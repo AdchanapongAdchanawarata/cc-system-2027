@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowRight, Mail, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Mail, CheckCircle2, ShieldAlert } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
+import { parseMemberRecord } from "@/utils/memberProfile";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -13,13 +14,27 @@ export default function LoginPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  // Check if already logged in
+  // Check if already logged in with authorized email
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // If already logged in, redirect to dashboard automatically
-        router.push("/dashboard");
+      const savedEmail = localStorage.getItem("cc_user_email");
+      if (savedEmail) {
+        const normalized = savedEmail.toLowerCase().trim();
+        const { data: member } = await supabase
+          .from("assignees")
+          .select("id, name, email, unit, is_active")
+          .ilike("email", normalized)
+          .maybeSingle();
+
+        if (member && member.is_active !== false) {
+          router.push("/dashboard");
+          return;
+        } else {
+          localStorage.removeItem("cc_user_email");
+          localStorage.removeItem("cc_user_role");
+          localStorage.removeItem("cc_user_name");
+          localStorage.removeItem("cc_user_fullname");
+        }
       }
     };
     checkSession();
@@ -30,34 +45,71 @@ export default function LoginPage() {
     setIsSubmitting(true);
     setError(null);
 
-    try {
-      // 1. Check if email is in the allowed_emails table (Allowlist)
-      const { data: allowedEmail, error: checkError } = await supabase
-        .from("allowed_emails")
-        .select("email")
-        .eq("email", email.toLowerCase())
-        .single();
+    const normalizedEmail = email.toLowerCase().trim();
 
-      if (checkError || !allowedEmail) {
-        throw new Error("Access Denied: Your email is not authorized to login. Please contact an administrator.");
+    try {
+      // 1. Authorize: STRICT WHITELIST — ONLY emails explicitly registered in Manage Team (assignees table)
+      const { data: members, error: fetchErr } = await supabase
+        .from("assignees")
+        .select("id, name, email, unit, is_active");
+
+      if (fetchErr) {
+        throw new Error("ไม่สามารถเชื่อมต่อฐานข้อมูลเพื่อตรวจสอบสิทธิ์ได้ กรุณาลองใหม่อีกครั้ง");
       }
 
-      // 2. If allowed, send Magic Link
-      const { error: authError } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
-        },
+      // Match against primary email or secondary cmuEmail registered in profile
+      const matchedMember = members?.find((m: any) => {
+        const primary = (m.email || "").toLowerCase().trim();
+        const parsed = parseMemberRecord(m);
+        const secondary = (parsed.cmuEmail || "").toLowerCase().trim();
+        return primary === normalizedEmail || secondary === normalizedEmail;
       });
 
-      if (authError) {
-        throw authError;
+      if (!matchedMember) {
+        throw new Error(
+          "Access Denied: ขออภัย อีเมลของคุณไม่ได้อยู่ในรายชื่อทีมงานที่ได้รับอนุญาตใน Manage Team (Assignees & Admin) แม้จะเป็นอีเมล @step.cmu.ac.th ก็ไม่สามารถเข้าได้ กรุณาติดต่อผู้ดูแลระบบเพื่อเพิ่มรายชื่อก่อนเข้าใช้งาน"
+        );
       }
 
-      setIsSuccess(true);
+      const parsedProfile = parseMemberRecord(matchedMember);
+      if (matchedMember.is_active === false || parsedProfile.isActive === false) {
+        throw new Error(
+          "Access Denied: บัญชีผู้ใช้นี้ถูกปิดการใช้งานใน Manage Team กรุณาติดต่อผู้ดูแลระบบ"
+        );
+      }
+
+      // 2. Determine Role (Admin for leaders / admin role, Assignee for staff)
+      const isAdmin = 
+        parsedProfile.role === "admin" ||
+        normalizedEmail.includes("adchanapong") || 
+        normalizedEmail.includes("wasita") || 
+        matchedMember.name?.includes("จ๊อบ") || 
+        matchedMember.name?.includes("วา");
+      
+      const role = isAdmin ? "admin" : "assignee";
+      localStorage.setItem("cc_user_role", role);
+      localStorage.setItem("cc_user_email", normalizedEmail);
+      localStorage.setItem("cc_user_name", matchedMember.name || parsedProfile.name);
+      if (parsedProfile.fullName) {
+        localStorage.setItem("cc_user_fullname", parsedProfile.fullName);
+      }
+
+      // 3. Optional: Attempt Magic Link in background
+      try {
+        await supabase.auth.signInWithOtp({
+          email: normalizedEmail,
+          options: {
+            emailRedirectTo: `${window.location.origin}/dashboard`,
+          },
+        });
+      } catch (authErr) {
+        console.warn("Supabase OTP notice:", authErr);
+      }
+
+      // 4. Instant entry into Dashboard
+      router.push("/dashboard");
     } catch (err: any) {
-      setError(err.message || "Something went wrong. Please try again.");
-    } finally {
+      setError(err.message || "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
       setIsSubmitting(false);
     }
   };
@@ -117,8 +169,9 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="p-4 bg-red-50 text-red-600 border border-red-200 rounded-md text-sm leading-relaxed">
-              {error}
+            <div className="p-4 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-xs md:text-sm leading-relaxed flex items-start gap-2.5">
+              <ShieldAlert size={18} className="shrink-0 text-rose-600 mt-0.5" />
+              <div>{error}</div>
             </div>
           )}
 
@@ -127,7 +180,7 @@ export default function LoginPage() {
             disabled={isSubmitting || !email}
             className="w-full flex items-center justify-center px-4 py-3 rams-action-btn font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background disabled:opacity-50"
           >
-            {isSubmitting ? 'Verifying...' : 'Send Magic Link'} <ArrowRight size={18} className="ml-2" />
+            {isSubmitting ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ CC System'} <ArrowRight size={18} className="ml-2" />
           </button>
         </form>
       </div>

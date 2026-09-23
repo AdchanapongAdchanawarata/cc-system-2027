@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import WeatherWidget from "@/components/WeatherWidget";
 import Link from "next/link";
-import { ArrowLeft, Settings, Plus, LayoutDashboard, LayoutList, FileText, Shield, User } from "lucide-react";
+import { ArrowLeft, Settings, Plus, LayoutDashboard, LayoutList, FileText, Shield, User, LogOut } from "lucide-react";
 import AssignmentsView from "./components/AssignmentsView";
 import DashboardsView from "./components/DashboardsView";
 import DataReportsView from "./components/DataReportsView";
@@ -17,8 +17,17 @@ export default function DashboardPage() {
   const [isSetupOpen, setIsSetupOpen] = useState(false);
   const [isInternalTaskOpen, setIsInternalTaskOpen] = useState(false);
   const [currentUserRole, setCurrentUserRole] = useState<"admin" | "assignee">("admin");
+  const [userDisplayName, setUserDisplayName] = useState<string>("");
 
   useEffect(() => {
+    const savedEmail = localStorage.getItem("cc_user_email");
+    if (!savedEmail) {
+      window.location.href = "/login";
+      return;
+    }
+    const savedName = localStorage.getItem("cc_user_name");
+    if (savedName) setUserDisplayName(savedName);
+
     const saved = localStorage.getItem("cc_user_role");
     if (saved === "admin" || saved === "assignee") {
       setCurrentUserRole(saved);
@@ -135,6 +144,28 @@ export default function DashboardPage() {
           >
             <Plus size={16} />
             <span className="hidden md:inline">Internal Task</span>
+          </button>
+
+          {/* User Display & Logout Button */}
+          {userDisplayName && (
+            <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 text-xs font-medium border border-slate-200">
+              <User size={13} className="text-slate-500" />
+              <span>{userDisplayName}</span>
+            </div>
+          )}
+
+          <button 
+            onClick={() => {
+              localStorage.removeItem("cc_user_email");
+              localStorage.removeItem("cc_user_role");
+              localStorage.removeItem("cc_user_name");
+              localStorage.removeItem("cc_user_fullname");
+              window.location.href = "/login";
+            }}
+            className="flex items-center justify-center p-2 rounded-full border border-surface-border bg-surface hover:bg-rose-50 hover:text-rose-600 transition-all shadow-[2px_4px_8px_rgba(0,0,0,0.05),-1px_-1px_4px_rgba(255,255,255,0.8)] hover:shadow-md cursor-pointer text-slate-600"
+            title="ออกจากระบบ (Logout)"
+          >
+            <LogOut size={18} />
           </button>
         </div>
       </div>

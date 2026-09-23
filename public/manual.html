@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CC TEAM : Briefing & Management System — คู่มือการใช้งานระบบฉบับสมบูรณ์</title>
+  <title>CC TEAM : Briefing & Management System — คู่มือการใช้งานระบบฉบับสมบูรณ์ (พร้อมภาพประกอบทุกฟังก์ชัน)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&display=swap" rel="stylesheet">
@@ -281,7 +281,7 @@
       font-size: 16px;
       font-weight: 700;
       color: var(--slate-900);
-      margin: 22px 0 10px;
+      margin: 24px 0 10px;
     }
     p {
       margin-bottom: 14px;
@@ -289,14 +289,14 @@
       color: var(--slate-700);
     }
 
-    /* Browser Mockup Container for Screenshots */
+    /* Browser Mockup Container for Desktop Screenshots */
     .browser-mockup {
       background: white;
       border: 1px solid var(--slate-200);
       border-radius: 12px;
       overflow: hidden;
       box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
-      margin: 20px 0 10px;
+      margin: 18px 0 8px;
     }
     .browser-chrome {
       background: #f1f5f9;
@@ -339,9 +339,79 @@
       font-size: 12px;
       color: var(--slate-500);
       text-align: center;
-      margin-top: 8px;
+      margin-top: 6px;
       margin-bottom: 22px;
       font-style: italic;
+    }
+
+    /* Two Columns Device Mockups */
+    .dual-mockup {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+      align-items: start;
+      margin: 18px 0 8px;
+    }
+    .mobile-mockup {
+      background: #0f172a;
+      border-radius: 36px;
+      padding: 10px;
+      box-shadow: 0 15px 35px -5px rgba(0,0,0,0.25);
+      border: 3px solid #334155;
+      margin: 0 auto;
+      max-width: 270px;
+    }
+    .mobile-screen {
+      border-radius: 26px;
+      overflow: hidden;
+      background: white;
+    }
+    .mobile-screen img {
+      width: 100%;
+      display: block;
+    }
+
+    /* Grid for Gallery of Works & Features */
+    .feature-gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin: 20px 0;
+    }
+    .gallery-card {
+      background: var(--slate-50);
+      border: 1px solid var(--slate-200);
+      border-radius: 10px;
+      padding: 16px;
+      transition: transform 0.2s;
+    }
+    .gallery-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+    .gallery-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .gallery-card-title {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--slate-900);
+    }
+    .gallery-price {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary-dark);
+      background: var(--primary-light);
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+    .gallery-card-desc {
+      font-size: 12px;
+      color: var(--slate-600);
+      line-height: 1.5;
     }
 
     /* Flow Chart / Visual Blocks */
@@ -466,6 +536,45 @@
       color: #1e40af;
     }
 
+    /* LINE Chat Bubble Mockup */
+    .line-chat-box {
+      background: #849ebf;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 18px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-width: 600px;
+    }
+    .chat-bubble {
+      max-width: 80%;
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-size: 13px;
+      line-height: 1.5;
+      position: relative;
+    }
+    .bubble-user {
+      align-self: flex-end;
+      background: #8ce462;
+      color: #111;
+      border-bottom-right-radius: 2px;
+    }
+    .bubble-bot {
+      align-self: flex-start;
+      background: white;
+      color: #111;
+      border-bottom-left-radius: 2px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .chat-sender {
+      font-size: 11px;
+      font-weight: 700;
+      color: #244b7a;
+      margin-bottom: 4px;
+    }
+
     code {
       background: var(--slate-100);
       color: var(--slate-900);
@@ -540,7 +649,7 @@
 
     <!-- Document Header / Cover -->
     <header class="doc-header">
-      <span class="meta-tag">คู่มือการใช้งานระบบฉบับสมบูรณ์ (Official Manual)</span>
+      <span class="meta-tag">คู่มือการใช้งานระบบฉบับสมบูรณ์ (Official Manual • Complete Visual Guide)</span>
       <h1 class="doc-title">CC TEAM : Briefing & Management System</h1>
       <p class="doc-subtitle">
         ระบบบริหารจัดการและขอรับบริการงานสร้างสรรค์และสื่อสารองค์กร อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (STeP)
@@ -560,8 +669,8 @@
           <span class="info-value">100% Free Forever (0.00 THB)</span>
         </div>
         <div class="info-item">
-          <span class="info-label">เวอร์ชันเอกสาร</span>
-          <span class="info-value">Production Release (พร้อมภาพประกอบ)</span>
+          <span class="info-label">ภาพประกอบสาธิตจริง</span>
+          <span class="info-value">26 ภาพประกอบระดับความละเอียดสูง (Hi-res)</span>
         </div>
       </div>
     </header>
@@ -570,10 +679,10 @@
     <nav class="toc">
       <div class="toc-title">📑 สารบัญคู่มือการใช้งาน</div>
       <div class="toc-grid">
-        <div class="toc-item"><a href="#sec-overview"><span class="toc-num">1</span> ภาพรวมและโครงสร้างสิทธิ์ผู้ใช้งาน</a></div>
+        <div class="toc-item"><a href="#sec-overview"><span class="toc-num">1</span> ภาพรวมและโครงสร้างสิทธิ์ผู้ใช้งาน (Desktop & Mobile)</a></div>
         <div class="toc-item"><a href="#sec-requester"><span class="toc-num">2</span> คู่มือการส่งงาน 3 ยูนิตหลัก (ไม่ต้อง Login)</a></div>
-        <div class="toc-item"><a href="#sec-special-forms"><span class="toc-num">3</span> แบบฟอร์มเฉพาะทาง (IDC & RSP Press)</a></div>
-        <div class="toc-item"><a href="#sec-tracking"><span class="toc-num">4</span> การติดตามสถานะและการประเมินงาน</a></div>
+        <div class="toc-item"><a href="#sec-special-forms"><span class="toc-num">3</span> แบบฟอร์มเฉพาะทาง (IDC & RSP Press Form)</a></div>
+        <div class="toc-item"><a href="#sec-tracking"><span class="toc-num">4</span> การติดตามสถานะงานและการประเมินผล</a></div>
         <div class="toc-item"><a href="#sec-staff-login"><span class="toc-num">5</span> การเข้าสู่ระบบทีมงาน (Strict Whitelist)</a></div>
         <div class="toc-item"><a href="#sec-dashboard"><span class="toc-num">6</span> การบริหารงานและจ่ายงาน (Tasks Board)</a></div>
         <div class="toc-item"><a href="#sec-reports"><span class="toc-num">7</span> ศูนย์รายงานผลงาน (Reports & Metrics)</a></div>
@@ -589,13 +698,54 @@
         <div class="section-icon">1</div>
         <div>
           <h2 class="section-title">ภาพรวมและโครงสร้างสิทธิ์ผู้ใช้งาน (System Overview & Access Roles)</h2>
-          <div class="section-desc">การแบ่งกลุ่มผู้ใช้งานและมาตรฐานความปลอดภัยของ CC TEAM</div>
+          <div class="section-desc">การแบ่งกลุ่มผู้ใช้งานและหน้าจอแสดงผลทั้งบน Desktop และ Mobile</div>
         </div>
       </div>
 
       <p>
-        <strong>CC TEAM : Briefing & Management System</strong> เป็นแพลตฟอร์มศูนย์กลางในการรับเรื่อง, บริหารจัดการคิวงาน, คำนวณมูลค่างานสร้างสรรค์ และติดตามผลงานของ <strong>ทีมสร้างสรรค์และการสื่อสาร (Creative and Communication - CC)</strong> อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ โดยแบ่งผู้ใช้งานออกเป็น 2 กลุ่มหลัก:
+        <strong>CC TEAM : Briefing & Management System</strong> เป็นแพลตฟอร์มศูนย์กลางในการรับเรื่อง, บริหารจัดการคิวงาน, คำนวณมูลค่างานสร้างสรรค์ และติดตามผลงานของ <strong>ทีมสร้างสรรค์และการสื่อสาร (Creative and Communication - CC)</strong> อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่
       </p>
+
+      <!-- Dual Mockup: Desktop and Mobile Home -->
+      <div class="dual-mockup">
+        <div>
+          <div class="browser-mockup">
+            <div class="browser-chrome">
+              <div class="browser-dots">
+                <span class="browser-dot dot-red"></span>
+                <span class="browser-dot dot-yellow"></span>
+                <span class="browser-dot dot-green"></span>
+              </div>
+              <div class="browser-address">https://ccteam.vercel.app/</div>
+            </div>
+            <img src="/manual_assets/shot_home_desktop.png" alt="หน้าแรก CC TEAM Portal บน Desktop">
+          </div>
+          <div class="img-caption">ภาพที่ 1.1: หน้าแรกบนคอมพิวเตอร์ (Desktop View) แสดง 3 วงกลมหลัก และวิดเจ็ตสภาพอากาศ</div>
+        </div>
+
+        <div>
+          <div class="mobile-mockup">
+            <div class="mobile-screen">
+              <img src="/manual_assets/shot_home_mobile.png" alt="หน้าแรก CC TEAM Portal บนมือถือ">
+            </div>
+          </div>
+          <div class="img-caption">ภาพที่ 1.2: หน้าแรกบนมือถือ (Mobile View) ปุ่มกดพอดีนิ้ว</div>
+        </div>
+      </div>
+
+      <!-- About Team Popup -->
+      <div class="browser-mockup">
+        <div class="browser-chrome">
+          <div class="browser-dots">
+            <span class="browser-dot dot-red"></span>
+            <span class="browser-dot dot-yellow"></span>
+            <span class="browser-dot dot-green"></span>
+          </div>
+          <div class="browser-address">https://ccteam.vercel.app/ (About Team Modal)</div>
+        </div>
+        <img src="/manual_assets/shot_about_team.png" alt="หน้าต่างแนะนำทีม CC TEAM">
+      </div>
+      <div class="img-caption">ภาพที่ 1.3: หน้าต่างแนะนำทีมสร้างสรรค์และการสื่อสาร (About Team Modal) แสดงพันธกิจและช่องทางติดต่อ</div>
 
       <table class="manual-table">
         <thead>
@@ -618,25 +768,6 @@
           </tr>
         </tbody>
       </table>
-
-      <!-- Screenshot: Home Page -->
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
-          </div>
-          <div class="browser-address">https://ccteam.vercel.app/</div>
-        </div>
-        <img src="/manual_assets/shot_home.png" alt="หน้าแรก CC TEAM Portal แสดง 3 วงกลมหลักและวิดเจ็ตสภาพอากาศ">
-      </div>
-      <div class="img-caption">ภาพที่ 1: หน้าแรก (Home Portal) แสดง 3 วงกลมบริการหลัก ออกแบบตามแนวคิด Dieter Rams เรียบหรู ใช้งานง่าย</div>
-
-      <div class="callout callout-info">
-        <div class="callout-title">💡 จุดเด่นด้านสถาปัตยกรรม (100% Free Forever)</div>
-        ระบบทำงานบนสถาปัตยกรรมคลาวด์แบบ Serverless ประกอบด้วย <strong>Next.js + Vercel Edge Server</strong>, <strong>Supabase Postgres DB</strong>, <strong>LINE Official Account</strong>, <strong>Google Gemini Free AI</strong> และ <strong>Google Sheets 2-Way Sync</strong> ทำให้ไม่มีค่าบำรุงรักษารายเดือน รองรับผู้ใช้งาน 500+ คนต่อเนื่อง 5 ปีอย่างมั่นคง
-      </div>
     </section>
 
     <!-- SECTION 2: การส่งงาน (สำหรับผู้ขอรับบริการ) -->
@@ -645,37 +776,31 @@
         <div class="section-icon">2</div>
         <div>
           <h2 class="section-title">คู่มือการส่งคำขอรับบริการ 3 ยูนิตหลัก (Requester Guide)</h2>
-          <div class="section-desc">ขั้นตอนการเปิดแบบฟอร์ม บรีฟงาน และแนบไฟล์สำหรับผู้ขอรับบริการทั่วไป (ไม่ต้อง Login)</div>
+          <div class="section-desc">สาธิตการเลือกยูนิต การกรอกข้อมูล การคำนวณราคากลาง และการแนบลิงก์ Google Drive</div>
         </div>
       </div>
 
-      <p>ผู้ใช้งานเปิดเบราว์เซอร์ไปที่ <strong><a href="https://ccteam.vercel.app" target="_blank">https://ccteam.vercel.app</a></strong> จะพบปุ่มวงกลมหลัก 3 บริการ สามารถกดเลือกยูนิตที่ตรงกับความต้องการ:</p>
+      <p>ผู้ใช้งานเปิดเบราว์เซอร์ไปที่ <strong><a href="https://ccteam.vercel.app" target="_blank">https://ccteam.vercel.app</a></strong> จะพบ 3 วงกลมบริการหลัก:</p>
 
       <div class="flow-grid">
         <div class="flow-step">
           <span class="flow-step-num" style="background:#7c3aed;">1</span>
           <div class="flow-step-title"><span class="badge badge-creative">Creative Designer</span></div>
-          <div class="flow-step-desc">
-            งานออกแบบกราฟิก, โลโก้, โปสเตอร์, แผ่นพับ, แบนเนอร์, ป้ายแบคดรอป, Layout หนังสือ, และงานถ่ายภาพผลิตภัณฑ์/บุคคล
-          </div>
+          <div class="flow-step-desc">งานออกแบบกราฟิก, โลโก้, โปสเตอร์, แผ่นพับ, แบนเนอร์, ป้ายแบคดรอป, Layout หนังสือ, และงานถ่ายภาพผลิตภัณฑ์/บุคคล</div>
         </div>
         <div class="flow-step">
           <span class="flow-step-num" style="background:#b45309;">2</span>
           <div class="flow-step-title"><span class="badge badge-content">Content Creator</span></div>
-          <div class="flow-step-desc">
-            ผลิตคอนเทนต์, บทความประชาสัมพันธ์สั้น/ยาว (SEO), ถ่ายทำและตัดต่อวิดีโอสั้น (TikTok/Reels), งานเขียนคำโฆษณา และ Boost Post
-          </div>
+          <div class="flow-step-desc">ผลิตคอนเทนต์, บทความประชาสัมพันธ์สั้น/ยาว (SEO), ถ่ายทำและตัดต่อวิดีโอสั้น (TikTok/Reels), งานเขียนคำโฆษณา และ Boost Post</div>
         </div>
         <div class="flow-step">
           <span class="flow-step-num" style="background:#047857;">3</span>
           <div class="flow-step-title"><span class="badge badge-pr">PR & Communications</span></div>
-          <div class="flow-step-desc">
-            เขียนข่าวแจกสื่อ (Press Release), รายงานข่าวผู้บริหาร/ศึกษาดูงาน, บันทึกภาพกิจกรรม MOU, ประสานงานสื่อมวลชน และคุมคิวพิธีการ
-          </div>
+          <div class="flow-step-desc">เขียนข่าวแจกสื่อ (Press Release), รายงานข่าวผู้บริหาร/ศึกษาดูงาน, บันทึกภาพกิจกรรม MOU, ประสานงานสื่อมวลชน และคุมคิวพิธีการ</div>
         </div>
       </div>
 
-      <!-- Screenshot: Creative Brief Form -->
+      <!-- Screenshot: Creative Step 1 -->
       <div class="browser-mockup">
         <div class="browser-chrome">
           <div class="browser-dots">
@@ -685,24 +810,96 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/request?unit=creative</div>
         </div>
-        <img src="/manual_assets/shot_request_creative.png" alt="แบบฟอร์มส่งงาน Creative Designer">
+        <img src="/manual_assets/shot_request_step1.png" alt="ฟอร์มส่งงาน Creative Designer ว่าง">
       </div>
-      <div class="img-caption">ภาพที่ 2: หน้าแบบฟอร์มส่งงาน Creative Designer แสดงข้อมูลผู้ขอรับบริการ, หัวข้อบริการ, วันกำหนดส่ง และช่องแนบไฟล์</div>
+      <div class="img-caption">ภาพที่ 2.1: ฟอร์มส่งงาน Creative Designer แสดงช่องกรอกข้อมูลผู้ขอรับบริการ, เมนูเลือกสังกัด และหมวดหมู่บริการ</div>
 
-      <h3>ขั้นตอนการกรอกแบบฟอร์มส่งงาน (Step-by-step)</h3>
-      <ol style="padding-left: 20px; font-size: 14px; color: var(--slate-700); line-height: 1.8;">
-        <li><strong>ข้อมูลผู้ขอรับบริการ:</strong> กรอกชื่อ-นามสกุล, เบอร์โทรศัพท์ที่ติดต่อได้สะดวก, อีเมลองค์กร (@step.cmu.ac.th หรือ @cmu.ac.th)</li>
-        <li><strong>หน่วยงานต้นสังกัด (Team/Department):</strong> เลือกหน่วยงานของท่านจากเมนู Dropdown (เช่น NMCO, PITI, INCO, TECH UP, ฯลฯ)</li>
-        <li><strong>ผู้บังคับบัญชา / ผู้มีอำนาจตัดสินใจ (Decision Maker):</strong> ระบุชื่อหัวหน้างานหรือผู้มีอำนาจตรวจรับงาน เพื่อให้ทีม CC ทราบผู้ประสานงานหลัก</li>
-        <li><strong>ประเภทบริการและรายละเอียดงาน:</strong> เลือกหัวข้อบริการ ระบบจะแสดง <em>ราคามาตรฐานอ้างอิง (Standard Pricing)</em> พร้อมกรอกวัตถุประสงค์ ขนาด และ Mood & Tone ที่ต้องการ</li>
-        <li><strong>กำหนดส่งงาน (Deadline):</strong> เลือกวันและเวลาที่ต้องการรับงาน (ระบบจะแจ้งเตือนอัตโนมัติหากเป็นงานด่วนกระชั้นชิด)</li>
-        <li><strong>การแนบไฟล์ตัวอย่าง / เอกสารอ้างอิง:</strong> สามารถวาง <em>ลิงก์ Google Drive</em> หรืออัปโหลดไฟล์ตัวอย่าง (Images, PDF, Word) เข้าสู่ระบบได้โดยตรง</li>
-        <li><strong>กดปุ่ม "ส่งคำขอรับบริการ (Submit Request)":</strong> ระบบจะบันทึกงาน และสร้าง <strong>รหัสติดตามงาน (Tracking Code)</strong> เช่น <code>CC-2026-0042</code> แสดงบนหน้าจอทันที</li>
-      </ol>
+      <!-- Screenshot: Creative Step 2 (Filled with sample data) -->
+      <div class="browser-mockup">
+        <div class="browser-chrome">
+          <div class="browser-dots">
+            <span class="browser-dot dot-red"></span>
+            <span class="browser-dot dot-yellow"></span>
+            <span class="browser-dot dot-green"></span>
+          </div>
+          <div class="browser-address">https://ccteam.vercel.app/request?unit=creative (Filled Demonstration)</div>
+        </div>
+        <img src="/manual_assets/shot_request_step2.png" alt="ตัวอย่างการกรอกข้อมูลฟอร์มส่งงานจริง">
+      </div>
+      <div class="img-caption">ภาพที่ 2.2: ตัวอย่างการกรอกข้อมูลงานจริง: ระบุชื่องาน 'FoodFab 2026', สังกัด, ราคากลางประเมิน และวางลิงก์ Google Drive</div>
 
-      <div class="callout callout-success">
-        <div class="callout-title">✅ ทราบผลทันใจผ่าน LINE</div>
-        เมื่อกดส่งงานเรียบร้อย ระบบจะส่งสัญญาณแจ้งเตือนอัตโนมัติไปยังกลุ่ม LINE ของทีม CC ทันที ทีมงานจะได้รับทราบและจัดคิวงานโดยไม่ต้องโทรตาม
+      <!-- Screenshot: Content Form -->
+      <div class="browser-mockup">
+        <div class="browser-chrome">
+          <div class="browser-dots">
+            <span class="browser-dot dot-red"></span>
+            <span class="browser-dot dot-yellow"></span>
+            <span class="browser-dot dot-green"></span>
+          </div>
+          <div class="browser-address">https://ccteam.vercel.app/request?unit=content</div>
+        </div>
+        <img src="/manual_assets/shot_request_content.png" alt="ฟอร์มส่งงาน Content Creator">
+      </div>
+      <div class="img-caption">ภาพที่ 2.3: ฟอร์มส่งงาน Content Creator รองรับการผลิตคลิปวิดีโอสั้น, สัมภาษณ์บุคคล, และบทความ SEO</div>
+
+      <!-- Screenshot: PR Form -->
+      <div class="browser-mockup">
+        <div class="browser-chrome">
+          <div class="browser-dots">
+            <span class="browser-dot dot-red"></span>
+            <span class="browser-dot dot-yellow"></span>
+            <span class="browser-dot dot-green"></span>
+          </div>
+          <div class="browser-address">https://ccteam.vercel.app/request?unit=pr</div>
+        </div>
+        <img src="/manual_assets/shot_request_pr.png" alt="ฟอร์มส่งงาน PR & Communications">
+      </div>
+      <div class="img-caption">ภาพที่ 2.4: ฟอร์มส่งงาน PR & Communications สำหรับเขียนข่าวแจกสื่อ, ถ่ายภาพพิธีการ, และจัดการสื่อมวลชน</div>
+
+      <h3>ตัวอย่างรายการงานและราคากลางมาตรฐาน (Standard Pricing Showcase)</h3>
+      <div class="feature-gallery">
+        <div class="gallery-card">
+          <div class="gallery-card-header">
+            <span class="gallery-card-title">Logo Design</span>
+            <span class="gallery-price">2,500 บาท</span>
+          </div>
+          <div class="gallery-card-desc">ออกแบบตราสัญลักษณ์แบรนด์ กำหนดโทนสีและชุดฟอนต์หลักประจำองค์กร/โครงการ</div>
+        </div>
+        <div class="gallery-card">
+          <div class="gallery-card-header">
+            <span class="gallery-card-title">Key Visual (KV)</span>
+            <span class="gallery-price">3,500 บาท</span>
+          </div>
+          <div class="gallery-card-desc">ออกแบบภาพสื่อสารหลัก (Mood & Tone) สำหรับใช้เป็นต้นแบบในแคมเปญประชาสัมพันธ์</div>
+        </div>
+        <div class="gallery-card">
+          <div class="gallery-card-header">
+            <span class="gallery-card-title">Brochure / Leaflet</span>
+            <span class="gallery-price">1,200 บาท</span>
+          </div>
+          <div class="gallery-card-desc">ออกแบบแผ่นพับ 2-3 พับ (4-6 หน้า) พร้อมจัดวางโครงสร้างภาพและเนื้อหา</div>
+        </div>
+        <div class="gallery-card">
+          <div class="gallery-card-header">
+            <span class="gallery-card-title">Packaging ครบวงจร</span>
+            <span class="gallery-price">10,000 บาท</span>
+          </div>
+          <div class="gallery-card-desc">ออกแบบโครงสร้างกล่อง/บรรจุภัณฑ์เชิงซ้อน พร้อมกราฟิกทุกมิติและไดคัทสำหรับพิมพ์</div>
+        </div>
+        <div class="gallery-card">
+          <div class="gallery-card-header">
+            <span class="gallery-card-title">Short-form Video</span>
+            <span class="gallery-price">1,500 บาท</span>
+          </div>
+          <div class="gallery-card-desc">ตัดต่อวิดีโอคลิปสั้นความยาว 15 - 60 วินาที สำหรับ TikTok, Reels และ YouTube Shorts</div>
+        </div>
+        <div class="gallery-card">
+          <div class="gallery-card-header">
+            <span class="gallery-card-title">Press Release</span>
+            <span class="gallery-price">1,500 บาท</span>
+          </div>
+          <div class="gallery-card-desc">เขียนข่าวประชาสัมพันธ์ภาษาไทยมาตรฐานสำหรับแจกจ่ายสื่อมวลชนและสำนักข่าว</div>
+        </div>
       </div>
     </section>
 
@@ -718,12 +915,11 @@
 
       <h3>1. แบบฟอร์มขอรับบริการ IDC (Innovation Design Center)</h3>
       <p>
-        สำหรับหน่วยงานหรือผู้ประกอบการที่ต้องการขอรับคำปรึกษา ออกแบบโมเดล 3D หรือขึ้นรูปบรรจุภัณฑ์เชิงนวัตกรรม สามารถเข้าใช้งานได้ที่ URL โดยตรง:
+        สำหรับหน่วยงานหรือผู้ประกอบการที่ต้องการขอรับคำปรึกษา ออกแบบโมเดล 3D หรือขึ้นรูปบรรจุภัณฑ์เชิงนวัตกรรม:
         <br>
         🔗 <strong><a href="https://ccteam.vercel.app/idc-form" target="_blank">https://ccteam.vercel.app/idc-form</a></strong>
       </p>
 
-      <!-- Screenshot: IDC Form -->
       <div class="browser-mockup">
         <div class="browser-chrome">
           <div class="browser-dots">
@@ -733,9 +929,9 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/idc-form</div>
         </div>
-        <img src="/manual_assets/shot_idc.png" alt="แบบฟอร์มขอรับบริการ IDC">
+        <img src="/manual_assets/shot_idc_details.png" alt="แบบฟอร์มขอรับบริการ IDC">
       </div>
-      <div class="img-caption">ภาพที่ 3: หน้าแบบฟอร์มขอรับบริการ IDC สำหรับงานที่ปรึกษาออกแบบบรรจุภัณฑ์และพัฒนาผลิตภัณฑ์นวัตกรรม</div>
+      <div class="img-caption">ภาพที่ 3.1: หน้าแบบฟอร์มขอรับบริการ IDC สำหรับงานที่ปรึกษาออกแบบบรรจุภัณฑ์และพัฒนาผลิตภัณฑ์นวัตกรรม</div>
 
       <h3 style="margin-top: 24px;">2. แบบฟอร์มข่าวกิจกรรมเครือข่าย RSP Press Form</h3>
       <p>
@@ -744,7 +940,6 @@
         🔗 <strong><a href="https://ccteam.vercel.app/rsp-press-form" target="_blank">https://ccteam.vercel.app/rsp-press-form</a></strong>
       </p>
 
-      <!-- Screenshot: RSP Press Form -->
       <div class="browser-mockup">
         <div class="browser-chrome">
           <div class="browser-dots">
@@ -754,9 +949,9 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/rsp-press-form</div>
         </div>
-        <img src="/manual_assets/shot_rsp.png" alt="แบบฟอร์มข่าวกิจกรรม RSP Press Form">
+        <img src="/manual_assets/shot_rsp_details.png" alt="แบบฟอร์มข่าวกิจกรรม RSP Press Form">
       </div>
-      <div class="img-caption">ภาพที่ 4: หน้าแบบฟอร์มข่าวกิจกรรม RSP Press ส่งประเด็นข่าวแจกสื่อมวลชนและภาพกิจกรรมเครือข่าย</div>
+      <div class="img-caption">ภาพที่ 3.2: หน้าแบบฟอร์มข่าวกิจกรรม RSP Press ส่งประเด็นข่าวแจกสื่อมวลชนและภาพกิจกรรมเครือข่าย</div>
     </section>
 
     <!-- SECTION 4: การติดตามสถานะและการประเมินงาน -->
@@ -765,11 +960,10 @@
         <div class="section-icon">4</div>
         <div>
           <h2 class="section-title">การติดตามสถานะงานและการประเมินผล (Tracking & Survey)</h2>
-          <div class="section-desc">วิธีเช็คความคืบหน้าของงานที่ส่ง และการประเมินความพึงพอใจเพื่อปิดงาน</div>
+          <div class="section-desc">วิธีเช็คความคืบหน้าของงานที่ส่ง ทั้งบนคอมพิวเตอร์และมือถือ และการประเมินความพึงพอใจเพื่อปิดงาน</div>
         </div>
       </div>
 
-      <h3>การเช็คสถานะงาน (Track Status)</h3>
       <p>
         ผู้ขอรับบริการสามารถติดตามความคืบหน้าของงานตนเองได้ตลอด 24 ชั่วโมง โดยไม่ต้องทักถามทีมงาน:
         <br>
@@ -778,63 +972,37 @@
         2. กรอก <strong>Tracking Code</strong> (เช่น <code>CC-2026-0015</code>) หรือใช้อีเมลของผู้ส่งงานในการค้นหา
       </p>
 
-      <!-- Screenshot: Track Status -->
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
+      <div class="dual-mockup">
+        <div>
+          <div class="browser-mockup">
+            <div class="browser-chrome">
+              <div class="browser-dots">
+                <span class="browser-dot dot-red"></span>
+                <span class="browser-dot dot-yellow"></span>
+                <span class="browser-dot dot-green"></span>
+              </div>
+              <div class="browser-address">https://ccteam.vercel.app/track</div>
+            </div>
+            <img src="/manual_assets/shot_track_search.png" alt="หน้าติดตามสถานะงานบน Desktop">
           </div>
-          <div class="browser-address">https://ccteam.vercel.app/track</div>
+          <div class="img-caption">ภาพที่ 4.1: หน้าติดตามสถานะงานบน Desktop แสดงช่องค้นหารหัสและประวัติการส่งงาน</div>
         </div>
-        <img src="/manual_assets/shot_track.png" alt="หน้าติดตามสถานะงาน Track Status">
-      </div>
-      <div class="img-caption">ภาพที่ 5: หน้าค้นหาและติดตามสถานะงาน (Track Status) แสดงความคืบหน้าแบบ Real-time</div>
 
-      <table class="manual-table">
-        <thead>
-          <tr>
-            <th style="width: 25%;">สถานะงาน (Status)</th>
-            <th style="width: 20%;">สีสัญลักษณ์</th>
-            <th style="width: 55%;">ความหมาย</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>Pending</strong></td>
-            <td><span style="color:#d97706;font-weight:600;">🟡 สีส้มอ่อน</span></td>
-            <td>คำขอส่งถึงทีม CC แล้ว กำลังรอหัวหน้าทีมตรวจบรีฟและจ่ายงานให้ผู้รับผิดชอบ</td>
-          </tr>
-          <tr>
-            <td><strong>In Progress</strong></td>
-            <td><span style="color:#2563eb;font-weight:600;">🔵 สีน้ำเงิน</span></td>
-            <td>ทีมงานได้รับมอบหมายแล้ว และกำลังดำเนินการผลิตชิ้นงานตามคิวงาน</td>
-          </tr>
-          <tr>
-            <td><strong>In Review / Draft</strong></td>
-            <td><span style="color:#7c3aed;font-weight:600;">🟣 สีม่วง</span></td>
-            <td>ทีมงานอัปโหลดดราฟต์แรกแล้ว ผู้ขอรับบริการสามารถกดดูลายเส้น/ตรวจแก้แบบได้</td>
-          </tr>
-          <tr>
-            <td><strong>Revision</strong></td>
-            <td><span style="color:#dc2626;font-weight:600;">🔴 สีแดง</span></td>
-            <td>งานอยู่ระหว่างการแก้ไขตาม Feedback ของผู้ขอรับบริการ</td>
-          </tr>
-          <tr>
-            <td><strong>Completed</strong></td>
-            <td><span style="color:#059669;font-weight:600;">🟢 สีเขียว</span></td>
-            <td>งานเสร็จสิ้นสมบูรณ์ มีลิงก์ส่งมอบไฟล์จริง (Final Delivery Link) พร้อมดาวน์โหลด</td>
-          </tr>
-        </tbody>
-      </table>
+        <div>
+          <div class="mobile-mockup">
+            <div class="mobile-screen">
+              <img src="/manual_assets/shot_track_mobile.png" alt="หน้าติดตามสถานะงานบนมือถือ">
+            </div>
+          </div>
+          <div class="img-caption">ภาพที่ 4.2: ค้นหาสถานะงานบนมือถือได้อย่างรวดเร็ว</div>
+        </div>
+      </div>
 
       <h3>การประเมินความพึงพอใจ (Satisfaction Survey)</h3>
       <p>
         เมื่องานอยู่ในสถานะ <strong>Completed</strong> ผู้ขอรับบริการสามารถกดลิงก์ <strong>"ทำแบบประเมินความพึงพอใจ"</strong> (หรือเปิดที่ 🔗 <strong><a href="https://ccteam.vercel.app/survey" target="_blank">https://ccteam.vercel.app/survey</a></strong>) เพื่อให้คะแนน 1-5 ดาว:
       </p>
 
-      <!-- Screenshot: Satisfaction Survey -->
       <div class="browser-mockup">
         <div class="browser-chrome">
           <div class="browser-dots">
@@ -844,9 +1012,9 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/survey</div>
         </div>
-        <img src="/manual_assets/shot_survey.png" alt="แบบประเมินความพึงพอใจงาน">
+        <img src="/manual_assets/shot_survey_rating.png" alt="แบบประเมินความพึงพอใจงาน">
       </div>
-      <div class="img-caption">ภาพที่ 6: แบบประเมินความพึงพอใจ (Satisfaction Survey) ให้คะแนน 5 ดาวเพื่อปิดงานและนำเข้าตัวชี้วัด ISO</div>
+      <div class="img-caption">ภาพที่ 4.3: แบบประเมินความพึงพอใจ (Satisfaction Survey) ให้คะแนน 5 ดาวเพื่อปิดงานและนำเข้าตัวชี้วัด ISO</div>
     </section>
 
     <!-- SECTION 5: การเข้าสู่ระบบทีมงาน CC -->
@@ -872,7 +1040,6 @@
         </ol>
       </div>
 
-      <!-- Screenshot: Login Screen -->
       <div class="browser-mockup">
         <div class="browser-chrome">
           <div class="browser-dots">
@@ -882,22 +1049,9 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/login</div>
         </div>
-        <img src="/manual_assets/shot_login.png" alt="หน้าเข้าสู่ระบบ CC Login พร้อมระบบ Strict Whitelist">
+        <img src="/manual_assets/shot_login_screen.png" alt="หน้าเข้าสู่ระบบ CC Login พร้อมระบบ Strict Whitelist">
       </div>
-      <div class="img-caption">ภาพที่ 7: หน้าเข้าสู่ระบบ (CC Login) รองรับเฉพาะอีเมลทีมงานที่ระบุใน Manage Team เท่านั้น</div>
-
-      <h3>ขั้นตอนการเข้าสู่ระบบ:</h3>
-      <ol style="padding-left: 20px; font-size: 14px; color: var(--slate-700); line-height: 1.8;">
-        <li>เปิดลิงก์ <strong><a href="https://ccteam.vercel.app/login" target="_blank">https://ccteam.vercel.app/login</a></strong> หรือกดปุ่ม <strong>CC Login</strong> ที่ด้านล่างสุดของหน้าแรก</li>
-        <li>กรอกอีเมลทางการของท่านที่ลงทะเบียนไว้ในทีม (เช่น <code>adchanapong@step.cmu.ac.th</code>, <code>wasita@step.cmu.ac.th</code>)</li>
-        <li>กดปุ่ม <strong>"เข้าสู่ระบบ CC System"</strong></li>
-        <li>ระบบจะตรวจสอบ Whitelist ทันที หากถูกต้องจะนำท่านเข้าสู่หน้า <strong>Control Center Dashboard</strong> ทันที โดยแยกบทบาทสิทธิ์อัตโนมัติ:
-          <ul style="margin-top: 6px;">
-            <li><strong>Admin Role:</strong> หัวหน้าทีม/ผู้ช่วย จะเห็นปุ่มฟันเฟือง ⚙️ ตั้งค่าทีม KPI และราคากลาง</li>
-            <li><strong>Assignee Role:</strong> สมาชิกทีมทั่วไป จะเห็นงานและสามารถอัปเดตงานของตนเองได้เต็มรูปแบบ</li>
-          </ul>
-        </li>
-      </ol>
+      <div class="img-caption">ภาพที่ 5.1: หน้าเข้าสู่ระบบ (CC Login) รองรับเฉพาะอีเมลทีมงานที่ระบุใน Manage Team เท่านั้น</div>
     </section>
 
     <!-- SECTION 6: Dashboard & Tasks Board -->
@@ -910,7 +1064,6 @@
         </div>
       </div>
 
-      <!-- Screenshot: Dashboard Home -->
       <div class="browser-mockup">
         <div class="browser-chrome">
           <div class="browser-dots">
@@ -920,13 +1073,12 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/dashboard</div>
         </div>
-        <img src="/manual_assets/shot_dashboard_home.png" alt="หน้าหลัก Control Center Dashboard">
+        <img src="/manual_assets/shot_control_center.png" alt="หน้าหลัก Control Center Dashboard">
       </div>
-      <div class="img-caption">ภาพที่ 8: หน้าหลัก Control Center Dashboard แบ่ง 3 ส่วน: Tasks (จัดการงาน), Insights (วิเคราะห์ผลงาน), Data Reports (รายงาน)</div>
+      <div class="img-caption">ภาพที่ 6.1: หน้าหลัก Control Center Dashboard แบ่ง 3 ส่วน: Tasks (จัดการงาน), Insights (วิเคราะห์ผลงาน), Data Reports (รายงาน)</div>
 
       <p>เมื่อเข้าสู่ <strong>Tasks View</strong> สมาชิกทีมจะพบกระดานคิวงานที่รวมทุกใบงานจากทุกยูนิตเข้ามาไว้ที่เดียว:</p>
 
-      <!-- Screenshot: Tasks Board -->
       <div class="browser-mockup">
         <div class="browser-chrome">
           <div class="browser-dots">
@@ -936,41 +1088,23 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/dashboard?view=assignments</div>
         </div>
-        <img src="/manual_assets/shot_dashboard_tasks.png" alt="กระดาน Tasks Board สำหรับจ่ายงานและติดตามสถานะงาน">
+        <img src="/manual_assets/shot_tasks_board.png" alt="กระดาน Tasks Board สำหรับจ่ายงานและติดตามสถานะงาน">
       </div>
-      <div class="img-caption">ภาพที่ 9: กระดาน Tasks Board แสดงรายการงาน กรองตามยูนิต ปุ่มจ่ายงาน และแถบติดตามความคืบหน้า</div>
+      <div class="img-caption">ภาพที่ 6.2: กระดาน Tasks Board แสดงรายการงาน กรองตามยูนิต ปุ่มจ่ายงาน และแถบติดตามความคืบหน้า</div>
 
-      <h3>การดำเนินงานบน Tasks Board (งานประจำวัน):</h3>
-      <table class="manual-table">
-        <thead>
-          <tr>
-            <th style="width: 25%;">การกระทำ (Action)</th>
-            <th style="width: 75%;">ขั้นตอนและผลลัพธ์</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>การจ่ายงาน (Assign Task)</strong></td>
-            <td>คลิกเปิดการ์ดงาน &gt; ในหัวข้อ <em>ผู้รับผิดชอบ (Assignee)</em> ให้เลือกชื่อสมาชิกทีม &gt; ระบบจะบันทึกและแท็กชื่อผู้รับผิดชอบทันที พร้อมส่งแจ้งเตือนใน LINE</td>
-          </tr>
-          <tr>
-            <td><strong>การเริ่มทำงาน (In Progress)</strong></td>
-            <td>เปลี่ยนสถานะเป็น <code>In Progress</code> พร้อมปรับแถบเปอร์เซ็นต์ความคืบหน้า (Progress 0 - 100%) เพื่อให้ผู้ส่งงานติดตามได้ในหน้า Track</td>
-          </tr>
-          <tr>
-            <td><strong>การส่งดราฟต์ตรวจแบบ</strong></td>
-            <td>วางลิงก์รูปภาพหรือโฟลเดอร์ Google Drive ในช่อง <em>Draft / Preview Link</em> &gt; เปลี่ยนสถานะเป็น <code>In Review</code></td>
-          </tr>
-          <tr>
-            <td><strong>การปิดงาน (Completed)</strong></td>
-            <td>วางลิงก์ไฟล์งานจริงความละเอียดสูง (Hi-res / Source file) ในช่อง <em>Final Delivery Link</em> &gt; เปลี่ยนสถานะเป็น <code>Completed</code> &gt; ระบบจะส่งสรุปงานเข้าสู่ฐานข้อมูลและพร้อมให้คะแนนประเมิน</td>
-          </tr>
-          <tr>
-            <td><strong>การสร้าง Internal Task</strong></td>
-            <td>กดปุ่ม <strong>+ Internal Task</strong> มุมขวาบน เพื่อสร้างงานภายในทีม CC เช่น งานเตรียม Proposal, งานขึ้นเวที, หรือซ่อมบำรุงสื่อ โดยไม่ต้องรอฟอร์มภายนอก</td>
-          </tr>
-        </tbody>
-      </table>
+      <!-- Screenshot: Internal Task Modal -->
+      <div class="browser-mockup">
+        <div class="browser-chrome">
+          <div class="browser-dots">
+            <span class="browser-dot dot-red"></span>
+            <span class="browser-dot dot-yellow"></span>
+            <span class="browser-dot dot-green"></span>
+          </div>
+          <div class="browser-address">https://ccteam.vercel.app/dashboard (Internal Task Modal)</div>
+        </div>
+        <img src="/manual_assets/shot_internal_task.png" alt="หน้าต่างสร้าง Internal Task">
+      </div>
+      <div class="img-caption">ภาพที่ 6.3: หน้าต่างสร้าง Internal Task สำหรับงานภายในทีม เช่น Proposal, ซ่อมบำรุง, หรืองานกิจกรรม</div>
     </section>
 
     <!-- SECTION 7: ศูนย์รายงานผลงาน -->
@@ -979,11 +1113,10 @@
         <div class="section-icon">7</div>
         <div>
           <h2 class="section-title">ศูนย์รายงานและข้อมูลตัวชี้วัด (Reports & Metrics)</h2>
-          <div class="section-desc">รายงาน 4 รูปแบบหลักสำหรับการบริหารงานคุณภาพและการประชุมผู้บริหาร</div>
+          <div class="section-desc">รายงาน 4 รูปแบบหลักสำหรับการบริหารงานคุณภาพและการประชุมผู้บริหาร พร้อมภาพตัวอย่างจริง</div>
         </div>
       </div>
 
-      <!-- Screenshot: Reports View -->
       <div class="browser-mockup">
         <div class="browser-chrome">
           <div class="browser-dots">
@@ -993,11 +1126,64 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports</div>
         </div>
-        <img src="/manual_assets/shot_dashboard_reports.png" alt="ศูนย์รวมรายงาน Data Reports & Metrics">
+        <img src="/manual_assets/shot_reports_hub.png" alt="ศูนย์รวมรายงาน Data Reports & Metrics">
       </div>
-      <div class="img-caption">ภาพที่ 10: ศูนย์รวมรายงาน 4 มิติ (ISO Report, Weekly Meeting Report, KM Value Savings, Team Action Plan)</div>
+      <div class="img-caption">ภาพที่ 7.1: ศูนย์รวมรายงาน 4 มิติ (ISO Report, Weekly Meeting Report, KM Value Savings, Team Action Plan)</div>
 
-      <!-- Screenshot: Insights View -->
+      <!-- Sub-reports Detail Screenshots -->
+      <div class="browser-mockup">
+        <div class="browser-chrome">
+          <div class="browser-dots">
+            <span class="browser-dot dot-red"></span>
+            <span class="browser-dot dot-yellow"></span>
+            <span class="browser-dot dot-green"></span>
+          </div>
+          <div class="browser-address">https://ccteam.vercel.app/dashboard (ISO Report Detail)</div>
+        </div>
+        <img src="/manual_assets/shot_iso_report.png" alt="หน้ารายงานสถิติกระบวนการและตัวชี้วัด ISO">
+      </div>
+      <div class="img-caption">ภาพที่ 7.2: หน้ารายงานมาตรฐาน ISO 9001 แสดงอัตราส่งงานตรงเวลา (% On-Time) และคะแนนความพึงพอใจ</div>
+
+      <div class="browser-mockup">
+        <div class="browser-chrome">
+          <div class="browser-dots">
+            <span class="browser-dot dot-red"></span>
+            <span class="browser-dot dot-yellow"></span>
+            <span class="browser-dot dot-green"></span>
+          </div>
+          <div class="browser-address">https://ccteam.vercel.app/dashboard (Weekly Meeting Report Detail)</div>
+        </div>
+        <img src="/manual_assets/shot_meeting_report.png" alt="หน้ารายงานประชุมประจำสัปดาห์ Meeting Report">
+      </div>
+      <div class="img-caption">ภาพที่ 7.3: หน้ารายงานประชุมประจำสัปดาห์ (Weekly Meeting Report) สรุปงานแยกตามยูนิตและงานด่วน</div>
+
+      <div class="browser-mockup">
+        <div class="browser-chrome">
+          <div class="browser-dots">
+            <span class="browser-dot dot-red"></span>
+            <span class="browser-dot dot-yellow"></span>
+            <span class="browser-dot dot-green"></span>
+          </div>
+          <div class="browser-address">https://ccteam.vercel.app/dashboard (KM Report Detail)</div>
+        </div>
+        <img src="/manual_assets/shot_km_report.png" alt="หน้ารายงานจัดการความรู้ KM และมูลค่าประหยัดงบประมาณ">
+      </div>
+      <div class="img-caption">ภาพที่ 7.4: หน้ารายงานการจัดการความรู้ (KM Report) แสดงมูลค่าเงินที่ทีมช่วยประหยัดงบประมาณแก่อุทยานฯ</div>
+
+      <div class="browser-mockup">
+        <div class="browser-chrome">
+          <div class="browser-dots">
+            <span class="browser-dot dot-red"></span>
+            <span class="browser-dot dot-yellow"></span>
+            <span class="browser-dot dot-green"></span>
+          </div>
+          <div class="browser-address">https://ccteam.vercel.app/dashboard (Team Action Plan Detail)</div>
+        </div>
+        <img src="/manual_assets/shot_tap_report.png" alt="หน้ารายงานแผนปฏิบัติการ Team Action Plan">
+      </div>
+      <div class="img-caption">ภาพที่ 7.5: หน้ารายงาน Team Action Plan (TAP) ติดตามความก้าวหน้าตามตัวชี้วัด OKRs ระดับองค์กร</div>
+
+      <!-- Insights Screenshot -->
       <div class="browser-mockup">
         <div class="browser-chrome">
           <div class="browser-dots">
@@ -1007,14 +1193,9 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/dashboard?view=dashboards</div>
         </div>
-        <img src="/manual_assets/shot_dashboard_insights.png" alt="หน้าวิเคราะห์สถิติ Insights และ OKRs">
+        <img src="/manual_assets/shot_insights_graphs.png" alt="หน้าวิเคราะห์สถิติ Insights และ OKRs">
       </div>
-      <div class="img-caption">ภาพที่ 11: หน้า Insights แสดงสถิติมูลค่าบริการสะสม, ภาระงานรายบุคคล (Workloads), และความคืบหน้า OKRs</div>
-
-      <div class="callout callout-info">
-        <div class="callout-title">🖨️ รองรับ One-Click Print & PDF Export</div>
-        ทุกรายงานมีปุ่ม <strong>"พิมพ์รายงาน / บันทึก PDF"</strong> และปุ่ม <strong>"คัดลอกสรุปข้อความ"</strong> พร้อมจัดหน้ารองรับกระดาษ A4 สวยงามสำหรับนำเข้าที่ประชุมได้ทันที
-      </div>
+      <div class="img-caption">ภาพที่ 7.6: หน้า Insights แสดงสถิติมูลค่าบริการสะสม, ภาระงานรายบุคคล (Workloads), และความคืบหน้า OKRs</div>
     </section>
 
     <!-- SECTION 8: LINE BOT & AI -->
@@ -1034,39 +1215,32 @@
         <li><strong>Monthly Brief (สรุปงานสิ้นเดือน):</strong> ส่งทุกวันทำการสุดท้ายของเดือน เวลา 09:00 น. สรุปผลงานที่ปิดสำเร็จในเดือนนั้นและมูลค่าบริการรวม</li>
       </ul>
 
-      <h3>2. การพิมพ์ถามตอบกับบอทใน LINE (Interactive AI Assistant)</h3>
-      <p>สมาชิกในกลุ่มหรือในการสนทนาส่วนตัว สามารถพิมพ์คำถามภาษาไทยตามธรรมชาติ บอทจะดึงข้อมูลจริงจากระบบและตอบกลับทันที:</p>
+      <h3>2. ตัวอย่างการสนทนาถามตอบกับ LINE Bot จริง (Simulation Demo)</h3>
+      <div class="line-chat-box">
+        <div class="chat-bubble bubble-user">
+          วันนี้มีงานอะไรต้องส่งบ้างครับ
+        </div>
+        <div class="chat-bubble bubble-bot">
+          <div class="chat-sender">🤖 CC TEAM AI Assistant</div>
+          ☀️ <strong>สรุปรายการงานที่ต้องส่งวันนี้ (23 ก.ย.):</strong><br>
+          1. <code>CC-2026-0042</code> โปสเตอร์ FoodFab 2026 (ผู้รับผิดชอบ: จ๊อบ AA)<br>
+          2. <code>CC-2026-0038</code> คลิปสั้น TikTok นวัตกรรมข้าวเหนียว (ผู้รับผิดชอบ: ลูกอิน STK)<br>
+          3. <code>CC-2026-0035</code> ข่าว MOU กรมวิชาการเกษตร (ผู้รับผิดชอบ: ต้า TTY)<br>
+          ✨ รวมทั้งหมด 3 ชิ้นงาน ขอให้ทุกท่านทำงานอย่างราบรื่นครับ!
+        </div>
 
-      <table class="manual-table">
-        <thead>
-          <tr>
-            <th style="width: 45%;">ตัวอย่างข้อความที่พิมพ์ถาม</th>
-            <th style="width: 55%;">คำตอบที่บอทจะประมวลผล</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><code>"วันนี้มีงานอะไรต้องส่งบ้าง"</code></td>
-            <td>บอทจะสรุปรายการงานทั้งหมดที่มีกำหนดส่งในวันนี้ พร้อมชื่อผู้รับผิดชอบ</td>
-          </tr>
-          <tr>
-            <td><code>"มีงานด่วนไหม"</code></td>
-            <td>บอทจะตรวจสอบงานที่ติดแท็ก Rush หรือใกล้ Deadline แล้วสรุปให้ทราบ</td>
-          </tr>
-          <tr>
-            <td><code>"เช็คสถานะงาน CC-2026-0012"</code></td>
-            <td>บอทจะดึงสถานะล่าสุด, เปอร์เซ็นต์ความคืบหน้า, และลิงก์ไฟล์ส่งมอบ</td>
-          </tr>
-          <tr>
-            <td><code>"ขอเบอร์โทรพี่จ๊อบ"</code></td>
-            <td>บอทจะค้นหาข้อมูลบุคลากรในตาราง Manage Team และตอบเบอร์โทรทางการ</td>
-          </tr>
-          <tr>
-            <td><code>"สรุปผลงานเดือนนี้"</code></td>
-            <td>บอทดึงสถิติจำนวนงานที่ส่งมอบแล้ว และมูลค่ารวมที่ประหยัดได้</td>
-          </tr>
-        </tbody>
-      </table>
+        <div class="chat-bubble bubble-user">
+          ขอเบอร์โทรพี่จ๊อบหน่อย
+        </div>
+        <div class="chat-bubble bubble-bot">
+          <div class="chat-sender">🤖 CC TEAM AI Assistant</div>
+          👤 <strong>ข้อมูลติดต่อ:</strong><br>
+          • <strong>ชื่อ:</strong> นายอัจชนะพงษ์ อัจชนะวราทา (จ๊อบ AA)<br>
+          • <strong>ตำแหน่ง:</strong> หัวหน้าทีมสร้างสรรค์และการสื่อสาร (Team Leader)<br>
+          • <strong>เบอร์โทร:</strong> 062-4166396<br>
+          • <strong>อีเมล:</strong> adchanapong@step.cmu.ac.th
+        </div>
+      </div>
     </section>
 
     <!-- SECTION 9: การจัดการหลังบ้าน ADMIN SETUP -->
@@ -1075,11 +1249,11 @@
         <div class="section-icon">9</div>
         <div>
           <h2 class="section-title">การตั้งค่าระบบหลังบ้าน (Admin Setup & Maintenance)</h2>
-          <div class="section-desc">สงวนสิทธิ์เฉพาะผู้มีสิทธิ์ Admin (คลิกปุ่มรูปฟันเฟือง ⚙️ บนหน้า Dashboard)</div>
+          <div class="section-desc">สงวนสิทธิ์เฉพาะผู้มีสิทธิ์ Admin (คลิกปุ่มรูปฟันเฟือง ⚙️ บนหน้า Dashboard) แสดงตัวอย่างภาพจริงครบทุกแท็บ</div>
         </div>
       </div>
 
-      <!-- Screenshot: Admin Setup Modal -->
+      <!-- Tab 1: Manage Team -->
       <div class="browser-mockup">
         <div class="browser-chrome">
           <div class="browser-dots">
@@ -1087,38 +1261,53 @@
             <span class="browser-dot dot-yellow"></span>
             <span class="browser-dot dot-green"></span>
           </div>
-          <div class="browser-address">https://ccteam.vercel.app/dashboard (Setup Modal)</div>
+          <div class="browser-address">https://ccteam.vercel.app/dashboard (Setup: Manage Team)</div>
         </div>
-        <img src="/manual_assets/shot_dashboard_setup.png" alt="หน้าต่างตั้งค่าระบบ Manage Team และ Pricing สำหรับ Admin">
+        <img src="/manual_assets/shot_setup_team.png" alt="หน้าต่างตั้งค่า Manage Team สำหรับ Admin">
       </div>
-      <div class="img-caption">ภาพที่ 12: หน้าต่างตั้งค่าระบบหลังบ้าน (Admin Setup) จัดการรายชื่อสมาชิกทีม, ราคากลางบริการ, และเป้าหมาย OKRs</div>
+      <div class="img-caption">ภาพที่ 9.1: แท็บ Manage Team สำหรับเพิ่ม/แก้ไขรายชื่อทีมงาน 14 คน กำหนดบทบาท Admin / Assignee / Executive</div>
 
-      <div class="flow-grid">
-        <div class="flow-step">
-          <div class="flow-step-title">👥 Manage Team</div>
-          <div class="flow-step-desc">
-            เพิ่ม/ลบ สมาชิกทีม, แก้ไขชื่อเล่น, ชื่อจริง-นามสกุล, ตำแหน่ง, เบอร์โทร, อีเมล, และกำหนดยูนิต/สิทธิ์ (Admin / Assignee / Executive)
+      <!-- Tab 2: Service Pricing -->
+      <div class="browser-mockup">
+        <div class="browser-chrome">
+          <div class="browser-dots">
+            <span class="browser-dot dot-red"></span>
+            <span class="browser-dot dot-yellow"></span>
+            <span class="browser-dot dot-green"></span>
           </div>
+          <div class="browser-address">https://ccteam.vercel.app/dashboard (Setup: Service Pricing)</div>
         </div>
-        <div class="flow-step">
-          <div class="flow-step-title">💵 Service Pricing</div>
-          <div class="flow-step-desc">
-            ปรับเปลี่ยนรายการบริการ และราคาประเมินมาตรฐาน (Standard Market Price) ของแต่ละยูนิต สำหรับใช้คำนวณมูลค่าในรายงาน KM
-          </div>
-        </div>
-        <div class="flow-step">
-          <div class="flow-step-title">🎯 OKR / R & KR Targets</div>
-          <div class="flow-step-desc">
-            กำหนดเป้าหมายเชิงผลลัพธ์ (Key Results) และตัวชี้วัด R ของทีม เพื่อใช้เปรียบเทียบความคืบหน้าในรายงาน TAP ประจำปี
-          </div>
-        </div>
-        <div class="flow-step">
-          <div class="flow-step-title">🧹 Storage & Auto Purge</div>
-          <div class="flow-step-desc">
-            ตรวจสอบพื้นที่ Database / Storage และกดล้างไฟล์แนบงานเก่าที่ปิดเสร็จสิ้นแล้วเพื่อคืนพื้นที่ฟรี 100% ตลอดชีพ
-          </div>
-        </div>
+        <img src="/manual_assets/shot_setup_pricing.png" alt="หน้าต่างตั้งค่า Service Pricing สำหรับ Admin">
       </div>
+      <div class="img-caption">ภาพที่ 9.2: แท็บ Service Pricing สำหรับปรับเปลี่ยนรายการบริการ และราคากลางอ้างอิงของแต่ละยูนิต</div>
+
+      <!-- Tab 3: OKR Targets -->
+      <div class="browser-mockup">
+        <div class="browser-chrome">
+          <div class="browser-dots">
+            <span class="browser-dot dot-red"></span>
+            <span class="browser-dot dot-yellow"></span>
+            <span class="browser-dot dot-green"></span>
+          </div>
+          <div class="browser-address">https://ccteam.vercel.app/dashboard (Setup: OKR Targets)</div>
+        </div>
+        <img src="/manual_assets/shot_setup_okr.png" alt="หน้าต่างตั้งค่า OKR Targets สำหรับ Admin">
+      </div>
+      <div class="img-caption">ภาพที่ 9.3: แท็บ OKR Targets สำหรับกำหนดเป้าหมายเชิงผลลัพธ์ (R & KR) ประจำปีเพื่อใช้คำนวณในรายงาน TAP</div>
+
+      <!-- Tab 4: Storage Quota -->
+      <div class="browser-mockup">
+        <div class="browser-chrome">
+          <div class="browser-dots">
+            <span class="browser-dot dot-red"></span>
+            <span class="browser-dot dot-yellow"></span>
+            <span class="browser-dot dot-green"></span>
+          </div>
+          <div class="browser-address">https://ccteam.vercel.app/dashboard (Setup: Storage Quota)</div>
+        </div>
+        <img src="/manual_assets/shot_setup_storage.png" alt="หน้าต่างตั้งค่า Storage Quota & Auto Purge สำหรับ Admin">
+      </div>
+      <div class="img-caption">ภาพที่ 9.4: แท็บ Storage & Auto Purge ตรวจสอบพื้นที่ฐานข้อมูลและกดปุ่มล้างไฟล์แนบงานเก่าเพื่อคืนพื้นที่ฟรี 100%</div>
     </section>
 
     <!-- SECTION 10: FAQ & TROUBLESHOOTING -->

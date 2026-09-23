@@ -1,0 +1,1 @@
+const fs = require("fs"); let content = fs.readFileSync("src/app/dashboard/components/BriefDetailsModal.tsx", "utf8"); let start = content.indexOf(`"use client";`); fs.writeFileSync("src/app/dashboard/components/BriefDetailsModal.tsx", content.substring(start), "utf8");

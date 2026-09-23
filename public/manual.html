@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CC SYSTEM 2027 — คู่มือการใช้งานระบบฉบับสมบูรณ์ (User & Admin Manual)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #f97316;
+      --primary-dark: #ea580c;
+      --primary-light: #ffedd5;
+      --slate-900: #0f172a;
+      --slate-800: #1e293b;
+      --slate-700: #334155;
+      --slate-600: #475569;
+      --slate-500: #64748b;
+      --slate-400: #94a3b8;
+      --slate-200: #e2e8f0;
+      --slate-100: #f1f5f9;
+      --slate-50: #f8fafc;
+      --creative: #8b5cf6;
+      --content: #f59e0b;
+      --pr: #10b981;
+      --border: #e2e8f0;
+      --radius: 12px;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Prompt', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--slate-800);
+      background-color: #fcfcfd;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Layout Containers */
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    /* Top Floating Action Bar */
+    .floating-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+    }
+    .floating-bar .logo-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      color: var(--slate-900);
+      font-size: 15px;
+    }
+    .floating-bar .logo-badge span {
+      background: var(--primary);
+      color: white;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+    .actions {
+      display: flex;
+      gap: 12px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      border: 1px solid var(--border);
+      background: white;
+      color: var(--slate-700);
+    }
+    .btn:hover {
+      background: var(--slate-50);
+      border-color: var(--slate-400);
+    }
+    .btn-primary {
+      background: var(--slate-900);
+      color: white;
+      border-color: var(--slate-900);
+    }
+    .btn-primary:hover {
+      background: var(--slate-800);
+      color: white;
+    }
+
+    /* Document Header & Cover */
+    .doc-header {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 48px;
+      margin-bottom: 40px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
+    }
+    .doc-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #f97316, #8b5cf6, #10b981);
+    }
+    .meta-tag {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary-dark);
+      background: var(--primary-light);
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+      letter-spacing: 0.5px;
+    }
+    .doc-title {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--slate-900);
+      line-height: 1.25;
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+    }
+    .doc-subtitle {
+      font-size: 16px;
+      color: var(--slate-600);
+      margin-bottom: 24px;
+    }
+    .doc-info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      padding-top: 24px;
+      border-top: 1px solid var(--slate-100);
+      font-size: 13px;
+    }
+    .info-item {
+      display: flex;
+      flex-direction: column;
+    }
+    .info-label {
+      color: var(--slate-400);
+      font-size: 11px;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    .info-value {
+      color: var(--slate-800);
+      font-weight: 600;
+    }
+
+    /* Table of Contents */
+    .toc {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      margin-bottom: 40px;
+      box-shadow: var(--shadow-sm);
+    }
+    .toc-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--slate-900);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px 24px;
+    }
+    .toc-item a {
+      color: var(--slate-700);
+      text-decoration: none;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      transition: color 0.15s;
+    }
+    .toc-item a:hover {
+      color: var(--primary);
+    }
+    .toc-num {
+      display: inline-block;
+      width: 22px;
+      height: 22px;
+      line-height: 22px;
+      text-align: center;
+      background: var(--slate-100);
+      color: var(--slate-600);
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    /* Section Styling */
+    .section-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      margin-bottom: 32px;
+      box-shadow: var(--shadow-sm);
+      page-break-inside: avoid;
+    }
+    .section-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--slate-100);
+    }
+    .section-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .section-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--slate-900);
+      line-height: 1.3;
+    }
+    .section-desc {
+      font-size: 14px;
+      color: var(--slate-500);
+      margin-top: 4px;
+    }
+
+    /* Subheadings */
+    h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--slate-900);
+      margin: 24px 0 12px;
+    }
+    p {
+      margin-bottom: 14px;
+      font-size: 14px;
+      color: var(--slate-700);
+    }
+
+    /* Flow Chart / Visual Blocks */
+    .flow-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      margin: 20px 0;
+    }
+    .flow-step {
+      background: var(--slate-50);
+      border: 1px solid var(--slate-200);
+      border-radius: 10px;
+      padding: 16px;
+      position: relative;
+    }
+    .flow-step-num {
+      display: inline-block;
+      background: var(--slate-900);
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 24px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .flow-step-title {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--slate-900);
+      margin-bottom: 4px;
+    }
+    .flow-step-desc {
+      font-size: 12px;
+      color: var(--slate-600);
+      line-height: 1.5;
+    }
+
+    /* Unit Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    .badge-creative {
+      background: #f5f3ff;
+      color: #7c3aed;
+      border: 1px solid #ddd6fe;
+    }
+    .badge-content {
+      background: #fffbeb;
+      color: #b45309;
+      border: 1px solid #fef3c7;
+    }
+    .badge-pr {
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid #a7f3d0;
+    }
+    .badge-admin {
+      background: #f1f5f9;
+      color: #0f172a;
+      border: 1px solid #cbd5e1;
+    }
+
+    /* Data Tables */
+    .manual-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 13px;
+    }
+    .manual-table th {
+      background: var(--slate-100);
+      color: var(--slate-800);
+      font-weight: 700;
+      text-align: left;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .manual-table td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      color: var(--slate-700);
+      vertical-align: top;
+    }
+    .manual-table tr:nth-child(even) td {
+      background: var(--slate-50);
+    }
+
+    /* Callouts / Alerts */
+    .callout {
+      border-left: 4px solid var(--primary);
+      background: #fff7ed;
+      padding: 16px 20px;
+      border-radius: 0 8px 8px 0;
+      margin: 20px 0;
+      font-size: 13.5px;
+      color: #9a3412;
+    }
+    .callout-title {
+      font-weight: 700;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .callout-success {
+      border-left-color: #10b981;
+      background: #f0fdf4;
+      color: #065f46;
+    }
+    .callout-info {
+      border-left-color: #3b82f6;
+      background: #eff6ff;
+      color: #1e40af;
+    }
+
+    /* Keyboard Shortcuts / Code */
+    kbd {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+      color: #334155;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 6px;
+    }
+    code {
+      background: var(--slate-100);
+      color: var(--slate-900);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: monospace;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px 16px;
+      }
+      .doc-header {
+        padding: 24px;
+      }
+      .doc-title {
+        font-size: 24px;
+      }
+      .section-card {
+        padding: 20px;
+      }
+    }
+
+    /* Print Optimized Styles */
+    @media print {
+      body {
+        background: white;
+        color: black;
+      }
+      .floating-bar {
+        display: none !important;
+      }
+      .container {
+        max-width: 100% !important;
+        padding: 0 !important;
+      }
+      .doc-header {
+        border: none;
+        box-shadow: none;
+        padding: 0 0 20px 0;
+        margin-bottom: 24px;
+        border-bottom: 2px solid #333;
+      }
+      .section-card {
+        border: none;
+        box-shadow: none;
+        padding: 0 0 20px 0;
+        margin-bottom: 30px;
+        page-break-inside: avoid;
+        border-bottom: 1px dashed #ccc;
+      }
+      .page-break {
+        page-break-before: always !important;
+      }
+      a {
+        text-decoration: none;
+        color: black;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Floating Bar -->
+  <div class="floating-bar">
+    <div class="logo-badge">
+      CC SYSTEM 2027 <span>OFFICIAL MANUAL</span>
+    </div>
+    <div class="actions">
+      <button onclick="window.print()" class="btn btn-primary">
+        🖨️ พิมพ์ / บันทึก PDF (Print)
+      </button>
+      <a href="https://ccteam.vercel.app" target="_blank" class="btn">
+        🌐 ไปยังเว็บไซต์จริง
+      </a>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- Document Header / Cover -->
+    <header class="doc-header">
+      <span class="meta-tag">คู่มือการใช้งานระบบฉบับสมบูรณ์ (V2.5 - 2027)</span>
+      <h1 class="doc-title">CC SYSTEM 2027: Briefing & Management System</h1>
+      <p class="doc-subtitle">
+        ระบบบริหารจัดการและขอรับบริการงานสร้างสรรค์และสื่อสารองค์กร อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (STeP)
+      </p>
+
+      <div class="doc-info-grid">
+        <div class="info-item">
+          <span class="info-label">URL ทางการ</span>
+          <span class="info-value"><a href="https://ccteam.vercel.app" style="color:var(--primary);text-decoration:none;">https://ccteam.vercel.app</a></span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">กลุ่มเป้าหมาย</span>
+          <span class="info-value">บุคลากร STeP ทั้งหมด 500+ คน และทีม CC 14 คน</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">สถานะการทำงาน</span>
+          <span class="info-value">100% Free Forever (0.00 THB)</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">อัปเดตล่าสุด</span>
+          <span class="info-value">กันยายน 2026 (Phase ใช้งานจริง)</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="toc">
+      <div class="toc-title">📑 สารบัญคู่มือการใช้งาน</div>
+      <div class="toc-grid">
+        <div class="toc-item"><a href="#sec-overview"><span class="toc-num">1</span> ภาพรวมและโครงสร้างสิทธิ์ผู้ใช้งาน</a></div>
+        <div class="toc-item"><a href="#sec-requester"><span class="toc-num">2</span> คู่มือการส่งงาน (ไม่ต้อง Login)</a></div>
+        <div class="toc-item"><a href="#sec-special-forms"><span class="toc-num">3</span> แบบฟอร์มเฉพาะทาง (IDC & RSP Press)</a></div>
+        <div class="toc-item"><a href="#sec-tracking"><span class="toc-num">4</span> การติดตามสถานะและการประเมินงาน</a></div>
+        <div class="toc-item"><a href="#sec-staff-login"><span class="toc-num">5</span> การเข้าสู่ระบบทีมงาน (Strict Whitelist)</a></div>
+        <div class="toc-item"><a href="#sec-dashboard"><span class="toc-num">6</span> การบริหารงานและจ่ายงาน (Tasks Board)</a></div>
+        <div class="toc-item"><a href="#sec-reports"><span class="toc-num">7</span> ศูนย์รายงานผลงาน (Reports & Metrics)</a></div>
+        <div class="toc-item"><a href="#sec-linebot"><span class="toc-num">8</span> การใช้งาน LINE Bot และ AI ตอบคำถาม</a></div>
+        <div class="toc-item"><a href="#sec-admin-setup"><span class="toc-num">9</span> การจัดการหลังบ้าน (Manage Team & Pricing)</a></div>
+        <div class="toc-item"><a href="#sec-faq"><span class="toc-num">10</span> คำถามที่พบบ่อย (FAQ & Troubleshooting)</a></div>
+      </div>
+    </nav>
+
+    <!-- SECTION 1: ภาพรวมระบบและสิทธิ์การเข้าถึง -->
+    <section id="sec-overview" class="section-card">
+      <div class="section-header">
+        <div class="section-icon">1</div>
+        <div>
+          <h2 class="section-title">ภาพรวมและโครงสร้างสิทธิ์ผู้ใช้งาน (System Overview & Access Roles)</h2>
+          <div class="section-desc">การแบ่งกลุ่มผู้ใช้งานและมาตรฐานความปลอดภัยของ CC System</div>
+        </div>
+      </div>
+
+      <p>
+        <strong>CC SYSTEM 2027</strong> เป็นแพลตฟอร์มศูนย์กลางในการรับเรื่อง, บริหารจัดการคิวงาน, คำนวณมูลค่างานสร้างสรรค์ และติดตามผลงานของ <strong>ทีมสร้างสรรค์และการสื่อสาร (Creative and Communication - CC)</strong> อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ โดยแบ่งผู้ใช้งานออกเป็น 2 กลุ่มหลัก:
+      </p>
+
+      <table class="manual-table">
+        <thead>
+          <tr>
+            <th style="width: 25%;">กลุ่มผู้ใช้งาน</th>
+            <th style="width: 35%;">หน้าที่และความรับผิดชอบ</th>
+            <th style="width: 40%;">การเข้าสู่ระบบ (Authentication)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>ผู้ขอรับบริการทั่วไป<br>(Public Requester)</strong></td>
+            <td>บุคลากรทุกฝ่ายใน STeP (เช่น NMCO, PITI, INCO, TECH UP, ฯลฯ) รวมถึงหน่วยงานภายนอกที่ต้องการขอให้ทีม CC ช่วยผลิตสื่อ</td>
+            <td><strong>ไม่ต้องล็อกอินใดๆ ทั้งสิ้น 100%</strong> สามารถเข้าหน้าแรก กดส่งงาน ติดตามสถานะงาน และทำแบบประเมินได้ทันทีผ่านลิงก์สาธารณะ</td>
+          </tr>
+          <tr>
+            <td><strong>ทีมงานและผู้บริหาร CC<br>(Internal Staff & Admin)</strong></td>
+            <td>ทีมงานผู้ปฏิบัติงาน CC (Assignees) และหัวหน้าทีม/ผู้บริหาร (Admins/Executives) ที่ต้องตรวจรับงาน มอบหมายงาน อัปเดตไฟล์ และดูสรุปสถิติ</td>
+            <td><strong>ต้องล็อกอินผ่าน Strict Whitelist:</strong> เฉพาะอีเมลที่ระบุไว้ใน Manage Team เท่านั้น อีเมลอื่นถึงแม้จะลงท้ายด้วย <code>@step.cmu.ac.th</code> ก็ไม่สามารถเข้าได้</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-info">
+        <div class="callout-title">💡 จุดเด่นด้านสถาปัตยกรรม (100% Free Forever)</div>
+        ระบบทำงานบนสถาปัตยกรรมคลาวด์แบบ Serverless ประกอบด้วย <strong>Next.js + Vercel Edge Server</strong>, <strong>Supabase Postgres DB</strong>, <strong>LINE Official Account</strong>, <strong>Google Gemini Free AI</strong> และ <strong>Google Sheets 2-Way Sync</strong> ทำให้ไม่มีค่าบำรุงรักษารายเดือน รองรับผู้ใช้งาน 500+ คนต่อเนื่อง 5 ปีอย่างมั่นคง
+      </div>
+    </section>
+
+    <!-- SECTION 2: การส่งงาน (สำหรับผู้ขอรับบริการ) -->
+    <section id="sec-requester" class="section-card page-break">
+      <div class="section-header">
+        <div class="section-icon">2</div>
+        <div>
+          <h2 class="section-title">คู่มือการส่งคำขอรับบริการ (Requester Guide - 3 Core Units)</h2>
+          <div class="section-desc">ขั้นตอนการเปิดแบบฟอร์ม บรีฟงาน และแนบไฟล์สำหรับผู้ขอรับบริการทั่วไป</div>
+        </div>
+      </div>
+
+      <p>ผู้ใช้งานเปิดเบราว์เซอร์ไปที่ <strong><a href="https://ccteam.vercel.app" target="_blank">https://ccteam.vercel.app</a></strong> จะพบปุ่มวงกลมหลัก 3 บริการ สามารถกดเลือกยูนิตที่ตรงกับความต้องการ:</p>
+
+      <div class="flow-grid">
+        <div class="flow-step">
+          <span class="flow-step-num" style="background:#7c3aed;">1</span>
+          <div class="flow-step-title"><span class="badge badge-creative">Creative Designer</span></div>
+          <div class="flow-step-desc">
+            งานออกแบบกราฟิก, โลโก้, โปสเตอร์, แผ่นพับ, แบนเนอร์, ป้ายแบคดรอป, Layout หนังสือ, และงานถ่ายภาพผลิตภัณฑ์/บุคคล
+          </div>
+        </div>
+        <div class="flow-step">
+          <span class="flow-step-num" style="background:#b45309;">2</span>
+          <div class="flow-step-title"><span class="badge badge-content">Content Creator</span></div>
+          <div class="flow-step-desc">
+            ผลิตคอนเทนต์, บทความประชาสัมพันธ์สั้น/ยาว (SEO), ถ่ายทำและตัดต่อวิดีโอสั้น (TikTok/Reels), งานเขียนคำโฆษณา และ Boost Post
+          </div>
+        </div>
+        <div class="flow-step">
+          <span class="flow-step-num" style="background:#047857;">3</span>
+          <div class="flow-step-title"><span class="badge badge-pr">PR & Communications</span></div>
+          <div class="flow-step-desc">
+            เขียนข่าวแจกสื่อ (Press Release), รายงานข่าวผู้บริหาร/ศึกษาดูงาน, บันทึกภาพกิจกรรม MOU, ประสานงานสื่อมวลชน และคุมคิวพิธีการ
+          </div>
+        </div>
+      </div>
+
+      <h3>ขั้นตอนการกรอกแบบฟอร์มส่งงาน (Step-by-step)</h3>
+      <ol style="padding-left: 20px; font-size: 14px; color: var(--slate-700); line-height: 1.8;">
+        <li><strong>ข้อมูลผู้ขอรับบริการ:</strong> กรอกชื่อ-นามสกุล, เบอร์โทรศัพท์ที่ติดต่อได้สะดวก, อีเมลองค์กร (@step.cmu.ac.th หรือ @cmu.ac.th)</li>
+        <li><strong>หน่วยงานต้นสังกัด (Team/Department):</strong> เลือกหน่วยงานของท่านจากเมนู Dropdown (เช่น NMCO, PITI, INCO, TECH UP, ฯลฯ)</li>
+        <li><strong>ผู้บังคับบัญชา / ผู้มีอำนาจตัดสินใจ (Decision Maker):</strong> ระบุชื่อหัวหน้างานหรือผู้มีอำนาจตรวจรับงาน เพื่อให้ทีม CC ทราบผู้ประสานงานหลัก</li>
+        <li><strong>ประเภทบริการและรายละเอียดงาน:</strong> เลือกหัวข้อบริการ ระบบจะแสดง <em>ราคามาตรฐานอ้างอิง (Standard Pricing)</em> พร้อมกรอกวัตถุประสงค์ ขนาด และ Mood & Tone ที่ต้องการ</li>
+        <li><strong>กำหนดส่งงาน (Deadline):</strong> เลือกวันและเวลาที่ต้องการรับงาน (ระบบจะแจ้งเตือนอัตโนมัติหากเป็นงานด่วนกระชั้นชิด)</li>
+        <li><strong>การแนบไฟล์ตัวอย่าง / เอกสารอ้างอิง:</strong> สามารถวาง <em>ลิงก์ Google Drive</em> หรืออัปโหลดไฟล์ตัวอย่าง (Images, PDF, Word) เข้าสู่ระบบได้โดยตรง</li>
+        <li><strong>กดปุ่ม "ส่งคำขอรับบริการ (Submit Request)":</strong> ระบบจะบันทึกงาน และสร้าง <strong>รหัสติดตามงาน (Tracking Code)</strong> เช่น <code>CC-2026-0042</code> แสดงบนหน้าจอทันที</li>
+      </ol>
+
+      <div class="callout callout-success">
+        <div class="callout-title">✅ ทราบผลทันใจผ่าน LINE</div>
+        เมื่อกดส่งงานเรียบร้อย ระบบจะส่งสัญญาณแจ้งเตือนอัตโนมัติไปยังกลุ่ม LINE ของทีม CC ทันที ทีมงานจะได้รับทราบและจัดคิวงานโดยไม่ต้องโทรตาม
+      </div>
+    </section>
+
+    <!-- SECTION 3: แบบฟอร์มเฉพาะทาง -->
+    <section id="sec-special-forms" class="section-card page-break">
+      <div class="section-header">
+        <div class="section-icon">3</div>
+        <div>
+          <h2 class="section-title">แบบฟอร์มเฉพาะทาง (Specialized Forms)</h2>
+          <div class="section-desc">แบบฟอร์มบริการพิเศษสำหรับการขอนวัตกรรมและข่าวประชาสัมพันธ์เครือข่าย</div>
+        </div>
+      </div>
+
+      <h3>1. แบบฟอร์มขอรับบริการ IDC (Innovation Design Center)</h3>
+      <p>
+        สำหรับหน่วยงานหรือผู้ประกอบการที่ต้องการขอรับคำปรึกษา ออกแบบโมเดล 3D หรือขึ้นรูปบรรจุภัณฑ์เชิงนวัตกรรม สามารถเข้าใช้งานได้ที่ URL โดยตรง:
+        <br>
+        🔗 <strong><a href="https://ccteam.vercel.app/idc-form" target="_blank">https://ccteam.vercel.app/idc-form</a></strong>
+      </p>
+      <ul>
+        <li>รองรับการระบุประเภทอุตสาหกรรม (Food, Agri-tech, Medical, Lifestyle)</li>
+        <li>เลือกขอบเขตบริการ: บรรจุภัณฑ์ (Packaging), ผลิตภัณฑ์ต้นแบบ (Product Prototyping), การสร้างแบรนด์ (Branding)</li>
+        <li>ข้อมูลจะถูกส่งเข้าสู่กระบวนการคัดกรองเฉพาะด้านเพื่อจัดสรรผู้เชี่ยวชาญเข้าประกบงาน</li>
+      </ul>
+
+      <h3 style="margin-top: 24px;">2. แบบฟอร์มข่าวกิจกรรมเครือข่าย RSP Press Form</h3>
+      <p>
+        สำหรับเครือข่ายอุทยานวิทยาศาสตร์ภาคเหนือ (Regional Science Park - RSP) ในการส่งประเด็นข่าวและภาพกิจกรรมเพื่อเผยแพร่สู่สื่อมวลชน:
+        <br>
+        🔗 <strong><a href="https://ccteam.vercel.app/rsp-press-form" target="_blank">https://ccteam.vercel.app/rsp-press-form</a></strong>
+      </p>
+      <ul>
+        <li>ระบุชื่อโครงการ, วันที่จัดกิจกรรม, สถานที่จัดงาน, และผู้บริหารที่เป็นประธาน</li>
+        <li>ระบุข้อความสำคัญ (Key Messages) และคำสัมภาษณ์ที่ต้องการเน้นในเนื้อข่าว</li>
+        <li>แนบโฟลเดอร์ภาพถ่ายกิจกรรมความละเอียดสูง (Hi-res) เพื่อใช้ประกอบข่าวแจกสื่อ</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 4: การติดตามสถานะและการประเมินงาน -->
+    <section id="sec-tracking" class="section-card">
+      <div class="section-header">
+        <div class="section-icon">4</div>
+        <div>
+          <h2 class="section-title">การติดตามสถานะงานและการประเมินผล (Tracking & Survey)</h2>
+          <div class="section-desc">วิธีเช็คความคืบหน้าของงานที่ส่ง และการประเมินความพึงพอใจเพื่อปิดงาน</div>
+        </div>
+      </div>
+
+      <h3>การเช็คสถานะงาน (Track Status)</h3>
+      <p>
+        ผู้ขอรับบริการสามารถติดตามความคืบหน้าของงานตนเองได้ตลอด 24 ชั่วโมง โดยไม่ต้องทักถามทีมงาน:
+        <br>
+        1. ไปที่เมนู <strong>Track Status</strong> ที่มุมขวาบนของหน้าเว็บ หรือเปิด 🔗 <strong><a href="https://ccteam.vercel.app/track" target="_blank">https://ccteam.vercel.app/track</a></strong>
+        <br>
+        2. กรอก <strong>Tracking Code</strong> (เช่น <code>CC-2026-0015</code>) หรือใช้อีเมลของผู้ส่งงานในการค้นหา
+      </p>
+
+      <table class="manual-table">
+        <thead>
+          <tr>
+            <th style="width: 25%;">สถานะงาน (Status)</th>
+            <th style="width: 20%;">สีสัญลักษณ์</th>
+            <th style="width: 55%;">ความหมาย</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Pending</strong></td>
+            <td><span style="color:#d97706;font-weight:600;">🟡 สีส้มอ่อน</span></td>
+            <td>คำขอส่งถึงทีม CC แล้ว กำลังรอหัวหน้าทีมตรวจบรีฟและจ่ายงานให้ผู้รับผิดชอบ</td>
+          </tr>
+          <tr>
+            <td><strong>In Progress</strong></td>
+            <td><span style="color:#2563eb;font-weight:600;">🔵 สีน้ำเงิน</span></td>
+            <td>ทีมงานได้รับมอบหมายแล้ว และกำลังดำเนินการผลิตชิ้นงานตามคิวงาน</td>
+          </tr>
+          <tr>
+            <td><strong>In Review / Draft</strong></td>
+            <td><span style="color:#7c3aed;font-weight:600;">🟣 สีม่วง</span></td>
+            <td>ทีมงานอัปโหลดดราฟต์แรกแล้ว ผู้ขอรับบริการสามารถกดดูลายเส้น/ตรวจแก้แบบได้</td>
+          </tr>
+          <tr>
+            <td><strong>Revision</strong></td>
+            <td><span style="color:#dc2626;font-weight:600;">🔴 สีแดง</span></td>
+            <td>งานอยู่ระหว่างการแก้ไขตาม Feedback ของผู้ขอรับบริการ</td>
+          </tr>
+          <tr>
+            <td><strong>Completed</strong></td>
+            <td><span style="color:#059669;font-weight:600;">🟢 สีเขียว</span></td>
+            <td>งานเสร็จสิ้นสมบูรณ์ มีลิงก์ส่งมอบไฟล์จริง (Final Delivery Link) พร้อมดาวน์โหลด</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>การประเมินความพึงพอใจ (Satisfaction Survey)</h3>
+      <p>
+        เมื่องานอยู่ในสถานะ <strong>Completed</strong> ผู้ขอรับบริการสามารถกดลิงก์ <strong>"ทำแบบประเมินความพึงพอใจ"</strong> (หรือเปิดที่ 🔗 <strong><a href="https://ccteam.vercel.app/survey" target="_blank">https://ccteam.vercel.app/survey</a></strong>) เพื่อให้คะแนน 1-5 ดาว ในด้าน:
+      </p>
+      <ul>
+        <li>ความถูกต้องตรงตามบรีฟ (Accuracy)</li>
+        <li>ความสวยงามและความคิดสร้างสรรค์ (Creativity)</li>
+        <li>ความตรงต่อเวลาและการส่งมอบงาน (Timeliness)</li>
+        <li>ความสุภาพและการประสานงานของทีมงาน (Service Mind)</li>
+      </ul>
+      <p style="font-size:12px;color:var(--slate-500);margin-top:6px;">
+        *คะแนนความพึงพอใจนี้จะถูกนำไปคำนวณใน <strong>ตัวชี้วัดคุณภาพ ISO (ISO Quality KPI)</strong> ของอุทยานฯ โดยอัตโนมัติ
+      </p>
+    </section>
+
+    <!-- SECTION 5: การเข้าสู่ระบบทีมงาน CC -->
+    <section id="sec-staff-login" class="section-card page-break">
+      <div class="section-header">
+        <div class="section-icon">5</div>
+        <div>
+          <h2 class="section-title">การเข้าสู่ระบบสำหรับทีมงาน CC (Strict Whitelist Authentication)</h2>
+          <div class="section-desc">ขั้นตอนและมาตรฐานความปลอดภัยสำหรับบุคลากร CC TEAM</div>
+        </div>
+      </div>
+
+      <p>
+        เพื่อรักษาความปลอดภัยของข้อมูลแผนงาน งบประมาณ และตัวชี้วัดองค์กร หน้าบริหารจัดการ <strong>Dashboard</strong> จะถูกปกป้องด้วยระบบ <strong>Strict Whitelist</strong>:
+      </p>
+
+      <div class="callout callout-info">
+        <div class="callout-title">🔒 กฎการอนุญาตเข้าสู่ระบบ (Security Rules)</div>
+        <ol style="margin-left: 16px; margin-top: 6px;">
+          <li>ต้องเป็นอีเมลที่ถูกลงทะเบียนไว้ในตาราง <strong>Manage Team (Assignees & Admin)</strong> หลังบ้านเท่านั้น</li>
+          <li><strong>อีเมลอื่นถึงแม้จะลงท้ายด้วย <code>@step.cmu.ac.th</code> ก็ไม่สามารถเข้าได้</strong> (ระบบจะปฏิเสธการเข้าถึงและแจ้งเตือน Access Denied ทันที)</li>
+          <li>สถานะสมาชิกในระบบต้องเป็น Active (เปิดใช้งาน) หากถูกระงับสิทธิ์จะไม่สามารถเข้าระบบได้</li>
+        </ol>
+      </div>
+
+      <h3>ขั้นตอนการเข้าสู่ระบบ:</h3>
+      <ol style="padding-left: 20px; font-size: 14px; color: var(--slate-700); line-height: 1.8;">
+        <li>เปิดลิงก์ <strong><a href="https://ccteam.vercel.app/login" target="_blank">https://ccteam.vercel.app/login</a></strong> หรือกดปุ่ม <strong>CC Login</strong> ที่ด้านล่างสุดของหน้าแรก</li>
+        <li>กรอกอีเมลทางการของท่านที่ลงทะเบียนไว้ในทีม (เช่น <code>adchanapong@step.cmu.ac.th</code>, <code>wasita@step.cmu.ac.th</code>)</li>
+        <li>กดปุ่ม <strong>"เข้าสู่ระบบ CC System"</strong></li>
+        <li>ระบบจะตรวจสอบ Whitelist ทันที หากถูกต้องจะนำท่านเข้าสู่หน้า <strong>Control Center Dashboard</strong> ทันที โดยแยกบทบาทสิทธิ์อัตโนมัติ:
+          <ul style="margin-top: 6px;">
+            <li><strong>Admin Role:</strong> หัวหน้าทีม/ผู้ช่วย จะเห็นปุ่มฟันเฟือง ⚙️ ตั้งค่าทีม KPI และราคากลาง</li>
+            <li><strong>Assignee Role:</strong> สมาชิกทีมทั่วไป จะเห็นงานและสามารถอัปเดตงานของตนเองได้เต็มรูปแบบ</li>
+          </ul>
+        </li>
+      </ol>
+    </section>
+
+    <!-- SECTION 6: Dashboard & Tasks Board -->
+    <section id="sec-dashboard" class="section-card page-break">
+      <div class="section-header">
+        <div class="section-icon">6</div>
+        <div>
+          <h2 class="section-title">การบริหารจัดการงาน (Control Center & Tasks Board)</h2>
+          <div class="section-desc">คู่มือการรับงาน จ่ายงาน อัปเดตสถานะ และแนบไฟล์ส่งมอบงาน</div>
+        </div>
+      </div>
+
+      <p>เมื่อเข้าสู่หน้า Dashboard สมาชิกจะพบ 3 ฟังก์ชันการทำงานหลัก:</p>
+      
+      <div class="flow-grid">
+        <div class="flow-step">
+          <div class="flow-step-title">1. Tasks (จัดการงาน)</div>
+          <div class="flow-step-desc">กระดานคิวงานหลัก ดูงานทั้งหมด กรองตามยูนิต จ่ายงาน อัปเดตความคืบหน้า และแนบลิงก์ส่งมอบ</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-title">2. Insights (ภาพรวมทีม)</div>
+          <div class="flow-step-desc">สถิติมูลค่าบริการสะสม (Saved Cost), ภาระงานรายบุคคล (Workload), และความคืบหน้า OKRs</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-title">3. Data & Reports (รายงาน)</div>
+          <div class="flow-step-desc">ดาวน์โหลดและดูรายงานมาตรฐาน ISO, สรุปงานประชุมประจำสัปดาห์, รายงาน KM และ Action Plan</div>
+        </div>
+      </div>
+
+      <h3>การดำเนินงานบน Tasks Board (งานประจำวัน):</h3>
+      <table class="manual-table">
+        <thead>
+          <tr>
+            <th style="width: 25%;">การกระทำ (Action)</th>
+            <th style="width: 75%;">ขั้นตอนและผลลัพธ์</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>การจ่ายงาน (Assign Task)</strong></td>
+            <td>คลิกเปิดการ์ดงาน &gt; ในหัวข้อ <em>ผู้รับผิดชอบ (Assignee)</em> ให้เลือกชื่อสมาชิกทีม &gt; ระบบจะบันทึกและแท็กชื่อผู้รับผิดชอบทันที พร้อมส่งแจ้งเตือนใน LINE</td>
+          </tr>
+          <tr>
+            <td><strong>การเริ่มทำงาน (In Progress)</strong></td>
+            <td>เปลี่ยนสถานะเป็น <code>In Progress</code> พร้อมปรับแถบเปอร์เซ็นต์ความคืบหน้า (Progress 0 - 100%) เพื่อให้ผู้ส่งงานติดตามได้ในหน้า Track</td>
+          </tr>
+          <tr>
+            <td><strong>การส่งดราฟต์ตรวจแบบ</strong></td>
+            <td>วางลิงก์รูปภาพหรือโฟลเดอร์ Google Drive ในช่อง <em>Draft / Preview Link</em> &gt; เปลี่ยนสถานะเป็น <code>In Review</code></td>
+          </tr>
+          <tr>
+            <td><strong>การปิดงาน (Completed)</strong></td>
+            <td>วางลิงก์ไฟล์งานจริงความละเอียดสูง (Hi-res / Source file) ในช่อง <em>Final Delivery Link</em> &gt; เปลี่ยนสถานะเป็น <code>Completed</code> &gt; ระบบจะส่งสรุปงานเข้าสู่ฐานข้อมูลและพร้อมให้คะแนนประเมิน</td>
+          </tr>
+          <tr>
+            <td><strong>การสร้าง Internal Task</strong></td>
+            <td>กดปุ่ม <strong>+ Internal Task</strong> มุมขวาบน เพื่อสร้างงานภายในทีม CC เช่น งานเตรียม Proposal, งานขึ้นเวที, หรือซ่อมบำรุงสื่อ โดยไม่ต้องรอฟอร์มภายนอก</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 7: ศูนย์รายงานผลงาน -->
+    <section id="sec-reports" class="section-card page-break">
+      <div class="section-header">
+        <div class="section-icon">7</div>
+        <div>
+          <h2 class="section-title">ศูนย์รายงานและข้อมูลตัวชี้วัด (Reports & Metrics)</h2>
+          <div class="section-desc">รายงาน 4 รูปแบบหลักสำหรับการบริหารงานคุณภาพและการประชุมผู้บริหาร</div>
+        </div>
+      </div>
+
+      <div class="flow-grid">
+        <div class="flow-step">
+          <div class="flow-step-title">📊 1. ISO Report</div>
+          <div class="flow-step-desc">
+            สรุปสถิติตามข้อกำหนดระบบบริหารคุณภาพ ISO 9001 ของอุทยานฯ: อัตราการส่งงานตรงเวลา (% On-time), จำนวนงานแก้ไข (Revisions), และคะแนนความพึงพอใจเฉลี่ย (CSAT)
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-title">📋 2. Meeting Report</div>
+          <div class="flow-step-desc">
+            สรุปวาระงานประจำสัปดาห์สำหรับประชุมทีม CC: งานที่กำลังทำแยกตามยูนิต, งานที่ต้องส่งในสัปดาห์นี้, และประเด็นติดขัด (Blockers)
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-title">💡 3. KM Report</div>
+          <div class="flow-step-desc">
+            การจัดการองค์ความรู้ (Knowledge Management): บันทึกมูลค่าบริการที่ช่วยประหยัดงบประมาณองค์กร (Calculated Savings จากราคาตลาด) และสถิติสื่อยอดนิยม
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-title">🎯 4. Team Action Plan (TAP)</div>
+          <div class="flow-step-desc">
+            แผนปฏิบัติการทีมประจำไตรมาส เชื่อมโยงกับ OKRs ระดับองค์กร (R & KR) แสดงสถานะ % ความสำเร็จเทียบเป้าหมายประจำปี
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-info">
+        <div class="callout-title">🖨️ รองรับ One-Click Print & PDF Export</div>
+        ทุกรายงานมีปุ่ม <strong>"พิมพ์รายงาน / บันทึก PDF"</strong> และปุ่ม <strong>"คัดลอกสรุปข้อความ"</strong> พร้อมจัดหน้ารองรับกระดาษ A4 สวยงามสำหรับนำเข้าที่ประชุมได้ทันที
+      </div>
+    </section>
+
+    <!-- SECTION 8: LINE BOT & AI -->
+    <section id="sec-linebot" class="section-card page-break">
+      <div class="section-header">
+        <div class="section-icon">8</div>
+        <div>
+          <h2 class="section-title">การใช้งาน LINE Bot และผู้ช่วย AI อัจฉริยะ (LINE Bot & AI Integration)</h2>
+          <div class="section-desc">การแจ้งเตือนงานอัตโนมัติ และการพิมพ์สอบถามข้อมูลงานผ่านแชท LINE</div>
+        </div>
+      </div>
+
+      <h3>1. การแจ้งเตือนอัตโนมัติ (Automated Broadcast Notifications)</h3>
+      <ul>
+        <li><strong>การแจ้งเตือนใบงานใหม่ (New Task Alert):</strong> ส่งทันทีที่มีคนกดส่งงานจากหน้าเว็บ แจ้งชื่อผู้ส่ง, หน่วยงาน, ยูนิตงาน, กำหนดส่ง และลิงก์เปิดดูงาน</li>
+        <li><strong>Morning Brief (สรุปงานประจำวัน):</strong> ส่งเข้ากลุ่ม CC TEAM ทุกวันจันทร์ – ศุกร์ เวลา 09:00 น. สรุปจำนวนงานที่กำลังทำ (In Progress), งานที่ต้องส่งวันนี้, งานด่วน (Rush) และงานสุ่มเสี่ยงล่าช้า แยกตามยูนิต</li>
+        <li><strong>Monthly Brief (สรุปงานสิ้นเดือน):</strong> ส่งทุกวันทำการสุดท้ายของเดือน เวลา 09:00 น. สรุปผลงานที่ปิดสำเร็จในเดือนนั้นและมูลค่าบริการรวม</li>
+      </ul>
+
+      <h3>2. การพิมพ์ถามตอบกับบอทใน LINE (Interactive AI Assistant)</h3>
+      <p>สมาชิกในกลุ่มหรือในการสนทนาส่วนตัว สามารถพิมพ์คำถามภาษาไทยตามธรรมชาติ บอทจะดึงข้อมูลจริงจากระบบและตอบกลับทันที:</p>
+
+      <table class="manual-table">
+        <thead>
+          <tr>
+            <th style="width: 45%;">ตัวอย่างข้อความที่พิมพ์ถาม</th>
+            <th style="width: 55%;">คำตอบที่บอทจะประมวลผล</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>"วันนี้มีงานอะไรต้องส่งบ้าง"</code></td>
+            <td>บอทจะสรุปรายการงานทั้งหมดที่มีกำหนดส่งในวันนี้ พร้อมชื่อผู้รับผิดชอบ</td>
+          </tr>
+          <tr>
+            <td><code>"มีงานด่วนไหม"</code></td>
+            <td>บอทจะตรวจสอบงานที่ติดแท็ก Rush หรือใกล้ Deadline แล้วสรุปให้ทราบ</td>
+          </tr>
+          <tr>
+            <td><code>"เช็คสถานะงาน CC-2026-0012"</code></td>
+            <td>บอทจะดึงสถานะล่าสุด, เปอร์เซ็นต์ความคืบหน้า, และลิงก์ไฟล์ส่งมอบ</td>
+          </tr>
+          <tr>
+            <td><code>"ขอเบอร์โทรพี่จ๊อบ"</code></td>
+            <td>บอทจะค้นหาข้อมูลบุคลากรในตาราง Manage Team และตอบเบอร์โทรทางการ</td>
+          </tr>
+          <tr>
+            <td><code>"สรุปผลงานเดือนนี้"</code></td>
+            <td>บอทดึงสถิติจำนวนงานที่ส่งมอบแล้ว และมูลค่ารวมที่ประหยัดได้</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 9: การจัดการหลังบ้าน ADMIN SETUP -->
+    <section id="sec-admin-setup" class="section-card page-break">
+      <div class="section-header">
+        <div class="section-icon">9</div>
+        <div>
+          <h2 class="section-title">การตั้งค่าระบบหลังบ้าน (Admin Setup & Maintenance)</h2>
+          <div class="section-desc">สงวนสิทธิ์เฉพาะผู้มีสิทธิ์ Admin (คลิกปุ่มรูปฟันเฟือง ⚙️ บนหน้า Dashboard)</div>
+        </div>
+      </div>
+
+      <div class="flow-grid">
+        <div class="flow-step">
+          <div class="flow-step-title">👥 Manage Team</div>
+          <div class="flow-step-desc">
+            เพิ่ม/ลบ สมาชิกทีม, แก้ไขชื่อเล่น, ชื่อจริง-นามสกุล, ตำแหน่ง, เบอร์โทร, อีเมล, และกำหนดยูนิต/สิทธิ์ (Admin / Assignee / Executive)
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-title">💵 Service Pricing</div>
+          <div class="flow-step-desc">
+            ปรับเปลี่ยนรายการบริการ และราคาประเมินมาตรฐาน (Standard Market Price) ของแต่ละยูนิต สำหรับใช้คำนวณมูลค่าในรายงาน KM
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-title">🎯 OKR / R & KR Targets</div>
+          <div class="flow-step-desc">
+            กำหนดเป้าหมายเชิงผลลัพธ์ (Key Results) และตัวชี้วัด R ของทีม เพื่อใช้เปรียบเทียบความคืบหน้าในรายงาน TAP ประจำปี
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-title">🧹 Storage & Auto Purge</div>
+          <div class="flow-step-desc">
+            ตรวจสอบพื้นที่ Database / Storage และกดล้างไฟล์แนบงานเก่าที่ปิดเสร็จสิ้นแล้วเพื่อคืนพื้นที่ฟรี 100% ตลอดชีพ
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 10: FAQ & TROUBLESHOOTING -->
+    <section id="sec-faq" class="section-card page-break">
+      <div class="section-header">
+        <div class="section-icon">10</div>
+        <div>
+          <h2 class="section-title">คำถามที่พบบ่อยและวิธีแก้ปัญหา (FAQ & Troubleshooting)</h2>
+          <div class="section-desc">วิธีแก้ไขปัญหาการใช้งานทั่วไปที่พบบ่อย</div>
+        </div>
+      </div>
+
+      <h3>Q1: ผู้ขอรับบริการทั่วไปจำเป็นต้องลงทะเบียนหรือล็อกอินก่อนส่งงานหรือไม่?</h3>
+      <p><strong>ตอบ:</strong> <strong>ไม่ต้องลงทะเบียนหรือล็อกอินใดๆ ทั้งสิ้น</strong> หน้าส่งงานทุกยูนิตเปิดเป็นสาธารณะเพื่อให้บุคลากรทุกท่านส่งงานได้อย่างสะดวก รวดเร็ว 100%</p>
+
+      <h3>Q2: เข้าสู่ระบบหน้า Dashboard แล้วขึ้นข้อความ "Access Denied" เกิดจากอะไร?</h3>
+      <p><strong>ตอบ:</strong> เกิดจากอีเมลที่ท่านใช้ยังไม่ได้ถูกลงทะเบียนในตาราง <strong>Manage Team</strong> ของระบบ (แม้จะเป็นอีเมล @step.cmu.ac.th ก็ตาม) วิธีแก้ไข: ให้แจ้งหัวหน้าทีม (Admin) เพื่อเข้าหน้าตั้งค่า ⚙️ แล้วกดเพิ่มชื่อและอีเมลของท่านเข้าสู่ระบบ</p>
+
+      <h3>Q3: หากไฟล์แนบงานมีขนาดใหญ่มากเกินกว่าจะอัปโหลด ต้องทำอย่างไร?</h3>
+      <p><strong>ตอบ:</strong> แนะนำให้อัปโหลดไฟล์ขึ้น <strong>Google Drive / CMU Drive</strong> ของท่าน แล้วตั้งค่าแชร์เป็น <em>"ทุกคนที่มีลิงก์สามารถดูได้"</em> จากนั้นคัดลอกลิงก์มาวางในช่อง <em>"แนบลิงก์ Google Drive"</em> บนแบบฟอร์มส่งงาน ซึ่งสะดวกและไม่จำกัดขนาดไฟล์</p>
+
+      <h3>Q4: ลืมรหัส Tracking Code สามารถค้นหางานได้อย่างไร?</h3>
+      <p><strong>ตอบ:</strong> สามารถเปิดหน้า <strong><a href="https://ccteam.vercel.app/track" target="_blank">Track Status</a></strong> แล้วพิมพ์ <strong>อีเมลของท่าน</strong> ที่เคยใช้ส่งงานในช่องค้นหา ระบบจะแสดงรายการงานทั้งหมดที่ท่านเคยส่งขึ้นมาให้เลือกทันที</p>
+
+      <h3>Q5: หากมีข้อสงสัยหรือต้องการความช่วยเหลือเพิ่มเติม ติดต่อได้ที่ไหน?</h3>
+      <p>
+        <strong>ทีมสร้างสรรค์และการสื่อสาร (CC TEAM)</strong><br>
+        อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (STeP)<br>
+        อีเมล: <a href="mailto:adchanapong@step.cmu.ac.th">adchanapong@step.cmu.ac.th</a> หรือสอบถามผ่านกลุ่ม LINE CC TEAM
+      </p>
+    </section>
+
+    <!-- Footer -->
+    <footer style="text-align: center; padding-top: 30px; border-top: 1px solid var(--border); color: var(--slate-500); font-size: 13px;">
+      <p>© 2026 - 2027 CC TEAM • Chiang Mai University Science and Technology Park (STeP)</p>
+      <p style="font-size: 11px; margin-top: 4px;">Designed with Dieter Rams Principles & Modern Serverless Cloud Architecture</p>
+    </footer>
+
+  </div>
+
+</body>
+</html>

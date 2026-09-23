@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PenTool, Video, Mic, ArrowRight, Lock } from "lucide-react";
+import { PenTool, Video, Mic, ArrowRight, Lock, BookOpen } from "lucide-react";
 import WeatherWidget from "@/components/WeatherWidget";
 import AboutTeamModal from "@/components/AboutTeamModal";
 
@@ -16,9 +16,21 @@ export default function Home() {
         </div>
         
         <div className="flex flex-col items-end gap-2 shrink-0 relative z-30">
-          <Link href="/track" className="flex items-center text-sm font-medium text-foreground hover:text-primary transition-colors bg-surface px-5 py-2 rounded-full border border-surface-border shadow-[2px_4px_8px_rgba(0,0,0,0.05),-1px_-1px_4px_rgba(255,255,255,0.8)] hover:shadow-md">
-            Track Status
-          </Link>
+          <div className="flex items-center gap-2">
+            <a 
+              href="/manual.html" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-primary transition-colors bg-surface px-3.5 py-2 rounded-full border border-surface-border shadow-sm hover:shadow-md cursor-pointer"
+              title="คู่มือการใช้งานระบบ (HTML / PDF)"
+            >
+              <BookOpen size={14} />
+              <span>คู่มือระบบ</span>
+            </a>
+            <Link href="/track" className="flex items-center text-sm font-medium text-foreground hover:text-primary transition-colors bg-surface px-5 py-2 rounded-full border border-surface-border shadow-[2px_4px_8px_rgba(0,0,0,0.05),-1px_-1px_4px_rgba(255,255,255,0.8)] hover:shadow-md">
+              Track Status
+            </Link>
+          </div>
           <AboutTeamModal />
         </div>
       </div>
@@ -66,13 +78,32 @@ export default function Home() {
 
       </div>
 
-      {/* Bottom CC Login */}
-      <div className="w-full flex justify-center pb-6 mt-auto pt-8 animate-premium-fade" style={{ animationDelay: '500ms' }}>
+      {/* Bottom CC Login & Manual */}
+      <div className="w-full flex items-center justify-center gap-6 pb-6 mt-auto pt-8 animate-premium-fade" style={{ animationDelay: '500ms' }}>
+        <a 
+          href="/manual.html" 
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors group cursor-pointer"
+        >
+          <BookOpen className="mr-1.5 text-muted-foreground/60 group-hover:text-primary transition-colors" size={14} />
+          คู่มือการใช้งาน (Manual)
+        </a>
+        <span className="text-muted-foreground/40">•</span>
+        <a 
+          href="/manual.pdf" 
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors group cursor-pointer"
+        >
+          ดาวน์โหลด PDF
+        </a>
+        <span className="text-muted-foreground/40">•</span>
         <Link 
           href="/login" 
           className="flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors group"
         >
-          <Lock className="mr-2 text-muted-foreground/60 group-hover:text-primary transition-colors" size={14} />
+          <Lock className="mr-1.5 text-muted-foreground/60 group-hover:text-primary transition-colors" size={14} />
           CC Login
         </Link>
       </div>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import WeatherWidget from "@/components/WeatherWidget";
 import Link from "next/link";
-import { ArrowLeft, Settings, Plus, LayoutDashboard, LayoutList, FileText, Shield, User, LogOut } from "lucide-react";
+import { ArrowLeft, Settings, Plus, LayoutDashboard, LayoutList, FileText, Shield, User, LogOut, BookOpen } from "lucide-react";
 import AssignmentsView from "./components/AssignmentsView";
 import DashboardsView from "./components/DashboardsView";
 import DataReportsView from "./components/DataReportsView";
@@ -137,6 +137,17 @@ export default function DashboardPage() {
               <Settings size={20} className="text-foreground" />
             </button>
           )}
+
+          {/* Manual Link */}
+          <a
+            href="/manual.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center p-2 rounded-full border border-surface-border bg-surface hover:bg-surface-border transition-all shadow-[2px_4px_8px_rgba(0,0,0,0.05),-1px_-1px_4px_rgba(255,255,255,0.8)] hover:shadow-md cursor-pointer text-slate-600 hover:text-primary"
+            title="คู่มือการใช้งานระบบ (Manual - HTML / PDF)"
+          >
+            <BookOpen size={18} />
+          </a>
 
           <button 
             onClick={() => setIsInternalTaskOpen(true)}

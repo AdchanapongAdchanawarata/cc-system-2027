@@ -1955,14 +1955,14 @@ export default function InnovationDesignCenterReport({
       {/* TOP TAB NAVIGATION: EXACT RED CAPSULE STYLE (MATCHING MEETING REPORT)      */}
       {/* Distributed evenly across container with NO overflow scrollbar             */}
       {/* ========================================================================= */}
-      <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-2xs">
-        <div className="flex overflow-x-auto no-scrollbar sm:grid sm:grid-cols-3 bg-slate-100 p-1 rounded-2xl border border-slate-200 gap-1">
+      <div className="bg-white dark:bg-zinc-900 p-2 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-2xs">
+        <div className="flex overflow-x-auto no-scrollbar sm:grid sm:grid-cols-3 bg-slate-100 dark:bg-zinc-950 p-1 rounded-2xl border border-slate-200 dark:border-zinc-800 gap-1">
           <button
             onClick={() => setActiveTab("records")}
             className={`flex-1 shrink-0 sm:shrink min-w-fit justify-center px-3 py-2.5 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
               activeTab === "records"
                 ? "bg-[#E03131] text-white shadow-xs font-bold"
-                : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
+                : "text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-zinc-800/90"
             }`}
           >
             <FileSpreadsheet size={15} />
@@ -1974,7 +1974,7 @@ export default function InnovationDesignCenterReport({
             className={`flex-1 shrink-0 sm:shrink min-w-fit justify-center px-3 py-2.5 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
               activeTab === "pm-design"
                 ? "bg-[#E03131] text-white shadow-xs font-bold"
-                : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
+                : "text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-zinc-800/90"
             }`}
           >
             <Palette size={15} />
@@ -1986,7 +1986,7 @@ export default function InnovationDesignCenterReport({
             className={`flex-1 shrink-0 sm:shrink min-w-fit justify-center px-3 py-2.5 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
               activeTab === "dashboard"
                 ? "bg-[#E03131] text-white shadow-xs font-bold"
-                : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
+                : "text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-zinc-800/90"
             }`}
           >
             <TrendingUp size={15} />
@@ -1999,13 +1999,13 @@ export default function InnovationDesignCenterReport({
       {/* TIME & DATE RANGE FILTER TOOLBAR (VISIBLE ON ALL TABS - REQUIREMENT 3)    */}
       {/* ========================================================================= */}
       {activeTab !== "form" && (
-        <div className="bg-white p-3 sm:p-3.5 rounded-2xl border border-slate-200 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="bg-white dark:bg-zinc-900 p-3 sm:p-3.5 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-3">
           {/* Left: Timeframe Presets */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+            <span className="text-xs font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider">
               เวลา:
             </span>
-            <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-xs flex-wrap">
+            <div className="flex items-center bg-slate-100 dark:bg-zinc-950 p-0.5 rounded-xl border border-slate-200 dark:border-zinc-800 text-xs flex-wrap">
               {(
                 [
                   { id: "1D", label: "1D", desc: "วันนี้" },
@@ -2024,8 +2024,8 @@ export default function InnovationDesignCenterReport({
                   title={tf.desc}
                   className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                     timeframe === tf.id
-                      ? "bg-slate-900 text-white shadow-xs"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
+                      ? "bg-slate-900 dark:bg-orange-600 text-white shadow-xs"
+                      : "text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-zinc-850"
                   }`}
                 >
                   {tf.label}
@@ -2036,10 +2036,10 @@ export default function InnovationDesignCenterReport({
 
           {/* Right: Date Pickers + Count */}
           <div className="flex items-center gap-2 flex-wrap text-xs">
-            <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+            <div className="flex items-center gap-1.5 bg-white dark:bg-zinc-950 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-2xs">
               <Calendar size={13} className="text-orange-500 shrink-0" />
               <div className="flex items-center gap-1.5 font-mono text-xs">
-                <span className="text-slate-500 font-sans">เริ่ม:</span>
+                <span className="text-slate-500 dark:text-zinc-400 font-sans">เริ่ม:</span>
                 <DatePicker
                   selected={parsedStartDate}
                   onChange={(d: Date | null) => {
@@ -2056,9 +2056,9 @@ export default function InnovationDesignCenterReport({
                   placeholderText="วว/ดด/ปปปป"
                   isClearable
                   popperClassName="z-[9999]"
-                  className="w-[98px] bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold border border-slate-200 hover:border-slate-300 focus:border-orange-500 focus:outline-none rounded-md px-1.5 py-0.5 text-center cursor-pointer shadow-2xs text-xs font-mono transition-colors"
+                  className="w-[98px] bg-slate-50 dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-200 font-bold border border-slate-200 dark:border-zinc-700 hover:border-slate-300 dark:hover:border-zinc-600 focus:border-orange-500 focus:outline-none rounded-md px-1.5 py-0.5 text-center cursor-pointer shadow-2xs text-xs font-mono transition-colors"
                 />
-                <span className="text-slate-400 font-sans px-0.5">ถึง</span>
+                <span className="text-slate-400 dark:text-zinc-500 font-sans px-0.5">ถึง</span>
                 <DatePicker
                   selected={parsedEndDate}
                   onChange={(d: Date | null) => {
@@ -2075,11 +2075,11 @@ export default function InnovationDesignCenterReport({
                   placeholderText="วว/ดด/ปปปป"
                   isClearable
                   popperClassName="z-[9999]"
-                  className="w-[98px] bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold border border-slate-200 hover:border-slate-300 focus:border-orange-500 focus:outline-none rounded-md px-1.5 py-0.5 text-center cursor-pointer shadow-2xs text-xs font-mono transition-colors"
+                  className="w-[98px] bg-slate-50 dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-200 font-bold border border-slate-200 dark:border-zinc-700 hover:border-slate-300 dark:hover:border-zinc-600 focus:border-orange-500 focus:outline-none rounded-md px-1.5 py-0.5 text-center cursor-pointer shadow-2xs text-xs font-mono transition-colors"
                 />
               </div>
-              <span className="text-slate-300 font-light mx-0.5">|</span>
-              <span className="text-slate-600 font-bold">
+              <span className="text-slate-300 dark:text-zinc-700 font-light mx-0.5">|</span>
+              <span className="text-slate-600 dark:text-zinc-300 font-bold">
                 ({currentTabItemCount} งาน)
               </span>
             </div>

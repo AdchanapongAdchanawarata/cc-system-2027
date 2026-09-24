@@ -30,6 +30,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      data-theme="light"
       suppressHydrationWarning
       className={`${inter.variable} ${ibmPlexThai.variable} ${geistMono.variable} h-full antialiased`}
     >
@@ -39,15 +40,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             __html: `
               (function() {
                 try {
-                  var mode = localStorage.getItem('cc_theme_mode') || 'system';
-                  var isDark = mode === 'dark' || (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-                  if (isDark) {
-                    document.documentElement.classList.add('dark');
-                    document.documentElement.setAttribute('data-theme', 'dark');
-                  } else {
-                    document.documentElement.classList.remove('dark');
-                    document.documentElement.setAttribute('data-theme', 'light');
-                  }
+                  document.documentElement.classList.remove('dark');
+                  document.documentElement.setAttribute('data-theme', 'light');
+                  document.documentElement.style.colorScheme = 'light';
+                  localStorage.setItem('cc_theme_mode', 'light');
                 } catch(e) {}
               })();
             `,

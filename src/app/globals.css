@@ -1,12 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
 @import "tailwindcss";
 
-@custom-variant dark (&:is(.dark *));
+/* DARK MODE PAUSED PER USER REQUEST: ENFORCE LIGHT MODE ONLY */
+@custom-variant dark (&:is(.never-dark-mode *));
 
 :root,
 html[data-theme="light"],
 body[data-theme="light"] {
-  /* DIETER RAMS STYLE - LIGHT MODE */
+  /* DIETER RAMS STYLE - MANDATORY LIGHT MODE */
   --background: #f4f4f5; /* zinc-100 */
   --foreground: #18181b; /* zinc-900 */
   
@@ -26,49 +27,45 @@ body[data-theme="light"] {
   color-scheme: light;
 }
 
+/* 
+  DARK MODE PAUSED BY USER REQUEST:
+  System enforces light mode across all devices.
+  Media query and dark theme styles are preserved in comment below for future reference.
+*/
+/*
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]),
   html:not([data-theme="light"]) {
-    /* DIETER RAMS STYLE - DARK MODE (SYSTEM) */
-    --background: #18181b; /* zinc-900 */
-    --foreground: #f4f4f5; /* zinc-100 */
-    
-    --surface: #27272a; /* zinc-800 */
-    --surface-border: #3f3f46; /* zinc-700 */
-    
-    --primary: #ea580c; /* orange-600 */
+    --background: #18181b;
+    --foreground: #f4f4f5;
+    --surface: #27272a;
+    --surface-border: #3f3f46;
+    --primary: #ea580c;
     --primary-foreground: #ffffff;
-    
-    --muted: #27272a; /* zinc-800 */
-    --muted-foreground: #a1a1aa; /* zinc-400 */
-    
+    --muted: #27272a;
+    --muted-foreground: #a1a1aa;
     --input: #3f3f46;
     --ring: #ea580c;
     color-scheme: dark;
   }
 }
-
 :root[data-theme="dark"],
 html.dark,
 html[data-theme="dark"],
 body.dark {
-  /* DIETER RAMS STYLE - DARK MODE (EXPLICIT) */
-  --background: #18181b; /* zinc-900 */
-  --foreground: #f4f4f5; /* zinc-100 */
-  
-  --surface: #27272a; /* zinc-800 */
-  --surface-border: #3f3f46; /* zinc-700 */
-  
-  --primary: #ea580c; /* orange-600 */
+  --background: #18181b;
+  --foreground: #f4f4f5;
+  --surface: #27272a;
+  --surface-border: #3f3f46;
+  --primary: #ea580c;
   --primary-foreground: #ffffff;
-  
-  --muted: #27272a; /* zinc-800 */
-  --muted-foreground: #a1a1aa; /* zinc-400 */
-  
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
   --input: #3f3f46;
   --ring: #ea580c;
   color-scheme: dark;
 }
+*/
 
 @theme inline {
   --color-background: var(--background);

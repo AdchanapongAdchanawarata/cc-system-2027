@@ -10,7 +10,6 @@ import DataReportsView from "./components/DataReportsView";
 import SetupModal from "./components/SetupModal";
 import AlertSummary from "./components/AlertSummary";
 import InternalTaskModal from "./components/InternalTaskModal";
-import ThemeToggle from "@/components/ThemeToggle";
 
 export default function DashboardPage() {
   const [activeView, setActiveView] = useState<"assignments" | "dashboards" | "data-reports" | null>(null);
@@ -108,11 +107,8 @@ export default function DashboardPage() {
           </p>
         </Link>
         
-        {/* Right: Actions, Theme Switcher & Role Switcher */}
+        {/* Right: Role Switcher */}
         <div className="flex items-center gap-1.5 sm:gap-3 z-30 shrink-0">
-          {/* Theme Mode Switcher: Light / Dark / Auto */}
-          <ThemeToggle />
-
           {/* Role Switcher Pill */}
           <div className="flex bg-surface border border-surface-border rounded-full p-0.5 shadow-sm">
             <button

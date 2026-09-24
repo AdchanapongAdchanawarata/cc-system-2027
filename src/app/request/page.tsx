@@ -7,7 +7,6 @@ import { useSearchParams } from "next/navigation";
 import { getStandardPriceForTask } from "@/utils/pricing";
 import ModernDatePicker from "@/components/ModernDatePicker";
 import ModernSelect from "@/components/ModernSelect";
-import ThemeToggle from "@/components/ThemeToggle";
 
 type UnitType = 'creative' | 'content' | 'pr';
 
@@ -549,9 +548,8 @@ function FormContent() {
             </div>
           </div>
 
-          {/* Theme Toggle & Copy Form Link Button */}
+          {/* Copy Form Link Button */}
           <div className="shrink-0 self-center sm:self-center flex items-center gap-2">
-            <ThemeToggle />
             <button
               type="button"
               onClick={handleCopyLink}

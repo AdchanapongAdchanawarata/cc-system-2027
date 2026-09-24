@@ -1125,19 +1125,19 @@ export default function IndividualReportView({
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
             {/* 1. Personal Workload Continuity */}
-            <div className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200 space-y-2.5 flex flex-col justify-between">
+            <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 space-y-2.5 flex flex-col justify-between">
               <div>
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 block">
                       1. ความต่อเนื่องของงาน
                     </span>
-                    <h4 className="text-xs font-bold text-slate-800 mt-0.5">Workload Flow</h4>
-                    <div className="text-[10px] text-slate-500 mt-0.5 font-medium">
+                    <h4 className="text-xs font-bold text-slate-800 dark:text-zinc-200 mt-0.5">Workload Flow</h4>
+                    <div className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5 font-medium">
                       เกณฑ์วัด: มีงานต่อเนื่อง {personalWorkloadInsight.consecutiveActiveWeeks} สัปดาห์
                     </div>
                   </div>
-                  <span className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border shadow-2xs bg-indigo-50 text-indigo-700 border-indigo-200">
+                  <span className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border shadow-2xs bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800">
                     <Activity size={16} />
                   </span>
                 </div>
@@ -1160,55 +1160,55 @@ export default function IndividualReportView({
                 {/* Status Box */}
                 <div className="mt-1">
                   {personalWorkloadInsight.burnoutRiskLevel === 'critical' ? (
-                    <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-rose-100/70 border border-rose-200 text-rose-900 p-2.5 rounded-xl space-y-0.5">
+                    <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-rose-100/70 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200 p-2.5 rounded-xl space-y-0.5">
                       <div className="w-full flex flex-col items-center justify-center text-center mx-auto" style={{ textAlign: 'center' }}>
                         <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>🔴 ระดับ 3: ความดันสูง</div>
                         <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>(เสี่ยงหมดไฟ)</div>
                       </div>
-                      <span className="text-[10px] text-rose-700 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>งานต่อเนื่อง {personalWorkloadInsight.consecutiveActiveWeeks} สัปดาห์ติดต่อกัน</span>
+                      <span className="text-[10px] text-rose-700 dark:text-rose-300 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>งานต่อเนื่อง {personalWorkloadInsight.consecutiveActiveWeeks} สัปดาห์ติดต่อกัน</span>
                     </div>
                   ) : personalWorkloadInsight.continuityRate >= 60 ? (
-                    <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-amber-100/70 border border-amber-200 text-amber-900 p-2.5 rounded-xl space-y-0.5">
+                    <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-amber-100/70 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 p-2.5 rounded-xl space-y-0.5">
                       <div className="w-full flex flex-col items-center justify-center text-center mx-auto" style={{ textAlign: 'center' }}>
                         <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>🟡 ระดับ 2: งานเข้าต่อเนื่อง</div>
                         <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>(สม่ำเสมอ)</div>
                       </div>
-                      <span className="text-[10px] text-amber-700 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>มีงาน {personalWorkloadInsight.activeWeeksCount} จาก {personalWorkloadInsight.totalWeeksObserved} สัปดาห์</span>
+                      <span className="text-[10px] text-amber-700 dark:text-amber-300 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>มีงาน {personalWorkloadInsight.activeWeeksCount} จาก {personalWorkloadInsight.totalWeeksObserved} สัปดาห์</span>
                     </div>
                   ) : (
-                    <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-emerald-100/70 border border-emerald-200 text-emerald-900 p-2.5 rounded-xl space-y-0.5">
+                    <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-emerald-100/70 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 p-2.5 rounded-xl space-y-0.5">
                       <div className="w-full flex flex-col items-center justify-center text-center mx-auto" style={{ textAlign: 'center' }}>
                         <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>🟢 ระดับ 1: ผ่อนคลาย</div>
                         <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>(งานไม่สะสม)</div>
                       </div>
-                      <span className="text-[10px] text-emerald-700 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>มีจังหวะสลับพักหายใจ โหลดงานไม่สะสมล้นมือ</span>
+                      <span className="text-[10px] text-emerald-700 dark:text-emerald-300 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>มีจังหวะสลับพักหายใจ โหลดงานไม่สะสมล้นมือ</span>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="pt-2.5 border-t border-slate-200/60 space-y-1 text-xs">
-                <div className="text-[10px] text-slate-600 bg-white/80 rounded px-2 py-1 flex items-center justify-between border border-slate-200/60">
+              <div className="pt-2.5 border-t border-slate-200/60 dark:border-zinc-800 space-y-1 text-xs">
+                <div className="text-[10px] text-slate-600 dark:text-zinc-300 bg-white/80 dark:bg-zinc-800/90 rounded px-2 py-1 flex items-center justify-between border border-slate-200/60 dark:border-zinc-700">
                   <span>ปริมาณงานเฉลี่ย:</span>
-                  <strong className="font-bold text-emerald-700">ทำงานเหมาะสม ~{personalWorkloadInsight.weeklyAverageTasks} ชิ้น/สัปดาห์</strong>
+                  <strong className="font-bold text-emerald-700 dark:text-emerald-400">ทำงานเหมาะสม ~{personalWorkloadInsight.weeklyAverageTasks} ชิ้น/สัปดาห์</strong>
                 </div>
               </div>
             </div>
 
             {/* 2. Value per Task */}
-            <div className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200 space-y-2.5 flex flex-col justify-between">
+            <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 space-y-2.5 flex flex-col justify-between">
               <div>
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 block">
                       2. เกจสร้างมูลค่าผลงาน
                     </span>
-                    <h4 className="text-xs font-bold text-slate-800 mt-0.5">Impact vs Volume</h4>
-                    <div className="text-[10px] text-slate-500 mt-0.5 font-medium">
+                    <h4 className="text-xs font-bold text-slate-800 dark:text-zinc-200 mt-0.5">Impact vs Volume</h4>
+                    <div className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5 font-medium">
                       เกณฑ์วัด: Save Cost เฉลี่ยต่องาน
                     </div>
                   </div>
-                  <span className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border shadow-2xs bg-emerald-50 text-emerald-700 border-emerald-200">
+                  <span className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border shadow-2xs bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">
                     <Gem size={16} />
                   </span>
                 </div>
@@ -1232,32 +1232,32 @@ export default function IndividualReportView({
 
                 <div className="mt-1">
                   {personalWorkloadInsight.avgValuePerTask >= 120000 ? (
-                    <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-emerald-100/70 border border-emerald-200 text-emerald-950 p-2.5 rounded-xl space-y-0.5">
+                    <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-emerald-100/70 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-950 dark:text-emerald-200 p-2.5 rounded-xl space-y-0.5">
                       <div className="w-full flex flex-col items-center justify-center text-center mx-auto" style={{ textAlign: 'center' }}>
                         <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>💎 สเกลโปรเจกต์ใหญ่</div>
                         <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>(High-Impact)</div>
                       </div>
-                      <span className="text-[10px] text-emerald-700 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>
+                      <span className="text-[10px] text-emerald-700 dark:text-emerald-300 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>
                         เฉลี่ย ฿{personalWorkloadInsight.avgValuePerTask.toLocaleString()}/ชิ้น (เน้นงานสเกลใหญ่)
                       </span>
                     </div>
                   ) : personalWorkloadInsight.avgValuePerTask >= 30000 ? (
-                    <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-purple-100/70 border border-purple-200 text-purple-950 p-2.5 rounded-xl space-y-0.5">
+                    <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-purple-100/70 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 text-purple-950 dark:text-purple-200 p-2.5 rounded-xl space-y-0.5">
                       <div className="w-full flex flex-col items-center justify-center text-center mx-auto" style={{ textAlign: 'center' }}>
                         <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>⚖️ สเกลงานสมดุล</div>
                         <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>(Balanced)</div>
                       </div>
-                      <span className="text-[10px] text-purple-700 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>
+                      <span className="text-[10px] text-purple-700 dark:text-purple-300 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>
                         เฉลี่ย ฿{personalWorkloadInsight.avgValuePerTask.toLocaleString()}/ชิ้น (สมดุล)
                       </span>
                     </div>
                   ) : (
-                    <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-sky-100/70 border border-sky-200 text-sky-950 p-2.5 rounded-xl space-y-0.5">
+                    <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-sky-100/70 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-800 text-sky-950 dark:text-sky-200 p-2.5 rounded-xl space-y-0.5">
                       <div className="w-full flex flex-col items-center justify-center text-center mx-auto" style={{ textAlign: 'center' }}>
                         <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>🚀 เน้นงานส่งมอบเร็ว</div>
                         <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>(High Volume)</div>
                       </div>
-                      <span className="text-[10px] text-sky-700 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>
+                      <span className="text-[10px] text-sky-700 dark:text-sky-300 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>
                         เฉลี่ย ฿{personalWorkloadInsight.avgValuePerTask.toLocaleString()}/ชิ้น (เน้นงานไว)
                       </span>
                     </div>
@@ -1265,28 +1265,28 @@ export default function IndividualReportView({
                 </div>
               </div>
 
-              <div className="pt-2.5 border-t border-slate-200/60 space-y-1 text-xs">
-                <div className="text-[10px] text-slate-600 bg-white/80 rounded px-2 py-1 flex items-center justify-between border border-slate-200/60">
+              <div className="pt-2.5 border-t border-slate-200/60 dark:border-zinc-800 space-y-1 text-xs">
+                <div className="text-[10px] text-slate-600 dark:text-zinc-300 bg-white/80 dark:bg-zinc-800/90 rounded px-2 py-1 flex items-center justify-between border border-slate-200/60 dark:border-zinc-700">
                   <span>Save Cost รวม:</span>
-                  <strong className="font-mono text-emerald-700 font-bold">฿{personalWorkloadInsight.totalSaveCost.toLocaleString()} ({personalWorkloadInsight.totalTasks} งาน)</strong>
+                  <strong className="font-mono text-emerald-700 dark:text-emerald-400 font-bold">฿{personalWorkloadInsight.totalSaveCost.toLocaleString()} ({personalWorkloadInsight.totalTasks} งาน)</strong>
                 </div>
               </div>
             </div>
 
             {/* 3. Support Ratio */}
-            <div className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200 space-y-2.5 flex flex-col justify-between">
+            <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 space-y-2.5 flex flex-col justify-between">
               <div>
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 block">
                       3. เกจสัดส่วนงานช่วย
                     </span>
-                    <h4 className="text-xs font-bold text-slate-800 mt-0.5">Support Ratio</h4>
-                    <div className="text-[10px] text-slate-500 mt-0.5 font-medium">
+                    <h4 className="text-xs font-bold text-slate-800 dark:text-zinc-200 mt-0.5">Support Ratio</h4>
+                    <div className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5 font-medium">
                       เกณฑ์วัด: % งานช่วยเพื่อน
                     </div>
                   </div>
-                  <span className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border shadow-2xs bg-amber-50 text-amber-700 border-amber-200">
+                  <span className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border shadow-2xs bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800">
                     <Users size={16} />
                   </span>
                 </div>
@@ -1310,34 +1310,34 @@ export default function IndividualReportView({
 
                 <div className="mt-1">
                   {personalWorkloadInsight.assistantRatio > 30 ? (
-                    <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-amber-100/70 border border-amber-200 text-amber-950 p-2.5 rounded-xl space-y-0.5">
+                    <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-amber-100/70 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-950 dark:text-amber-200 p-2.5 rounded-xl space-y-0.5">
                       <div className="w-full flex flex-col items-center justify-center text-center mx-auto" style={{ textAlign: 'center' }}>
                         <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>🤝 เสาหลักงานช่วย</div>
                       </div>
-                      <span className="text-[10px] text-amber-700 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>ถูกดึงตัวไปเป็นผู้ช่วยบ่อยเป็นพิเศษ</span>
+                      <span className="text-[10px] text-amber-700 dark:text-amber-300 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>ถูกดึงตัวไปเป็นผู้ช่วยบ่อยเป็นพิเศษ</span>
                     </div>
                   ) : personalWorkloadInsight.assistantRatio >= 12 ? (
-                    <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-emerald-100/70 border border-emerald-200 text-emerald-950 p-2.5 rounded-xl space-y-0.5">
+                    <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-emerald-100/70 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-950 dark:text-emerald-200 p-2.5 rounded-xl space-y-0.5">
                       <div className="w-full flex flex-col items-center justify-center text-center mx-auto" style={{ textAlign: 'center' }}>
                         <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>🤝 ร่วมมือสมดุล</div>
                       </div>
-                      <span className="text-[10px] text-emerald-700 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>ทำงานหลักและช่วยเพื่อนได้ลงตัว</span>
+                      <span className="text-[10px] text-emerald-700 dark:text-emerald-300 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>ทำงานหลักและช่วยเพื่อนได้ลงตัว</span>
                     </div>
                   ) : (
-                    <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-sky-100/70 border border-sky-200 text-sky-950 p-2.5 rounded-xl space-y-0.5">
+                    <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-sky-100/70 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-800 text-sky-950 dark:text-sky-200 p-2.5 rounded-xl space-y-0.5">
                       <div className="w-full flex flex-col items-center justify-center text-center mx-auto" style={{ textAlign: 'center' }}>
                         <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>🎯 เน้นรับผิดชอบงานหลัก</div>
                       </div>
-                      <span className="text-[10px] text-sky-700 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>งานหลัก {personalWorkloadInsight.ownerTaskCount} งาน</span>
+                      <span className="text-[10px] text-sky-700 dark:text-sky-300 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>งานหลัก {personalWorkloadInsight.ownerTaskCount} งาน</span>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="pt-2.5 border-t border-slate-200/60 space-y-1 text-xs">
-                <div className="text-[10px] text-slate-600 bg-white/80 rounded px-2 py-1 flex items-center justify-between border border-slate-200/60">
+              <div className="pt-2.5 border-t border-slate-200/60 dark:border-zinc-800 space-y-1 text-xs">
+                <div className="text-[10px] text-slate-600 dark:text-zinc-300 bg-white/80 dark:bg-zinc-800/90 rounded px-2 py-1 flex items-center justify-between border border-slate-200/60 dark:border-zinc-700">
                   <span>งานหลัก {personalWorkloadInsight.ownerTaskCount} งาน</span>
-                  <strong className="text-amber-800 font-bold">ช่วยเพื่อน {personalWorkloadInsight.assistantTaskCount} งาน ({personalWorkloadInsight.assistantRatio}%)</strong>
+                  <strong className="text-amber-800 dark:text-amber-400 font-bold">ช่วยเพื่อน {personalWorkloadInsight.assistantTaskCount} งาน ({personalWorkloadInsight.assistantRatio}%)</strong>
                 </div>
               </div>
             </div>

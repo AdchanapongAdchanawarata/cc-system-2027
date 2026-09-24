@@ -697,16 +697,16 @@ export default function MeetingReportDetail() {
           </div>
 
           {/* Month Selector Bar with Add Month Button */}
-          <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs">
+          <div className="bg-white dark:bg-zinc-900 p-3 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-2xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-2.5 px-1">
-              <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                <Calendar size={13} className="text-orange-600 shrink-0" />
+              <span className="text-xs font-bold text-slate-700 dark:text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
+                <Calendar size={13} className="text-orange-600 dark:text-orange-400 shrink-0" />
                 <span>เลือกรอบการประชุมประจำเดือน (เริ่ม ต.ค. 2026 เป็นต้นไป)</span>
               </span>
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <button
                   onClick={handleAddNewMonth}
-                  className="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-orange-50 hover:text-orange-600 border border-slate-200 hover:border-orange-300 rounded-xl text-[11.5px] font-semibold text-slate-700 transition-all cursor-pointer whitespace-nowrap"
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-3 py-1.5 bg-slate-100 dark:bg-zinc-800 hover:bg-orange-50 dark:hover:bg-zinc-700 hover:text-orange-600 dark:hover:text-orange-400 border border-slate-200 dark:border-zinc-700 hover:border-orange-300 rounded-xl text-[11.5px] font-semibold text-slate-700 dark:text-zinc-200 transition-all cursor-pointer whitespace-nowrap"
                   title="กดเพิ่มเดือนถัดไปได้เรื่อยๆ"
                 >
                   <Plus size={12} />
@@ -739,14 +739,16 @@ export default function MeetingReportDetail() {
                     title={m.name}
                     className={`w-full py-2 px-1 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap ${
                       isSelected
-                        ? "bg-slate-900 text-white shadow-xs"
-                        : "bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 border border-slate-200/80"
+                        ? "bg-slate-900 dark:bg-orange-600 text-white shadow-xs"
+                        : "bg-slate-50 dark:bg-zinc-800/80 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-700 hover:text-slate-900 dark:hover:text-white border border-slate-200/80 dark:border-zinc-700"
                     }`}
                   >
                     <span>{shortLabel}</span>
                     {count > 0 && (
                       <span className={`px-1.5 py-0.2 rounded-full text-[9.5px] font-bold ${
-                        isSelected ? "bg-orange-500 text-white" : "bg-slate-200 text-slate-700"
+                        isSelected 
+                          ? "bg-orange-500 dark:bg-zinc-950 text-white" 
+                          : "bg-slate-200 dark:bg-zinc-700 text-slate-700 dark:text-zinc-200"
                       }`}>
                         {count}
                       </span>
@@ -761,32 +763,32 @@ export default function MeetingReportDetail() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
             
             {/* Column 1: แบบร่าง (Draft) */}
-            <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+            <div className="bg-slate-50/70 dark:bg-zinc-900/60 p-4 rounded-2xl border border-slate-200/90 dark:border-zinc-800 shadow-2xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-zinc-800">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-                  <h4 className="text-sm font-black text-slate-900">
+                  <h4 className="text-sm font-black text-slate-900 dark:text-zinc-100">
                     แบบร่างการประชุม (Draft)
                   </h4>
-                  <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[11px] font-bold">
+                  <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-[11px] font-bold">
                     {draftMeetings.length} รายการ
                   </span>
                 </div>
-                <span className="text-[11px] text-slate-400 font-light">
+                <span className="text-[11px] text-slate-400 dark:text-zinc-500 font-light">
                   เตรียมวาระและผู้จดบันทึก
                 </span>
               </div>
 
               {draftMeetings.length === 0 ? (
-                <div className="py-12 text-center text-slate-400 space-y-2 border-2 border-dashed border-slate-200 rounded-xl">
-                  <FileText size={28} className="mx-auto text-slate-300" />
+                <div className="py-12 text-center text-slate-400 dark:text-zinc-500 space-y-2 border-2 border-dashed border-slate-200 dark:border-zinc-800 rounded-xl">
+                  <FileText size={28} className="mx-auto text-slate-300 dark:text-zinc-600" />
                   <p className="text-xs">ยังไม่มีบันทึกการประชุมแบบร่างในเดือนนี้</p>
                   <button
                     onClick={() => {
                       setEditingMeeting(null);
                       setIsNewMeetingModalOpen(true);
                     }}
-                    className="text-xs font-semibold text-orange-600 hover:underline cursor-pointer"
+                    className="text-xs font-semibold text-orange-600 dark:text-orange-400 hover:underline cursor-pointer"
                   >
                     + สร้างวาระการประชุมประจำเดือน {months.find(m => m.key === selectedMonthKey)?.name}
                   </button>
@@ -811,27 +813,27 @@ export default function MeetingReportDetail() {
             </div>
 
             {/* Column 2: ส่งบันทึกการประชุมแล้ว (Sent) */}
-            <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+            <div className="bg-slate-50/70 dark:bg-zinc-900/60 p-4 rounded-2xl border border-slate-200/90 dark:border-zinc-800 shadow-2xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-zinc-800">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                  <h4 className="text-sm font-black text-slate-900">
+                  <h4 className="text-sm font-black text-slate-900 dark:text-zinc-100">
                     ส่งบันทึกการประชุมแล้ว (Sent to Team &amp; Executives)
                   </h4>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-[11px] font-bold">
                     {sentMeetings.length} รายการ
                   </span>
                 </div>
-                <span className="text-[11px] text-slate-400 font-light">
+                <span className="text-[11px] text-slate-400 dark:text-zinc-500 font-light">
                   ส่งอีเมลและรับรองมติ
                 </span>
               </div>
 
               {sentMeetings.length === 0 ? (
-                <div className="py-12 text-center text-slate-400 space-y-2 border-2 border-dashed border-slate-200 rounded-xl">
-                  <CheckCircle2 size={28} className="mx-auto text-slate-300" />
+                <div className="py-12 text-center text-slate-400 dark:text-zinc-500 space-y-2 border-2 border-dashed border-slate-200 dark:border-zinc-800 rounded-xl">
+                  <CheckCircle2 size={28} className="mx-auto text-slate-300 dark:text-zinc-600" />
                   <p className="text-xs">ยังไม่มีการส่งบันทึกการประชุมในเดือนนี้</p>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[11px] text-slate-400 dark:text-zinc-500">
                     ย้ายงานจากคอลัมน์แบบร่างเพื่อส่งอีเมลถึงทีมและผู้บริหาร
                   </p>
                 </div>

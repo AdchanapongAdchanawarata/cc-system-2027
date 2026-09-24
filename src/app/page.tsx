@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { PenTool, Video, Mic, Lock } from "lucide-react";
 import WeatherWidget from "@/components/WeatherWidget";
 import AboutTeamModal from "@/components/AboutTeamModal";
-import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Home() {
   const router = useRouter();
@@ -35,7 +34,6 @@ export default function Home() {
         </div>
         
         <div className="flex flex-row items-center gap-1.5 sm:gap-2 shrink-0 relative z-30">
-          <ThemeToggle />
           <Link 
             href="/track" 
             className="flex items-center text-xs sm:text-sm font-medium text-foreground hover:text-primary transition-colors bg-surface px-3 py-1.5 sm:px-5 sm:py-2 rounded-full border border-surface-border shadow-[2px_4px_8px_rgba(0,0,0,0.05),-1px_-1px_4px_rgba(255,255,255,0.8)] hover:shadow-md whitespace-nowrap"

@@ -735,15 +735,15 @@ export default function IndividualReportView({
           </div>
 
           {/* Action Steps 1 2 3 */}
-          <div className="bg-blue-50/60 p-4 rounded-2xl border border-blue-100">
-            <h4 className="text-xs font-bold text-blue-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <Zap size={14} className="text-blue-600" />
+          <div className="bg-blue-50/60 dark:bg-blue-950/40 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/50">
+            <h4 className="text-xs font-bold text-blue-900 dark:text-blue-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <Zap size={14} className="text-blue-600 dark:text-blue-400" />
               แนวทางการจัดการที่ควรปฏิบัติ (Action Steps 1, 2, 3)
             </h4>
-            <ul className="space-y-1.5 text-xs text-blue-950 font-medium">
+            <ul className="space-y-1.5 text-xs text-blue-950 dark:text-zinc-100 font-medium">
               {currentProfileMember.actionSteps.map((step, i) => (
                 <li key={i} className="flex items-start gap-1.5">
-                  <span className="text-blue-600 font-bold">✓</span>
+                  <span className="text-blue-600 dark:text-blue-400 font-bold">✓</span>
                   <span>{step}</span>
                 </li>
               ))}
@@ -751,15 +751,15 @@ export default function IndividualReportView({
           </div>
 
           {/* Risk Impacts 1 2 3 */}
-          <div className="bg-rose-50/60 p-4 rounded-2xl border border-rose-100">
-            <h4 className="text-xs font-bold text-rose-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <ShieldCheck size={14} className="text-rose-600" />
+          <div className="bg-rose-50/60 dark:bg-rose-950/40 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/50">
+            <h4 className="text-xs font-bold text-rose-900 dark:text-rose-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <ShieldCheck size={14} className="text-rose-600 dark:text-rose-400" />
               ความเสี่ยงที่จะตามมา หากไม่รีบปรับปรุง (Risk Impacts 1, 2, 3)
             </h4>
-            <ul className="space-y-1.5 text-xs text-rose-950 font-medium">
+            <ul className="space-y-1.5 text-xs text-rose-950 dark:text-rose-100 font-medium">
               {currentProfileMember.riskImpacts.map((risk, i) => (
                 <li key={i} className="flex items-start gap-1.5">
-                  <span className="text-rose-600 font-bold">⚠️</span>
+                  <span className="text-rose-600 dark:text-rose-400 font-bold">⚠️</span>
                   <span>{risk}</span>
                 </li>
               ))}
@@ -790,12 +790,12 @@ export default function IndividualReportView({
               <Target size={22} />
             </span>
             <div>
-              <h3 className="text-base font-black text-slate-800 flex items-center gap-2 flex-wrap">
+              <h3 className="text-base font-black text-slate-800 dark:text-zinc-100 flex items-center gap-2 flex-wrap">
                 เป้าหมาย OKRs / KR / R และ KPI / TIP ประจำตัว
-                <span className="text-xs font-normal text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
+                <span className="text-xs font-normal text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 px-2.5 py-0.5 rounded-full border border-slate-200 dark:border-zinc-700">
                   {pacingSummary.fiscalPeriodLabel} • ไตรมาส Q{pacingSummary.currentQuarter}
                 </span>
-                <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-700/60">
                   ⚡ สัปดาห์นี้ทำได้ {pacingSummary.totalTasksThisWeek} งาน • เดือนนี้ทำได้ {pacingSummary.totalTasksThisMonth} งาน
                 </span>
               </h3>
@@ -806,7 +806,7 @@ export default function IndividualReportView({
           </div>
 
           {/* Filter Toggle */}
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 self-start lg:self-auto">
+          <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-zinc-800 p-1.5 rounded-2xl border border-slate-200 dark:border-zinc-700 self-start lg:self-auto">
             <button
               onClick={() => setPacingMetricFilter('all')}
               className={`px-3 py-1 text-xs font-bold rounded-xl transition-all ${
@@ -836,71 +836,71 @@ export default function IndividualReportView({
 
         {/* Regular Performance Alert Banner */}
         {pacingSummary.monthlyBehindCount + pacingSummary.quarterlyBehindCount > 0 ? (
-          <div className="bg-rose-50 border-2 border-rose-300 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="bg-rose-50 dark:bg-rose-950/60 border-2 border-rose-300 dark:border-rose-800/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
             <div className="flex items-start gap-3">
               <span className="p-2 rounded-xl bg-rose-600 text-white shrink-0 mt-0.5">
                 <AlertTriangle size={18} />
               </span>
               <div>
-                <div className="text-sm font-black text-rose-950 flex items-center gap-2">
+                <div className="text-sm font-black text-rose-950 dark:text-rose-100 flex items-center gap-2 flex-wrap">
                   แจ้งเตือนความเร็วเป้าหมาย: พบตัวชี้วัดที่ต่ำกว่าเกณฑ์สะสม (Behind Target)
-                  <span className="px-2 py-0.5 rounded-md bg-rose-200 text-rose-900 text-xs font-bold font-mono">
+                  <span className="px-2 py-0.5 rounded-md bg-rose-200 dark:bg-rose-900/80 text-rose-900 dark:text-rose-200 text-xs font-bold font-mono border dark:border-rose-700/60">
                     {pacingSummary.monthlyBehindCount + pacingSummary.quarterlyBehindCount} ตัวชี้วัด
                   </span>
                 </div>
-                <div className="text-xs text-rose-800 mt-1">
+                <div className="text-xs text-rose-800 dark:text-rose-200 mt-1 font-medium">
                   กรุณาเร่งความเร็วในการส่งมอบชิ้นงานให้สอดคล้องกับเป้าหมายรายเดือน เพื่อป้องกันการหลุดเป้าหมายประจำไตรมาส Q{pacingSummary.currentQuarter}
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
               {pacingSummary.monthlyBehindCount > 0 && (
-                <span className="px-2.5 py-1 rounded-lg bg-rose-200 text-rose-900 text-xs font-black">
+                <span className="px-2.5 py-1 rounded-lg bg-rose-200 dark:bg-rose-900/80 text-rose-900 dark:text-rose-200 text-xs font-black border dark:border-rose-700/60">
                   เดือน: ล่าช้า {pacingSummary.monthlyBehindCount}
                 </span>
               )}
               {pacingSummary.quarterlyBehindCount > 0 && (
-                <span className="px-2.5 py-1 rounded-lg bg-rose-300 text-rose-950 text-xs font-black">
+                <span className="px-2.5 py-1 rounded-lg bg-rose-300 dark:bg-rose-850 text-rose-950 dark:text-rose-100 text-xs font-black border dark:border-rose-700/60">
                   ไตรมาส: ล่าช้า {pacingSummary.quarterlyBehindCount}
                 </span>
               )}
             </div>
           </div>
         ) : pacingSummary.monthlyAtRiskCount + pacingSummary.quarterlyAtRiskCount > 0 ? (
-          <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="bg-amber-50 dark:bg-amber-950/60 border-2 border-amber-300 dark:border-amber-800/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
             <div className="flex items-start gap-3">
               <span className="p-2 rounded-xl bg-amber-500 text-white shrink-0 mt-0.5">
                 <AlertCircle size={18} />
               </span>
               <div>
-                <div className="text-sm font-black text-amber-950 flex items-center gap-2">
+                <div className="text-sm font-black text-amber-950 dark:text-amber-100 flex items-center gap-2">
                   เฝ้าระวังเป้าหมาย: มีตัวชี้วัดที่ใกล้หลุดเกณฑ์เป้าหมายสะสม (At Risk)
-                  <span className="px-2 py-0.5 rounded-md bg-amber-200 text-amber-900 text-xs font-bold font-mono">
+                  <span className="px-2 py-0.5 rounded-md bg-amber-200 dark:bg-amber-900/80 text-amber-900 dark:text-amber-200 text-xs font-bold font-mono border dark:border-amber-700/60">
                     {pacingSummary.monthlyAtRiskCount + pacingSummary.quarterlyAtRiskCount} ตัวชี้วัด
                   </span>
                 </div>
-                <div className="text-xs text-amber-800 mt-1">
+                <div className="text-xs text-amber-800 dark:text-amber-200 mt-1 font-medium">
                   ผลงานสะสมคิดเป็น 70-99% ของเกณฑ์ที่ควรจะทำได้ตามรอบเวลาปีงบประมาณ
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
-              <span className="px-2.5 py-1 rounded-lg bg-amber-200 text-amber-900 text-xs font-bold">
+              <span className="px-2.5 py-1 rounded-lg bg-amber-200 dark:bg-amber-900/80 text-amber-900 dark:text-amber-200 text-xs font-bold border dark:border-amber-700/60">
                 เสี่ยงหลุดเป้า {pacingSummary.monthlyAtRiskCount + pacingSummary.quarterlyAtRiskCount} รายการ
               </span>
             </div>
           </div>
         ) : (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 flex items-center justify-between gap-3 shadow-2xs">
+          <div className="bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/70 rounded-2xl p-3.5 flex items-center justify-between gap-3 shadow-2xs">
             <div className="flex items-center gap-3">
               <span className="p-1.5 rounded-xl bg-emerald-600 text-white shrink-0">
                 <CheckCircle2 size={16} />
               </span>
-              <div className="text-xs font-bold text-emerald-950">
+              <div className="text-xs font-bold text-emerald-950 dark:text-emerald-100">
                 สถานะดีเยี่ยม: ทุกตัวชี้วัดผลงานดำเนินการสอดคล้องตามเป้าหมายของเดือนและไตรมาส (All Metrics On Track)
               </div>
             </div>
-            <span className="text-[11px] font-mono text-emerald-800 font-bold bg-white px-2 py-0.5 rounded-md border border-emerald-200">
+            <span className="text-[11px] font-mono text-emerald-800 dark:text-emerald-300 font-bold bg-white dark:bg-zinc-900 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-700/60">
               100% On Track
             </span>
           </div>

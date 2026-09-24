@@ -130,30 +130,30 @@ export default function WorkloadContinuityInsights({
       </div>
 
       {/* 2. 4 Hero KPI Cards */}
-      <div className="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3.5 bg-slate-50/50">
+      <div className="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3.5 bg-slate-50/50 dark:bg-zinc-950/60">
         
         {/* CARD 1: เกจวัดความดันภาระงาน (Burnout Pressure Gauge) */}
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-2.5 relative overflow-hidden group hover:border-indigo-300 transition-all flex flex-col justify-between">
+        <div className="p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200/90 dark:border-zinc-800 shadow-2xs space-y-2.5 relative overflow-hidden group hover:border-indigo-300 dark:hover:border-indigo-500 transition-all flex flex-col justify-between">
           <div>
             <div className="flex items-start justify-between gap-2">
               <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-400 block">
                   1. เกจความดันภาระงานสะสม
                 </span>
-                <h4 className="text-xs font-bold text-slate-800 mt-0.5 flex items-center gap-1">
+                <h4 className="text-xs font-bold text-slate-800 dark:text-zinc-100 mt-0.5 flex items-center gap-1">
                   <span>Burnout Pressure Gauge</span>
                   <span title="มาตรวัดความดันภาระงาน: สมาชิกมีงานมือไม่ว่างเลยตลอดหลายสัปดาห์จนเสี่ยงหมดไฟหรือไม่?">
-                    <HelpCircle size={12} className="text-slate-400 cursor-help" />
+                    <HelpCircle size={12} className="text-slate-400 dark:text-zinc-400 cursor-help" />
                   </span>
                 </h4>
-                <div className="text-[10px] text-slate-500 mt-0.5 font-medium">
+                <div className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5 font-medium">
                   เกณฑ์วัด: มีงานต่อเนื่องไม่เว้นวรรค (ป้องกันหมดไฟ)
                 </div>
               </div>
               <span className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border shadow-2xs ${
                 burnoutRiskCount > 0 
-                  ? 'bg-rose-50 text-rose-600 border-rose-200' 
-                  : 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                  ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800' 
+                  : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
               }`}>
                 <Flame size={17} />
               </span>
@@ -171,94 +171,94 @@ export default function WorkloadContinuityInsights({
             {/* Status Callout Box */}
             <div className="mt-1">
               {burnoutRiskCount > 0 ? (
-                <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-rose-50 border border-rose-200/90 text-rose-900 p-2.5 rounded-xl space-y-0.5">
+                <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-rose-50 dark:bg-rose-950/50 border border-rose-200/90 dark:border-rose-800/60 text-rose-950 dark:text-rose-100 p-2.5 rounded-xl space-y-0.5">
                   <div className="w-full flex flex-col items-center justify-center text-center mx-auto" style={{ textAlign: 'center' }}>
                     <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>🔴 ระดับ 3: ความดันสูง เสี่ยงหมดไฟ</div>
                     <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>({burnoutRiskCount} คน)</div>
                   </div>
-                  <span className="text-[10px] text-rose-700 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>งานต่อเนื่องเกิน 85% ของเวลา ควรเกลี่ยงานออก</span>
+                  <span className="text-[10px] text-rose-700 dark:text-rose-300 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>งานต่อเนื่องเกิน 85% ของเวลา ควรเกลี่ยงานออก</span>
                 </div>
               ) : teamAvgContinuityRate >= 60 ? (
-                <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-amber-50 border border-amber-200/90 text-amber-900 p-2.5 rounded-xl space-y-0.5">
+                <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-amber-50 dark:bg-amber-950/50 border border-amber-200/90 dark:border-amber-800/60 text-amber-950 dark:text-amber-100 p-2.5 rounded-xl space-y-0.5">
                   <div className="w-full flex flex-col items-center justify-center text-center mx-auto" style={{ textAlign: 'center' }}>
                     <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>🟡 ระดับ 2: งานเข้าต่อเนื่อง</div>
                     <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>(สม่ำเสมอ)</div>
                   </div>
-                  <span className="text-[10px] text-amber-700 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>ภาระงานหมุนเวียนต่อเนื่อง ยังไม่เกินเกณฑ์</span>
+                  <span className="text-[10px] text-amber-700 dark:text-amber-300 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>ภาระงานหมุนเวียนต่อเนื่อง ยังไม่เกินเกณฑ์</span>
                 </div>
               ) : (
-                <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-emerald-50 border border-emerald-200/90 text-emerald-900 p-2.5 rounded-xl space-y-0.5">
+                <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/90 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-100 p-2.5 rounded-xl space-y-0.5">
                   <div className="w-full flex flex-col items-center justify-center text-center mx-auto" style={{ textAlign: 'center' }}>
                     <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>🟢 ระดับ 1: ผ่อนคลาย</div>
                     <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>(งานไม่คั่งค้าง)</div>
                   </div>
-                  <span className="text-[10px] text-emerald-700 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>ไม่มีใครรับงานสะสมเกินเกณฑ์ สมาชิกมีช่วงพักหายใจ</span>
+                  <span className="text-[10px] text-emerald-700 dark:text-emerald-300 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>ไม่มีใครรับงานสะสมเกินเกณฑ์ สมาชิกมีช่วงพักหายใจ</span>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="pt-2.5 border-t border-slate-100 space-y-1.5 text-xs">
+          <div className="pt-2.5 border-t border-slate-100 dark:border-zinc-800 space-y-1.5 text-xs">
             {burnoutRiskCount > 0 && topContinuity ? (
-              <div className="bg-rose-50 border border-rose-200/80 rounded-xl p-2.5 space-y-1 text-xs">
+              <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-800/60 rounded-xl p-2.5 space-y-1 text-xs">
                 <div className="flex items-center justify-between gap-1 text-[11px]">
-                  <span className="flex items-center gap-1 text-rose-900 font-bold">
-                    <Flame size={13} className="text-rose-600 shrink-0" />
+                  <span className="flex items-center gap-1 text-rose-900 dark:text-rose-200 font-bold">
+                    <Flame size={13} className="text-rose-600 dark:text-rose-400 shrink-0" />
                     <span>รับงานต่อเนื่องสูงสุด:</span>
                   </span>
-                  <span className="font-bold text-rose-800 bg-white px-2 py-0.5 rounded border border-rose-200 shrink-0">
+                  <span className="font-bold text-rose-800 dark:text-rose-200 bg-white dark:bg-zinc-800 px-2 py-0.5 rounded border border-rose-200 dark:border-rose-700 shrink-0">
                     {topContinuity.name}
                   </span>
                 </div>
-                <div className="text-[10px] text-rose-700 bg-white/60 rounded px-2 py-1 flex items-center justify-between">
-                  <span>สถานะภาระงาน:</span>
-                  <strong className="font-bold text-rose-800">ทำต่อเนื่อง {topContinuity.consecutiveActiveWeeks} สัปดาห์ (~{topContinuity.weeklyAverageTasks} งาน/สัปดาห์)</strong>
+                <div className="text-[10px] text-rose-800 dark:text-zinc-200 bg-white/70 dark:bg-zinc-900/90 border border-slate-200/40 dark:border-zinc-800 rounded px-2 py-1 flex items-center justify-between">
+                  <span className="text-rose-700 dark:text-zinc-400 font-medium">สถานะภาระงาน:</span>
+                  <strong className="font-bold text-rose-800 dark:text-rose-300">ทำต่อเนื่อง {topContinuity.consecutiveActiveWeeks} สัปดาห์ (~{topContinuity.weeklyAverageTasks} งาน/สัปดาห์)</strong>
                 </div>
               </div>
             ) : topContinuity ? (
-              <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 space-y-1 text-xs">
+              <div className="bg-slate-50 dark:bg-zinc-850/80 border border-slate-200/80 dark:border-zinc-700/80 rounded-xl p-2.5 space-y-1 text-xs">
                 <div className="flex items-center justify-between gap-1 text-[11px]">
-                  <span className="flex items-center gap-1 text-slate-800 font-bold">
-                    <CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
+                  <span className="flex items-center gap-1 text-slate-800 dark:text-zinc-200 font-bold">
+                    <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <span>จัดสรรภาระงานดีเยี่ยม:</span>
                   </span>
-                  <span className="font-bold text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-200 shrink-0">
+                  <span className="font-bold text-slate-800 dark:text-zinc-100 bg-white dark:bg-zinc-900 px-2 py-0.5 rounded border border-slate-200 dark:border-zinc-700 shrink-0">
                     {topContinuity.name}
                   </span>
                 </div>
-                <div className="text-[10px] text-slate-600 bg-white/60 rounded px-2 py-1 flex items-center justify-between">
-                  <span>ปริมาณงานที่ทำ:</span>
-                  <strong className="font-bold text-emerald-700">ทำงานเหมาะสม ~{topContinuity.weeklyAverageTasks} ชิ้น/สัปดาห์</strong>
+                <div className="text-[10px] text-slate-600 dark:text-zinc-300 bg-white/70 dark:bg-zinc-900/90 border border-slate-200/40 dark:border-zinc-800 rounded px-2 py-1 flex items-center justify-between">
+                  <span className="text-slate-600 dark:text-zinc-400 font-medium">ปริมาณงานที่ทำ:</span>
+                  <strong className="font-bold text-emerald-700 dark:text-emerald-400">ทำงานเหมาะสม ~{topContinuity.weeklyAverageTasks} ชิ้น/สัปดาห์</strong>
                 </div>
               </div>
             ) : (
               <div className="text-[11px] text-slate-400">-</div>
             )}
-            <div className="text-[10px] text-slate-500 px-0.5">
+            <div className="text-[10px] text-slate-500 dark:text-zinc-400 px-0.5">
               {burnoutRiskCount > 0 ? 'มีงานเข้ามือต่อเนื่องเกือบตลอดเวลา เสี่ยงล้าสะสม' : 'สมาชิกกระจายงานได้สมดุล มีปริมาณงานเหมาะสมสม่ำเสมอ'}
             </div>
           </div>
         </div>
 
         {/* CARD 2: เกจสร้างมูลค่าผลงาน (Average Value per Task) */}
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-2.5 relative overflow-hidden group hover:border-emerald-300 transition-all flex flex-col justify-between">
+        <div className="p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200/90 dark:border-zinc-800 shadow-2xs space-y-2.5 relative overflow-hidden group hover:border-emerald-300 dark:hover:border-emerald-500 transition-all flex flex-col justify-between">
           <div>
             <div className="flex items-start justify-between gap-2">
               <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-400 block">
                   2. เกจสร้างมูลค่าผลงาน
                 </span>
-                <h4 className="text-xs font-bold text-slate-800 mt-0.5 flex items-center gap-1">
+                <h4 className="text-xs font-bold text-slate-800 dark:text-zinc-100 mt-0.5 flex items-center gap-1">
                   <span>Impact vs Volume Gauge</span>
                   <span title="เปรียบเทียบมูลค่าต่องาน: ทีมเน้นงานไวส่งมอบเร็ว (Volume) หรือเน้นงานยากสร้างมูลค่าสูง (High-Impact)">
-                    <HelpCircle size={12} className="text-slate-400 cursor-help" />
+                    <HelpCircle size={12} className="text-slate-400 dark:text-zinc-400 cursor-help" />
                   </span>
                 </h4>
-                <div className="text-[10px] text-slate-500 mt-0.5 font-medium">
+                <div className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5 font-medium">
                   เกณฑ์วัด: Save Cost เฉลี่ยต่องาน (งานยาก vs งานไว)
                 </div>
               </div>
-              <span className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border shadow-2xs bg-emerald-50 text-emerald-700 border-emerald-200">
+              <span className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border shadow-2xs bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800">
                 <Gem size={17} />
               </span>
             </div>
@@ -277,32 +277,32 @@ export default function WorkloadContinuityInsights({
             {/* Status Callout Box */}
             <div className="mt-1">
               {teamAvgValuePerTask >= 120000 ? (
-                <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-emerald-50 border border-emerald-200/90 text-emerald-950 p-2.5 rounded-xl space-y-0.5">
+                <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/90 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-100 p-2.5 rounded-xl space-y-0.5">
                   <div className="w-full flex flex-col items-center justify-center text-center mx-auto" style={{ textAlign: 'center' }}>
                     <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>💎 สเกลโปรเจกต์ใหญ่</div>
                     <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>(High-Impact)</div>
                   </div>
-                  <span className="text-[10px] text-emerald-700 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>
+                  <span className="text-[10px] text-emerald-700 dark:text-emerald-300 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>
                     เฉลี่ย ฿{teamAvgValuePerTask.toLocaleString()}/งาน เน้นมูลค่าสูงต่อชิ้น
                   </span>
                 </div>
               ) : teamAvgValuePerTask >= 30000 ? (
-                <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-purple-50 border border-purple-200/90 text-purple-950 p-2.5 rounded-xl space-y-0.5">
+                <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-purple-50 dark:bg-purple-950/50 border border-purple-200/90 dark:border-purple-800/60 text-purple-950 dark:text-purple-100 p-2.5 rounded-xl space-y-0.5">
                   <div className="w-full flex flex-col items-center justify-center text-center mx-auto" style={{ textAlign: 'center' }}>
                     <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>⚖️ สเกลงานสมดุล</div>
                     <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>(Balanced)</div>
                   </div>
-                  <span className="text-[10px] text-purple-700 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>
+                  <span className="text-[10px] text-purple-700 dark:text-purple-300 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>
                     เฉลี่ย ฿{teamAvgValuePerTask.toLocaleString()}/งาน ผสมงานไวและงานหลัก
                   </span>
                 </div>
               ) : (
-                <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-sky-50 border border-sky-200/90 text-sky-950 p-2.5 rounded-xl space-y-0.5">
+                <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-sky-50 dark:bg-sky-950/50 border border-sky-200/90 dark:border-sky-800/60 text-sky-950 dark:text-sky-100 p-2.5 rounded-xl space-y-0.5">
                   <div className="w-full flex flex-col items-center justify-center text-center mx-auto" style={{ textAlign: 'center' }}>
                     <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>🚀 เน้นงานส่งมอบเร็ว</div>
                     <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>(High Volume)</div>
                   </div>
-                  <span className="text-[10px] text-sky-700 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>
+                  <span className="text-[10px] text-sky-700 dark:text-sky-300 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>
                     เฉลี่ย ฿{teamAvgValuePerTask.toLocaleString()}/งาน เน้นรอบงานเร็ว
                   </span>
                 </div>
@@ -310,51 +310,51 @@ export default function WorkloadContinuityInsights({
             </div>
           </div>
 
-          <div className="pt-2.5 border-t border-slate-100 space-y-1.5 text-xs">
+          <div className="pt-2.5 border-t border-slate-100 dark:border-zinc-800 space-y-1.5 text-xs">
             {topValueMember ? (
-              <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 space-y-1 text-xs">
+              <div className="bg-slate-50 dark:bg-zinc-850/80 border border-slate-200/80 dark:border-zinc-700/80 rounded-xl p-2.5 space-y-1 text-xs">
                 <div className="flex items-center justify-between gap-1 text-[11px]">
-                  <span className="flex items-center gap-1 text-slate-800 font-bold">
-                    <Gem size={13} className="text-emerald-600 shrink-0" />
+                  <span className="flex items-center gap-1 text-slate-800 dark:text-zinc-200 font-bold">
+                    <Gem size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <span>มูลค่าเฉลี่ยสูงสุด:</span>
                   </span>
-                  <span className="font-bold text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-200 shrink-0">
+                  <span className="font-bold text-slate-800 dark:text-zinc-100 bg-white dark:bg-zinc-900 px-2 py-0.5 rounded border border-slate-200 dark:border-zinc-700 shrink-0">
                     {topValueMember.name}
                   </span>
                 </div>
-                <div className="text-[10px] text-slate-600 bg-white/60 rounded px-2 py-1 flex items-center justify-between">
-                  <span>Save Cost เฉลี่ย:</span>
-                  <strong className="font-mono font-bold text-emerald-700">฿{Math.round(topValueMember.avgValuePerTask).toLocaleString()}/งาน</strong>
+                <div className="text-[10px] text-slate-600 dark:text-zinc-300 bg-white/70 dark:bg-zinc-900/90 border border-slate-200/40 dark:border-zinc-800 rounded px-2 py-1 flex items-center justify-between">
+                  <span className="text-slate-600 dark:text-zinc-400 font-medium">Save Cost เฉลี่ย:</span>
+                  <strong className="font-mono font-bold text-emerald-700 dark:text-emerald-400">฿{Math.round(topValueMember.avgValuePerTask).toLocaleString()}/งาน</strong>
                 </div>
               </div>
             ) : (
               <div className="text-[11px] text-slate-400">-</div>
             )}
-            <div className="text-[10px] text-slate-500 px-0.5">
+            <div className="text-[10px] text-slate-500 dark:text-zinc-400 px-0.5">
               มี {highImpactCount} คนเน้นโปรเจกต์สเกลใหญ่สร้างมูลค่าสูง (Save Cost)
             </div>
           </div>
         </div>
 
         {/* CARD 3: เกจสัดส่วนงานช่วยซัพพอร์ต (Support Ratio) */}
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-2.5 relative overflow-hidden group hover:border-amber-300 transition-all flex flex-col justify-between">
+        <div className="p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200/90 dark:border-zinc-800 shadow-2xs space-y-2.5 relative overflow-hidden group hover:border-amber-300 dark:hover:border-amber-500 transition-all flex flex-col justify-between">
           <div>
             <div className="flex items-start justify-between gap-2">
               <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-400 block">
                   3. เกจสัดส่วนงานช่วยซัพพอร์ต
                 </span>
-                <h4 className="text-xs font-bold text-slate-800 mt-0.5 flex items-center gap-1">
+                <h4 className="text-xs font-bold text-slate-800 dark:text-zinc-100 mt-0.5 flex items-center gap-1">
                   <span>Support Ratio Gauge</span>
                   <span title="สัดส่วนงานที่เป็นผู้ช่วยคนอื่นเทียบกับงานทั้งหมด บ่งบอกว่าทีมต้องพึ่งพางานซัพพอร์ตข้ามฝ่ายมากน้อยเพียงใด">
-                    <HelpCircle size={12} className="text-slate-400 cursor-help" />
+                    <HelpCircle size={12} className="text-slate-400 dark:text-zinc-400 cursor-help" />
                   </span>
                 </h4>
-                <div className="text-[10px] text-slate-500 mt-0.5 font-medium">
+                <div className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5 font-medium">
                   เกณฑ์วัด: สัดส่วนงานช่วยเพื่อน (% งานช่วย vs งานหลัก)
                 </div>
               </div>
-              <span className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border shadow-2xs bg-amber-50 text-amber-700 border-amber-200">
+              <span className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border shadow-2xs bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800">
                 <Users size={17} />
               </span>
             </div>
@@ -373,29 +373,29 @@ export default function WorkloadContinuityInsights({
             {/* Status Callout Box */}
             <div className="mt-1">
               {teamAvgAssistantRatio > 30 ? (
-                <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-amber-50 border border-amber-200/90 text-amber-950 p-2.5 rounded-xl space-y-0.5">
+                <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-amber-50 dark:bg-amber-950/50 border border-amber-200/90 dark:border-amber-800/60 text-amber-950 dark:text-amber-100 p-2.5 rounded-xl space-y-0.5">
                   <div className="w-full flex flex-col items-center justify-center text-center mx-auto" style={{ textAlign: 'center' }}>
                     <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>👥 พึ่งพางานช่วยสูง</div>
                   </div>
-                  <span className="text-[10px] text-amber-700 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>
+                  <span className="text-[10px] text-amber-700 dark:text-amber-300 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>
                     มีงานที่ต้องระดมทีมช่วยเยอะ ควรระวังไม่ให้ผู้ช่วยรับงานล้นมือ
                   </span>
                 </div>
               ) : teamAvgAssistantRatio >= 12 ? (
-                <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-emerald-50 border border-emerald-200/90 text-emerald-950 p-2.5 rounded-xl space-y-0.5">
+                <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/90 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-100 p-2.5 rounded-xl space-y-0.5">
                   <div className="w-full flex flex-col items-center justify-center text-center mx-auto" style={{ textAlign: 'center' }}>
                     <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>🤝 สัดส่วนร่วมมือพอดี</div>
                   </div>
-                  <span className="text-[10px] text-emerald-700 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>
+                  <span className="text-[10px] text-emerald-700 dark:text-emerald-300 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>
                     งานหลัก {100 - teamAvgAssistantRatio}% • ช่วยซัพพอร์ตกันอย่างสมดุล
                   </span>
                 </div>
               ) : (
-                <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-sky-50 border border-sky-200/90 text-sky-950 p-2.5 rounded-xl space-y-0.5">
+                <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-sky-50 dark:bg-sky-950/50 border border-sky-200/90 dark:border-sky-800/60 text-sky-950 dark:text-sky-100 p-2.5 rounded-xl space-y-0.5">
                   <div className="w-full flex flex-col items-center justify-center text-center mx-auto" style={{ textAlign: 'center' }}>
                     <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>🎯 เน้นลุยเดี่ยวเป็นหลัก</div>
                   </div>
-                  <span className="text-[10px] text-sky-700 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>
+                  <span className="text-[10px] text-sky-700 dark:text-sky-300 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>
                     สมาชิกรับผิดชอบงานจบด้วยตัวเอง งานช่วย {teamAvgAssistantRatio}%
                   </span>
                 </div>
@@ -403,56 +403,56 @@ export default function WorkloadContinuityInsights({
             </div>
           </div>
 
-          <div className="pt-2.5 border-t border-slate-100 space-y-1.5 text-xs">
+          <div className="pt-2.5 border-t border-slate-100 dark:border-zinc-800 space-y-1.5 text-xs">
             {topSupportMember ? (
-              <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 space-y-1 text-xs">
+              <div className="bg-slate-50 dark:bg-zinc-850/80 border border-slate-200/80 dark:border-zinc-700/80 rounded-xl p-2.5 space-y-1 text-xs">
                 <div className="flex items-center justify-between gap-1 text-[11px]">
-                  <span className="flex items-center gap-1 text-slate-800 font-bold">
-                    <Users size={13} className="text-amber-600 shrink-0" />
+                  <span className="flex items-center gap-1 text-slate-800 dark:text-zinc-200 font-bold">
+                    <Users size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
                     <span>ช่วยเพื่อนมากสุด:</span>
                   </span>
-                  <span className="font-bold text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-200 shrink-0">
+                  <span className="font-bold text-slate-800 dark:text-zinc-100 bg-white dark:bg-zinc-900 px-2 py-0.5 rounded border border-slate-200 dark:border-zinc-700 shrink-0">
                     {topSupportMember.name}
                   </span>
                 </div>
-                <div className="text-[10px] text-slate-600 bg-white/60 rounded px-2 py-1 flex items-center justify-between">
-                  <span>จำนวนงานที่ช่วยซัพพอร์ต:</span>
-                  <strong className="font-bold text-amber-800">ช่วย {topSupportMember.assistantTaskCount} งาน ({topSupportMember.assistantRatio}%)</strong>
+                <div className="text-[10px] text-slate-600 dark:text-zinc-300 bg-white/70 dark:bg-zinc-900/90 border border-slate-200/40 dark:border-zinc-800 rounded px-2 py-1 flex items-center justify-between">
+                  <span className="text-slate-600 dark:text-zinc-400 font-medium">จำนวนงานที่ช่วยซัพพอร์ต:</span>
+                  <strong className="font-bold text-amber-800 dark:text-amber-300">ช่วย {topSupportMember.assistantTaskCount} งาน ({topSupportMember.assistantRatio}%)</strong>
                 </div>
               </div>
             ) : (
               <div className="text-[11px] text-slate-400">-</div>
             )}
-            <div className="text-[10px] text-slate-500 px-0.5">
+            <div className="text-[10px] text-slate-500 dark:text-zinc-400 px-0.5">
               มี {topSupportCount} คนเป็นเสาหลักร่วมซัพพอร์ตงานของทีม
             </div>
           </div>
         </div>
 
         {/* CARD 4: เกจวัดความจุงานช่วงพีคสุด (Team Capacity Peak Spike Gauge) */}
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-2.5 relative overflow-hidden group hover:border-rose-300 transition-all flex flex-col justify-between">
+        <div className="p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200/90 dark:border-zinc-800 shadow-2xs space-y-2.5 relative overflow-hidden group hover:border-rose-300 dark:hover:border-rose-500 transition-all flex flex-col justify-between">
           <div>
             <div className="flex items-start justify-between gap-2">
               <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-zinc-400 block">
                   4. เกจความจุงานช่วงพีคสุด
                 </span>
-                <h4 className="text-xs font-bold text-slate-800 mt-0.5 flex items-center gap-1">
+                <h4 className="text-xs font-bold text-slate-800 dark:text-zinc-100 mt-0.5 flex items-center gap-1">
                   <span>Peak Capacity Load</span>
                   <span title="สัปดาห์ที่มีจำนวนงานดำเนินอยู่ทับซ้อนกันหนาแน่นที่สุดในรอบปี เพื่อช่วยหัวหน้าทีมวางแผนเกลี่ยกำลังคนหรือพิจารณา Outsource ล่วงหน้า">
-                    <HelpCircle size={12} className="text-slate-400 cursor-help" />
+                    <HelpCircle size={12} className="text-slate-400 dark:text-zinc-400 cursor-help" />
                   </span>
                 </h4>
-                <div className="text-[10px] text-slate-500 mt-0.5 font-medium">
+                <div className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5 font-medium">
                   เกณฑ์วัด: งานที่ทำพร้อมกัน เทียบกับค่าเฉลี่ยปกติ
                 </div>
               </div>
               <span className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border shadow-2xs ${
                 isRealSpike 
-                  ? 'bg-rose-50 text-rose-700 border-rose-200' 
+                  ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800' 
                   : isModerateSpike 
-                  ? 'bg-amber-50 text-amber-700 border-amber-200' 
-                  : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800' 
+                  : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
               }`}>
                 <TrendingUp size={17} />
               </span>
@@ -470,32 +470,32 @@ export default function WorkloadContinuityInsights({
             {/* Peak Load Status Box */}
             <div className="mt-1">
               {isRealSpike ? (
-                <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-rose-50 border border-rose-200/90 text-rose-950 p-2.5 rounded-xl space-y-0.5">
+                <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-rose-50 dark:bg-rose-950/50 border border-rose-200/90 dark:border-rose-800/60 text-rose-950 dark:text-rose-100 p-2.5 rounded-xl space-y-0.5">
                   <div className="w-full flex flex-col items-center justify-center text-center mx-auto" style={{ textAlign: 'center' }}>
                     <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>🔴 ระดับ 3: งานล้นพิกัด</div>
                     <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>({peakSpikePeriod?.concurrentTaskCount || 0} งานพร้อมกัน)</div>
                   </div>
-                  <span className="text-[10px] text-rose-700 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>
+                  <span className="text-[10px] text-rose-700 dark:text-rose-300 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>
                     งวด {peakSpikePeriod?.startDateStr} - {peakSpikePeriod?.endDateStr} สูงกว่าปกติ ~{peakRatio} เท่า
                   </span>
                 </div>
               ) : isModerateSpike ? (
-                <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-amber-50 border border-amber-200/90 text-amber-950 p-2.5 rounded-xl space-y-0.5">
+                <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-amber-50 dark:bg-amber-950/50 border border-amber-200/90 dark:border-amber-800/60 text-amber-950 dark:text-amber-100 p-2.5 rounded-xl space-y-0.5">
                   <div className="w-full flex flex-col items-center justify-center text-center mx-auto" style={{ textAlign: 'center' }}>
                     <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>🟡 ระดับ 2: งานหนาแน่นขึ้น</div>
                     <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>({peakSpikePeriod?.concurrentTaskCount || 0} งานพร้อมกัน)</div>
                   </div>
-                  <span className="text-[10px] text-amber-700 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>
+                  <span className="text-[10px] text-amber-700 dark:text-amber-300 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>
                     งวด {peakSpikePeriod?.startDateStr} - {peakSpikePeriod?.endDateStr} สูงกว่าปกติ ~{peakRatio} เท่า
                   </span>
                 </div>
               ) : (
-                <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-emerald-50 border border-emerald-200/90 text-emerald-950 p-2.5 rounded-xl space-y-0.5">
+                <div className="min-h-[64px] flex flex-col justify-center items-center text-center bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/90 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-100 p-2.5 rounded-xl space-y-0.5">
                   <div className="w-full flex flex-col items-center justify-center text-center mx-auto" style={{ textAlign: 'center' }}>
                     <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>🟢 ระดับ 1: ปริมาณงานปกติ</div>
                     <div className="text-xs font-black text-center w-full leading-tight" style={{ textAlign: 'center' }}>({peakSpikePeriod?.concurrentTaskCount || 0} งานพร้อมกัน)</div>
                   </div>
-                  <span className="text-[10px] text-emerald-700 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>
+                  <span className="text-[10px] text-emerald-700 dark:text-emerald-300 block mt-0.5 text-center w-full" style={{ textAlign: 'center' }}>
                     งวด {peakSpikePeriod?.startDateStr} - {peakSpikePeriod?.endDateStr} ใกล้เคียงค่าเฉลี่ยปกติ
                   </span>
                 </div>
@@ -503,25 +503,25 @@ export default function WorkloadContinuityInsights({
             </div>
           </div>
 
-          <div className="pt-2.5 border-t border-slate-100 space-y-1.5 text-xs">
-            <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 space-y-1 text-xs">
+          <div className="pt-2.5 border-t border-slate-100 dark:border-zinc-800 space-y-1.5 text-xs">
+            <div className="bg-slate-50 dark:bg-zinc-850/80 border border-slate-200/80 dark:border-zinc-700/80 rounded-xl p-2.5 space-y-1 text-xs">
               <div className="flex items-center justify-between gap-1 text-[11px]">
-                <span className="flex items-center gap-1 text-slate-800 font-bold">
-                  <TrendingUp size={13} className={`${isRealSpike ? 'text-rose-600' : 'text-emerald-600'} shrink-0`} />
+                <span className="flex items-center gap-1 text-slate-800 dark:text-zinc-200 font-bold">
+                  <TrendingUp size={13} className={`${isRealSpike ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'} shrink-0`} />
                   <span>สัปดาห์งานสูงสุด:</span>
                 </span>
-                <span className="font-bold text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-200 shrink-0">
+                <span className="font-bold text-slate-800 dark:text-zinc-100 bg-white dark:bg-zinc-900 px-2 py-0.5 rounded border border-slate-200 dark:border-zinc-700 shrink-0">
                   งวด {peakSpikePeriod?.weekLabel}
                 </span>
               </div>
-              <div className="text-[10px] text-slate-600 bg-white/60 rounded px-2 py-1 flex items-center justify-between">
-                <span>ปริมาณงานทับซ้อน:</span>
-                <strong className={`font-mono font-bold ${isRealSpike ? 'text-rose-700' : 'text-slate-800'}`}>
+              <div className="text-[10px] text-slate-600 dark:text-zinc-300 bg-white/70 dark:bg-zinc-900/90 border border-slate-200/40 dark:border-zinc-800 rounded px-2 py-1 flex items-center justify-between">
+                <span className="text-slate-600 dark:text-zinc-400 font-medium">ปริมาณงานทับซ้อน:</span>
+                <strong className={`font-mono font-bold ${isRealSpike ? 'text-rose-700 dark:text-rose-300' : 'text-slate-800 dark:text-zinc-200'}`}>
                   {peakSpikePeriod?.concurrentTaskCount || 0} งานพร้อมกัน
                 </strong>
               </div>
             </div>
-            <div className="text-[10px] text-slate-500 px-0.5">
+            <div className="text-[10px] text-slate-500 dark:text-zinc-400 px-0.5">
               เฉลี่ยทั้งทีมปกติ ~{teamWeeklyAverageTasks} งาน/สัปดาห์ {isRealSpike ? '• ควรเกลี่ยกำลังคนล่วงหน้า' : '• อัตรากระจายตัวปกติ'}
             </div>
           </div>
@@ -531,7 +531,7 @@ export default function WorkloadContinuityInsights({
 
       {/* 3. Expandable Member Ranking Matrix & Spike Timeline */}
       {isExpanded && (
-        <div className="p-4 sm:p-5 border-t border-slate-200 bg-white animate-in fade-in duration-200 space-y-4">
+        <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 animate-in fade-in duration-200 space-y-4">
           
           {/* Sub-tab Navigation */}
           <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100">

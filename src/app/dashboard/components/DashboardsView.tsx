@@ -2553,51 +2553,51 @@ ${portalUrl}`;
 
               {/* Header Analysis & Highlights - Scoped to selected Unit filter */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                <div className="bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border border-amber-200/80 rounded-2xl p-4.5 shadow-xs">
-                  <div className="flex items-center justify-between text-amber-800 mb-1.5">
+                <div className="bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border border-amber-200/80 dark:border-amber-800/60 rounded-2xl p-4.5 shadow-xs">
+                  <div className="flex items-center justify-between text-amber-800 dark:text-amber-400 mb-1.5">
                     <span className="text-xs font-bold uppercase tracking-wider">
                       ความเร็วเฉลี่ยต่อชิ้น ({scopedTimeMetrics.unitLabel})
                     </span>
-                    <Clock size={18} className="text-amber-600" />
+                    <Clock size={18} className="text-amber-600 dark:text-amber-400" />
                   </div>
-                  <div className="text-3xl font-black font-mono text-amber-950">
-                    {scopedTimeMetrics.avgTurnaroundDays > 0 ? scopedTimeMetrics.avgTurnaroundDays : "-"} <span className="text-sm font-normal text-slate-600">วัน/งาน</span>
+                  <div className="text-3xl font-black font-mono text-amber-950 dark:text-amber-100">
+                    {scopedTimeMetrics.avgTurnaroundDays > 0 ? scopedTimeMetrics.avgTurnaroundDays : "-"} <span className="text-sm font-normal text-slate-600 dark:text-zinc-400">วัน/งาน</span>
                   </div>
-                  <p className="text-[11px] text-amber-900/80 mt-1">
+                  <p className="text-[11px] text-amber-900/80 dark:text-amber-300 font-medium mt-1">
                     {scopedTimeMetrics.completedCount > 0
                       ? `คำนวณจากงานที่ส่งมอบเสร็จสิ้น ${scopedTimeMetrics.completedCount} งาน`
                       : `กำลังดำเนินการ ${scopedTimeMetrics.inProgressCount} งาน (รอผลงานส่งมอบ)`}
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-200/80 rounded-2xl p-4.5 shadow-xs">
-                  <div className="flex items-center justify-between text-emerald-800 mb-1.5">
+                <div className="bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-200/80 dark:border-emerald-800/60 rounded-2xl p-4.5 shadow-xs">
+                  <div className="flex items-center justify-between text-emerald-800 dark:text-emerald-400 mb-1.5">
                     <span className="text-xs font-bold uppercase tracking-wider">
                       อัตราตรงต่อเวลา ({scopedTimeMetrics.unitLabel})
                     </span>
-                    <CheckCircle2 size={18} className="text-emerald-600" />
+                    <CheckCircle2 size={18} className="text-emerald-600 dark:text-emerald-400" />
                   </div>
-                  <div className="text-3xl font-black font-mono text-emerald-950">
+                  <div className="text-3xl font-black font-mono text-emerald-950 dark:text-emerald-100">
                     {scopedTimeMetrics.onTimeRate !== null ? `${scopedTimeMetrics.onTimeRate}%` : "100%"}
                   </div>
-                  <p className="text-[11px] text-emerald-900/80 mt-1">
+                  <p className="text-[11px] text-emerald-900/80 dark:text-emerald-300 font-medium mt-1">
                     {scopedTimeMetrics.completedCount > 0
                       ? "สัดส่วนงานที่ส่งมอบทันตามวัน Deadline หรือก่อนกำหนด"
                       : "รักษามาตรฐานตรงเวลา (ไม่มีงานค้างเกินกำหนด)"}
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-transparent border border-purple-200/80 rounded-2xl p-4.5 shadow-xs">
-                  <div className="flex items-center justify-between text-purple-800 mb-1.5">
+                <div className="bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-transparent border border-purple-200/80 dark:border-purple-800/60 rounded-2xl p-4.5 shadow-xs">
+                  <div className="flex items-center justify-between text-purple-800 dark:text-purple-400 mb-1.5">
                     <span className="text-xs font-bold uppercase tracking-wider">
                       ดัชนีประสิทธิภาพ Save Cost ({scopedTimeMetrics.unitLabel})
                     </span>
-                    <TrendingUp size={18} className="text-purple-600" />
+                    <TrendingUp size={18} className="text-purple-600 dark:text-purple-400" />
                   </div>
-                  <div className="text-3xl font-black font-mono text-purple-950">
+                  <div className="text-3xl font-black font-mono text-purple-950 dark:text-purple-100">
                     ฿{scopedTimeMetrics.saveCostPerUnit.toLocaleString()}
                   </div>
-                  <p className="text-[11px] text-purple-900/80 mt-1">
+                  <p className="text-[11px] text-purple-900/80 dark:text-purple-300 font-medium mt-1">
                     {scopedTimeMetrics.completedCount > 0
                       ? "มูลค่า Save Cost เฉลี่ยต่อ 1 ชิ้นงานที่ส่งมอบแล้ว"
                       : `ภาระงานสะสมในมือทั้งหมด ${scopedTimeMetrics.totalTasks} งาน`}
@@ -2861,14 +2861,14 @@ ${portalUrl}`;
                           {/* 4 Metrics Mini Grid */}
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-2 bg-muted/20 rounded-xl border border-surface-border/50 text-center mb-3">
                             <div className="p-1 flex flex-col justify-center items-center">
-                              <div className="text-[10px] text-slate-400 font-medium whitespace-nowrap">เวลาเฉลี่ย</div>
-                              <div className="text-xs font-bold font-mono text-amber-900 mt-0.5 whitespace-nowrap">
+                              <div className="text-[10px] text-slate-400 dark:text-zinc-400 font-medium whitespace-nowrap">เวลาเฉลี่ย</div>
+                              <div className="text-xs font-bold font-mono text-amber-900 dark:text-amber-300 mt-0.5 whitespace-nowrap">
                                 {member.avgTurnaroundDays > 0 ? `${member.avgTurnaroundDays} วัน` : "-"}
                               </div>
                             </div>
                             <div className="p-1 flex flex-col justify-center items-center">
-                              <div className="text-[10px] text-slate-400 font-medium whitespace-nowrap">ตรงเวลา</div>
-                              <div className={`text-xs font-bold font-mono mt-0.5 whitespace-nowrap ${member.onTimeRate >= 80 ? "text-emerald-700" : "text-amber-700"}`}>
+                              <div className="text-[10px] text-slate-400 dark:text-zinc-400 font-medium whitespace-nowrap">ตรงเวลา</div>
+                              <div className={`text-xs font-bold font-mono mt-0.5 whitespace-nowrap ${member.onTimeRate >= 80 ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400"}`}>
                                 {member.onTimeRate}%
                                 {member.lateCompletedCount > 0 && (
                                   <span className="text-[9px] text-rose-500 ml-0.5">(-{member.lateCompletedCount})</span>
@@ -2876,21 +2876,21 @@ ${portalUrl}`;
                               </div>
                             </div>
                             <div className="p-1 flex flex-col justify-center items-center">
-                              <div className="text-[10px] text-slate-400 font-medium whitespace-nowrap">เสร็จ / ในมือ</div>
-                              <div className="text-xs font-bold font-mono text-slate-800 mt-0.5 whitespace-nowrap">
+                              <div className="text-[10px] text-slate-400 dark:text-zinc-400 font-medium whitespace-nowrap">เสร็จ / ในมือ</div>
+                              <div className="text-xs font-bold font-mono text-slate-800 dark:text-zinc-100 mt-0.5 whitespace-nowrap">
                                 {member.completedTasks} / {member.inProgressTasks + member.pendingTasks}
                               </div>
                             </div>
                             <div className="p-1 flex flex-col justify-center items-center">
-                              <div className="text-[10px] text-slate-400 font-medium whitespace-nowrap">งานค้าง</div>
-                              <div className={`text-xs font-bold font-mono mt-0.5 whitespace-nowrap ${totalBottlenecks > 0 ? "text-rose-600 font-black" : "text-emerald-600"}`}>
+                              <div className="text-[10px] text-slate-400 dark:text-zinc-400 font-medium whitespace-nowrap">งานค้าง</div>
+                              <div className={`text-xs font-bold font-mono mt-0.5 whitespace-nowrap ${totalBottlenecks > 0 ? "text-rose-600 dark:text-rose-400 font-black" : "text-emerald-600 dark:text-emerald-400"}`}>
                                 {totalBottlenecks > 0 ? `${totalBottlenecks} งาน` : "0"}
                               </div>
                             </div>
                           </div>
 
                           {/* Action Recommendation */}
-                          <p className="text-[11px] text-slate-600 bg-slate-50/80 p-2.5 rounded-xl border border-slate-200/70 mb-3 leading-relaxed">
+                          <p className="text-[11px] text-slate-600 dark:text-zinc-300 bg-slate-50/80 dark:bg-zinc-800/80 p-2.5 rounded-xl border border-slate-200/70 dark:border-zinc-700 mb-3 leading-relaxed">
                             💡 <strong>คำแนะนำเชิงลึก:</strong> {member.actionSteps?.[0] || (member as any).recommendation || "รักษามาตรฐานความเร็วและคุณภาพการทำงานอย่างต่อเนื่อง"}
                           </p>
                         </div>
@@ -3540,11 +3540,11 @@ ${portalUrl}`;
                     <span className="p-1.5 rounded-lg bg-emerald-600 text-white shadow-2xs">
                       <Target size={13} />
                     </span>
-                    <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                    <h4 className="text-xs font-black text-slate-800 dark:text-zinc-100 uppercase tracking-wider">
                       ผลงานตามตัวชี้วัดรายบุคคล (Individual Member Goals & Outputs)
                     </h4>
                   </div>
-                  <span className="text-xs text-slate-500 font-medium">
+                  <span className="text-xs text-slate-500 dark:text-zinc-400 font-medium">
                     ({memberGoalStats.length} คน)
                   </span>
                 </div>
@@ -3564,7 +3564,7 @@ ${portalUrl}`;
                           setSelectedMember(member);
                           setSelectedMemberScope(unitFilter.toLowerCase());
                         }}
-                        className="bg-surface border border-surface-border hover:border-blue-300 rounded-2xl p-4.5 shadow-2xs hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
+                        className="bg-surface border border-surface-border hover:border-blue-300 dark:hover:border-blue-500/60 rounded-2xl p-4.5 shadow-2xs hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
                       >
                         <div>
                           <div className="flex items-start justify-between gap-2 mb-3">
@@ -3572,16 +3572,16 @@ ${portalUrl}`;
                               <div className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${
                                 isTopThree
                                   ? index === 0
-                                    ? "bg-amber-100 text-amber-700 border border-amber-300 shadow-xs"
+                                    ? "bg-amber-100 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 shadow-xs"
                                     : index === 1
-                                    ? "bg-slate-200 text-slate-700 border border-slate-300"
-                                    : "bg-amber-50 text-amber-800 border border-amber-200"
+                                    ? "bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 border border-slate-300 dark:border-zinc-700"
+                                    : "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50"
                                   : "bg-muted text-muted-foreground"
                               }`}>
                                 {isTopThree ? (index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉") : `#${index + 1}`}
                               </div>
                               <div className="min-w-0">
-                                <h4 className="font-bold text-slate-800 text-sm truncate group-hover:text-blue-700 transition-colors">
+                                <h4 className="font-bold text-slate-800 dark:text-zinc-100 text-sm truncate group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">
                                   {member.name}
                                 </h4>
                                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${uStyle.bg} ${uStyle.color} ${uStyle.border} border mt-0.5`}>
@@ -3591,10 +3591,10 @@ ${portalUrl}`;
                             </div>
 
                             <div className="text-right shrink-0">
-                              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                              <div className="text-[10px] text-slate-400 dark:text-zinc-400 font-bold uppercase tracking-wider">
                                 งานตอบโจทย์เป้าหมาย
                               </div>
-                              <div className="text-base font-black font-mono text-blue-700">
+                              <div className="text-base font-black font-mono text-blue-700 dark:text-blue-400">
                                 {member.totalGoalTasks} งาน
                               </div>
                             </div>
@@ -3603,33 +3603,33 @@ ${portalUrl}`;
                           {/* 4 Mini Grid for KR / Goals */}
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-2 bg-muted/20 rounded-xl border border-surface-border/50 text-center mb-3">
                             <div className="p-1">
-                              <div className="text-[10px] text-slate-400 font-medium">R1 (ภายใน)</div>
-                              <div className="text-xs font-bold font-mono text-blue-900 mt-0.5">
+                              <div className="text-[10px] text-slate-400 dark:text-zinc-400 font-medium">R1 (ภายใน)</div>
+                              <div className="text-xs font-bold font-mono text-blue-900 dark:text-blue-300 mt-0.5">
                                 {member.r1Count} งาน
                               </div>
                             </div>
                             <div className="p-1">
-                              <div className="text-[10px] text-slate-400 font-medium">R3 (ภายนอก)</div>
-                              <div className="text-xs font-bold font-mono text-indigo-900 mt-0.5">
+                              <div className="text-[10px] text-slate-400 dark:text-zinc-400 font-medium">R3 (ภายนอก)</div>
+                              <div className="text-xs font-bold font-mono text-indigo-900 dark:text-indigo-300 mt-0.5">
                                 {member.r3Count} งาน
                               </div>
                             </div>
                             <div className="p-1">
-                              <div className="text-[10px] text-slate-400 font-medium">กำไร PM (R7/8)</div>
-                              <div className="text-xs font-bold font-mono text-emerald-700 mt-0.5 truncate">
+                              <div className="text-[10px] text-slate-400 dark:text-zinc-400 font-medium">กำไร PM (R7/8)</div>
+                              <div className="text-xs font-bold font-mono text-emerald-700 dark:text-emerald-400 mt-0.5 truncate">
                                 ฿{member.pmProfitShare.toLocaleString()}
                               </div>
                             </div>
                             <div className="p-1">
-                              <div className="text-[10px] text-slate-400 font-medium">ความพึงพอใจ</div>
-                              <div className="text-xs font-bold font-mono text-amber-700 mt-0.5">
+                              <div className="text-[10px] text-slate-400 dark:text-zinc-400 font-medium">ความพึงพอใจ</div>
+                              <div className="text-xs font-bold font-mono text-amber-700 dark:text-amber-400 mt-0.5">
                                 {member.avgSat}%
                               </div>
                             </div>
                           </div>
                         </div>
 
-                        <div className="mt-2 pt-2 border-t border-surface-border/60 flex items-center justify-between text-[11px] text-muted-foreground group-hover:text-blue-700 font-semibold">
+                        <div className="mt-2 pt-2 border-t border-surface-border/60 flex items-center justify-between text-[11px] text-muted-foreground group-hover:text-blue-700 dark:group-hover:text-blue-400 font-semibold">
                           <span>ดูรายละเอียดงาน ({member.completedTasks} งานเสร็จ)</span>
                           <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
                         </div>

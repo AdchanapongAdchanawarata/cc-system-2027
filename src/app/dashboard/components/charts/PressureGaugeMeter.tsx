@@ -46,7 +46,8 @@ export default function PressureGaugeMeter({
         <path
           d="M 24,66 A 46,46 0 0,1 116,66"
           fill="none"
-          stroke="#f1f5f9"
+          stroke="currentColor"
+          className="text-slate-100 dark:text-zinc-750"
           strokeWidth="12"
           strokeLinecap="round"
         />
@@ -85,13 +86,13 @@ export default function PressureGaugeMeter({
           y1={cy}
           x2={needleX}
           y2={needleY}
-          stroke={needleColor}
+          stroke={needleColor === "#0f172a" ? "currentColor" : needleColor}
           strokeWidth="3.2"
           strokeLinecap="round"
-          className="transition-all duration-700 ease-out"
+          className={`transition-all duration-700 ease-out ${needleColor === "#0f172a" ? "text-slate-900 dark:text-zinc-100" : ""}`}
         />
         {/* Needle Hub */}
-        <circle cx={cx} cy={cy} r="5" fill={needleColor} />
+        <circle cx={cx} cy={cy} r="5" fill={needleColor === "#0f172a" ? "currentColor" : needleColor} className={needleColor === "#0f172a" ? "text-slate-900 dark:text-zinc-100" : ""} />
         <circle cx={cx} cy={cy} r="2" fill="#ffffff" />
       </svg>
     </div>

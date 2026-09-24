@@ -369,7 +369,7 @@ textarea[class*="bg-white"], textarea[class*="bg-[#f9f9fb]"],
   border-color: var(--primary) !important;
 }
 
-/* DIETER RAMS SKEUOMORPHIC UI - CIRCLE BUTTONS ALWAYS WHITE WITH IMMEDIATE GLOW */
+/* DIETER RAMS SKEUOMORPHIC UI - CIRCLE BUTTONS (LIGHT: WHITE / DARK: BLACK AS REQUESTED) */
 .rams-circle {
   background: linear-gradient(135deg, #ffffff, #e5e5e5) !important;
   border: 1px solid #d4d4d8 !important;
@@ -384,21 +384,39 @@ textarea[class*="bg-white"], textarea[class*="bg-[#f9f9fb]"],
   color: #1e293b !important;
 }
 
-/* Force dark charcoal icons on the white circular surface in both light & dark mode */
+/* Light mode: dark charcoal icon on white circular button */
 .rams-circle svg,
 .rams-circle svg path,
-.rams-circle i,
+.rams-circle i {
+  color: #1e293b !important;
+  stroke: #1e293b !important;
+}
+
+/* DARK MODE: Black circular button (opposite of light mode) with crisp white/silver icon */
+.dark .rams-circle,
+[data-theme="dark"] .rams-circle {
+  background: linear-gradient(135deg, #27272a, #121214) !important;
+  border: 1px solid #3f3f46 !important;
+  box-shadow: 
+    -4px -4px 12px rgba(255, 255, 255, 0.08),
+    6px 6px 18px rgba(0, 0, 0, 0.85),
+    0 0 20px rgba(255, 255, 255, 0.2),
+    inset 0px 1px 2px rgba(255, 255, 255, 0.25),
+    inset 0px -2px 4px rgba(0, 0, 0, 0.85) !important;
+  color: #f8fafc !important;
+}
+
 .dark .rams-circle svg,
 .dark .rams-circle svg path,
 .dark .rams-circle i,
 [data-theme="dark"] .rams-circle svg,
 [data-theme="dark"] .rams-circle svg path,
 [data-theme="dark"] .rams-circle i {
-  color: #1e293b !important;
-  stroke: #1e293b !important;
+  color: #f8fafc !important;
+  stroke: #f8fafc !important;
 }
 
-/* On hover, give lively primary orange tone to the icon */
+/* Hover: Lively signature Dieter Rams orange accent */
 .group:hover .rams-circle svg,
 .group:hover .rams-circle svg path,
 .rams-circle:hover svg,
@@ -413,6 +431,55 @@ textarea[class*="bg-white"], textarea[class*="bg-[#f9f9fb]"],
 [data-theme="dark"] .rams-circle:hover svg path {
   color: var(--primary) !important;
   stroke: var(--primary) !important;
+}
+
+/* Global text-muted fix: Prevents invisible text when text-muted is used instead of text-muted-foreground */
+.text-muted {
+  color: var(--muted-foreground) !important;
+}
+.dark .text-muted,
+[data-theme="dark"] .text-muted {
+  color: #cbd5e1 !important;
+}
+
+/* Global react-datepicker dark mode support */
+.dark .react-datepicker-wrapper input,
+[data-theme="dark"] .react-datepicker-wrapper input {
+  background-color: #18181b !important;
+  color: #f4f4f5 !important;
+  border-color: #3f3f46 !important;
+}
+.dark .react-datepicker,
+[data-theme="dark"] .react-datepicker {
+  background-color: #18181b !important;
+  color: #f4f4f5 !important;
+  border-color: #3f3f46 !important;
+}
+.dark .react-datepicker__header,
+[data-theme="dark"] .react-datepicker__header {
+  background-color: #27272a !important;
+  border-color: #3f3f46 !important;
+}
+.dark .react-datepicker__current-month,
+.dark .react-datepicker-time__header,
+.dark .react-datepicker-year-header,
+.dark .react-datepicker__day-name,
+.dark .react-datepicker__day,
+[data-theme="dark"] .react-datepicker__current-month,
+[data-theme="dark"] .react-datepicker-time__header,
+[data-theme="dark"] .react-datepicker-year-header,
+[data-theme="dark"] .react-datepicker__day-name,
+[data-theme="dark"] .react-datepicker__day {
+  color: #f4f4f5 !important;
+}
+.dark .react-datepicker__day:hover,
+[data-theme="dark"] .react-datepicker__day:hover {
+  background-color: #3f3f46 !important;
+}
+.dark .react-datepicker__day--selected,
+[data-theme="dark"] .react-datepicker__day--selected {
+  background-color: #ea580c !important;
+  color: #ffffff !important;
 }
 
 .rams-circle::after {
@@ -439,6 +506,14 @@ textarea[class*="bg-white"], textarea[class*="bg-[#f9f9fb]"],
     inset 5px 5px 10px rgba(0,0,0,0.1),
     inset -5px -5px 10px rgba(255,255,255,0.8);
   background: linear-gradient(135deg, #ebebeb, #f4f4f5) !important;
+  transform: translateY(2px);
+}
+.dark .rams-circle:active,
+[data-theme="dark"] .rams-circle:active {
+  box-shadow: 
+    inset 4px 4px 8px rgba(0,0,0,0.8),
+    inset -2px -2px 6px rgba(255,255,255,0.05) !important;
+  background: linear-gradient(135deg, #09090b, #18181b) !important;
   transform: translateY(2px);
 }
 
@@ -783,22 +858,22 @@ textarea[class*="bg-white"], textarea[class*="bg-[#f9f9fb]"],
 @keyframes btn-glow-pulse-dark {
   0%, 100% {
     box-shadow: 
-      -6px -6px 18px rgba(255,255,255,0.45),
-      6px 6px 20px rgba(0,0,0,0.85),
-      inset 0px 1px 2px rgba(255,255,255,0.4),
-      inset 0px -1px 2px rgba(0,0,0,0.6),
-      0 0 24px rgba(255, 255, 255, 0.6),
-      0 0 45px rgba(255, 255, 255, 0.25);
+      -4px -4px 12px rgba(255,255,255,0.08),
+      6px 6px 18px rgba(0,0,0,0.85),
+      inset 0px 1px 2px rgba(255,255,255,0.25),
+      inset 0px -2px 4px rgba(0,0,0,0.85),
+      0 0 22px rgba(255, 255, 255, 0.28),
+      0 0 45px rgba(255, 255, 255, 0.12);
     transform: translate(0px, 0px) scale(1);
   }
   50% {
     box-shadow: 
-      -8px -8px 24px rgba(255,255,255,0.65),
+      -4px -4px 14px rgba(255,255,255,0.12),
       8px 8px 24px rgba(0,0,0,0.95),
-      inset 0px 1px 3px rgba(255,255,255,0.55),
-      inset 0px -1px 2px rgba(0,0,0,0.6),
-      0 0 36px rgba(255, 255, 255, 0.85),
-      0 0 70px rgba(255, 255, 255, 0.4);
+      inset 0px 1px 3px rgba(255,255,255,0.35),
+      inset 0px -2px 4px rgba(0,0,0,0.85),
+      0 0 32px rgba(255, 255, 255, 0.45),
+      0 0 65px rgba(255, 255, 255, 0.22);
     transform: translate(0px, -2px) scale(1.02);
   }
 }

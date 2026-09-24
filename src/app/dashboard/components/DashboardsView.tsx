@@ -1858,10 +1858,10 @@ ${portalUrl}`;
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs text-xs self-start sm:self-auto">
+              <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-zinc-800/90 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-750 shadow-2xs text-xs self-start sm:self-auto">
                 <Calendar size={13} className="text-orange-500 shrink-0" />
                 <div className="flex items-center gap-1 font-mono text-[11px]">
-                  <span className="text-slate-500 font-sans font-bold">เริ่ม:</span>
+                  <span className="text-slate-500 dark:text-zinc-400 font-sans font-bold">เริ่ม:</span>
                   <DatePicker
                     selected={parsedStartDate}
                     onChange={(d: Date | null) => {
@@ -1875,9 +1875,9 @@ ${portalUrl}`;
                     dateFormat="dd/MM/yyyy"
                     placeholderText="วันเริ่มต้น"
                     popperClassName="z-[9999]"
-                    className="w-[92px] bg-white hover:bg-slate-100 text-slate-800 font-bold border border-slate-200 hover:border-slate-300 focus:border-orange-500 focus:outline-none rounded-md px-1.5 py-0.5 text-center cursor-pointer shadow-2xs text-[11px] font-mono transition-colors"
+                    className="w-[92px] bg-white dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-100 font-bold border border-slate-200 dark:border-zinc-700 hover:border-slate-300 dark:hover:border-zinc-600 focus:border-orange-500 focus:outline-none rounded-md px-1.5 py-0.5 text-center cursor-pointer shadow-2xs text-[11px] font-mono transition-colors"
                   />
-                  <span className="text-slate-400 font-sans mx-0.5 font-bold">ถึง</span>
+                  <span className="text-slate-400 dark:text-zinc-400 font-sans mx-0.5 font-bold">ถึง</span>
                   <DatePicker
                     selected={parsedEndDate}
                     onChange={(d: Date | null) => {
@@ -1891,10 +1891,10 @@ ${portalUrl}`;
                     dateFormat="dd/MM/yyyy"
                     placeholderText="วันสิ้นสุด"
                     popperClassName="z-[9999]"
-                    className="w-[92px] bg-white hover:bg-slate-100 text-slate-800 font-bold border border-slate-200 hover:border-slate-300 focus:border-orange-500 focus:outline-none rounded-md px-1.5 py-0.5 text-center cursor-pointer shadow-2xs text-[11px] font-mono transition-colors"
+                    className="w-[92px] bg-white dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-100 font-bold border border-slate-200 dark:border-zinc-700 hover:border-slate-300 dark:hover:border-zinc-600 focus:border-orange-500 focus:outline-none rounded-md px-1.5 py-0.5 text-center cursor-pointer shadow-2xs text-[11px] font-mono transition-colors"
                   />
                 </div>
-                <span className="text-[10px] text-slate-400 font-mono border-l border-slate-200 pl-1.5 ml-0.5">
+                <span className="text-[10px] text-slate-400 dark:text-zinc-400 font-mono border-l border-slate-200 dark:border-zinc-700 pl-1.5 ml-0.5">
                   ({effectiveBriefs.length} งาน)
                 </span>
               </div>
@@ -2194,37 +2194,37 @@ ${portalUrl}`;
                         </div>
 
                         {unitGroup.isInternal && (
-                          <div className="text-[11px] text-slate-600 bg-slate-100/90 px-3.5 py-2 rounded-xl border border-slate-200 leading-relaxed">
+                          <div className="text-[11px] text-slate-600 dark:text-zinc-300 bg-slate-100/90 dark:bg-zinc-800/80 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 leading-relaxed">
                             ℹ️ <strong>Internal Unit (ผู้ดูแล: จ๊อบ AA):</strong> สมาชิกคือทุกคนใน CC TEAM เพราะทุกคนจะต้องเข้ามาบันทึกงานภายในที่อยู่นอกเหนือ Task บริการ
                           </div>
                         )}
 
                         <div>
-                          <div className="flex justify-between text-xs text-slate-600 mb-1 font-medium">
+                          <div className="flex justify-between text-xs text-slate-600 dark:text-zinc-300 mb-1 font-medium">
                             <span>สัดส่วนการ Save Cost ขององค์กร</span>
-                            <span className="font-bold text-slate-800">{unitShareOfTotal}%</span>
+                            <span className="font-bold font-mono text-slate-800 dark:text-zinc-100">{unitShareOfTotal}%</span>
                           </div>
-                          <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                            <div style={{ width: `${unitShareOfTotal}%` }} className="bg-emerald-500 h-full rounded-full transition-all" />
+                          <div className="w-full bg-slate-200 dark:bg-zinc-700/80 h-3 rounded-full overflow-hidden border border-slate-300/40 dark:border-zinc-600/50">
+                            <div style={{ width: `${Math.max(unitShareOfTotal > 0 ? 3 : 0, unitShareOfTotal)}%` }} className="bg-emerald-500 dark:bg-emerald-400 h-full rounded-full transition-all shadow-xs" />
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center bg-muted/20 p-2.5 rounded-xl border border-surface-border/50">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center bg-slate-50 dark:bg-zinc-800/60 p-2.5 rounded-xl border border-slate-200 dark:border-zinc-700/60">
                           <div>
-                            <div className="text-[10px] text-slate-400 font-medium">งานหลักรวม</div>
-                            <div className="text-sm font-bold text-slate-800 font-mono">{unitGroup.ownerTaskCount}</div>
+                            <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium">งานหลักรวม</div>
+                            <div className="text-sm font-bold text-slate-800 dark:text-zinc-100 font-mono">{unitGroup.ownerTaskCount}</div>
                           </div>
                           <div>
-                            <div className="text-[10px] text-slate-400 font-medium">งานช่วยรวม</div>
-                            <div className="text-sm font-bold text-amber-700 font-mono">{unitGroup.assistantTaskCount}</div>
+                            <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium">งานช่วยรวม</div>
+                            <div className="text-sm font-bold text-amber-600 dark:text-amber-400 font-mono">{unitGroup.assistantTaskCount}</div>
                           </div>
                           <div>
-                            <div className="text-[10px] text-slate-400 font-medium">Save Cost งานหลัก</div>
-                            <div className="text-xs font-bold text-emerald-700 font-mono">฿{unitGroup.ownerSaveCost.toLocaleString()}</div>
+                            <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium">Save Cost งานหลัก</div>
+                            <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono">฿{unitGroup.ownerSaveCost.toLocaleString()}</div>
                           </div>
                           <div>
-                            <div className="text-[10px] text-slate-400 font-medium">Save Cost งานช่วย</div>
-                            <div className="text-xs font-bold text-emerald-700 font-mono">฿{unitGroup.assistantSaveCost.toLocaleString()}</div>
+                            <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium">Save Cost งานช่วย</div>
+                            <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono">฿{unitGroup.assistantSaveCost.toLocaleString()}</div>
                           </div>
                         </div>
 
@@ -2637,59 +2637,63 @@ ${portalUrl}`;
                         key={alert.unit} 
                         className={`rounded-3xl p-5 border transition-all shadow-xs space-y-4 ${
                           alert.severity === 'critical'
-                            ? 'bg-rose-50/50 border-rose-200'
+                            ? 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40'
                             : alert.severity === 'warning'
-                            ? 'bg-amber-50/50 border-amber-200'
-                            : 'bg-emerald-50/40 border-emerald-200'
+                            ? 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40'
+                            : 'bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40'
                         }`}
                       >
                         {/* Unit Card Header */}
-                        <div className="flex items-start justify-between gap-2 pb-3 border-b border-slate-200/60">
+                        <div className="flex items-start justify-between gap-2 pb-3 border-b border-slate-200/60 dark:border-zinc-700/60">
                           <div>
                             <div className="flex items-center gap-2">
                               <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wider whitespace-nowrap ${uStyle.bg} ${uStyle.color} ${uStyle.border} border`}>
                                 {alert.unit === 'internal' ? "Internal Task (งานภายใน)" : `${alert.unitLabel} Unit`}
                               </span>
-                              <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase ${
-                                alert.severity === 'critical' ? 'bg-rose-100 text-rose-800' : alert.severity === 'warning' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+                              <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase border ${
+                                alert.severity === 'critical'
+                                  ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-200 border-rose-200 dark:border-rose-800/60'
+                                  : alert.severity === 'warning'
+                                  ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-200 border-amber-200 dark:border-amber-800/60'
+                                  : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-200 border-emerald-200 dark:border-emerald-800/60'
                               }`}>
                                 {alert.severity === 'critical' ? 'วิกฤต (Critical)' : alert.severity === 'warning' ? 'เฝ้าระวัง (Warning)' : 'ปกติ (Normal)'}
                               </span>
                             </div>
-                            <div className="text-xs text-slate-600 font-medium mt-1">
-                              ผู้ดูแล Unit: <strong className="text-slate-800">{alert.leadName}</strong> • สมาชิก {unitMembers.length} คน
+                            <div className="text-xs text-slate-600 dark:text-zinc-400 font-medium mt-1">
+                              ผู้ดูแล Unit: <strong className="text-slate-800 dark:text-zinc-100">{alert.leadName}</strong> • สมาชิก {unitMembers.length} คน
                             </div>
                           </div>
                           <div className="text-right shrink-0">
-                            <div className="text-[10px] text-slate-400 font-bold uppercase">งานในมือทั้งหมด</div>
-                            <div className="text-base font-bold font-mono text-slate-900">{alert.totalTasks} งาน</div>
+                            <div className="text-[10px] text-slate-400 dark:text-zinc-400 font-bold uppercase">งานในมือทั้งหมด</div>
+                            <div className="text-base font-bold font-mono text-slate-900 dark:text-zinc-100">{alert.totalTasks} งาน</div>
                           </div>
                         </div>
 
                         {/* 4 Unit Metrics */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-2.5 bg-white/80 rounded-2xl border border-slate-200/60 text-center">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-2.5 bg-white/80 dark:bg-zinc-800/80 rounded-2xl border border-slate-200/60 dark:border-zinc-700/60 text-center">
                           <div>
-                            <div className="text-[10px] text-slate-400 font-medium">ความเร็วเฉลี่ย</div>
-                            <div className="text-xs font-bold font-mono text-amber-900 mt-0.5">
+                            <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium">ความเร็วเฉลี่ย</div>
+                            <div className="text-xs font-bold font-mono text-amber-900 dark:text-amber-300 mt-0.5">
                               {alert.avgTurnaroundDays > 0 ? `${alert.avgTurnaroundDays} วัน` : "-"}
                             </div>
                           </div>
                           <div>
-                            <div className="text-[10px] text-slate-400 font-medium">ส่งตรงเวลา</div>
-                            <div className="text-xs font-bold font-mono text-emerald-700 mt-0.5">
+                            <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium">ส่งตรงเวลา</div>
+                            <div className="text-xs font-bold font-mono text-emerald-700 dark:text-emerald-400 mt-0.5">
                               {alert.onTimeRate}%
                             </div>
                           </div>
                           <div>
-                            <div className="text-[10px] text-slate-400 font-medium">งานเสร็จแล้ว</div>
-                            <div className="text-xs font-bold font-mono text-slate-800 mt-0.5">
+                            <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium">งานเสร็จแล้ว</div>
+                            <div className="text-xs font-bold font-mono text-slate-800 dark:text-zinc-200 mt-0.5">
                               {alert.completedCount} งาน
                             </div>
                           </div>
                           <div>
-                            <div className="text-[10px] text-slate-400 font-medium">งานค้างเกินเกณฑ์</div>
+                            <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium">งานค้างเกินเกณฑ์</div>
                             <div className={`text-xs font-bold font-mono mt-0.5 ${
-                              alert.stalledPendingCount + alert.stalledProgressCount + alert.overdueCount > 0 ? "text-rose-600 font-black" : "text-emerald-600"
+                              alert.stalledPendingCount + alert.stalledProgressCount + alert.overdueCount > 0 ? "text-rose-600 dark:text-rose-400 font-black" : "text-emerald-600 dark:text-emerald-400"
                             }`}>
                               {alert.stalledPendingCount + alert.stalledProgressCount + alert.overdueCount > 0
                                 ? `${alert.stalledPendingCount + alert.stalledProgressCount + alert.overdueCount} งาน`
@@ -2699,20 +2703,20 @@ ${portalUrl}`;
                         </div>
 
                         {/* Situation */}
-                        <p className="text-xs text-slate-700 bg-white/90 p-2.5 rounded-2xl border border-slate-200/60 leading-relaxed">
+                        <p className="text-xs text-slate-800 dark:text-zinc-100 bg-white/90 dark:bg-zinc-800/90 p-2.5 rounded-2xl border border-slate-200/60 dark:border-zinc-700/60 leading-relaxed">
                           📌 <strong>สถานการณ์:</strong> {alert.situation}
                         </p>
 
                         {/* Action Steps */}
                         <div>
-                          <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wider block mb-1.5 flex items-center gap-1">
-                            <Zap size={12} className="text-amber-600" />
+                          <span className="text-[11px] font-bold text-slate-800 dark:text-zinc-200 uppercase tracking-wider block mb-1.5 flex items-center gap-1">
+                            <Zap size={12} className="text-amber-600 dark:text-amber-400" />
                             แนวทางการจัดการของ {alert.leadName} (วิธีแก้ไข 1, 2, 3):
                           </span>
-                          <div className="space-y-1 text-xs text-slate-700 bg-white/90 p-2.5 rounded-2xl border border-slate-200">
+                          <div className="space-y-1 text-xs text-slate-800 dark:text-zinc-100 bg-white/90 dark:bg-zinc-800/90 p-2.5 rounded-2xl border border-slate-200 dark:border-zinc-700">
                             {alert.actionSteps.map((step, idx) => (
                               <div key={idx} className="flex items-start gap-1.5">
-                                <span className="text-emerald-600 font-bold text-xs shrink-0">•</span>
+                                <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs shrink-0">•</span>
                                 <span>{step}</span>
                               </div>
                             ))}
@@ -2721,14 +2725,14 @@ ${portalUrl}`;
 
                         {/* Risk Impacts */}
                         <div>
-                          <span className="text-[11px] font-bold text-rose-800 uppercase tracking-wider block mb-1.5 flex items-center gap-1">
-                            <AlertTriangle size={12} className="text-rose-600" />
+                          <span className="text-[11px] font-bold text-rose-800 dark:text-rose-300 uppercase tracking-wider block mb-1.5 flex items-center gap-1">
+                            <AlertTriangle size={12} className="text-rose-600 dark:text-rose-400" />
                             ความเสี่ยงที่จะนำไปสู่ หากไม่รีบแก้ไข:
                           </span>
-                          <div className="space-y-1 text-xs text-rose-950/90 bg-rose-50/80 p-2.5 rounded-2xl border border-rose-200">
+                          <div className="space-y-1 text-xs text-rose-950 dark:text-rose-200 bg-rose-50/80 dark:bg-rose-950/40 p-2.5 rounded-2xl border border-rose-200 dark:border-rose-800/60">
                             {alert.riskImpacts.map((risk, idx) => (
                               <div key={idx} className="flex items-start gap-1.5">
-                                <span className="text-rose-600 font-bold text-xs shrink-0">⚠️</span>
+                                <span className="text-rose-600 dark:text-rose-400 font-bold text-xs shrink-0">⚠️</span>
                                 <span>{risk}</span>
                               </div>
                             ))}
@@ -2736,8 +2740,8 @@ ${portalUrl}`;
                         </div>
 
                         {/* Member Speed Roster in this Unit */}
-                        <div className="pt-2 border-t border-slate-200/60 space-y-1.5">
-                          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <div className="pt-2 border-t border-slate-200/60 dark:border-zinc-700/60 space-y-1.5">
+                          <div className="text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
                             {alert.unit === "internal" ? "สมาชิกทุกคนใน CC TEAM (สถานะความเร็วและตรงเวลา):" : "สมาชิกใน Unit และประสิทธิภาพ:"}
                           </div>
                           <div className="flex flex-wrap gap-1.5">
@@ -2748,17 +2752,17 @@ ${portalUrl}`;
                                   setSelectedMember(m);
                                   setSelectedMemberScope(alert.unit);
                                 }}
-                                className="text-xs font-medium px-2.5 py-1 rounded-full bg-white border border-slate-200 hover:border-amber-300 hover:text-amber-800 transition-colors flex items-center gap-1.5 shadow-2xs"
+                                className="text-xs font-medium px-2.5 py-1 rounded-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-800 dark:text-zinc-200 hover:border-amber-300 dark:hover:border-amber-500 hover:text-amber-800 dark:hover:text-amber-300 transition-colors flex items-center gap-1.5 shadow-2xs"
                               >
                                 <span>{m.name}</span>
                                 <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
-                                  m.speedCategory === "fast" ? "bg-emerald-100 text-emerald-800" :
-                                  m.speedCategory === "deep" ? "bg-purple-100 text-purple-800" :
-                                  m.speedCategory === "at_risk" ? "bg-rose-100 text-rose-800" : "bg-blue-100 text-blue-800"
+                                  m.speedCategory === "fast" ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300" :
+                                  m.speedCategory === "deep" ? "bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300" :
+                                  m.speedCategory === "at_risk" ? "bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300" : "bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300"
                                 }`}>
                                   {m.avgTurnaroundDays > 0 ? `${m.avgTurnaroundDays}d` : "-"}
                                 </span>
-                                <span className="text-[10px] font-mono text-slate-500">
+                                <span className="text-[10px] font-mono text-slate-500 dark:text-zinc-400">
                                   {m.onTimeRate}%
                                 </span>
                               </button>
@@ -3154,33 +3158,33 @@ ${portalUrl}`;
 
                 {/* KPI Metrics Summary Ribbon */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="bg-blue-50/70 border border-blue-200/80 p-3 rounded-2xl">
-                    <div className="text-[10px] text-blue-600 font-bold uppercase">KR ความสำเร็จรวม</div>
-                    <div className="text-xl font-mono font-black text-blue-900 mt-0.5">{realtimeMetrics.overallKRScore}%</div>
-                    <div className="text-[10px] text-blue-700 font-medium">เฉลี่ยความสำเร็จ 4 KR</div>
+                  <div className="bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800/60 p-3 rounded-2xl">
+                    <div className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase">KR ความสำเร็จรวม</div>
+                    <div className="text-xl font-mono font-black text-blue-900 dark:text-blue-200 mt-0.5">{realtimeMetrics.overallKRScore}%</div>
+                    <div className="text-[10px] text-blue-700 dark:text-blue-300 font-medium">เฉลี่ยความสำเร็จ 4 KR</div>
                   </div>
 
-                  <div className="bg-amber-50/70 border border-amber-200/80 p-3 rounded-2xl">
-                    <div className="text-[10px] text-amber-600 font-bold uppercase">TIP ความสำเร็จรวม</div>
-                    <div className="text-xl font-mono font-black text-amber-900 mt-0.5">{realtimeMetrics.overallTIPScore}%</div>
-                    <div className="text-[10px] text-amber-700 font-medium">ยุทธศาสตร์ & นวัตกรรม</div>
+                  <div className="bg-amber-50/70 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 p-3 rounded-2xl">
+                    <div className="text-[10px] text-amber-600 dark:text-amber-400 font-bold uppercase">TIP ความสำเร็จรวม</div>
+                    <div className="text-xl font-mono font-black text-amber-900 dark:text-amber-200 mt-0.5">{realtimeMetrics.overallTIPScore}%</div>
+                    <div className="text-[10px] text-amber-700 dark:text-amber-300 font-medium">ยุทธศาสตร์ & นวัตกรรม</div>
                   </div>
 
-                  <div className="bg-emerald-50/70 border border-emerald-200/80 p-3 rounded-2xl">
-                    <div className="text-[10px] text-emerald-600 font-bold uppercase">ความพึงพอใจเฉลี่ย</div>
-                    <div className="text-xl font-mono font-black text-emerald-900 mt-0.5 flex items-center gap-1">
+                  <div className="bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 p-3 rounded-2xl">
+                    <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">ความพึงพอใจเฉลี่ย</div>
+                    <div className="text-xl font-mono font-black text-emerald-900 dark:text-emerald-200 mt-0.5 flex items-center gap-1">
                       <Star size={16} className="fill-amber-400 text-amber-500" />
                       {realtimeMetrics.averageSatisfactionRate}%
                     </div>
-                    <div className="text-[10px] text-emerald-700 font-medium">ประเมินแล้ว {realtimeMetrics.totalEvaluatedBriefs} งาน</div>
+                    <div className="text-[10px] text-emerald-700 dark:text-emerald-300 font-medium">ประเมินแล้ว {realtimeMetrics.totalEvaluatedBriefs} งาน</div>
                   </div>
 
-                  <div className="bg-indigo-50/70 border border-indigo-200/80 p-3 rounded-2xl">
-                    <div className="text-[10px] text-indigo-600 font-bold uppercase">กำไร PM รวม (R7+R8)</div>
-                    <div className="text-lg font-mono font-black text-indigo-900 mt-0.5 truncate">
+                  <div className="bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-800/60 p-3 rounded-2xl">
+                    <div className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold uppercase">กำไร PM รวม (R7+R8)</div>
+                    <div className="text-lg font-mono font-black text-indigo-900 dark:text-indigo-200 mt-0.5 truncate">
                       ฿{(realtimeMetrics.totalProfitGov + realtimeMetrics.totalProfitPrivate).toLocaleString()}
                     </div>
-                    <div className="text-[10px] text-indigo-700 font-medium">ภาครัฐ ฿{realtimeMetrics.totalProfitGov.toLocaleString()} | เอกชน ฿{realtimeMetrics.totalProfitPrivate.toLocaleString()}</div>
+                    <div className="text-[10px] text-indigo-700 dark:text-indigo-300 font-medium">ภาครัฐ ฿{realtimeMetrics.totalProfitGov.toLocaleString()} | เอกชน ฿{realtimeMetrics.totalProfitPrivate.toLocaleString()}</div>
                   </div>
                 </div>
               </div>
@@ -3207,43 +3211,42 @@ ${portalUrl}`;
                       return (
                         <div 
                           key={kr.code}
-                          className="bg-white rounded-3xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-all space-y-4"
+                          className="bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200 dark:border-zinc-800 p-5 shadow-sm hover:shadow-md transition-all space-y-4"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex items-center gap-2.5">
-                              <span className="px-2.5 py-1 rounded-xl bg-slate-900 text-white font-mono font-black text-xs">
+                              <span className="px-2.5 py-1 rounded-xl bg-slate-900 dark:bg-zinc-800 text-white font-mono font-black text-xs border dark:border-zinc-700">
                                 {kr.code}
                               </span>
                               <div>
-                                <h5 className="text-xs sm:text-sm font-bold text-slate-900">
+                                <h5 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-zinc-100">
                                   {kr.name}
                                 </h5>
-                                
                               </div>
                             </div>
 
                             <span className={`text-xs font-mono font-black px-2.5 py-1 rounded-full border ${
                               percentage >= 80 
-                                ? "bg-emerald-50 text-emerald-800 border-emerald-200" 
+                                ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60" 
                                 : percentage >= 40 
-                                ? "bg-amber-50 text-amber-800 border-amber-200" 
-                                : "bg-slate-50 text-slate-700 border-slate-200"
+                                ? "bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-700/60" 
+                                : "bg-slate-50 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-700"
                             }`}>
                               {percentage}%
                             </span>
                           </div>
 
                           {/* Prominent Target & Actual Dual Ribbon */}
-                          <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 p-3.5 rounded-2xl bg-gradient-to-r from-slate-50 to-blue-50/40 border border-slate-200">
+                          <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 p-3.5 rounded-2xl bg-gradient-to-r from-slate-50 to-blue-50/40 dark:from-zinc-800/90 dark:to-zinc-850/90 border border-slate-200 dark:border-zinc-700">
                             <div>
-                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">ผลงานจริงสะสม</span>
-                              <span className="text-xl sm:text-2xl font-black font-mono text-slate-900 leading-tight">
+                              <span className="text-[10px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider block">ผลงานจริงสะสม</span>
+                              <span className="text-xl sm:text-2xl font-black font-mono text-slate-900 dark:text-zinc-100 leading-tight">
                                 {kr.isCurrency ? `฿${actualAchieved.toLocaleString()}` : `${actualAchieved.toLocaleString()} ${kr.unit}`}
                               </span>
                             </div>
                             <div className="sm:text-right">
-                              <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">เป้าหมายทีม</span>
-                              <span className="text-xl sm:text-2xl font-black font-mono text-emerald-600 leading-tight">
+                              <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider block">เป้าหมายทีม</span>
+                              <span className="text-xl sm:text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400 leading-tight">
                                 {kr.isCurrency ? `฿${activeTarget.toLocaleString()}` : `${activeTarget.toLocaleString()} ${kr.unit}`}
                               </span>
                             </div>
@@ -3251,29 +3254,29 @@ ${portalUrl}`;
 
                           {/* Progress Bar */}
                           <div className="space-y-1">
-                            <div className="flex items-center justify-between text-xs font-mono font-bold text-slate-600">
+                            <div className="flex items-center justify-between text-xs font-mono font-bold text-slate-600 dark:text-zinc-300">
                               <span>ความคืบหน้ารวม</span>
-                              <span className="text-sm font-black text-slate-900">{percentage}%</span>
+                              <span className="text-sm font-black text-slate-900 dark:text-zinc-100">{percentage}%</span>
                             </div>
-                            <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-2.5 w-full bg-slate-200 dark:bg-zinc-700/80 rounded-full overflow-hidden border border-slate-300/40 dark:border-zinc-600/50">
                               <div 
                                 className={`h-full rounded-full transition-all ${
                                   percentage >= 80 ? "bg-emerald-500" : percentage >= 40 ? "bg-amber-500" : "bg-blue-600"
                                 }`}
-                                style={{ width: `${Math.min(100, percentage)}%` }}
+                                style={{ width: `${Math.max(percentage > 0 ? 3 : 0, Math.min(100, percentage))}%` }}
                               />
                             </div>
                           </div>
 
                           {/* Special KR3: 50:50 Content & PR split notice and button */}
                           {kr.code === "KR3" && (
-                            <div className="p-3 bg-blue-50/60 rounded-2xl border border-blue-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                              <div className="text-xs text-blue-900">
+                            <div className="p-3 bg-blue-50/60 dark:bg-blue-950/40 rounded-2xl border border-blue-200/80 dark:border-blue-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                              <div className="text-xs text-blue-900 dark:text-blue-200">
                                 <div className="font-bold flex items-center gap-1.5">
                                   <span>📢 สัดส่วนแบ่งปัน 50:50</span>
-                                  <span className="text-[10px] font-normal text-blue-700">(Content 50% / PR 50%)</span>
+                                  <span className="text-[10px] font-normal text-blue-700 dark:text-blue-300">(Content 50% / PR 50%)</span>
                                 </div>
-                                <div className="text-[11px] text-blue-700 font-mono mt-0.5">
+                                <div className="text-[11px] text-blue-700 dark:text-blue-300 font-mono mt-0.5">
                                   Reach & Engagement ที่กรอกจะถูกกระจายให้ทีม Content และ PR ในจำนวนเท่าๆ กัน
                                 </div>
                               </div>
@@ -3289,8 +3292,8 @@ ${portalUrl}`;
                           )}
 
                           {/* Nested R-Metrics Breakdown */}
-                          <div className="pt-3 border-t border-slate-100 space-y-2">
-                            <div className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
+                          <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 space-y-2">
+                            <div className="text-[11px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wide">
                               ตัวชี้วัดย่อย (R-Metrics):
                             </div>
                             <div className="space-y-2">
@@ -3305,28 +3308,28 @@ ${portalUrl}`;
                                 return (
                                   <div 
                                     key={r.code}
-                                    className="p-3 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 transition-all text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-2xs"
+                                    className="p-3 rounded-2xl bg-white dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700/80 hover:border-slate-300 dark:hover:border-zinc-600 transition-all text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-2xs"
                                   >
                                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                                      <span className="px-2 py-0.5 rounded-lg bg-blue-100 border border-blue-200 font-mono font-black text-xs text-blue-800 shrink-0">
+                                      <span className="px-2 py-0.5 rounded-lg bg-blue-100 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-700/60 font-mono font-black text-xs text-blue-800 dark:text-blue-300 shrink-0">
                                         {r.code}
                                       </span>
-                                      <span className="font-bold text-slate-800 text-xs sm:text-sm leading-snug whitespace-normal" title={r.name}>
+                                      <span className="font-bold text-slate-800 dark:text-zinc-100 text-xs sm:text-sm leading-snug whitespace-normal" title={r.name}>
                                         {displayName}
                                       </span>
                                     </div>
 
-                                    <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                                    <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-zinc-700/60">
                                       <div className="text-left sm:text-right font-mono">
-                                        <span className="text-[9.5px] text-slate-400 block font-semibold leading-none mb-1">
+                                        <span className="text-[9.5px] text-slate-400 dark:text-zinc-400 block font-semibold leading-none mb-1">
                                           ผลงานจริง / เป้าหมาย
                                         </span>
-                                        <div className="text-xs sm:text-sm font-black text-slate-900 flex items-center justify-start sm:justify-end gap-1.5">
-                                          <span className="font-black text-slate-900">
+                                        <div className="text-xs sm:text-sm font-black flex items-center justify-start sm:justify-end gap-1.5">
+                                          <span className="font-black text-slate-900 dark:text-zinc-100">
                                             {r.isCurrency ? `฿${r.actual.toLocaleString()}` : r.isPercentage ? `${r.actual}%` : r.actual.toLocaleString()}
                                           </span>
-                                          <span className="text-slate-300 font-light">/</span>
-                                          <span className="font-black text-emerald-700">
+                                          <span className="text-slate-300 dark:text-zinc-600 font-light">/</span>
+                                          <span className="font-black text-emerald-700 dark:text-emerald-400">
                                             {r.isCurrency ? `฿${r.activeTarget.toLocaleString()}` : r.isPercentage ? `${r.activeTarget}%` : `${r.activeTarget.toLocaleString()} ${r.unit}`}
                                           </span>
                                         </div>

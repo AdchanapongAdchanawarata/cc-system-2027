@@ -939,7 +939,7 @@ export default function IndividualReportView({
             const statusBadge = (st: 'on_track' | 'at_risk' | 'behind', labelPrefix: string) => {
               if (st === 'on_track') {
                 return (
-                  <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/80 shrink-0 whitespace-nowrap">
+                  <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/70 px-1.5 py-0.5 rounded border border-emerald-200/80 dark:border-emerald-700/70 shrink-0 whitespace-nowrap">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                     {labelPrefix}: ตามเป้า
                   </span>
@@ -947,14 +947,14 @@ export default function IndividualReportView({
               }
               if (st === 'at_risk') {
                 return (
-                  <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-300/80 shrink-0 whitespace-nowrap">
+                  <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/70 px-1.5 py-0.5 rounded border border-amber-300/80 dark:border-amber-700/70 shrink-0 whitespace-nowrap">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
                     {labelPrefix}: เสี่ยง
                   </span>
                 );
               }
               return (
-                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-300/80 shrink-0 whitespace-nowrap">
+                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/70 px-1.5 py-0.5 rounded border border-rose-300/80 dark:border-rose-700/70 shrink-0 whitespace-nowrap">
                   <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
                   {labelPrefix}: ต่ำเป้า
                 </span>
@@ -966,59 +966,59 @@ export default function IndividualReportView({
                 key={m.code}
                 className={`p-4 rounded-2xl border transition-all ${
                   m.monthlyStatus === 'behind' || m.quarterlyStatus === 'behind'
-                    ? 'bg-rose-50/40 border-rose-200'
+                    ? 'bg-rose-50/40 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40'
                     : m.monthlyStatus === 'at_risk' || m.quarterlyStatus === 'at_risk'
-                    ? 'bg-amber-50/30 border-amber-200'
-                    : 'bg-white border-slate-200 hover:border-slate-300'
-                } shadow-2xs space-y-3`}
+                    ? 'bg-amber-50/30 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40'
+                    : 'bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700'
+                } shadow-2xs space-y-3 overflow-hidden`}
               >
                 {/* Header */}
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <div className="flex items-center gap-1.5">
                       <span className={`px-2 py-0.5 text-xs font-black font-mono rounded-lg ${
-                        m.type === 'R' ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-amber-100 text-amber-800 border border-amber-200'
+                        m.type === 'R' ? 'bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-700/60' : 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700/60'
                       }`}>
                         {m.code}
                       </span>
-                      <span className="text-[11px] font-bold text-slate-500">
+                      <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400">
                         {m.isSatisfaction ? 'เกณฑ์ทุกคน 85%' : `รับผิดชอบ ${m.allocationPct}%`}
                       </span>
                     </div>
-                    <h4 className="text-xs font-bold text-slate-800 mt-1 line-clamp-2" title={m.name}>
+                    <h4 className="text-xs font-bold text-slate-800 dark:text-zinc-100 mt-1 line-clamp-2" title={m.name}>
                       {m.name}
                     </h4>
                   </div>
 
                   <div className="text-right shrink-0">
-                    <span className="text-[10px] text-slate-400 font-bold block">ผลงานจริงสะสม</span>
-                    <span className="text-base font-black font-mono text-slate-900 leading-tight">
+                    <span className="text-[10px] text-slate-400 dark:text-zinc-400 font-bold block">ผลงานจริงสะสม</span>
+                    <span className="text-base font-black font-mono text-slate-900 dark:text-zinc-100 leading-tight">
                       {formatVal(m.actualAchieved)}
                     </span>
                   </div>
                 </div>
 
                 {/* Prominent Annual Target Box */}
-                <div className="p-3 rounded-2xl bg-gradient-to-r from-emerald-50/90 to-teal-50/40 border border-emerald-200/90 space-y-2">
+                <div className="p-3 rounded-2xl bg-gradient-to-r from-emerald-50/90 to-teal-50/40 dark:from-zinc-800/90 dark:to-zinc-850/90 border border-emerald-200/90 dark:border-emerald-800/50 space-y-2">
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
+                      <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider block">
                         เป้าหมายทั้งปีงบประมาณ (Target)
                       </span>
-                      <span className="text-xl sm:text-2xl font-black font-mono text-emerald-700 leading-tight">
+                      <span className="text-xl sm:text-2xl font-black font-mono text-emerald-700 dark:text-emerald-400 leading-tight">
                         {formatVal(m.annualTarget, true)}
                       </span>
                     </div>
                     <div className="text-right">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                      <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-400 uppercase tracking-wider block">
                         บรรลุเป้าหมาย
                       </span>
-                      <span className="text-xl sm:text-2xl font-black font-mono text-slate-800 leading-tight">
+                      <span className="text-xl sm:text-2xl font-black font-mono text-slate-800 dark:text-zinc-100 leading-tight">
                         {m.annualTarget > 0 ? Math.min(100, Math.round((m.actualAchieved / m.annualTarget) * 100)) : (m.allocationPct === 0 ? 100 : 0)}%
                       </span>
                     </div>
                   </div>
-                  <div className="h-2 w-full bg-emerald-100/60 rounded-full overflow-hidden">
+                  <div className="h-2 w-full bg-emerald-100/60 dark:bg-zinc-700/80 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-300 ${
                         m.monthlyStatus === 'behind' || m.quarterlyStatus === 'behind'
@@ -1035,56 +1035,56 @@ export default function IndividualReportView({
                 </div>
 
                 {/* Weekly & Monthly Actual Progress Ribbon */}
-                <div className="flex items-center justify-between text-xs bg-slate-50/90 px-3 py-1.5 rounded-xl border border-slate-200/70">
+                <div className="flex items-center justify-between text-xs bg-slate-50/90 dark:bg-zinc-800/80 px-3 py-1.5 rounded-xl border border-slate-200/70 dark:border-zinc-700/70">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-slate-500 font-bold shrink-0">สัปดาห์นี้ทำได้:</span>
-                    <span className="font-mono font-black text-slate-900">{formatVal(m.actualThisWeek)}</span>
+                    <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-bold shrink-0">สัปดาห์นี้ทำได้:</span>
+                    <span className="font-mono font-black text-slate-900 dark:text-zinc-100">{formatVal(m.actualThisWeek)}</span>
                   </div>
-                  <div className="h-3 w-px bg-slate-200 shrink-0" />
+                  <div className="h-3 w-px bg-slate-200 dark:bg-zinc-700 shrink-0" />
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-slate-500 font-bold shrink-0">เดือนนี้ทำได้:</span>
-                    <span className="font-mono font-black text-blue-700">{formatVal(m.actualThisMonth)}</span>
+                    <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-bold shrink-0">เดือนนี้ทำได้:</span>
+                    <span className="font-mono font-black text-blue-700 dark:text-blue-400">{formatVal(m.actualThisMonth)}</span>
                   </div>
                 </div>
 
                 {/* 2-Pillar Breakdown: เดือน (÷12) / ไตรมาส (÷4) ตามปีงบประมาณ */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-slate-100/80">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-slate-100/80 dark:border-zinc-800">
                   {/* 1. Monthly Target (÷12) */}
-                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/70 space-y-1.5">
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="text-[10px] font-bold text-slate-600 shrink-0" title="เป้าเฉลี่ยต่อเดือน (เป้าทั้งปี ÷ 12)">
+                  <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-800/80 border border-slate-200/70 dark:border-zinc-700/80 space-y-1.5 overflow-hidden">
+                    <div className="flex items-center justify-between gap-1 min-w-0">
+                      <span className="text-[10px] font-bold text-slate-600 dark:text-zinc-300 truncate min-w-0" title="เป้าเฉลี่ยต่อเดือน (เป้าทั้งปี ÷ 12)">
                         เป้าเดือน (÷12)
                       </span>
                       {statusBadge(m.monthlyStatus, 'M')}
                     </div>
                     <div className="space-y-0.5">
                       <div className="flex items-baseline justify-between text-xs font-mono">
-                        <span className="text-[10px] text-slate-400 font-sans shrink-0">ทำได้เดือนนี้:</span>
-                        <span className="font-black text-slate-900 text-right">{formatVal(m.actualThisMonth)}</span>
+                        <span className="text-[10px] text-slate-400 dark:text-zinc-400 font-sans shrink-0">ทำได้เดือนนี้:</span>
+                        <span className="font-black text-slate-900 dark:text-zinc-100 text-right">{formatVal(m.actualThisMonth)}</span>
                       </div>
-                      <div className="flex items-baseline justify-between text-xs font-mono pt-0.5 border-t border-slate-200/40">
-                        <span className="text-[10px] text-slate-400 font-sans shrink-0">เป้าเฉลี่ย:</span>
-                        <span className="font-bold text-slate-600 text-right">{formatVal(m.monthlyTarget)}</span>
+                      <div className="flex items-baseline justify-between text-xs font-mono pt-0.5 border-t border-slate-200/40 dark:border-zinc-700/50">
+                        <span className="text-[10px] text-slate-400 dark:text-zinc-400 font-sans shrink-0">เป้าเฉลี่ย:</span>
+                        <span className="font-bold text-slate-600 dark:text-zinc-300 text-right">{formatVal(m.monthlyTarget)}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* 2. Quarterly Target (÷4) */}
-                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/70 space-y-1.5">
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="text-[10px] font-bold text-slate-600 shrink-0" title={`เป้าเฉลี่ยต่อไตรมาส (เป้าทั้งปี ÷ 4) - Q${pacingSummary.currentQuarter}`}>
+                  <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-800/80 border border-slate-200/70 dark:border-zinc-700/80 space-y-1.5 overflow-hidden">
+                    <div className="flex items-center justify-between gap-1 min-w-0">
+                      <span className="text-[10px] font-bold text-slate-600 dark:text-zinc-300 truncate min-w-0" title={`เป้าเฉลี่ยต่อไตรมาส (เป้าทั้งปี ÷ 4) - Q${pacingSummary.currentQuarter}`}>
                         เป้าไตรมาส Q{pacingSummary.currentQuarter} (÷4)
                       </span>
                       {statusBadge(m.quarterlyStatus, 'Q')}
                     </div>
                     <div className="space-y-0.5">
                       <div className="flex items-baseline justify-between text-xs font-mono">
-                        <span className="text-[10px] text-slate-400 font-sans shrink-0">ทำได้ไตรมาส:</span>
-                        <span className="font-black text-slate-900 text-right">{formatVal(m.actualThisQuarter)}</span>
+                        <span className="text-[10px] text-slate-400 dark:text-zinc-400 font-sans shrink-0">ทำได้ไตรมาส:</span>
+                        <span className="font-black text-slate-900 dark:text-zinc-100 text-right">{formatVal(m.actualThisQuarter)}</span>
                       </div>
-                      <div className="flex items-baseline justify-between text-xs font-mono pt-0.5 border-t border-slate-200/40">
-                        <span className="text-[10px] text-slate-400 font-sans shrink-0">เป้าเฉลี่ย:</span>
-                        <span className="font-bold text-slate-600 text-right">{formatVal(m.quarterlyTarget)}</span>
+                      <div className="flex items-baseline justify-between text-xs font-mono pt-0.5 border-t border-slate-200/40 dark:border-zinc-700/50">
+                        <span className="text-[10px] text-slate-400 dark:text-zinc-400 font-sans shrink-0">เป้าเฉลี่ย:</span>
+                        <span className="font-bold text-slate-600 dark:text-zinc-300 text-right">{formatVal(m.quarterlyTarget)}</span>
                       </div>
                     </div>
                   </div>

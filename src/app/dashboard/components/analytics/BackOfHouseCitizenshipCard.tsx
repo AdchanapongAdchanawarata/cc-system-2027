@@ -59,25 +59,25 @@ export default function BackOfHouseCitizenshipCard({
     switch (tier) {
       case "champion":
         return {
-          bg: "bg-amber-100 text-amber-900 border-amber-300",
+          bg: "bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-600/70",
           icon: "🏆",
           glow: "ring-2 ring-amber-300/40"
         };
       case "anchor":
         return {
-          bg: "bg-purple-100 text-purple-900 border-purple-300",
+          bg: "bg-purple-100 dark:bg-purple-950/70 text-purple-900 dark:text-purple-200 border-purple-300 dark:border-purple-600/70",
           icon: "🤝",
           glow: "ring-1 ring-purple-200"
         };
       case "contributor":
         return {
-          bg: "bg-blue-100 text-blue-900 border-blue-300",
+          bg: "bg-blue-100 dark:bg-blue-950/70 text-blue-900 dark:text-blue-200 border-blue-300 dark:border-blue-600/70",
           icon: "🛡️",
           glow: ""
         };
       default:
         return {
-          bg: "bg-slate-100 text-slate-700 border-slate-200",
+          bg: "bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 border-slate-200 dark:border-zinc-700",
           icon: "⚙️",
           glow: ""
         };
@@ -318,88 +318,88 @@ export default function BackOfHouseCitizenshipCard({
 
                     {/* Total BOH Score Badge */}
                     <div className="text-right shrink-0">
-                      <div className="text-[9.5px] uppercase font-bold text-muted tracking-wider">
+                      <div className="text-[9.5px] uppercase font-bold text-slate-400 dark:text-zinc-400 tracking-wider">
                         BOH SCORE
                       </div>
                       <div className="text-xl font-black font-mono text-amber-600 dark:text-amber-400 leading-tight">
                         {member.citizenshipScore}
-                        <span className="text-xs font-normal text-muted">/100</span>
+                        <span className="text-xs font-normal text-slate-400 dark:text-zinc-500">/100</span>
                       </div>
                     </div>
                   </div>
 
                   {/* 4 Pillars Stacked Meter Bar */}
-                  <div className="space-y-1 mb-3 bg-muted/5 p-2.5 rounded-lg border border-surface-border">
-                    <div className="flex justify-between items-center text-[10px] font-bold text-foreground">
+                  <div className="space-y-1 mb-3 bg-slate-50 dark:bg-zinc-800/60 p-2.5 rounded-lg border border-slate-200 dark:border-zinc-700/60">
+                    <div className="flex justify-between items-center text-[10px] font-bold text-slate-800 dark:text-zinc-100">
                       <span>คะแนนแยก 4 มิติ:</span>
-                      <span className="font-mono text-muted">
+                      <span className="font-mono text-slate-500 dark:text-zinc-300">
                         🤝{pillars.peerSupport} | 📋{pillars.internalOps} | ⚡{pillars.systemDiscipline} | 🎯{pillars.qualityClosure}
                       </span>
                     </div>
 
-                    <div className="w-full bg-muted/20 h-2.5 rounded-full overflow-hidden flex gap-0.5 p-[1px] border border-surface-border">
+                    <div className="w-full bg-slate-200 dark:bg-zinc-700/80 h-3 rounded-full overflow-hidden flex gap-0.5 p-[1px] border border-slate-300/60 dark:border-zinc-600">
                       {/* Peer Support (Blue) */}
                       <div
                         style={{ width: `${(pillars.peerSupport / 100) * 100}%` }}
-                        className="bg-blue-600 h-full rounded-l-full transition-all"
+                        className="bg-blue-500 h-full rounded-l-full transition-all"
                         title={`1. ช่วยเพื่อน: ${pillars.peerSupport}/25 คะแนน`}
                       />
                       {/* Internal Ops (Purple) */}
                       <div
                         style={{ width: `${(pillars.internalOps / 100) * 100}%` }}
-                        className="bg-purple-600 h-full transition-all"
+                        className="bg-purple-500 h-full transition-all"
                         title={`2. งานภายใน/หลังบ้าน: ${pillars.internalOps}/25 คะแนน`}
                       />
                       {/* System Discipline (Amber) */}
                       <div
                         style={{ width: `${(pillars.systemDiscipline / 100) * 100}%` }}
-                        className="bg-amber-500 h-full transition-all"
+                        className="bg-amber-400 h-full transition-all"
                         title={`3. วินัยในระบบ: ${pillars.systemDiscipline}/25 คะแนน`}
                       />
                       {/* Quality Closure (Emerald) */}
                       <div
                         style={{ width: `${(pillars.qualityClosure / 100) * 100}%` }}
-                        className="bg-emerald-600 h-full rounded-r-full transition-all"
+                        className="bg-emerald-500 h-full rounded-r-full transition-all"
                         title={`4. ปิดงานตรงเวลา: ${pillars.qualityClosure}/25 คะแนน`}
                       />
                     </div>
 
-                    <div className="flex justify-between items-center text-[9px] text-muted font-mono pt-0.5">
-                      <span className="text-blue-600 dark:text-blue-400">ช่วยเพื่อน ({pillars.peerSupport})</span>
-                      <span className="text-purple-600 dark:text-purple-400">งานภายใน ({pillars.internalOps})</span>
-                      <span className="text-amber-600 dark:text-amber-400">วินัย ({pillars.systemDiscipline})</span>
-                      <span className="text-emerald-600 dark:text-emerald-400">ส่งตรง ({pillars.qualityClosure})</span>
+                    <div className="flex justify-between items-center text-[9.5px] font-mono pt-1">
+                      <span className="text-blue-600 dark:text-blue-300 font-semibold">ช่วยเพื่อน ({pillars.peerSupport})</span>
+                      <span className="text-purple-600 dark:text-purple-300 font-semibold">งานภายใน ({pillars.internalOps})</span>
+                      <span className="text-amber-600 dark:text-amber-300 font-semibold">วินัย ({pillars.systemDiscipline})</span>
+                      <span className="text-emerald-600 dark:text-emerald-300 font-semibold">ส่งตรง ({pillars.qualityClosure})</span>
                     </div>
                   </div>
 
                   {/* Concrete Quantifiable Metrics Grid */}
                   <div className="grid grid-cols-3 gap-1.5 text-center text-[10.5px]">
-                    <div className="p-1.5 bg-muted/5 rounded-lg border border-surface-border">
-                      <div className="text-[9.5px] text-muted font-medium">งานช่วยเกื้อกูล</div>
-                      <div className="font-bold font-mono text-blue-700 dark:text-blue-300">
+                    <div className="p-1.5 bg-slate-50 dark:bg-zinc-800/80 rounded-lg border border-slate-200 dark:border-zinc-700/80">
+                      <div className="text-[9.5px] text-slate-500 dark:text-zinc-300 font-semibold">งานช่วยเกื้อกูล</div>
+                      <div className="font-bold font-mono text-blue-700 dark:text-blue-300 text-xs">
                         {member.assistantTaskCount} งาน
                       </div>
-                      <div className="text-[9px] text-muted font-mono">
+                      <div className="text-[9px] text-slate-400 dark:text-zinc-400 font-mono">
                         ฿{member.assistantSaveCost.toLocaleString()}
                       </div>
                     </div>
 
-                    <div className="p-1.5 bg-muted/5 rounded-lg border border-surface-border">
-                      <div className="text-[9.5px] text-muted font-medium">งานปฏิบัติการหลังบ้าน</div>
-                      <div className="font-bold font-mono text-purple-700 dark:text-purple-300">
+                    <div className="p-1.5 bg-slate-50 dark:bg-zinc-800/80 rounded-lg border border-slate-200 dark:border-zinc-700/80">
+                      <div className="text-[9.5px] text-slate-500 dark:text-zinc-300 font-semibold">งานปฏิบัติการหลังบ้าน</div>
+                      <div className="font-bold font-mono text-purple-700 dark:text-purple-300 text-xs">
                         {member.internalTasksCount} งาน
                       </div>
-                      <div className="text-[9px] text-muted">
+                      <div className="text-[9px] text-slate-400 dark:text-zinc-400">
                         STeP/CMU/RSP
                       </div>
                     </div>
 
-                    <div className="p-1.5 bg-muted/5 rounded-lg border border-surface-border">
-                      <div className="text-[9.5px] text-muted font-medium">ส่งงานตรงเวลา</div>
-                      <div className="font-bold font-mono text-emerald-700 dark:text-emerald-300">
+                    <div className="p-1.5 bg-slate-50 dark:bg-zinc-800/80 rounded-lg border border-slate-200 dark:border-zinc-700/80">
+                      <div className="text-[9.5px] text-slate-500 dark:text-zinc-300 font-semibold">ส่งงานตรงเวลา</div>
+                      <div className="font-bold font-mono text-emerald-700 dark:text-emerald-300 text-xs">
                         {member.onTimeRate}%
                       </div>
-                      <div className="text-[9px] text-muted font-mono">
+                      <div className="text-[9px] text-slate-400 dark:text-zinc-400 font-mono">
                         ปิดสำเร็จ {member.completedTasks}
                       </div>
                     </div>
@@ -407,8 +407,8 @@ export default function BackOfHouseCitizenshipCard({
                 </div>
 
                 {/* Footer Insight Note */}
-                <div className="mt-2.5 pt-2 border-t border-surface-border flex items-center justify-between text-[10.5px] text-muted">
-                  <span className="font-medium text-foreground/80 truncate">
+                <div className="mt-2.5 pt-2 border-t border-slate-200 dark:border-zinc-700/60 flex items-center justify-between text-[10.5px]">
+                  <span className="font-medium text-slate-600 dark:text-zinc-300 truncate">
                     {member.citizenshipTier === "champion" && "🌟 โครงเสาหลักช่วยพยุงโหลดทีมสูงสุด"}
                     {member.citizenshipTier === "anchor" && "🤝 เป็นที่พึ่งพาและร่วมมือในการทำงาน"}
                     {member.citizenshipTier === "contributor" && "🛡️ มีวินัยและปฏิบัติตามมาตรฐานระบบดี"}

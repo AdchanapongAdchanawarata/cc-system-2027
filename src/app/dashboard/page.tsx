@@ -233,7 +233,7 @@ export default function DashboardPage() {
                 className="flex flex-col items-center group cursor-pointer w-full focus:outline-none transition-all"
               >
                 <div className="w-36 h-36 rounded-full rams-circle animate-btn-glow flex items-center justify-center transition-all duration-300 mb-3 group-hover:scale-105 group-active:scale-95 shadow-md group-hover:shadow-xl" style={{ animationDelay: '0s' }}>
-                  <LayoutList size={48} className="text-foreground opacity-80 group-hover:opacity-100 group-hover:text-primary transition-colors duration-300" strokeWidth={1.5} />
+                  <LayoutList size={48} className="text-slate-800 opacity-80 group-hover:opacity-100 group-hover:text-primary transition-colors duration-300" strokeWidth={1.5} />
                 </div>
                 <h2 className="text-xl font-bold mb-2 text-foreground tracking-wide group-hover:text-primary transition-colors">Tasks</h2>
                 <p className="text-sm text-muted-foreground/80 leading-relaxed font-light px-2 max-w-[250px] group-hover:text-foreground/90 transition-colors">
@@ -250,7 +250,7 @@ export default function DashboardPage() {
                 className="flex flex-col items-center group cursor-pointer w-full focus:outline-none transition-all"
               >
                 <div className="w-36 h-36 rounded-full rams-circle animate-btn-glow flex items-center justify-center transition-all duration-300 mb-3 group-hover:scale-105 group-active:scale-95 shadow-md group-hover:shadow-xl" style={{ animationDelay: '0s' }}>
-                  <LayoutDashboard size={48} className="text-foreground opacity-80 group-hover:opacity-100 group-hover:text-primary transition-colors duration-300" strokeWidth={1.5} />
+                  <LayoutDashboard size={48} className="text-slate-800 opacity-80 group-hover:opacity-100 group-hover:text-primary transition-colors duration-300" strokeWidth={1.5} />
                 </div>
                 <h2 className="text-xl font-bold mb-2 text-foreground tracking-wide group-hover:text-primary transition-colors">Insights</h2>
                 <p className="text-sm text-muted-foreground/80 leading-relaxed font-light px-2 max-w-[250px] group-hover:text-foreground/90 transition-colors">
@@ -267,7 +267,7 @@ export default function DashboardPage() {
                 className="flex flex-col items-center group cursor-pointer w-full focus:outline-none transition-all"
               >
                 <div className="w-36 h-36 rounded-full rams-circle animate-btn-glow flex items-center justify-center transition-all duration-300 mb-3 group-hover:scale-105 group-active:scale-95 shadow-md group-hover:shadow-xl" style={{ animationDelay: '0s' }}>
-                  <FileText size={48} className="text-foreground opacity-80 group-hover:opacity-100 group-hover:text-primary transition-colors duration-300" strokeWidth={1.5} />
+                  <FileText size={48} className="text-slate-800 opacity-80 group-hover:opacity-100 group-hover:text-primary transition-colors duration-300" strokeWidth={1.5} />
                 </div>
                 <h2 className="text-xl font-bold mb-2 text-foreground tracking-wide group-hover:text-primary transition-colors">Back of House</h2>
                 <p className="text-sm text-muted-foreground/80 leading-relaxed font-light px-2 max-w-[250px] group-hover:text-foreground/90 transition-colors">

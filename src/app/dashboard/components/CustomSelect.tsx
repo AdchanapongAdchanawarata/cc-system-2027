@@ -66,16 +66,16 @@ export default function CustomSelect({
       </div>
       
       {isOpen && (
-        <div className={`absolute z-50 mt-1 left-0 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto overflow-x-hidden ${dropdownClassName}`}>
+        <div className={`absolute z-50 mt-1 left-0 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl shadow-lg max-h-60 overflow-y-auto overflow-x-hidden ${dropdownClassName}`}>
           {options.map((opt) => (
             <div 
               key={opt.value}
-              className={`px-4 py-2.5 text-[13px] transition-colors border-b border-slate-100 last:border-b-0 ${
+              className={`px-4 py-2.5 text-[13px] transition-colors border-b border-slate-100 dark:border-zinc-700/60 last:border-b-0 ${
                 opt.disabled 
-                  ? 'opacity-40 cursor-not-allowed bg-slate-50/50 text-slate-400 select-none'
+                  ? 'opacity-40 cursor-not-allowed bg-slate-50/50 dark:bg-zinc-900/50 text-slate-400 dark:text-zinc-500 select-none'
                   : 'cursor-pointer ' + (opt.className 
-                      ? `${opt.className} ${value === opt.value ? 'bg-slate-50' : ''}` 
-                      : (value === opt.value ? 'bg-slate-50 font-semibold text-slate-800' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'))
+                      ? `${opt.className} ${value === opt.value ? 'bg-slate-50 dark:bg-zinc-700' : ''}` 
+                      : (value === opt.value ? 'bg-slate-50 dark:bg-zinc-700 font-semibold text-slate-800 dark:text-zinc-100' : 'text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-700/70 hover:text-slate-900 dark:hover:text-white'))
               }`}
               onClick={(e) => {
                 if (opt.disabled) {

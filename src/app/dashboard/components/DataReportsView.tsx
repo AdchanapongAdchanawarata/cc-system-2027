@@ -215,7 +215,7 @@ export default function DataReportsView({ onSubReportChange }: DataReportsViewPr
                   <div className="w-28 h-28 sm:w-32 md:w-36 sm:h-32 md:h-36 rounded-full rams-circle animate-btn-glow flex items-center justify-center transition-all duration-300 mb-3 sm:mb-4 group-hover:scale-105 group-active:scale-95 shadow-md group-hover:shadow-xl relative">
                     <Icon 
                       size={40} 
-                      className="text-foreground opacity-80 group-hover:opacity-100 group-hover:text-primary transition-colors duration-300" 
+                      className="text-slate-800 opacity-80 group-hover:opacity-100 group-hover:text-primary transition-colors duration-300" 
                       strokeWidth={1.5} 
                     />
                   </div>

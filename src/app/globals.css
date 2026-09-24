@@ -147,18 +147,24 @@ textarea[class*="bg-white"], textarea[class*="bg-[#f9f9fb]"],
 /* ========================================================================= */
 /* DARK MODE TEXT CONTRAST ENHANCEMENTS (Fixes media_1790216102206, etc.)     */
 /* ========================================================================= */
-.dark .text-slate-900, [data-theme="dark"] .text-slate-900,
-.dark .text-zinc-900, [data-theme="dark"] .text-zinc-900 {
+.dark .text-slate-900:not(.rams-circle *):not(.rams-card *):not([data-keep-white="true"] *),
+[data-theme="dark"] .text-slate-900:not(.rams-circle *):not(.rams-card *):not([data-keep-white="true"] *),
+.dark .text-zinc-900:not(.rams-circle *):not(.rams-card *):not([data-keep-white="true"] *),
+[data-theme="dark"] .text-zinc-900:not(.rams-circle *):not(.rams-card *):not([data-keep-white="true"] *) {
   color: #f8fafc !important;
 }
 
-.dark .text-slate-800, [data-theme="dark"] .text-slate-800,
-.dark .text-zinc-800, [data-theme="dark"] .text-zinc-800 {
+.dark .text-slate-800:not(.rams-circle *):not(.rams-card *):not([data-keep-white="true"] *),
+[data-theme="dark"] .text-slate-800:not(.rams-circle *):not(.rams-card *):not([data-keep-white="true"] *),
+.dark .text-zinc-800:not(.rams-circle *):not(.rams-card *):not([data-keep-white="true"] *),
+[data-theme="dark"] .text-zinc-800:not(.rams-circle *):not(.rams-card *):not([data-keep-white="true"] *) {
   color: #f1f5f9 !important;
 }
 
-.dark .text-slate-700, [data-theme="dark"] .text-slate-700,
-.dark .text-zinc-700, [data-theme="dark"] .text-zinc-700 {
+.dark .text-slate-700:not(.rams-circle *):not(.rams-card *):not([data-keep-white="true"] *),
+[data-theme="dark"] .text-slate-700:not(.rams-circle *):not(.rams-card *):not([data-keep-white="true"] *),
+.dark .text-zinc-700:not(.rams-circle *):not(.rams-card *):not([data-keep-white="true"] *),
+[data-theme="dark"] .text-zinc-700:not(.rams-circle *):not(.rams-card *):not([data-keep-white="true"] *) {
   color: #e2e8f0 !important;
 }
 
@@ -211,8 +217,8 @@ textarea[class*="bg-white"], textarea[class*="bg-[#f9f9fb]"],
 }
 
 /* Inner containers and cards in dark mode: Automatically convert bg-white cards to dark surface */
-.dark .bg-white:not(input):not(textarea):not(button.keep-white):not([data-keep-white="true"]),
-[data-theme="dark"] .bg-white:not(input):not(textarea):not(button.keep-white):not([data-keep-white="true"]) {
+.dark .bg-white:not(input):not(textarea):not(button.keep-white):not([data-keep-white="true"]):not(.rams-card):not(.rams-card *),
+[data-theme="dark"] .bg-white:not(input):not(textarea):not(button.keep-white):not([data-keep-white="true"]):not(.rams-card):not(.rams-card *) {
   background-color: var(--surface) !important;
   border-color: var(--surface-border) !important;
 }
@@ -323,30 +329,92 @@ textarea[class*="bg-white"], textarea[class*="bg-[#f9f9fb]"],
   color: #fbbf24 !important;
 }
 
-/* Rams card dark mode theme support */
-.dark .rams-card, [data-theme="dark"] .rams-card {
-  background: #18181b !important;
-  border: 1px solid #27272a !important;
-  box-shadow: 0 15px 35px rgba(0,0,0,0.3) !important;
-  color: var(--foreground) !important;
+/* Rams card - Form background ALWAYS clean white like original */
+.rams-card {
+  background-color: #ffffff !important;
+  color: #18181b !important;
+  border-radius: 16px;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.06), 0 3px 10px rgba(0,0,0,0.03);
+  border: 1px solid #e4e4e7 !important;
 }
 
-.dark .rams-card label, [data-theme="dark"] .rams-card label {
-  color: #f1f5f9 !important;
+.rams-card label {
+  color: #18181b !important;
+  font-weight: 600;
 }
 
-/* DIETER RAMS SKEUOMORPHIC UI */
+.rams-card h1,
+.rams-card h2 {
+  color: #27272a !important;
+  border-color: #e4e4e7 !important;
+}
+
+.rams-card p,
+.rams-card span:not([class*="bg-"]):not([class*="text-amber"]):not([class*="text-emerald"]):not([class*="text-blue"]):not([class*="text-rose"]):not([class*="text-orange"]) {
+  color: #52525b !important;
+}
+
+.rams-card input,
+.rams-card select,
+.rams-card textarea {
+  background-color: #f9f9fb !important;
+  color: #0f172a !important;
+  border-color: #e4e4e7 !important;
+}
+
+.rams-card input:focus,
+.rams-card select:focus,
+.rams-card textarea:focus {
+  background-color: #ffffff !important;
+  border-color: var(--primary) !important;
+}
+
+/* DIETER RAMS SKEUOMORPHIC UI - CIRCLE BUTTONS ALWAYS WHITE WITH IMMEDIATE GLOW */
 .rams-circle {
-  background: linear-gradient(135deg, #ffffff, #e5e5e5);
-  border: 1px solid #d4d4d8;
+  background: linear-gradient(135deg, #ffffff, #e5e5e5) !important;
+  border: 1px solid #d4d4d8 !important;
   box-shadow: 
     -8px -8px 16px rgba(255,255,255,1),
     8px 8px 16px rgba(0,0,0,0.08),
+    0 0 20px rgba(255, 255, 255, 0.8),
     inset 0px 2px 4px rgba(255,255,255,1),
     inset 0px -2px 4px rgba(0,0,0,0.05);
   position: relative;
   transition: all 0.2s ease;
+  color: #1e293b !important;
 }
+
+/* Force dark charcoal icons on the white circular surface in both light & dark mode */
+.rams-circle svg,
+.rams-circle svg path,
+.rams-circle i,
+.dark .rams-circle svg,
+.dark .rams-circle svg path,
+.dark .rams-circle i,
+[data-theme="dark"] .rams-circle svg,
+[data-theme="dark"] .rams-circle svg path,
+[data-theme="dark"] .rams-circle i {
+  color: #1e293b !important;
+  stroke: #1e293b !important;
+}
+
+/* On hover, give lively primary orange tone to the icon */
+.group:hover .rams-circle svg,
+.group:hover .rams-circle svg path,
+.rams-circle:hover svg,
+.rams-circle:hover svg path,
+.dark .group:hover .rams-circle svg,
+.dark .group:hover .rams-circle svg path,
+.dark .rams-circle:hover svg,
+.dark .rams-circle:hover svg path,
+[data-theme="dark"] .group:hover .rams-circle svg,
+[data-theme="dark"] .group:hover .rams-circle svg path,
+[data-theme="dark"] .rams-circle:hover svg,
+[data-theme="dark"] .rams-circle:hover svg path {
+  color: var(--primary) !important;
+  stroke: var(--primary) !important;
+}
+
 .rams-circle::after {
   content: '';
   position: absolute;
@@ -370,7 +438,7 @@ textarea[class*="bg-white"], textarea[class*="bg-[#f9f9fb]"],
   box-shadow: 
     inset 5px 5px 10px rgba(0,0,0,0.1),
     inset -5px -5px 10px rgba(255,255,255,0.8);
-  background: linear-gradient(135deg, #ebebeb, #f4f4f5);
+  background: linear-gradient(135deg, #ebebeb, #f4f4f5) !important;
   transform: translateY(2px);
 }
 
@@ -397,74 +465,6 @@ textarea[class*="bg-white"], textarea[class*="bg-[#f9f9fb]"],
   background: linear-gradient(to bottom, #ea580c, #c2410c);
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
   transform: translateY(2px);
-}
-
-.rams-card {
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 
-    0 15px 35px rgba(0,0,0,0.05),
-    0 3px 10px rgba(0,0,0,0.03);
-  border: 1px solid #f0f0f0;
-}
-
-@media (prefers-color-scheme: dark) {
-  .rams-circle {
-    background: linear-gradient(135deg, #27272a, #18181b);
-    border: 1px solid #3f3f46;
-    box-shadow: 
-      -4px -4px 12px rgba(255,255,255,0.04),
-      6px 6px 16px rgba(0,0,0,0.6),
-      inset 0px 1px 2px rgba(255,255,255,0.1),
-      inset 0px -1px 2px rgba(0,0,0,0.5);
-    position: relative;
-    transition: all 0.2s ease;
-  }
-  .rams-circle::after {
-    content: '';
-    position: absolute;
-    top: 15%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background-color: var(--primary);
-    box-shadow: inset 1px 1px 2px rgba(0,0,0,0.5), 0 0 6px rgba(249,115,22,0.7);
-    opacity: 0;
-    transition: opacity 300ms ease, transform 300ms ease;
-  }
-  .group:hover .rams-circle::after {
-    opacity: 1;
-    transform: translateX(-50%) scale(1.1);
-  }
-  .rams-circle:active {
-    box-shadow: 
-      inset 4px 4px 10px rgba(0,0,0,0.7),
-      inset -2px -2px 6px rgba(255,255,255,0.04);
-    background: linear-gradient(135deg, #18181b, #27272a);
-    transform: translateY(2px);
-  }
-  .rams-action-btn {
-    box-shadow: 
-      0 4px 6px -1px rgba(0, 0, 0, 0.4), 
-      inset 0 1px 1px rgba(255, 255, 255, 0.1);
-  }
-  .rams-card {
-    background: #18181b;
-    border: 1px solid #27272a;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.3);
-  }
-}
-
-.dark .rams-circle {
-  background: linear-gradient(135deg, #27272a, #18181b);
-  border: 1px solid #3f3f46;
-  box-shadow: 
-    -4px -4px 12px rgba(255,255,255,0.04),
-    6px 6px 16px rgba(0,0,0,0.6),
-    inset 0px 1px 2px rgba(255,255,255,0.1),
-    inset 0px -1px 2px rgba(0,0,0,0.5);
 }
 
 @keyframes orange-glow {
@@ -764,7 +764,8 @@ textarea[class*="bg-white"], textarea[class*="bg-[#f9f9fb]"],
       8px 8px 16px rgba(0,0,0,0.08),
       inset 0px 2px 4px rgba(255,255,255,1),
       inset 0px -2px 4px rgba(0,0,0,0.05),
-      0 0 16px rgba(255, 255, 255, 0.65);
+      0 0 20px rgba(255, 255, 255, 0.9),
+      0 0 35px rgba(255, 255, 255, 0.6);
     transform: translate(0px, 0px) scale(1);
   }
   50% {
@@ -773,7 +774,8 @@ textarea[class*="bg-white"], textarea[class*="bg-[#f9f9fb]"],
       8px 8px 18px rgba(0,0,0,0.12),
       inset 0px 2px 4px rgba(255,255,255,1),
       inset 0px -2px 4px rgba(0,0,0,0.05),
-      0 0 28px rgba(255, 255, 255, 1);
+      0 0 32px rgba(255, 255, 255, 1),
+      0 0 55px rgba(255, 255, 255, 0.8);
     transform: translate(0px, -2px) scale(1.02);
   }
 }
@@ -781,20 +783,22 @@ textarea[class*="bg-white"], textarea[class*="bg-[#f9f9fb]"],
 @keyframes btn-glow-pulse-dark {
   0%, 100% {
     box-shadow: 
-      -6px -6px 18px rgba(255,255,255,0.32),
+      -6px -6px 18px rgba(255,255,255,0.45),
       6px 6px 20px rgba(0,0,0,0.85),
-      inset 0px 1px 2px rgba(255,255,255,0.35),
+      inset 0px 1px 2px rgba(255,255,255,0.4),
       inset 0px -1px 2px rgba(0,0,0,0.6),
-      0 0 18px rgba(255, 255, 255, 0.35);
+      0 0 24px rgba(255, 255, 255, 0.6),
+      0 0 45px rgba(255, 255, 255, 0.25);
     transform: translate(0px, 0px) scale(1);
   }
   50% {
     box-shadow: 
-      -8px -8px 24px rgba(255,255,255,0.6),
+      -8px -8px 24px rgba(255,255,255,0.65),
       8px 8px 24px rgba(0,0,0,0.95),
-      inset 0px 1px 3px rgba(255,255,255,0.5),
+      inset 0px 1px 3px rgba(255,255,255,0.55),
       inset 0px -1px 2px rgba(0,0,0,0.6),
-      0 0 34px rgba(255, 255, 255, 0.7);
+      0 0 36px rgba(255, 255, 255, 0.85),
+      0 0 70px rgba(255, 255, 255, 0.4);
     transform: translate(0px, -2px) scale(1.02);
   }
 }

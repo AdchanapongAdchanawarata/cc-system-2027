@@ -499,8 +499,8 @@ function FormContent() {
       ),
       desc: "แบบฟอร์มขอรับบริการงานออกแบบสร้างสรรค์ ทั้งในส่วนงานกราฟิกและสื่อสร้างสรรค์ เพื่อสร้างการรับรู้และภาพลักษณ์ที่ดี มากยิ่งขึ้น โดย Creative Designer",
       icon: (
-        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#ffffff] to-[#e5e5e5] border border-zinc-300 flex items-center justify-center shadow-[-8px_-8px_16px_rgba(255,255,255,1),8px_8px_16px_rgba(0,0,0,0.08),inset_0px_2px_4px_rgba(255,255,255,1),inset_0px_-2px_4px_rgba(0,0,0,0.05)] relative shrink-0 animate-premium-fade">
-          <PenTool size={44} className="text-zinc-700 -rotate-12" strokeWidth={1.5} />
+        <div className="w-24 h-24 rounded-full rams-circle animate-btn-glow flex items-center justify-center relative shrink-0">
+          <PenTool size={44} className="text-slate-800 -rotate-12" strokeWidth={1.5} />
         </div>
       )
     },
@@ -513,8 +513,8 @@ function FormContent() {
       ),
       desc: "แบบฟอร์มขอรับบริการงานสร้างสรรค์คอนเทนต์ ทั้งในส่วนของบทความและวีดีโอสั้น เพื่อสร้างภาพลักษณ์ สนับสนุนองค์กรให้เป็นที่รู้จักในวงกว้าง มากยิ่งขึ้น โดย Content Creator",
       icon: (
-        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#ffffff] to-[#e5e5e5] border border-zinc-300 flex items-center justify-center shadow-[-8px_-8px_16px_rgba(255,255,255,1),8px_8px_16px_rgba(0,0,0,0.08),inset_0px_2px_4px_rgba(255,255,255,1),inset_0px_-2px_4px_rgba(0,0,0,0.05)] relative shrink-0 animate-premium-fade">
-          <Video size={44} className="text-zinc-700" strokeWidth={1.5} />
+        <div className="w-24 h-24 rounded-full rams-circle animate-btn-glow flex items-center justify-center relative shrink-0">
+          <Video size={44} className="text-slate-800" strokeWidth={1.5} />
         </div>
       )
     },
@@ -527,8 +527,8 @@ function FormContent() {
       ),
       desc: "แบบฟอร์มขอรับบริการงานประชาสัมพันธ์ ทั้งในส่วนของงานเขียนข่าว ถ่ายภาพข่าว ประสานงานนักข่าว สนับสนุนงานอีเว้นท์และอื่นๆในส่วนที่เกี่ยวข้อง โดย PR",
       icon: (
-        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#ffffff] to-[#e5e5e5] border border-zinc-300 flex items-center justify-center shadow-[-8px_-8px_16px_rgba(255,255,255,1),8px_8px_16px_rgba(0,0,0,0.08),inset_0px_2px_4px_rgba(255,255,255,1),inset_0px_-2px_4px_rgba(0,0,0,0.05)] relative shrink-0 animate-premium-fade">
-          <Mic size={44} className="text-zinc-700" strokeWidth={1.5} />
+        <div className="w-24 h-24 rounded-full rams-circle animate-btn-glow flex items-center justify-center relative shrink-0">
+          <Mic size={44} className="text-slate-800" strokeWidth={1.5} />
         </div>
       )
     }
@@ -578,7 +578,7 @@ function FormContent() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-10 rams-card p-10 relative overflow-hidden bg-surface">
+      <form onSubmit={handleSubmit} data-keep-white="true" className="space-y-10 rams-card p-10 relative overflow-hidden bg-white text-slate-900 border border-slate-200 shadow-xl">
         <div className="absolute top-0 left-0 w-full h-[3px] bg-primary"></div>
         <input type="hidden" name="unit" value={activeUnit} />
 

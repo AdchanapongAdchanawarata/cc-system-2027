@@ -46,20 +46,44 @@ type OKR = {
 };
 
 const COLUMNS = [
-  { id: "pending", label: "Pending (รอดำเนินการ)", shortLabel: "PENDING", color: "border-amber-400 bg-amber-50" },
-  { id: "in_progress", label: "In Progress (กำลังทำ)", shortLabel: "IN PROGRESS", color: "border-blue-400 bg-blue-50" },
-  { id: "completed", label: "Completed (เสร็จสิ้น)", shortLabel: "COMPLETED", color: "border-emerald-400 bg-emerald-50" },
-  { id: "cancelled", label: "Cancelled (ยกเลิก)", shortLabel: "CANCELLED", color: "border-rose-400 bg-rose-50" }
+  { 
+    id: "pending", 
+    label: "Pending (รอดำเนินการ)", 
+    shortLabel: "PENDING", 
+    headerBg: "bg-[#fef3c7] dark:bg-amber-950/70 border-amber-300 dark:border-amber-600/70 text-[#78350f] dark:text-amber-200 border-t-amber-500",
+    badgeBg: "bg-amber-200/90 dark:bg-amber-900/80 text-amber-950 dark:text-amber-100"
+  },
+  { 
+    id: "in_progress", 
+    label: "In Progress (กำลังทำ)", 
+    shortLabel: "IN PROGRESS", 
+    headerBg: "bg-[#dbeafe] dark:bg-blue-950/70 border-blue-300 dark:border-blue-600/70 text-[#1e40af] dark:text-blue-200 border-t-blue-500",
+    badgeBg: "bg-blue-200/90 dark:bg-blue-900/80 text-blue-950 dark:text-blue-100"
+  },
+  { 
+    id: "completed", 
+    label: "Completed (เสร็จสิ้น)", 
+    shortLabel: "COMPLETED", 
+    headerBg: "bg-[#d1fae5] dark:bg-emerald-950/70 border-emerald-300 dark:border-emerald-600/70 text-[#065f46] dark:text-emerald-200 border-t-emerald-500",
+    badgeBg: "bg-emerald-200/90 dark:bg-emerald-900/80 text-emerald-950 dark:text-emerald-100"
+  },
+  { 
+    id: "cancelled", 
+    label: "Cancelled (ยกเลิก)", 
+    shortLabel: "CANCELLED", 
+    headerBg: "bg-[#ffe4e6] dark:bg-rose-950/70 border-rose-300 dark:border-rose-600/70 text-[#9f1239] dark:text-rose-200 border-t-rose-500",
+    badgeBg: "bg-rose-200/90 dark:bg-rose-900/80 text-rose-950 dark:text-rose-100"
+  }
 ];
 
 const getAssigneeColorClass = (unitStr: string, hasAssignee: boolean) => {
-  if (!hasAssignee) return "text-slate-400 font-normal";
+  if (!hasAssignee) return "text-slate-400 dark:text-slate-400 font-normal";
   switch (unitStr?.toLowerCase()) {
-    case 'creative': return 'text-[#8b5cf6] font-bold hover:text-[#7c3aed]';
-    case 'content': return 'text-[#ec4899] font-bold hover:text-[#db2777]';
-    case 'pr': return 'text-[#1877F2] font-bold hover:text-[#1466d0]';
-    case 'internal': return 'text-[#27272a] font-bold hover:text-black';
-    default: return 'text-[#00a884] font-bold hover:text-[#008f6f]';
+    case 'creative': return 'text-[#7c3aed] dark:text-[#c4b5fd] font-bold hover:text-[#6d28d9]';
+    case 'content': return 'text-[#db2777] dark:text-[#f472b6] font-bold hover:text-[#be185d]';
+    case 'pr': return 'text-[#1d4ed8] dark:text-[#93c5fd] font-bold hover:text-[#1e40af]';
+    case 'internal': return 'text-slate-800 dark:text-slate-100 font-bold hover:text-slate-900';
+    default: return 'text-[#047857] dark:text-[#6ee7b7] font-bold hover:text-[#065f46]';
   }
 };
 
@@ -857,9 +881,9 @@ export default function AssignmentsView() {
           >
             
             {/* Column Header */}
-            <div className={`flex items-center justify-between mb-3 px-3 py-2 bg-surface border border-surface-border rounded-md border-t-4 shadow-2xs shrink-0 ${col.color}`}>
-              <h3 className="font-bold text-sm text-foreground uppercase tracking-wide">{col.shortLabel}</h3>
-              <span className="text-xs font-semibold text-muted-foreground bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
+            <div className={`flex items-center justify-between mb-3 px-3.5 py-2.5 rounded-xl border border-t-4 shadow-2xs shrink-0 ${col.headerBg}`}>
+              <h3 className="font-bold text-sm uppercase tracking-wide">{col.shortLabel}</h3>
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full shadow-2xs ${col.badgeBg}`}>
                 {displayBriefs.filter(b => b.status === col.id).length}
               </span>
             </div>
@@ -913,10 +937,18 @@ export default function AssignmentsView() {
 
                     {/* Task Name - full width without extra right padding unless badge exists */}
                     <h4 className={`font-semibold text-foreground text-[13px] leading-snug mb-2 line-clamp-3 break-words ${hasTopBadge ? 'pr-8' : 'pr-0'}`}>
-                      <span className={`font-bold mr-1 ${brief.unit?.toLowerCase() === "creative" ? "text-[#8b5cf6]" : brief.unit?.toLowerCase() === "content" ? "text-[#ec4899]" : brief.unit?.toLowerCase() === "pr" ? "text-[#1877F2]" : brief.unit?.toLowerCase() === "internal" ? "text-[#27272a]" : "text-[#00a884]"}`}>{getTaskCode(brief.unit, brief.id)}</span>
+                      <span className={`font-bold mr-1 ${
+                        brief.unit?.toLowerCase() === "creative" ? "text-[#7c3aed] dark:text-[#c4b5fd]" : 
+                        brief.unit?.toLowerCase() === "content" ? "text-[#db2777] dark:text-[#f472b6]" : 
+                        brief.unit?.toLowerCase() === "pr" ? "text-[#1d4ed8] dark:text-[#93c5fd]" : 
+                        brief.unit?.toLowerCase() === "internal" ? "text-slate-800 dark:text-slate-100" : 
+                        "text-[#047857] dark:text-[#6ee7b7]"
+                      }`}>
+                        {getTaskCode(brief.unit, brief.id)}
+                      </span>
                       {/* isWiBreached icon removed per user request */}
                       {isWiAtRisk && (
-                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-100 text-amber-800 border border-amber-300 mr-1 align-middle" title="งานนี้มีแนวโน้มหลุดเกณฑ์ WI (ค้างนาน หรือแก้ไขใกล้เกินเกณฑ์)">
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700/60 mr-1 align-middle" title="งานนี้มีแนวโน้มหลุดเกณฑ์ WI (ค้างนาน หรือแก้ไขใกล้เกินเกณฑ์)">
                           ⚠️ เสี่ยง WI
                         </span>
                       )}
@@ -926,7 +958,7 @@ export default function AssignmentsView() {
                     <div className="flex flex-col gap-1.5">
                       
                       {/* Row 1: Assignee and Date */}
-                      <div className="flex items-center justify-between gap-x-1 gap-y-1 text-xs text-slate-600 flex-nowrap">
+                      <div className="flex items-center justify-between gap-x-1 gap-y-1 text-xs text-slate-600 dark:text-slate-300 flex-nowrap">
                         <div className="flex items-center flex-1 min-w-0">
                           <CustomSelect 
                             triggerClassName={`text-left text-xs py-0.5 px-0 rounded transition-colors focus:outline-none cursor-pointer w-auto max-w-[135px] truncate ${getAssigneeColorClass(brief.unit, Boolean(brief.assignee_id))}`}
@@ -942,18 +974,18 @@ export default function AssignmentsView() {
                         </div>
                         <div className="flex items-center gap-2 shrink-0 text-[11px]">
                           {brief.status === 'completed' && (
-                            <span className="flex items-center gap-0.5 text-emerald-600" title="Completed Date">
+                            <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 font-medium" title="Completed Date">
                               <CheckCircle2 size={12} />
                               {brief.completed_at ? new Date(brief.completed_at).toLocaleDateString('th-TH', { month: 'short', day: 'numeric' }) : '-'}
                             </span>
                           )}
                           {brief.status === 'cancelled' && (
-                            <span className="flex items-center gap-0.5 text-rose-600 font-medium" title="Canceled Date">
+                            <span className="flex items-center gap-0.5 text-rose-600 dark:text-rose-400 font-medium" title="Canceled Date">
                               <XCircle size={12} />
                               {brief.completed_at ? new Date(brief.completed_at).toLocaleDateString('th-TH', { month: 'short', day: 'numeric' }) : '-'}
                             </span>
                           )}
-                          <span className="flex items-center gap-1 text-slate-500">
+                          <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
                             <Flame size={13} className="text-red-500" fill="currentColor" />
                             <span>
                               {(brief.deadline || brief.details?.usage_date || brief.details?.publish_date) 
@@ -967,12 +999,12 @@ export default function AssignmentsView() {
 
                       {/* Row 1.5: Assistants indicator if any */}
                       {brief.details?.assistants && brief.details.assistants.some((a: any) => a.assignee_id && Number(a.percentage) > 0) && (
-                        <div className="flex items-center gap-1.5 text-[10px] text-emerald-700 bg-emerald-50/90 border border-emerald-200/80 px-2 py-0.5 rounded-full w-fit">
-                          <Users size={11} className="text-emerald-600 shrink-0" />
+                        <div className="flex items-center gap-1.5 text-[10px] text-emerald-700 dark:text-emerald-300 bg-emerald-50/90 dark:bg-emerald-950/50 border border-emerald-200/80 dark:border-emerald-800/60 px-2 py-0.5 rounded-full w-fit">
+                          <Users size={11} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                           <span className="font-semibold">
                             +{brief.details.assistants.filter((a: any) => a.assignee_id && Number(a.percentage) > 0).length} ผู้ช่วย
                           </span>
-                          <span className="text-emerald-600/80 font-mono">
+                          <span className="text-emerald-600/80 dark:text-emerald-400/80 font-mono">
                             ({brief.details.assistants.reduce((sum: number, a: any) => sum + (Number(a.percentage) || 0), 0)}%)
                           </span>
                         </div>
@@ -982,23 +1014,23 @@ export default function AssignmentsView() {
                       {(brief.status === 'completed' || brief.status === 'complete') && (
                         brief.details?.satisfaction_scores?.averagePercent !== undefined ? (
                           <div 
-                            className="flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50/95 border border-amber-200/90 px-2 py-0.5 rounded-full w-fit mt-1 shadow-2xs"
+                            className="flex items-center gap-1 text-[10px] font-bold text-amber-800 dark:text-amber-300 bg-amber-50/95 dark:bg-amber-950/60 border border-amber-200/90 dark:border-amber-800/60 px-2 py-0.5 rounded-full w-fit mt-1 shadow-2xs"
                             title={brief.details?.satisfaction_scores?.comment ? `ข้อเสนอแนะ: "${brief.details.satisfaction_scores.comment}"` : `ประเมินแล้ว ${brief.details.satisfaction_scores.averagePercent}%`}
                           >
                             <Star size={10} className="fill-amber-400 text-amber-500" />
                             <span>{brief.details.satisfaction_scores.averagePercent}% พึงพอใจ</span>
                             {brief.details?.satisfaction_scores?.comment && (
-                              <span className="text-[9px] text-amber-600 font-normal italic truncate max-w-[90px]">
+                              <span className="text-[9px] text-amber-600 dark:text-amber-400 font-normal italic truncate max-w-[90px]">
                                 • {brief.details.satisfaction_scores.comment}
                               </span>
                             )}
                           </div>
                         ) : (
                           <div 
-                            className="flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-50/90 border border-blue-200/90 px-2 py-0.5 rounded-full w-fit mt-1 shadow-2xs"
+                            className="flex items-center gap-1 text-[10px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50/90 dark:bg-blue-950/60 border border-blue-200/90 dark:border-blue-800/60 px-2 py-0.5 rounded-full w-fit mt-1 shadow-2xs"
                             title={`ส่งแบบประเมินเข้าอีเมลผู้สั่งงานแล้ว (${brief.requester_email || 'ผู้สั่งงาน'}) แต่ยังไม่ทำแบบประเมิน (คิดเกณฑ์มาตรฐาน 85.0% ชั่วคราว)`}
                           >
-                            <Mail size={10} className="text-blue-600" />
+                            <Mail size={10} className="text-blue-600 dark:text-blue-400" />
                             <span>ส่งแบบประเมินแล้ว</span>
                           </div>
                         )
@@ -1007,35 +1039,41 @@ export default function AssignmentsView() {
                       {/* Row 2: Badges & Task Age */}
                       <div className="flex items-center justify-between gap-1 mt-1">
                         <div className="flex gap-1 items-center min-w-0 flex-wrap">
-                          <span className={`text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0 ${brief.unit?.toLowerCase() === "creative" ? "bg-[#8b5cf6]" : brief.unit?.toLowerCase() === "content" ? "bg-[#ec4899]" : brief.unit?.toLowerCase() === "pr" ? "text-[#1877F2]" : brief.unit?.toLowerCase() === "internal" ? "bg-[#27272a]" : "bg-[#00a884]"}`}>
+                          <span className={`text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0 ${
+                            brief.unit?.toLowerCase() === "creative" ? "bg-[#8b5cf6]" : 
+                            brief.unit?.toLowerCase() === "content" ? "bg-[#ec4899]" : 
+                            brief.unit?.toLowerCase() === "pr" ? "bg-[#1877F2]" : 
+                            brief.unit?.toLowerCase() === "internal" ? "bg-slate-700 dark:bg-slate-600 text-white" : 
+                            "bg-[#00a884]"
+                          }`}>
                             {brief.unit}
                           </span>
                           {((brief as any).decision_maker || brief.details?.team) && (
                             <span 
-                              className="text-slate-500 text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-slate-200 bg-slate-50 uppercase truncate max-w-[85px]"
+                              className="text-slate-600 dark:text-slate-300 text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-slate-200 dark:border-surface-border bg-slate-50 dark:bg-surface-border/50 uppercase truncate max-w-[85px]"
                               title={(brief as any).decision_maker || brief.details?.team}
                             >
                               {(brief as any).decision_maker || brief.details?.team}
                             </span>
                           )}
                           {isWiAtRisk && (
-                            <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded-full border border-amber-200 bg-amber-50 text-amber-700 shrink-0" title="มีแนวโน้มหลุดเกณฑ์ WI">
+                            <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded-full border border-amber-200 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 shrink-0" title="มีแนวโน้มหลุดเกณฑ์ WI">
                               ⚠️ เสี่ยง WI
                             </span>
                           )}
                         </div>
                         
                         {/* Task Age Indicators and Completed Day */}
-                        <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium tracking-tighter shrink-0 ml-auto">
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-medium tracking-tighter shrink-0 ml-auto">
                           <span title="Days in Pending" className="flex items-center gap-1">
-                            <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b] shadow-sm"></span> {ages.pendingDays}d
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b] shadow-xs"></span> {ages.pendingDays}d
                           </span>
                           <span title="Days in Progress" className="flex items-center gap-1">
-                              <span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6] shadow-sm"></span> {ages.inProgressDays}d
-                            </span>
-                          </div>
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6] shadow-xs"></span> {ages.inProgressDays}d
+                          </span>
                         </div>
                       </div>
+                    </div>
                       
                       {/* Quick Actions (Hover) */}
                       <div className="absolute bottom-2 right-2 flex flex-row items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20 bg-white/80 backdrop-blur-sm p-1 rounded-md shadow-sm">

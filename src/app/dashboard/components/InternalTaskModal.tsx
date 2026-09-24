@@ -1194,7 +1194,7 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
                 <label className="block text-[11px] font-bold text-[#3F3F46] uppercase tracking-wider">
                   ประเภทผู้รับบริการ (Sector Type) *
                 </label>
-                <div className="flex flex-wrap gap-2 pt-1">
+                <div className="grid grid-cols-5 gap-1.5 sm:gap-2 pt-1 w-full">
                   {[
                     { key: "STeP", label: "STeP" },
                     { key: "CMU", label: "CMU" },
@@ -1208,7 +1208,7 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
                         key={sector.key}
                         type="button"
                         onClick={() => setFormData({ ...formData, client_sector: sector.key as any })}
-                        className={`px-4 py-2 rounded-full border font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        className={`w-full py-2 px-1 rounded-full border font-bold text-xs flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer text-center ${
                           isSelected
                             ? 'bg-[#18181B] text-white border-[#18181B] shadow-xs'
                             : 'bg-white text-[#52525B] border-[#D4D4D0] hover:bg-[#EAEAE7] hover:text-[#18181B]'
@@ -1217,7 +1217,7 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
                         {isSelected && (
                           <span className="w-1.5 h-1.5 rounded-full bg-[#EA580C] shrink-0" />
                         )}
-                        <span>{sector.label}</span>
+                        <span className="truncate">{sector.label}</span>
                       </button>
                     );
                   })}

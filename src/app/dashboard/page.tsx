@@ -18,13 +18,15 @@ export default function DashboardPage() {
   const [isInternalTaskOpen, setIsInternalTaskOpen] = useState(false);
   const [currentUserRole, setCurrentUserRole] = useState<"admin" | "assignee">("admin");
   const [userDisplayName, setUserDisplayName] = useState<string>("");
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
 
   useEffect(() => {
-    const savedEmail = localStorage.getItem("cc_user_email");
+    const savedEmail = typeof window !== "undefined" ? localStorage.getItem("cc_user_email") : null;
     if (!savedEmail) {
       window.location.href = "/login";
       return;
     }
+    setIsAuthChecking(false);
     const savedName = localStorage.getItem("cc_user_name");
     if (savedName) setUserDisplayName(savedName);
 
@@ -84,6 +86,14 @@ export default function DashboardPage() {
     setCurrentUserRole(role);
     localStorage.setItem("cc_user_role", role);
   };
+
+  if (isAuthChecking) {
+    return (
+      <main className="flex-1 flex flex-col items-center justify-center min-h-screen">
+        <div className="w-8 h-8 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+      </main>
+    );
+  }
 
   return (
     <main className="flex-1 flex flex-col items-center px-4 py-2 md:px-8 md:py-3 max-w-6xl mx-auto w-full min-h-screen">
@@ -184,6 +194,17 @@ export default function DashboardPage() {
       {/* Main Content Area */}
       {!activeView ? (
         <>
+        {/* Back to Home Button on Main Control Center */}
+        <div className="w-full flex justify-start mb-2 print:hidden z-30 relative">
+          <Link 
+            href="/" 
+            className="group flex items-center gap-2 px-4 py-2 bg-surface border border-surface-border shadow-sm rounded-full text-xs md:text-sm font-semibold text-foreground hover:text-primary hover:border-primary/30 hover:shadow-md transition-all active:scale-95 w-fit cursor-pointer"
+            title="Home page"
+          >
+            <ArrowLeft size={16} className="text-muted-foreground group-hover:text-primary transition-colors -ml-0.5" />
+            <span>Home page</span>
+          </Link>
+        </div>
         
         {/* Dashboard Weather & Quote Widget - Header Section (pointer-events-none ensures it never blocks clicks below) */}
         <div className="w-full animate-premium-fade relative pointer-events-none select-none" style={{ animationDelay: '100ms' }}>

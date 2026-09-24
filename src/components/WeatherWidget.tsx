@@ -82,92 +82,75 @@ export default function WeatherWidget({ variant = "full" }: { variant?: "full" |
   if (weather.type === "rainy") needleRotation = 35;
 
   return (
-    <div className="flex flex-col items-center justify-center -mt-6 mb-0 w-full">
-      
-      
-      
-      
-      
-      
+    <div className="flex flex-col items-center justify-center mt-0 sm:-mt-2 mb-0 w-full">
       {/* If variant is quoteOnly, we just hide the weather part using opacity-0 so layout remains EXACTLY identical */}
-        <div className={variant === "quoteOnly" ? "opacity-0 pointer-events-none" : ""}>
-        {/* Character Image (Multi-layer Lo-fi Animation with Weather) */}
-      <div className="relative w-[300px] h-[300px] flex flex-col items-center justify-center -mt-10 pointer-events-none scale-90 md:scale-100 -mb-12">
-        
-        {/* Weather Background Effects */}
-        {weather.type === "sunny" && (
-          <img 
-            src="/animation/พระอาทิตย์ (Sunny).png" 
-            alt="Sunny" 
-            className="absolute inset-0 w-full h-full object-contain char-sunny"
-          />
-        )}
-        
-        {weather.type === "cloudy" && (
-          <>
-            {/* Original 3 Clouds */}
-            <img src="/animation/เมฆ (Cloudy)_1.png" alt="Cloudy 1" className="absolute inset-0 w-full h-full object-contain cloud-1" />
-            <img src="/animation/เมฆ (Cloudy)_2.png" alt="Cloudy 2" className="absolute inset-0 w-full h-full object-contain cloud-2" />
-            <img src="/animation/เมฆ (Cloudy)_3.png" alt="Cloudy 3" className="absolute inset-0 w-full h-full object-contain cloud-3" />
-            
-          </>
-        )}
-
-        {/* Character Base & Seat */}
-        <img src="/animation/ฐานพื้นหลัง.png" alt="Base" className="absolute inset-0 w-full h-full object-contain" />
-        <img src="/animation/ที่นั่ง.png" alt="Seat" className="absolute inset-0 w-full h-full object-contain" />
-
-        {/* Legs (Behind Body, Right first so Left is on top) */}
-        <img src="/animation/เท้าขวา.png" alt="Right Foot" className="absolute inset-0 w-full h-full object-contain char-leg-right" />
-        <img src="/animation/เท้าซ้าย.png" alt="Left Foot" className="absolute inset-0 w-full h-full object-contain char-leg-left" />
-
-        {/* Body (On top of legs) */}
-        <img src="/animation/ตัว.png" alt="Body" className="absolute inset-0 w-full h-full object-contain" />
-
-        {/* Face (Eyes and Mouth moving together) */}
-        <div className="absolute inset-0 w-full h-full char-face-look">
-          {/* Eyes */}
-          <img src="/animation/ตา.png" alt="Eyes" className="absolute inset-0 w-full h-full object-contain char-eyes-blink" />
+      <div className={variant === "quoteOnly" ? "opacity-0 pointer-events-none" : ""}>
+        {/* Character Image (Multi-layer Lo-fi Animation with Weather - Responsive on Mobile) */}
+        <div className="relative w-[150px] h-[150px] sm:w-[220px] sm:h-[220px] md:w-[290px] md:h-[290px] flex flex-col items-center justify-center mt-1 sm:mt-0 pointer-events-none scale-95 sm:scale-100 -mb-5 sm:-mb-7 md:-mb-10">
+          {/* Weather Background Effects */}
+          {weather.type === "sunny" && (
+            <img 
+              src="/animation/พระอาทิตย์ (Sunny).png" 
+              alt="Sunny" 
+              className="absolute inset-0 w-full h-full object-contain char-sunny"
+            />
+          )}
           
-          {/* Mouth */}
-          <img src="/animation/ปาก_1.png" alt="Mouth 1" className="absolute inset-0 w-full h-full object-contain char-mouth-1" />
-          <img src="/animation/ปาก_2.png" alt="Mouth 2" className="absolute inset-0 w-full h-full object-contain char-mouth-2" />
+          {weather.type === "cloudy" && (
+            <>
+              {/* Original 3 Clouds */}
+              <img src="/animation/เมฆ (Cloudy)_1.png" alt="Cloudy 1" className="absolute inset-0 w-full h-full object-contain cloud-1" />
+              <img src="/animation/เมฆ (Cloudy)_2.png" alt="Cloudy 2" className="absolute inset-0 w-full h-full object-contain cloud-2" />
+              <img src="/animation/เมฆ (Cloudy)_3.png" alt="Cloudy 3" className="absolute inset-0 w-full h-full object-contain cloud-3" />
+            </>
+          )}
+
+          {/* Character Base & Seat */}
+          <img src="/animation/ฐานพื้นหลัง.png" alt="Base" className="absolute inset-0 w-full h-full object-contain" />
+          <img src="/animation/ที่นั่ง.png" alt="Seat" className="absolute inset-0 w-full h-full object-contain" />
+
+          {/* Legs (Behind Body, Right first so Left is on top) */}
+          <img src="/animation/เท้าขวา.png" alt="Right Foot" className="absolute inset-0 w-full h-full object-contain char-leg-right" />
+          <img src="/animation/เท้าซ้าย.png" alt="Left Foot" className="absolute inset-0 w-full h-full object-contain char-leg-left" />
+
+          {/* Body (On top of legs) */}
+          <img src="/animation/ตัว.png" alt="Body" className="absolute inset-0 w-full h-full object-contain" />
+
+          {/* Face (Eyes and Mouth moving together) */}
+          <div className="absolute inset-0 w-full h-full char-face-look">
+            {/* Eyes */}
+            <img src="/animation/ตา.png" alt="Eyes" className="absolute inset-0 w-full h-full object-contain char-eyes-blink" />
+            
+            {/* Mouth */}
+            <img src="/animation/ปาก_1.png" alt="Mouth 1" className="absolute inset-0 w-full h-full object-contain char-mouth-1" />
+            <img src="/animation/ปาก_2.png" alt="Mouth 2" className="absolute inset-0 w-full h-full object-contain char-mouth-2" />
+          </div>
+
+          {/* Weather Foreground Effects (Rain) */}
+          {weather.type === "rainy" && (
+            <>
+              <img src="/animation/ฝน (Rainy)_1.png" alt="Rainy" className="absolute inset-0 w-full h-full object-contain anim-frame-4 f1" />
+              <img src="/animation/ฝน (Rainy)_2.png" alt="Rainy" className="absolute inset-0 w-full h-full object-contain anim-frame-4 f2" />
+              <img src="/animation/ฝน (Rainy)_3.png" alt="Rainy" className="absolute inset-0 w-full h-full object-contain anim-frame-4 f3" />
+              <img src="/animation/ฝน (Rainy)_4.png" alt="Rainy" className="absolute inset-0 w-full h-full object-contain anim-frame-4 f4" />
+            </>
+          )}
         </div>
 
-        {/* Weather Foreground Effects (Rain) */}
-        {weather.type === "rainy" && (
-          <>
-            <img src="/animation/ฝน (Rainy)_1.png" alt="Rainy" className="absolute inset-0 w-full h-full object-contain anim-frame-4 f1" />
-            <img src="/animation/ฝน (Rainy)_2.png" alt="Rainy" className="absolute inset-0 w-full h-full object-contain anim-frame-4 f2" />
-            <img src="/animation/ฝน (Rainy)_3.png" alt="Rainy" className="absolute inset-0 w-full h-full object-contain anim-frame-4 f3" />
-            <img src="/animation/ฝน (Rainy)_4.png" alt="Rainy" className="absolute inset-0 w-full h-full object-contain anim-frame-4 f4" />
-          </>
-        )}
+        {/* Weather Text & Date (Real Weather - No Manual Switchers) */}
+        <div className="text-center font-light tracking-wide text-[#78716c] -mt-4 sm:-mt-5 mb-1 sm:mb-2 relative z-30">
+          <p className="text-xs sm:text-base md:text-lg text-foreground font-normal mb-0.5">{weather.label} & {weather.temp}°C</p>
+          <p className="text-[10px] sm:text-xs md:text-sm font-medium text-muted-foreground">{dateString}</p>
+        </div>
       </div>
-
-      {/* Weather Text & Date */}
-        <div className="text-center font-light tracking-wide text-[#78716c] -mt-6 mb-2 relative z-30">
-          <p className="text-lg text-foreground font-normal mb-1">{weather.label} & {weather.temp}°C</p>
-          <p className="text-sm font-medium text-muted-foreground">{dateString}</p>
+      
+      {/* Quote */}
+      <div className={variant === "hidden" ? "opacity-0" : "opacity-100"}>
+        <div className="mt-0 sm:mt-1 mb-2 sm:mb-3 text-center max-w-3xl mx-auto px-3">
+          <p className="text-sm sm:text-xl md:text-2xl lg:text-3xl font-serif italic text-foreground mb-0.5 sm:mb-1 leading-snug sm:leading-relaxed">"{quote.text}"</p>
+          <p className="text-[10px] sm:text-xs md:text-sm font-medium text-primary tracking-[0.15em] sm:tracking-[0.25em] uppercase">— {quote.author} —</p>
         </div>
-
-        {/* Debug / Test Buttons */}
-        <div className="flex gap-2 justify-center mb-2 opacity-30 hover:opacity-100 transition-opacity z-50">
-          <button onClick={() => setWeather({ temp: 35, label: "Sunny", type: "sunny" })} className="text-[10px] px-2 py-1 bg-neutral-200 dark:bg-neutral-800 rounded-full">☀️ Sunny</button>
-          <button onClick={() => setWeather({ temp: 28, label: "Cloudy", type: "cloudy" })} className="text-[10px] px-2 py-1 bg-neutral-200 dark:bg-neutral-800 rounded-full">☁️ Cloudy</button>
-          <button onClick={() => setWeather({ temp: 25, label: "Rainy", type: "rainy" })} className="text-[10px] px-2 py-1 bg-neutral-200 dark:bg-neutral-800 rounded-full">🌧️ Rainy</button>
-        </div>
-
-        </div>
-        
-        {/* Quote */}
-        <div className={variant === "hidden" ? "opacity-0" : "opacity-100"}>
-        <div className="mt-1 mb-4 text-center max-w-3xl mx-auto px-4">
-        <p className="text-3xl md:text-4xl font-serif italic text-foreground mb-2 leading-relaxed">"{quote.text}"</p>
-        <p className="text-sm font-medium text-primary tracking-[0.3em] uppercase">— {quote.author} —</p>
       </div>
-
     </div>
-      </div>
   );
 }

@@ -11,34 +11,23 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
   const router = useRouter();
   const supabase = createClient();
 
   // Check if already logged in with authorized email
   useEffect(() => {
     const checkSession = async () => {
-      const savedEmail = localStorage.getItem("cc_user_email");
+      const savedEmail = typeof window !== "undefined" ? localStorage.getItem("cc_user_email") : null;
       if (savedEmail) {
-        const normalized = savedEmail.toLowerCase().trim();
-        const { data: member } = await supabase
-          .from("assignees")
-          .select("id, name, email, unit, is_active")
-          .ilike("email", normalized)
-          .maybeSingle();
-
-        if (member && member.is_active !== false) {
-          router.push("/dashboard");
-          return;
-        } else {
-          localStorage.removeItem("cc_user_email");
-          localStorage.removeItem("cc_user_role");
-          localStorage.removeItem("cc_user_name");
-          localStorage.removeItem("cc_user_fullname");
-        }
+        // Instant redirect to dashboard to prevent ANY ghost flash or stutter of the login UI
+        router.replace("/dashboard");
+        return;
       }
+      setIsCheckingSession(false);
     };
     checkSession();
-  }, [supabase, router]);
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,6 +103,14 @@ export default function LoginPage() {
     }
   };
 
+  if (isCheckingSession) {
+    return (
+      <main className="flex-1 flex flex-col items-center justify-center p-8 w-full max-w-md mx-auto min-h-[80vh]">
+        <div className="w-8 h-8 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+      </main>
+    );
+  }
+
   if (isSuccess) {
     return (
       <main className="flex-1 flex flex-col items-center justify-center p-8 w-full max-w-md mx-auto min-h-[80vh]">
@@ -127,7 +124,7 @@ export default function LoginPage() {
           </p>
           <button 
             onClick={() => setIsSuccess(false)}
-            className="text-sm font-medium text-primary hover:underline"
+            className="text-sm font-medium text-primary hover:underline cursor-pointer"
           >
             Try a different email
           </button>
@@ -178,7 +175,7 @@ export default function LoginPage() {
           <button 
             type="submit" 
             disabled={isSubmitting || !email}
-            className="w-full flex items-center justify-center px-4 py-3 rams-action-btn font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background disabled:opacity-50"
+            className="w-full flex items-center justify-center px-4 py-3 rams-action-btn font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background disabled:opacity-50 cursor-pointer"
           >
             {isSubmitting ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ CC System'} <ArrowRight size={18} className="ml-2" />
           </button>

@@ -117,14 +117,15 @@
 
     /* Document Header & Cover */
     .doc-header {
-      background: white;
+      background: linear-gradient(180deg, #ffffff 0%, #fffbf6 100%);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 44px;
+      border-radius: 20px;
+      padding: 56px 40px;
       margin-bottom: 36px;
-      box-shadow: var(--shadow-sm);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04);
       position: relative;
       overflow: hidden;
+      text-align: center;
     }
     .doc-header::before {
       content: '';
@@ -132,32 +133,43 @@
       top: 0;
       left: 0;
       right: 0;
-      height: 4px;
-      background: linear-gradient(90deg, #f97316, #8b5cf6, #10b981);
+      height: 6px;
+      background: linear-gradient(90deg, #ea580c, #f97316, #8b5cf6, #10b981);
     }
     .meta-tag {
       display: inline-block;
-      font-size: 12px;
-      font-weight: 600;
+      font-size: 13px;
+      font-weight: 700;
       color: var(--primary-dark);
       background: var(--primary-light);
-      padding: 4px 12px;
-      border-radius: 20px;
-      margin-bottom: 16px;
+      padding: 6px 18px;
+      border-radius: 30px;
+      margin-bottom: 20px;
       letter-spacing: 0.5px;
     }
     .doc-title {
-      font-size: 32px;
-      font-weight: 800;
-      color: var(--slate-900);
+      font-size: clamp(26px, 4vw, 38px);
+      font-weight: 900;
+      color: var(--slate-950);
       line-height: 1.25;
-      margin-bottom: 10px;
+      margin-bottom: 16px;
       letter-spacing: -0.5px;
+      text-wrap: balance;
+    }
+    .doc-title .title-brand {
+      white-space: nowrap;
+    }
+    .doc-title .title-sub {
+      white-space: nowrap;
     }
     .doc-subtitle {
-      font-size: 16px;
+      font-size: 17px;
       color: var(--slate-600);
       margin-bottom: 24px;
+      max-width: 820px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.6;
     }
     .doc-info-grid {
       display: grid;
@@ -483,11 +495,20 @@
       border: 1px solid #cbd5e1;
     }
 
-    /* Data Tables */
+    /* Responsive Data Tables */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: 16px 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
     .manual-table {
       width: 100%;
+      min-width: 580px;
       border-collapse: collapse;
-      margin: 16px 0;
+      margin: 0;
       font-size: 13px;
     }
     .manual-table th {
@@ -584,6 +605,89 @@
       font-family: monospace;
     }
 
+    /* Mobile Responsive Styles */
+    @media (max-width: 768px) {
+      body {
+        font-size: 14px;
+      }
+      .container {
+        padding: 16px 12px 60px;
+      }
+      .floating-bar {
+        padding: 8px 12px;
+        flex-direction: column;
+        gap: 8px;
+        align-items: stretch;
+      }
+      .floating-bar .actions {
+        justify-content: space-between;
+        width: 100%;
+      }
+      .floating-bar .btn {
+        flex: 1;
+        justify-content: center;
+        padding: 7px 10px;
+        font-size: 12px;
+      }
+      .doc-header {
+        padding: 28px 16px;
+        margin-bottom: 20px;
+        border-radius: 14px;
+      }
+      .doc-title {
+        font-size: 22px;
+      }
+      .doc-subtitle {
+        font-size: 13px;
+      }
+      .doc-info-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .toc {
+        padding: 18px 14px;
+      }
+      .toc-grid {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+      .section-card {
+        padding: 20px 14px;
+        margin-bottom: 20px;
+        border-radius: 12px;
+      }
+      .section-title {
+        font-size: 18px;
+      }
+      .dual-mockup {
+        grid-template-columns: 1fr !important;
+        gap: 14px;
+      }
+      .mobile-mockup {
+        max-width: 260px;
+      }
+      .flow-grid {
+        grid-template-columns: 1fr;
+      }
+      .feature-gallery {
+        grid-template-columns: 1fr;
+      }
+      .chat-bubble {
+        max-width: 92%;
+        font-size: 12.5px;
+      }
+      .browser-mockup {
+        border-radius: 8px;
+      }
+      .browser-chrome {
+        padding: 6px 10px;
+      }
+      .browser-address {
+        font-size: 9.5px;
+        padding: 2px 8px;
+      }
+    }
+
     /* Print Optimized Styles */
     @media print {
       body {
@@ -650,29 +754,12 @@
     <!-- Document Header / Cover -->
     <header class="doc-header">
       <span class="meta-tag">คู่มือการใช้งานระบบฉบับสมบูรณ์ (Official Manual • Complete Visual Guide)</span>
-      <h1 class="doc-title">CC TEAM : Briefing & Management System</h1>
+      <h1 class="doc-title">
+        <span class="title-brand">CC TEAM :</span> <span class="title-sub">Briefing &amp; Management System</span>
+      </h1>
       <p class="doc-subtitle">
         ระบบบริหารจัดการและขอรับบริการงานสร้างสรรค์และสื่อสารองค์กร อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (STeP)
       </p>
-
-      <div class="doc-info-grid">
-        <div class="info-item">
-          <span class="info-label">URL ทางการของระบบ</span>
-          <span class="info-value"><a href="https://ccteam.vercel.app" style="color:var(--primary);text-decoration:none;">https://ccteam.vercel.app</a></span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">กลุ่มเป้าหมายผู้ใช้งาน</span>
-          <span class="info-value">บุคลากร STeP 500+ คน และทีมงาน CC 14 คน</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">โครงสร้างงบประมาณ</span>
-          <span class="info-value">100% Free Forever (0.00 THB)</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">ภาพประกอบสาธิตจริง</span>
-          <span class="info-value">26 ภาพประกอบระดับความละเอียดสูง (Hi-res)</span>
-        </div>
-      </div>
     </header>
 
     <!-- Table of Contents -->
@@ -685,10 +772,11 @@
         <div class="toc-item"><a href="#sec-tracking"><span class="toc-num">4</span> การติดตามสถานะงานและการประเมินผล</a></div>
         <div class="toc-item"><a href="#sec-staff-login"><span class="toc-num">5</span> การเข้าสู่ระบบทีมงาน (Strict Whitelist)</a></div>
         <div class="toc-item"><a href="#sec-dashboard"><span class="toc-num">6</span> การบริหารงานและจ่ายงาน (Tasks Board)</a></div>
-        <div class="toc-item"><a href="#sec-reports"><span class="toc-num">7</span> ศูนย์รายงานผลงาน (Reports & Metrics)</a></div>
-        <div class="toc-item"><a href="#sec-linebot"><span class="toc-num">8</span> การใช้งาน LINE Bot และ AI ตอบคำถาม</a></div>
-        <div class="toc-item"><a href="#sec-admin-setup"><span class="toc-num">9</span> การจัดการหลังบ้าน (Manage Team & Pricing)</a></div>
-        <div class="toc-item"><a href="#sec-faq"><span class="toc-num">10</span> คำถามที่พบบ่อย (FAQ & Troubleshooting)</a></div>
+        <div class="toc-item"><a href="#sec-reports"><span class="toc-num">7</span> ศูนย์รายงาน Back of House (เต็มรูปแบบ 8 รายการ)</a></div>
+        <div class="toc-item"><a href="#sec-insights"><span class="toc-num">8</span> ศูนย์วิเคราะห์ผลงาน Insights (ครบทั้ง 5 แท็บ)</a></div>
+        <div class="toc-item"><a href="#sec-linebot"><span class="toc-num">9</span> การใช้งาน LINE Bot และ AI ตอบคำถาม</a></div>
+        <div class="toc-item"><a href="#sec-admin-setup"><span class="toc-num">10</span> การจัดการหลังบ้าน (Manage Team & Pricing)</a></div>
+        <div class="toc-item"><a href="#sec-faq"><span class="toc-num">11</span> คำถามที่พบบ่อย (FAQ & Troubleshooting)</a></div>
       </div>
     </nav>
 
@@ -747,27 +835,29 @@
       </div>
       <div class="img-caption">ภาพที่ 1.3: หน้าต่างแนะนำทีมสร้างสรรค์และการสื่อสาร (About Team Modal) แสดงพันธกิจและช่องทางติดต่อ</div>
 
-      <table class="manual-table">
-        <thead>
-          <tr>
-            <th style="width: 25%;">กลุ่มผู้ใช้งาน</th>
-            <th style="width: 35%;">หน้าที่และความรับผิดชอบ</th>
-            <th style="width: 40%;">การเข้าสู่ระบบ (Authentication)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>ผู้ขอรับบริการทั่วไป<br>(Public Requester)</strong></td>
-            <td>บุคลากรทุกฝ่ายใน STeP (เช่น NMCO, PITI, INCO, TECH UP, ฯลฯ) รวมถึงหน่วยงานภายนอกที่ต้องการขอให้ทีม CC ช่วยผลิตสื่อ</td>
-            <td><strong>ไม่ต้องล็อกอินใดๆ ทั้งสิ้น 100%</strong> สามารถเข้าหน้าแรก กดส่งงาน ติดตามสถานะงาน และทำแบบประเมินได้ทันทีผ่านลิงก์สาธารณะ</td>
-          </tr>
-          <tr>
-            <td><strong>ทีมงานและผู้บริหาร CC<br>(Internal Staff & Admin)</strong></td>
-            <td>ทีมงานผู้ปฏิบัติงาน CC (Assignees) และหัวหน้าทีม/ผู้บริหาร (Admins/Executives) ที่ต้องตรวจรับงาน มอบหมายงาน อัปเดตไฟล์ และดูสรุปสถิติ</td>
-            <td><strong>ต้องล็อกอินผ่าน Strict Whitelist:</strong> เฉพาะอีเมลที่ระบุไว้ใน Manage Team เท่านั้น อีเมลอื่นถึงแม้จะลงท้ายด้วย <code>@step.cmu.ac.th</code> ก็ไม่สามารถเข้าได้</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-container">
+        <table class="manual-table">
+          <thead>
+            <tr>
+              <th style="width: 25%;">กลุ่มผู้ใช้งาน</th>
+              <th style="width: 35%;">หน้าที่และความรับผิดชอบ</th>
+              <th style="width: 40%;">การเข้าสู่ระบบ (Authentication)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>ผู้ขอรับบริการทั่วไป<br>(Public Requester)</strong></td>
+              <td>บุคลากรทุกฝ่ายใน STeP (เช่น NMCO, PITI, INCO, TECH UP, ฯลฯ) รวมถึงหน่วยงานภายนอกที่ต้องการขอให้ทีม CC ช่วยผลิตสื่อ</td>
+              <td><strong>ไม่ต้องล็อกอินใดๆ ทั้งสิ้น 100%</strong> สามารถเข้าหน้าแรก กดส่งงาน ติดตามสถานะงาน และทำแบบประเมินได้ทันทีผ่านลิงก์สาธารณะ</td>
+            </tr>
+            <tr>
+              <td><strong>ทีมงานและผู้บริหาร CC<br>(Internal Staff & Admin)</strong></td>
+              <td>ทีมงานผู้ปฏิบัติงาน CC (Assignees) และหัวหน้าทีม/ผู้บริหาร (Admins/Executives) ที่ต้องตรวจรับงาน มอบหมายงาน อัปเดตไฟล์ และดูสรุปสถิติ</td>
+              <td><strong>ต้องล็อกอินผ่าน Strict Whitelist:</strong> เฉพาะอีเมลที่ระบุไว้ใน Manage Team เท่านั้น อีเมลอื่นถึงแม้จะลงท้ายด้วย <code>@step.cmu.ac.th</code> ก็ไม่สามารถเข้าได้</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </section>
 
     <!-- SECTION 2: การส่งงาน (สำหรับผู้ขอรับบริการ) -->
@@ -856,51 +946,6 @@
       </div>
       <div class="img-caption">ภาพที่ 2.4: ฟอร์มส่งงาน PR & Communications สำหรับเขียนข่าวแจกสื่อ, ถ่ายภาพพิธีการ, และจัดการสื่อมวลชน</div>
 
-      <h3>ตัวอย่างรายการงานและราคากลางมาตรฐาน (Standard Pricing Showcase)</h3>
-      <div class="feature-gallery">
-        <div class="gallery-card">
-          <div class="gallery-card-header">
-            <span class="gallery-card-title">Logo Design</span>
-            <span class="gallery-price">2,500 บาท</span>
-          </div>
-          <div class="gallery-card-desc">ออกแบบตราสัญลักษณ์แบรนด์ กำหนดโทนสีและชุดฟอนต์หลักประจำองค์กร/โครงการ</div>
-        </div>
-        <div class="gallery-card">
-          <div class="gallery-card-header">
-            <span class="gallery-card-title">Key Visual (KV)</span>
-            <span class="gallery-price">3,500 บาท</span>
-          </div>
-          <div class="gallery-card-desc">ออกแบบภาพสื่อสารหลัก (Mood & Tone) สำหรับใช้เป็นต้นแบบในแคมเปญประชาสัมพันธ์</div>
-        </div>
-        <div class="gallery-card">
-          <div class="gallery-card-header">
-            <span class="gallery-card-title">Brochure / Leaflet</span>
-            <span class="gallery-price">1,200 บาท</span>
-          </div>
-          <div class="gallery-card-desc">ออกแบบแผ่นพับ 2-3 พับ (4-6 หน้า) พร้อมจัดวางโครงสร้างภาพและเนื้อหา</div>
-        </div>
-        <div class="gallery-card">
-          <div class="gallery-card-header">
-            <span class="gallery-card-title">Packaging ครบวงจร</span>
-            <span class="gallery-price">10,000 บาท</span>
-          </div>
-          <div class="gallery-card-desc">ออกแบบโครงสร้างกล่อง/บรรจุภัณฑ์เชิงซ้อน พร้อมกราฟิกทุกมิติและไดคัทสำหรับพิมพ์</div>
-        </div>
-        <div class="gallery-card">
-          <div class="gallery-card-header">
-            <span class="gallery-card-title">Short-form Video</span>
-            <span class="gallery-price">1,500 บาท</span>
-          </div>
-          <div class="gallery-card-desc">ตัดต่อวิดีโอคลิปสั้นความยาว 15 - 60 วินาที สำหรับ TikTok, Reels และ YouTube Shorts</div>
-        </div>
-        <div class="gallery-card">
-          <div class="gallery-card-header">
-            <span class="gallery-card-title">Press Release</span>
-            <span class="gallery-price">1,500 บาท</span>
-          </div>
-          <div class="gallery-card-desc">เขียนข่าวประชาสัมพันธ์ภาษาไทยมาตรฐานสำหรับแจกจ่ายสื่อมวลชนและสำนักข่าว</div>
-        </div>
-      </div>
     </section>
 
     <!-- SECTION 3: แบบฟอร์มเฉพาะทาง -->
@@ -1107,16 +1152,21 @@
       <div class="img-caption">ภาพที่ 6.3: หน้าต่างสร้าง Internal Task สำหรับงานภายในทีม เช่น Proposal, ซ่อมบำรุง, หรืองานกิจกรรม</div>
     </section>
 
-    <!-- SECTION 7: ศูนย์รายงานผลงาน -->
+    <!-- SECTION 7: ศูนย์รายงาน Back of House -->
     <section id="sec-reports" class="section-card page-break">
       <div class="section-header">
         <div class="section-icon">7</div>
         <div>
-          <h2 class="section-title">ศูนย์รายงานและข้อมูลตัวชี้วัด (Reports & Metrics)</h2>
-          <div class="section-desc">รายงาน 4 รูปแบบหลักสำหรับการบริหารงานคุณภาพและการประชุมผู้บริหาร พร้อมภาพตัวอย่างจริง</div>
+          <h2 class="section-title">ศูนย์รายงาน Back of House (เต็มรูปแบบ 8 รายการ)</h2>
+          <div class="section-desc">ระบบสนับสนุนการทำงานเบื้องหลัง รายงานสถิติ การจัดการความรู้ แผนงาน และเอกสารมาตรฐานทีม CC ครบทั้ง 8 โมดูล</div>
         </div>
       </div>
 
+      <p>
+        ศูนย์รวมข้อมูลเบื้องหลังและรายงานสนับสนุนงานของทีม CC ประกอบด้วย 8 วงกลมหลักที่ครอบคลุมทุกมิติการดำเนินงาน ทั้งมาตรฐาน ISO, การประชุม, การประหยัดงบประมาณ, ผลงานต้นแบบ และระบบบันทึกความแอคทีฟ:
+      </p>
+
+      <!-- Full View Back of House Mockup -->
       <div class="browser-mockup">
         <div class="browser-chrome">
           <div class="browser-dots">
@@ -1126,127 +1176,638 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports</div>
         </div>
-        <img src="/manual_assets/shot_reports_hub.png" alt="ศูนย์รวมรายงาน Data Reports & Metrics">
+        <img src="/manual_assets/shot_dashboard_reports_full.png" alt="ศูนย์รวมรายงาน Back of House แสดงครบทั้ง 8 วงกลม">
       </div>
-      <div class="img-caption">ภาพที่ 7.1: ศูนย์รวมรายงาน 4 มิติ (ISO Report, Weekly Meeting Report, KM Value Savings, Team Action Plan)</div>
+      <div class="img-caption">ภาพที่ 7.1: ศูนย์รวมรายงาน Back of House แสดงครบทั้ง 8 โมดูล (แถวบน 4 รายการ และแถวล่าง 4 รายการ สมบูรณ์ 100%)</div>
 
-      <!-- Sub-reports Detail Screenshots -->
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
-          </div>
-          <div class="browser-address">https://ccteam.vercel.app/dashboard (ISO Report Detail)</div>
-        </div>
-        <img src="/manual_assets/shot_iso_report.png" alt="หน้ารายงานสถิติกระบวนการและตัวชี้วัด ISO">
+      <div class="table-container">
+        <table class="manual-table">
+          <thead>
+            <tr>
+              <th style="width: 28%;">โมดูลรายงาน</th>
+              <th style="width: 42%;">รายละเอียดและการใช้งาน</th>
+              <th style="width: 30%;">ประโยชน์ต่อองค์กร</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>1. Meeting Report</strong></td>
+              <td>บันทึกการประชุมทีม CC สรุปมติที่ประชุมและข้อสั่งการ พร้อมระบบติดตามผลการดำเนินงาน</td>
+              <td>ติดตามงานประชุมและมติไม่ตกหล่น</td>
+            </tr>
+            <tr>
+              <td><strong>2. Innovation Design Center (IDC) Report</strong></td>
+              <td>รายงานสถิติงานออกแบบผลงานนวัตกรรมต้นแบบ บรรจุภัณฑ์ และสถิติการใช้งานห้องแล็บ</td>
+              <td>วัดผลผลิตนวัตกรรมกายภาพของ STeP</td>
+            </tr>
+            <tr>
+              <td><strong>3. RSP Press Report</strong></td>
+              <td>ข่าวประชาสัมพันธ์เครือข่าย สรุปยอดเผยแพร่ผ่านสื่อมวลชน และผลสัมฤทธิ์การสื่อสาร</td>
+              <td>ประเมินผลการสร้างการรับรู้ (Awareness)</td>
+            </tr>
+            <tr>
+              <td><strong>4. ISO Report</strong></td>
+              <td>เอกสารระบบคุณภาพ ISO 9001 ขั้นตอนการปฏิบัติงาน (WI) และการตรวจประเมินความเสี่ยง</td>
+              <td>รักษามาตรฐานคุณภาพตามระบบสากล</td>
+            </tr>
+            <tr>
+              <td><strong>5. KM คลังความรู้</strong></td>
+              <td>คลังความรู้และนวัตกรรม AI Weekly Creative Trends บทความ และไฟล์แบ่งปันในทีม</td>
+              <td>ยกระดับทักษะทีมงานอย่างต่อเนื่อง</td>
+            </tr>
+            <tr>
+              <td><strong>6. แผนดำเนินงานของทีม</strong></td>
+              <td>แผนการดำเนินงานประจำปี ติดตาม Timeline และผู้รับผิดชอบ แก้ไขและอัปเดตได้ทุกรายการ</td>
+              <td>ขับเคลื่อนตามแผนกลยุทธ์อุทยานฯ</td>
+            </tr>
+            <tr>
+              <td><strong>7. ลิ้งค์อื่นๆ ที่เกี่ยวข้อง</strong></td>
+              <td>รวมลิงก์เครื่องมือและไฟล์ทำงาน คลาวด์ไดรฟ์ และแบบฟอร์มทางการ อัปเดตได้ตลอดเวลา</td>
+              <td>เข้าถึงทรัพยากรส่วนกลางได้รวดเร็ว</td>
+            </tr>
+            <tr>
+              <td><strong>8. Activity Log</strong></td>
+              <td>บันทึกกิจกรรมและความแอคทีฟ ตรวจสอบการมีส่วนร่วมในระบบ แจ้งเตือนงานค้างและประวัติงาน</td>
+              <td>ความโปร่งใสและตรวจสอบย้อนหลังได้</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <div class="img-caption">ภาพที่ 7.2: หน้ารายงานมาตรฐาน ISO 9001 แสดงอัตราส่งงานตรงเวลา (% On-Time) และคะแนนความพึงพอใจ</div>
 
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
+      <!-- 8 Back of House Modules Detailed Showcase -->
+      
+      <!-- 7.1 Meeting Report -->
+      <div style="margin-top: 32px;">
+        <h3 style="display: flex; align-items: center; gap: 8px;">
+          <span style="background: #e0e7ff; color: #4338ca; font-size: 12px; padding: 2px 10px; border-radius: 20px;">โมดูลที่ 1</span>
+          1. Meeting Report (บันทึกการประชุมทีม CC)
+        </h3>
+        <p>บันทึกการประชุมประจำสัปดาห์ สรุปมติที่ประชุม ข้อสั่งการเร่งด่วน พร้อมระบบติดตามผลการดำเนินงาน (Action Items) เพื่อให้งานขับเคลื่อนต่อเนื่องและไม่ตกหล่น:</p>
+        <div class="browser-mockup">
+          <div class="browser-chrome">
+            <div class="browser-dots">
+              <span class="browser-dot dot-red"></span>
+              <span class="browser-dot dot-yellow"></span>
+              <span class="browser-dot dot-green"></span>
+            </div>
+            <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=meeting</div>
           </div>
-          <div class="browser-address">https://ccteam.vercel.app/dashboard (Weekly Meeting Report Detail)</div>
+          <img src="/manual_assets/shot_boh_meeting.png" alt="หน้า Meeting Report บันทึกการประชุมทีม CC">
         </div>
-        <img src="/manual_assets/shot_meeting_report.png" alt="หน้ารายงานประชุมประจำสัปดาห์ Meeting Report">
+        <div class="img-caption">ภาพที่ 7.2: หน้า Meeting Report แสดงรายการบันทึกการประชุม มติสำคัญ และระบบติดตามความคืบหน้ารายสัปดาห์</div>
+        <div class="callout callout-info" style="margin-top: 12px;">
+          <div class="callout-title">💡 วิธีใช้งาน Meeting Report</div>
+          <ol style="margin-left: 18px; margin-top: 6px; font-size: 13.5px; line-height: 1.6;">
+            <li>คลิกเลือกวงกลม <strong>Meeting Report</strong> จากหน้า Back of House</li>
+            <li>เลือกรอบการประชุมที่ต้องการเปิดดู หรือกดปุ่ม <strong>+ บันทึกการประชุมใหม่</strong></li>
+            <li>ตรวจสอบ Action Items ที่ได้รับมอบหมาย ติดตามผู้รับผิดชอบ และกำหนดส่งมอบ</li>
+            <li>สามารถกดปุ่มพิมพ์ / บันทึกรายงานประชุมเป็นเอกสาร PDF สำหรับส่งผู้บริหารได้ทันที</li>
+          </ol>
+        </div>
       </div>
-      <div class="img-caption">ภาพที่ 7.3: หน้ารายงานประชุมประจำสัปดาห์ (Weekly Meeting Report) สรุปงานแยกตามยูนิตและงานด่วน</div>
 
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
+      <!-- 7.2 Innovation Design Center (IDC) Report -->
+      <div style="margin-top: 36px;">
+        <h3 style="display: flex; align-items: center; gap: 8px;">
+          <span style="background: #fef3c7; color: #b45309; font-size: 12px; padding: 2px 10px; border-radius: 20px;">โมดูลที่ 2</span>
+          2. Innovation Design Center (IDC) Report
+        </h3>
+        <p>รายงานสถิติงานออกแบบผลงานนวัตกรรมต้นแบบ บรรจุภัณฑ์ และสถิติการใช้งานห้องปฏิบัติการแล็บ พร้อมสถิติมูลค่าที่ทีม CC ช่วยสร้างสรรค์ให้กับอุทยานวิทยาศาสตร์ฯ:</p>
+        <div class="browser-mockup">
+          <div class="browser-chrome">
+            <div class="browser-dots">
+              <span class="browser-dot dot-red"></span>
+              <span class="browser-dot dot-yellow"></span>
+              <span class="browser-dot dot-green"></span>
+            </div>
+            <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=design-center</div>
           </div>
-          <div class="browser-address">https://ccteam.vercel.app/dashboard (KM Report Detail)</div>
+          <img src="/manual_assets/shot_boh_idc.png" alt="หน้า Innovation Design Center Report">
         </div>
-        <img src="/manual_assets/shot_km_report.png" alt="หน้ารายงานจัดการความรู้ KM และมูลค่าประหยัดงบประมาณ">
+        <div class="img-caption">ภาพที่ 7.3: หน้า IDC Report แสดงสถิติงานต้นแบบนวัตกรรม รายการสิ่งประดิษฐ์ บรรจุภัณฑ์ และการใช้งานห้องแล็บ</div>
+        <div class="callout callout-info" style="margin-top: 12px;">
+          <div class="callout-title">💡 วิธีใช้งาน Innovation Design Center Report</div>
+          <ol style="margin-left: 18px; margin-top: 6px; font-size: 13.5px; line-height: 1.6;">
+            <li>คลิกเลือก <strong>Innovation Design Center Report</strong> จากหน้า Back of House</li>
+            <li>ดูแท็บ <strong>Records</strong> เพื่อสืบค้นรายการชิ้นงานนวัตกรรมต้นแบบและผู้ขอรับบริการ</li>
+            <li>ดูแท็บ <strong>Dashboard</strong> เพื่อประเมินสถิติเชิงปริมาณและมูลค่าเชิงพาณิชย์</li>
+            <li>กดปุ่ม <strong>Export Report</strong> เพื่อดาวน์โหลดสรุปผลงาน IDC ไปประกอบรายงานประจำปี</li>
+          </ol>
+        </div>
       </div>
-      <div class="img-caption">ภาพที่ 7.4: หน้ารายงานการจัดการความรู้ (KM Report) แสดงมูลค่าเงินที่ทีมช่วยประหยัดงบประมาณแก่อุทยานฯ</div>
 
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
+      <!-- 7.3 RSP Press Report -->
+      <div style="margin-top: 36px;">
+        <h3 style="display: flex; align-items: center; gap: 8px;">
+          <span style="background: #d1fae5; color: #047857; font-size: 12px; padding: 2px 10px; border-radius: 20px;">โมดูลที่ 3</span>
+          3. RSP Press Report (ข่าวประชาสัมพันธ์เครือข่าย)
+        </h3>
+        <p>รายงานรวบรวมข่าวสารประชาสัมพันธ์เครือข่ายอุทยานวิทยาศาสตร์ภาคเหนือ (RSP) สรุปยอดเผยแพร่ผ่านสื่อมวลชนชั้นนำ และผลสัมฤทธิ์การสร้างการรับรู้:</p>
+        <div class="browser-mockup">
+          <div class="browser-chrome">
+            <div class="browser-dots">
+              <span class="browser-dot dot-red"></span>
+              <span class="browser-dot dot-yellow"></span>
+              <span class="browser-dot dot-green"></span>
+            </div>
+            <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=rsp-press</div>
           </div>
-          <div class="browser-address">https://ccteam.vercel.app/dashboard (Team Action Plan Detail)</div>
+          <img src="/manual_assets/shot_boh_rsp.png" alt="หน้า RSP Press Report ข่าวประชาสัมพันธ์เครือข่าย">
         </div>
-        <img src="/manual_assets/shot_tap_report.png" alt="หน้ารายงานแผนปฏิบัติการ Team Action Plan">
+        <div class="img-caption">ภาพที่ 7.4: หน้า RSP Press Report สรุปรายการข่าวประชาสัมพันธ์ ลิงก์สื่อมวลชน และสถิติการเผยแพร่</div>
+        <div class="callout callout-info" style="margin-top: 12px;">
+          <div class="callout-title">💡 วิธีใช้งาน RSP Press Report</div>
+          <ol style="margin-left: 18px; margin-top: 6px; font-size: 13.5px; line-height: 1.6;">
+            <li>คลิกเลือก <strong>RSP Press Report</strong> จากหน้า Back of House</li>
+            <li>ค้นหาข่าวตามชื่อโครงการ หรือกรองตามช่วงวันที่จัดกิจกรรม</li>
+            <li>คลิกลิงก์เพื่อเปิดดูข่าวดั้งเดิมที่ได้รับการตีพิมพ์ในสื่อมวลชนแต่ละสำนัก</li>
+            <li>เพิ่มบันทึกการส่งข่าวใหม่พร้อมลิงก์และภาพข่าวยืนยัน (Clipping Proof)</li>
+          </ol>
+        </div>
       </div>
-      <div class="img-caption">ภาพที่ 7.5: หน้ารายงาน Team Action Plan (TAP) ติดตามความก้าวหน้าตามตัวชี้วัด OKRs ระดับองค์กร</div>
 
-      <!-- Insights Screenshot -->
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
+      <!-- 7.4 ISO Report -->
+      <div style="margin-top: 36px;">
+        <h3 style="display: flex; align-items: center; gap: 8px;">
+          <span style="background: #e0f2fe; color: #0369a1; font-size: 12px; padding: 2px 10px; border-radius: 20px;">โมดูลที่ 4</span>
+          4. ISO Report (เอกสารระบบคุณภาพ ISO & WI)
+        </h3>
+        <p>เอกสารระบบคุณภาพ ISO 9001 ขั้นตอนการปฏิบัติงานมาตรฐาน (Work Instructions - WI) การตรวจประเมินความเสี่ยง และดัชนีชี้วัดคุณภาพการให้บริการ:</p>
+        <div class="browser-mockup">
+          <div class="browser-chrome">
+            <div class="browser-dots">
+              <span class="browser-dot dot-red"></span>
+              <span class="browser-dot dot-yellow"></span>
+              <span class="browser-dot dot-green"></span>
+            </div>
+            <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=iso</div>
           </div>
-          <div class="browser-address">https://ccteam.vercel.app/dashboard?view=dashboards</div>
+          <img src="/manual_assets/shot_boh_iso.png" alt="หน้า ISO Report เอกสารระบบคุณภาพและขั้นตอน WI">
         </div>
-        <img src="/manual_assets/shot_insights_graphs.png" alt="หน้าวิเคราะห์สถิติ Insights และ OKRs">
+        <div class="img-caption">ภาพที่ 7.5: หน้า ISO Report แสดงขั้นตอน WI อัตราส่งงานตรงเวลา (% On-Time) และการบริหารความเสี่ยง</div>
+        <div class="callout callout-info" style="margin-top: 12px;">
+          <div class="callout-title">💡 วิธีใช้งาน ISO Report</div>
+          <ol style="margin-left: 18px; margin-top: 6px; font-size: 13.5px; line-height: 1.6;">
+            <li>คลิกเลือก <strong>ISO Report</strong> จากหน้า Back of House</li>
+            <li>ศึกษาขั้นตอน WI แยกตามสายงาน Creative, Content และ PR</li>
+            <li>ตรวจสอบตัวชี้วัดความพึงพอใจและอัตราส่งมอบงานตามข้อกำหนด ISO 9001</li>
+            <li>ใช้เป็นคู่มืออ้างอิงสำหรับการตรวจประเมินคุณภาพภายใน (Internal Audit) ประจำปี</li>
+          </ol>
+        </div>
       </div>
-      <div class="img-caption">ภาพที่ 7.6: หน้า Insights แสดงสถิติมูลค่าบริการสะสม, ภาระงานรายบุคคล (Workloads), และความคืบหน้า OKRs</div>
+
+      <!-- 7.5 KM คลังความรู้ -->
+      <div style="margin-top: 36px;">
+        <h3 style="display: flex; align-items: center; gap: 8px;">
+          <span style="background: #fae8ff; color: #86198f; font-size: 12px; padding: 2px 10px; border-radius: 20px;">โมดูลที่ 5</span>
+          5. KM คลังความรู้ (Knowledge Management)
+        </h3>
+        <p>ศูนย์รวมองค์ความรู้ นวัตกรรมเครื่องมือสร้างสรรค์ AI Weekly Creative Trends บทความเทคนิค และแนวทางการยกระดับทักษะของทีม CC:</p>
+        <div class="browser-mockup">
+          <div class="browser-chrome">
+            <div class="browser-dots">
+              <span class="browser-dot dot-red"></span>
+              <span class="browser-dot dot-yellow"></span>
+              <span class="browser-dot dot-green"></span>
+            </div>
+            <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=km</div>
+          </div>
+          <img src="/manual_assets/shot_boh_km.png" alt="หน้า KM คลังความรู้และนวัตกรรม">
+        </div>
+        <div class="img-caption">ภาพที่ 7.6: หน้า KM คลังความรู้ แสดงบทความการประยุกต์ใช้ AI, เทคนิคงานสื่อสาร และไฟล์แบ่งปันความรู้</div>
+        <div class="callout callout-info" style="margin-top: 12px;">
+          <div class="callout-title">💡 วิธีใช้งาน KM คลังความรู้</div>
+          <ol style="margin-left: 18px; margin-top: 6px; font-size: 13.5px; line-height: 1.6;">
+            <li>คลิกเลือก <strong>KM คลังความรู้</strong> จากหน้า Back of House</li>
+            <li>เลือกหมวดหมู่ที่สนใจ เช่น AI Prompts, การตัดต่อวิดีโอ, การออกแบบอัตลักษณ์</li>
+            <li>อ่านสาระสำคัญและคลิกดาวน์โหลดเอกสารหรือเทมเพลตประกอบ</li>
+            <li>สมาชิกทีมสามารถร่วมเขียนบทความหรืออัปเดตเทรนด์ใหม่ๆ เข้าระบบได้ตลอดเวลา</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- 7.6 Team Action Plan (TAP) -->
+      <div style="margin-top: 36px;">
+        <h3 style="display: flex; align-items: center; gap: 8px;">
+          <span style="background: #ffedd5; color: #c2410c; font-size: 12px; padding: 2px 10px; border-radius: 20px;">โมดูลที่ 6</span>
+          6. แผนดำเนินงานของทีม (Team Action Plan - TAP)
+        </h3>
+        <p>แผนการดำเนินงานประจำปี ติดตาม Timeline และผู้รับผิดชอบ สอดรับกับตัวชี้วัด OKRs และเป้าหมายยุทธศาสตร์ระดับองค์กรของอุทยานฯ:</p>
+        <div class="browser-mockup">
+          <div class="browser-chrome">
+            <div class="browser-dots">
+              <span class="browser-dot dot-red"></span>
+              <span class="browser-dot dot-yellow"></span>
+              <span class="browser-dot dot-green"></span>
+            </div>
+            <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=action-plan</div>
+          </div>
+          <img src="/manual_assets/shot_boh_tap.png" alt="หน้ารายงานแผนดำเนินงาน Team Action Plan">
+        </div>
+        <div class="img-caption">ภาพที่ 7.7: หน้า Team Action Plan ติดตามความคืบหน้ากิจกรรมรายไตรมาส (Q1 - Q4) และผู้รับผิดชอบ</div>
+        <div class="callout callout-info" style="margin-top: 12px;">
+          <div class="callout-title">💡 วิธีใช้งาน Team Action Plan</div>
+          <ol style="margin-left: 18px; margin-top: 6px; font-size: 13.5px; line-height: 1.6;">
+            <li>คลิกเลือก <strong>แผนดำเนินงานของทีม</strong> จากหน้า Back of House</li>
+            <li>ติดตามสถานะโครงการตามแถบไทม์ไลน์รายเดือนและรายไตรมาส</li>
+            <li>ตรวจสอบตัวชี้วัดความสำเร็จ (Milestones) ของแต่ละโครงการ</li>
+            <li>กดแก้ไขเพื่ออัปเดตเปอร์เซ็นต์ความคืบหน้า หรือเพิ่มกิจกรรมใหม่ในแผนงาน</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- 7.7 Work Links -->
+      <div style="margin-top: 36px;">
+        <h3 style="display: flex; align-items: center; gap: 8px;">
+          <span style="background: #f1f5f9; color: #334155; font-size: 12px; padding: 2px 10px; border-radius: 20px;">โมดูลที่ 7</span>
+          7. ลิ้งค์อื่นๆ ที่เกี่ยวข้อง (Work Links)
+        </h3>
+        <p>ศูนย์รวมลิงก์เครื่องมือและไฟล์ทำงานส่วนกลาง คลาวด์ไดรฟ์ แหล่งรวมฟอนต์ โลโก้องค์กร และแบบฟอร์มทางการ ช่วยให้เข้าถึงทรัพยากรได้อย่างรวดเร็ว:</p>
+        <div class="browser-mockup">
+          <div class="browser-chrome">
+            <div class="browser-dots">
+              <span class="browser-dot dot-red"></span>
+              <span class="browser-dot dot-yellow"></span>
+              <span class="browser-dot dot-green"></span>
+            </div>
+            <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=work-links</div>
+          </div>
+          <img src="/manual_assets/shot_boh_links.png" alt="หน้าศูนย์รวมลิ้งค์อื่นๆ ที่เกี่ยวข้อง Work Links">
+        </div>
+        <div class="img-caption">ภาพที่ 7.8: หน้า Work Links รวมลิงก์ Google Drive ส่วนกลาง, แฟ้มโลโก้, เทมเพลต และฟอร์มทางการ</div>
+        <div class="callout callout-info" style="margin-top: 12px;">
+          <div class="callout-title">💡 วิธีใช้งาน Work Links</div>
+          <ol style="margin-left: 18px; margin-top: 6px; font-size: 13.5px; line-height: 1.6;">
+            <li>คลิกเลือก <strong>ลิ้งค์อื่นๆ ที่เกี่ยวข้อง</strong> จากหน้า Back of House</li>
+            <li>คลิกที่การ์ดลิงก์ที่ต้องการเพื่อเปิดระบบปลายทางในแท็บใหม่ทันที</li>
+            <li>ใช้ช่องค้นหาเพื่อค้นหาเครื่องมือหรือไดรฟ์ที่ต้องการอย่างรวดเร็ว</li>
+            <li>แอดมินสามารถกดปุ่ม <strong>+ เพิ่มลิงก์ใหม่</strong> เพื่อแชร์ทรัพยากรให้คนในทีมได้ทันที</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- 7.8 Activity Log -->
+      <div style="margin-top: 36px;">
+        <h3 style="display: flex; align-items: center; gap: 8px;">
+          <span style="background: #fce7f3; color: #be185d; font-size: 12px; padding: 2px 10px; border-radius: 20px;">โมดูลที่ 8</span>
+          8. Activity Log (บันทึกกิจกรรมและความแอคทีฟ)
+        </h3>
+        <p>บันทึกประวัติกิจกรรมการทำงาน การเข้าใช้งานระบบ การจ่ายงาน และการอัปเดตสถานะงาน เพื่อความโปร่งใสและสามารถตรวจสอบย้อนหลังได้ทุกขั้นตอน:</p>
+        <div class="browser-mockup">
+          <div class="browser-chrome">
+            <div class="browser-dots">
+              <span class="browser-dot dot-red"></span>
+              <span class="browser-dot dot-yellow"></span>
+              <span class="browser-dot dot-green"></span>
+            </div>
+            <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=activity</div>
+          </div>
+          <img src="/manual_assets/shot_boh_activity.png" alt="หน้าบันทึกกิจกรรม Activity Log">
+        </div>
+        <div class="img-caption">ภาพที่ 7.9: หน้า Activity Log แสดงประวัติการดำเนินการ การส่งมอบงาน และความเคลื่อนไหวในระบบ</div>
+        <div class="callout callout-info" style="margin-top: 12px;">
+          <div class="callout-title">💡 วิธีใช้งาน Activity Log</div>
+          <ol style="margin-left: 18px; margin-top: 6px; font-size: 13.5px; line-height: 1.6;">
+            <li>คลิกเลือก <strong>Activity Log</strong> จากหน้า Back of House</li>
+            <li>ตรวจสอบฟีดกิจกรรมตามลำดับเวลาล่าสุด (Timeline Stream)</li>
+            <li>กรองดูกิจกรรมแยกตามชื่อสมาชิกทีม หรือประเภทการทำงาน</li>
+            <li>ใช้เป็นบันทึกยืนยันความโปร่งใสในการดำเนินงานตามมาตรฐานสากล</li>
+          </ol>
+        </div>
+      </div>
     </section>
 
-    <!-- SECTION 8: LINE BOT & AI -->
-    <section id="sec-linebot" class="section-card page-break">
+    <!-- SECTION 8: ศูนย์วิเคราะห์ผลงาน INSIGHTS (ครบทั้ง 5 แท็บ) -->
+    <section id="sec-insights" class="section-card page-break">
       <div class="section-header">
         <div class="section-icon">8</div>
         <div>
-          <h2 class="section-title">การใช้งาน LINE Bot และผู้ช่วย AI อัจฉริยะ (LINE Bot & AI Integration)</h2>
-          <div class="section-desc">การแจ้งเตือนงานอัตโนมัติ และการพิมพ์สอบถามข้อมูลงานผ่านแชท LINE</div>
+          <h2 class="section-title">ศูนย์วิเคราะห์ผลงาน Insights (ครบทั้ง 5 แท็บ)</h2>
+          <div class="section-desc">การวิเคราะห์ผลงานเชิงลึก มูลค่าความคุ้มค่า (Save Cost & Profit) สถิติ OKRs และประสิทธิภาพการทำงานรายบุคคล</div>
         </div>
       </div>
 
-      <h3>1. การแจ้งเตือนอัตโนมัติ (Automated Broadcast Notifications)</h3>
-      <ul>
-        <li><strong>การแจ้งเตือนใบงานใหม่ (New Task Alert):</strong> ส่งทันทีที่มีคนกดส่งงานจากหน้าเว็บ แจ้งชื่อผู้ส่ง, หน่วยงาน, ยูนิตงาน, กำหนดส่ง และลิงก์เปิดดูงาน</li>
-        <li><strong>Morning Brief (สรุปงานประจำวัน):</strong> ส่งเข้ากลุ่ม CC TEAM ทุกวันจันทร์ – ศุกร์ เวลา 09:00 น. สรุปจำนวนงานที่กำลังทำ (In Progress), งานที่ต้องส่งวันนี้, งานด่วน (Rush) และงานสุ่มเสี่ยงล่าช้า แยกตามยูนิต</li>
-        <li><strong>Monthly Brief (สรุปงานสิ้นเดือน):</strong> ส่งทุกวันทำการสุดท้ายของเดือน เวลา 09:00 น. สรุปผลงานที่ปิดสำเร็จในเดือนนั้นและมูลค่าบริการรวม</li>
-      </ul>
+      <p>
+        หน้า <strong>Insights</strong> ของ CC TEAM ได้รับการออกแบบให้เป็นศูนย์รวมการวิเคราะห์ข้อมูลอัจฉริยะ (Business Intelligence) เพื่อให้หัวหน้าทีมและผู้บริหารมองเห็นภาพรวมการดำเนินงาน ผลสัมฤทธิ์ทางการเงิน และความสุขในการทำงานของสมาชิกในทีม โดยแบ่งออกเป็น <strong>5 แท็บหลัก</strong> ครบถ้วน:
+      </p>
 
-      <h3>2. ตัวอย่างการสนทนาถามตอบกับ LINE Bot จริง (Simulation Demo)</h3>
-      <div class="line-chat-box">
-        <div class="chat-bubble bubble-user">
-          วันนี้มีงานอะไรต้องส่งบ้างครับ
+      <!-- Tab 1: Workloads & Save Cost -->
+      <h3>แท็บที่ 1: จำนวนงาน / มูลค่า (Workloads & Save Cost)</h3>
+      <p>แสดงสถิติมูลค่าการประหยัดงบประมาณ (Save Cost) สะสมจากการผลิตสื่อเองภายในทีม, กำไรสุทธิจากโครงการที่รับบริหารจัดการ (PM Projects), จำนวนงานทั้งหมดพร้อมสถานะ, และสถิติงานเกื้อกูล (Assist Cross-Skilling):</p>
+      
+      <div class="browser-mockup">
+        <div class="browser-chrome">
+          <div class="browser-dots">
+            <span class="browser-dot dot-red"></span>
+            <span class="browser-dot dot-yellow"></span>
+            <span class="browser-dot dot-green"></span>
+          </div>
+          <div class="browser-address">https://ccteam.vercel.app/dashboard?view=dashboards (Tab: จำนวนงาน / มูลค่า)</div>
         </div>
-        <div class="chat-bubble bubble-bot">
-          <div class="chat-sender">🤖 CC TEAM AI Assistant</div>
-          ☀️ <strong>สรุปรายการงานที่ต้องส่งวันนี้ (23 ก.ย.):</strong><br>
-          1. <code>CC-2026-0042</code> โปสเตอร์ FoodFab 2026 (ผู้รับผิดชอบ: จ๊อบ AA)<br>
-          2. <code>CC-2026-0038</code> คลิปสั้น TikTok นวัตกรรมข้าวเหนียว (ผู้รับผิดชอบ: ลูกอิน STK)<br>
-          3. <code>CC-2026-0035</code> ข่าว MOU กรมวิชาการเกษตร (ผู้รับผิดชอบ: ต้า TTY)<br>
-          ✨ รวมทั้งหมด 3 ชิ้นงาน ขอให้ทุกท่านทำงานอย่างราบรื่นครับ!
-        </div>
-
-        <div class="chat-bubble bubble-user">
-          ขอเบอร์โทรพี่จ๊อบหน่อย
-        </div>
-        <div class="chat-bubble bubble-bot">
-          <div class="chat-sender">🤖 CC TEAM AI Assistant</div>
-          👤 <strong>ข้อมูลติดต่อ:</strong><br>
-          • <strong>ชื่อ:</strong> นายอัจชนะพงษ์ อัจชนะวราทา (จ๊อบ AA)<br>
-          • <strong>ตำแหน่ง:</strong> หัวหน้าทีมสร้างสรรค์และการสื่อสาร (Team Leader)<br>
-          • <strong>เบอร์โทร:</strong> 062-4166396<br>
-          • <strong>อีเมล:</strong> adchanapong@step.cmu.ac.th
-        </div>
+        <img src="/manual_assets/shot_insight_tab1_workloads.png" alt="หน้า Insights แท็บที่ 1: จำนวนงานและมูลค่าความคุ้มค่า">
       </div>
+      <div class="img-caption">ภาพที่ 8.1: แท็บที่ 1 จำนวนงาน/มูลค่า แสดงยอด Save Cost ฿2,004,750, กำไร PM ฿2,119,750 และภาระงาน 52 ชิ้นงาน</div>
+
+      <!-- Tab 2: Goals & OKRs -->
+      <h3>แท็บที่ 2: ตัวชี้วัดความสำเร็จ 🎯 KR/R , KPI/TIP ทีม CC</h3>
+      <p>ประมวลผลความคืบหน้าของตัวชี้วัดระดับผลลัพธ์ (Key Results & Result Objectives), ตัวชี้วัด TIP ยุทธศาสตร์และนวัตกรรม, ผลประเมินความพึงพอใจ 5 มิติจากผู้รับบริการ (Satisfaction Score) และสัดส่วนกำไร PM แยกตามภาครัฐและเอกชน:</p>
+
+      <div class="browser-mockup">
+        <div class="browser-chrome">
+          <div class="browser-dots">
+            <span class="browser-dot dot-red"></span>
+            <span class="browser-dot dot-yellow"></span>
+            <span class="browser-dot dot-green"></span>
+          </div>
+          <div class="browser-address">https://ccteam.vercel.app/dashboard?view=dashboards (Tab: KR/R , KPI/TIP)</div>
+        </div>
+        <img src="/manual_assets/shot_insight_tab2_goals.png" alt="หน้า Insights แท็บที่ 2: ตัวชี้วัดความสำเร็จ KR/R และ KPI/TIP">
+      </div>
+      <div class="img-caption">ภาพที่ 8.2: แท็บที่ 2 ตัวชี้วัดความสำเร็จ KR/R และ KPI/TIP แสดงเปอร์เซ็นต์ความสำเร็จ KR (26%), TIP (77%) และความพึงพอใจเฉลี่ย 90.8%</div>
+
+      <!-- Tab 3: Time & Efficiency -->
+      <h3>แท็บที่ 3: เวลา / สถานะงาน (Time & Efficiency)</h3>
+      <p>วิเคราะห์ความเร็วในการผลิตงานเฉลี่ย (Turnaround Days per Task), อัตราการส่งมอบตรงเวลา (On-Time Delivery Rate 100%), ดัชนีประสิทธิภาพ Save Cost เฉลี่ยต่อ 1 งานที่ปิดสำเร็จ (฿62,648), พร้อมแดชบอร์ดประเมินความเร็วและความเสี่ยงแยกตามรายยูนิต (Sub-Unit Velocity & Risk):</p>
+
+      <div class="browser-mockup">
+        <div class="browser-chrome">
+          <div class="browser-dots">
+            <span class="browser-dot dot-red"></span>
+            <span class="browser-dot dot-yellow"></span>
+            <span class="browser-dot dot-green"></span>
+          </div>
+          <div class="browser-address">https://ccteam.vercel.app/dashboard?view=dashboards (Tab: เวลา / สถานะงาน)</div>
+        </div>
+        <img src="/manual_assets/shot_insight_tab3_time.png" alt="หน้า Insights แท็บที่ 3: เวลาและประสิทธิภาพการส่งมอบงาน">
+      </div>
+      <div class="img-caption">ภาพที่ 8.3: แท็บที่ 3 เวลา/สถานะงาน แสดงความเร็วเฉลี่ย 3.5 วัน/งาน อัตราตรงเวลา 100% และระดับความเสี่ยงของแต่ละยูนิต</div>
+
+      <!-- Tab 4: Individual 360 Report -->
+      <h3>แท็บที่ 4: รายงานรายบุคคล 360 (Individual Performance & Profile) 🌟 ไฮไลท์สำคัญ</h3>
+      <p>
+        รายงานสรุปผลงานเชิงลึกรายบุคคล 360 องศา ออกแบบเพื่อประเมินศักยภาพ ความคุ้มค่า และการพัฒนาทักษะของบุคลากรในทีม CC เป็นรายบุคคล (ครบทั้ง 12 สมาชิก) 
+        โดยภาพตัวอย่างแสดงโปรไฟล์ของ <strong>คุณจ๊อบ AA (นายอัจชนะพงษ์ อัจชนะวราทา)</strong> ผู้สร้างมูลค่า <strong>Save Cost สูงสุดอันดับ 1 ของทีม ถึง ฿881,500</strong> จาก 52 โครงการที่เกี่ยวข้อง:
+      </p>
+
+      <div class="browser-mockup">
+        <div class="browser-chrome">
+          <div class="browser-dots">
+            <span class="browser-dot dot-red"></span>
+            <span class="browser-dot dot-yellow"></span>
+            <span class="browser-dot dot-green"></span>
+          </div>
+          <div class="browser-address">https://ccteam.vercel.app/dashboard?view=dashboards (Tab: รายงานรายบุคคล — โปรไฟล์: จ๊อบ AA)</div>
+        </div>
+        <img src="/manual_assets/shot_insight_tab4_individual.png" alt="หน้า Insights แท็บที่ 4: รายงานสรุปผลงานรายบุคคล 360 องศา โปรไฟล์ จ๊อบ AA ยอด Save Cost สูงสุด ฿881,500">
+      </div>
+      <div class="img-caption">ภาพที่ 8.4: แท็บที่ 4 รายงานรายบุคคล 360 แสดงผลงานคุณจ๊อบ AA ยอด Save Cost สะสม ฿881,500, สัดส่วนงานหลัก/งานช่วย, Velocity กราฟ และปุ่ม Save PDF ออกรายงานทางการ</div>
+
+      <div class="callout callout-success" style="margin-top: 14px;">
+        <div class="callout-title">🏆 องค์ประกอบสำคัญในรายงานรายบุคคล 360</div>
+        <ul style="margin-left: 18px; margin-top: 6px; font-size: 13.5px; line-height: 1.6;">
+          <li><strong>ยอด Save Cost สะสมและโครงการที่เกี่ยวข้อง:</strong> ชูมูลค่าความคุ้มค่าทางการเงินที่พนักงานประหยัดงบประมาณให้แก่อุทยานฯ (ตัวอย่างเช่น คุณจ๊อบ AA สร้างมูลค่าสูงถึง ฿881,500)</li>
+          <li><strong>สัดส่วนงานหลัก vs งานช่วย (81% : 19%):</strong> สะท้อนวัฒนธรรมการช่วยเหลือเพื่อนร่วมงานข้ามสายงาน (Cross-Skilling Collaboration)</li>
+          <li><strong>ดัชนีความเร็วและความสม่ำเสมอ (Velocity):</strong> แผนภูมิแท่งวิเคราะห์จำนวนงานและมูลค่าที่ปิดสำเร็จย้อนหลัง 8 สัปดาห์ และ 6 เดือน</li>
+          <li><strong>Donut Chart วิเคราะห์ประเภทงานและหน่วยงานผู้ขอรับบริการ:</strong> แสดงความเชี่ยวชาญเฉพาะทาง (Specialization) และความเชื่อมโยงกับฝ่ายต่างๆ</li>
+          <li><strong>ปุ่ม Save PDF ทางการ:</strong> กดเพื่อพิมพ์รายงานสรุปผลงานจัดหน้าสวยงามตามแบบฟอร์มทางการเพื่อใช้ประเมินผลงานเลื่อนขั้นหรือรายงานต่อผู้บริหาร</li>
+        </ul>
+      </div>
+
+      <!-- Tab 5: Executive Team Overview -->
+      <h3>แท็บที่ 5: รายงานรวมทีม / ผู้บริหาร (Executive Team Overview)</h3>
+      <p>รายงานสรุปภาพรวมระดับผู้บริหาร แสดงดัชนีชี้วัด 4 ด้านสำคัญ: วัฒนธรรมความร่วมมือในทีม (สัดส่วนงานช่วย 25% ไม่ทิ้งใครโดดเดี่ยว), มูลค่าความคุ้มค่าและผลประโยชน์ทางการเงินสุทธิ (Save Cost & Net Profit), สถิติการส่งมอบงานตรงเวลา 100%, และความสอดคล้องกับทิศทางเป้าหมายองค์กร:</p>
+
+      <div class="browser-mockup">
+        <div class="browser-chrome">
+          <div class="browser-dots">
+            <span class="browser-dot dot-red"></span>
+            <span class="browser-dot dot-yellow"></span>
+            <span class="browser-dot dot-green"></span>
+          </div>
+          <div class="browser-address">https://ccteam.vercel.app/dashboard?view=dashboards (Tab: รายงานรวมทีม)</div>
+        </div>
+        <img src="/manual_assets/shot_insight_tab5_executive.png" alt="หน้า Insights แท็บที่ 5: รายงานภาพรวมทีมและผู้บริหาร">
+      </div>
+      <div class="img-caption">ภาพที่ 8.5: แท็บที่ 5 รายงานภาพรวมทีม/ผู้บริหาร รวม 4 ดัชนีหลักสำหรับนำเสนอในที่ประชุมกรรมการบริหาร</div>
     </section>
 
-    <!-- SECTION 9: การจัดการหลังบ้าน ADMIN SETUP -->
-    <section id="sec-admin-setup" class="section-card page-break">
+    <!-- SECTION 9: LINE BOT & AI -->
+    <section id="sec-linebot" class="section-card page-break">
       <div class="section-header">
         <div class="section-icon">9</div>
+        <div>
+          <h2 class="section-title">การใช้งาน LINE Bot และผู้ช่วย AI อัจฉริยะ "น้อง CC" (LINE Bot & AI Assistant)</h2>
+          <div class="section-desc">ระบบแจ้งเตือนงานอัตโนมัติ คำสั่งโต้ตอบอัจฉริยะ และตัวอย่างบทสนทนาหลากหลายบริบทการทำงานจริง</div>
+        </div>
+      </div>
+
+      <p>
+        <strong>"น้อง CC"</strong> คือผู้ช่วย AI ประจำทีมสร้างสรรค์และการสื่อสาร (CC TEAM) พัฒนาขึ้นด้วยโมเดล <strong>Gemini 2.0 Flash</strong> ร่วมกับฐานข้อมูลสด (Live Context Engine) ของระบบ เพื่อทำหน้าที่แจ้งเตือนและตอบคำถามเกี่ยวกับภาระงาน ผู้รับผิดชอบ เดดไลน์ และข้อมูลความคุ้มค่า โดยได้รับการออกแบบตามแนวทาง <em>Non-Intrusive Smart Assistant</em> เพื่อไม่ให้รบกวนบรรยากาศการสนทนาในกลุ่ม
+      </p>
+
+      <!-- 9.1 Broadcast Notifications -->
+      <h3>1. ระบบแจ้งเตือนอัตโนมัติ (Automated Broadcast Notifications)</h3>
+      <div class="flow-grid">
+        <div class="flow-step">
+          <div class="flow-step-num">1</div>
+          <div class="flow-step-title">แจ้งเตือนใบงานใหม่ (New Task Alert)</div>
+          <div class="flow-step-desc">ส่งแจ้งเตือนเข้ากลุ่มทันทีเมื่อมีผู้ส่งงานใหม่ ระบุรหัสงาน, ชื่องาน, ยูนิต, ผู้ประสานงาน และกำหนดส่งมอบงาน</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-num">2</div>
+          <div class="flow-step-title">Morning Brief (09:00 น.)</div>
+          <div class="flow-step-desc">ส่งสรุปงานทุกวันจันทร์–ศุกร์ เวลา 09:00 น. แจ้งงานด่วน 48 ชม., งานที่ต้องส่งวันนี้ และสถิติงานกำลังดำเนินการ</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-num">3</div>
+          <div class="flow-step-title">Monthly Summary (สิ้นเดือน)</div>
+          <div class="flow-step-desc">ส่งรายงานสรุปผลงานสิ้นเดือน วันทำการสุดท้าย เวลา 09:00 น. สรุปจำนวนงานที่ปิดสำเร็จและยอด Save Cost ประจำเดือน</div>
+        </div>
+      </div>
+
+      <!-- 9.2 AI Manners & Clean Chat Principles -->
+      <h3>2. กฎเหล็กมารยาทห้องแชทและความฉลาดของน้อง CC (Clean & Smart AI Principles)</h3>
+      <div class="callout callout-info" style="margin: 16px 0;">
+        <div class="callout-title">💡 มาตรฐานการตอบคำถามเพื่อความสงบเรียบร้อยของกลุ่มแชท</div>
+        <ul style="margin-left: 18px; margin-top: 8px; font-size: 13.5px; line-height: 1.65;">
+          <li><strong>ตอบสั้น กระชับ ตรงประเด็น (2-3 บรรทัด จบในตัว):</strong> ให้ข้อมูลแม่นยำ ไม่เวิ่นเว้อ และไม่พิมพ์หลายข้อความต่อเนื่องเพื่อไม่ให้ดันแชทของคนอื่นตกฟีด</li>
+          <li><strong>ความเงียบในกลุ่มแชท (Strict Silence):</strong> น้อง CC จะไม่สอดแทรกบทสนทนาระหว่างสมาชิกเด็ดขาด จะตอบเฉพาะเมื่อพิมพ์เรียกชื่อ <code>น้อง CC</code> หรือ <code>@mention</code> เท่านั้น</li>
+          <li><strong>หยุดคุยทันทีเมื่อรับทราบ (Smart Receipt):</strong> หากผู้ใช้พิมพ์คำสั้นๆ เช่น <em>"โอเค", "รับทราบ", "ขอบคุณ", "555", "thx"</em> น้อง CC จะหยุดตอบเพื่อปล่อยให้ห้องแชทพักผ่อน</li>
+          <li><strong>คำสั่งควบคุมความเงียบ (Mute / Stop):</strong> หากผู้ใช้พิมพ์ว่า <em>"หยุด", "เงียบ", "พอแล้ว", "พักก่อน"</em> น้อง CC จะตัดการตอบกลับทันที 100%</li>
+          <li><strong>ไม่มีการสแปมเรื่องสุขภาพ:</strong> ตัดข้อความเตือนเรื่องจิบน้ำหรือพักสายตาอัตโนมัติ จะตอบคำแนะนำสุขภาพเฉพาะเมื่อมีคนเอ่ยถามโดยตรงเท่านั้น</li>
+        </ul>
+      </div>
+
+      <!-- 9.3 Command Reference Matrix -->
+      <h3>3. ตารางสรุปคำสั่งและคีย์เวิร์ดคุยกับน้อง CC (Command Matrix)</h3>
+      <div class="table-container">
+        <table class="manual-table">
+          <thead>
+            <tr>
+              <th style="width: 22%;">หมวดหมู่คำสั่ง</th>
+              <th style="width: 28%;">คีย์เวิร์ดที่ใช้งานได้</th>
+              <th style="width: 50%;">ผลลัพธ์และการทำงานของน้อง CC</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>1. ส่งงาน & เช็คสถานะ</strong></td>
+              <td><code>ขอบรีฟ</code>, <code>ขอฟอร์ม</code>, <code>ส่งงาน</code>, <code>ติดตามงาน</code>, <code>track</code></td>
+              <td>ส่งลิงก์แบบฟอร์มส่งบรีฟทั้ง 3 ยูนิต และลิงก์หน้า Track Status เพื่อติดตามงาน</td>
+            </tr>
+            <tr>
+              <td><strong>2. งานด่วน & เดดไลน์</strong></td>
+              <td><code>งานด่วน</code>, <code>urgent</code>, <code>งานวันนี้</code>, <code>เดดไลน์</code></td>
+              <td>สแกนงานที่มีกำหนดส่งมอบภายใน 48 ชั่วโมง หรืองานที่ครบกำหนดวันนี้ พร้อมชื่อผู้รับผิดชอบ</td>
+            </tr>
+            <tr>
+              <td><strong>3. ภาระงาน & ตรวจระบบ</strong></td>
+              <td><code>งานค้าง</code>, <code>สถานะ</code>, <code>ความผิดปกติ</code>, <code>ความเสี่ยง</code>, <code>overdue</code></td>
+              <td>สรุปจำนวนงาน Pending / In Progress / Completed และตรวจจับงานที่ยังไม่มีผู้รับผิดชอบหรืองานเกินกำหนด</td>
+            </tr>
+            <tr>
+              <td><strong>4. ผลงาน & Save Cost</strong></td>
+              <td><code>สรุปงาน</code>, <code>ภาพรวม</code>, <code>save cost</code>, <code>ผลงาน</code></td>
+              <td>สรุปสถิติจำนวนงานที่ส่งมอบแล้วและยอดมูลค่าประหยัดงบประมาณสะสมของทีม</td>
+            </tr>
+            <tr>
+              <td><strong>5. ข้อมูลทีมงาน</strong></td>
+              <td><code>เบอร์โทรพี่...</code>, <code>ใครดูแลงาน...</code>, <code>ติดต่อ...</code></td>
+              <td>ค้นหาข้อมูลชื่อ ตำแหน่ง เบอร์โทรศัพท์ และอีเมลของสมาชิกทีม CC แบบเรียลไทม์</td>
+            </tr>
+            <tr>
+              <td><strong>6. ครีเอทีฟ & สุขภาพ</strong></td>
+              <td><code>ขอไอเดีย</code>, <code>เทรนด์วันนี้</code>, <code>สุขภาพ</code>, <code>เมื่อย</code></td>
+              <td>แนะนำลิงก์แหล่งศึกษาเทรนด์สากล หรือส่งท่ายืดกล้ามเนื้อออฟฟิศซินโดรมจากแพทย์ มช. (เฉพาะเมื่อถาม)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 9.4 Realistic Simulation Dialogues across 6 Contexts -->
+      <h3>4. ตัวอย่างบทสนทนาจริง 6 บริบท (Realistic Simulation Dialogues)</h3>
+      <p>ตัวอย่างการโต้ตอบจริงของน้อง CC เมื่อถูกเรียกใช้งานในกลุ่มแชทหรือแชทเดี่ยวในสถานการณ์ต่างๆ:</p>
+
+      <!-- Context 1: Urgent & Deadline -->
+      <div style="margin-top: 18px;">
+        <h4 style="font-size: 14px; font-weight: 700; color: #ea580c; margin-bottom: 8px;">
+          บริบทที่ 1: ตรวจสอบคิวงานด่วนและงานที่ต้องส่งวันนี้ (Daily Urgent & Deadline Check)
+        </h4>
+        <div class="line-chat-box">
+          <div class="chat-bubble bubble-user">
+            น้อง CC วันนี้มีงานอะไรต้องส่งมอบบ้างครับ
+          </div>
+          <div class="chat-bubble bubble-bot">
+            <div class="chat-sender">🤖 น้อง CC</div>
+            🎯 <strong>[งานที่มีกำหนดส่งมอบวันนี้]</strong><br>
+            1. <strong>โปสเตอร์ FoodFab 2026</strong> (Creative) — ผู้ดูแล: พี่จ๊อบ AA<br>
+            2. <strong>คลิปสั้น TikTok ข้าวเหนียว</strong> (Content) — ผู้ดูแล: พี่ลูกอิน STK<br>
+            3. <strong>ข่าวประชาสัมพันธ์ MOU กษ.</strong> (PR) — ผู้ดูแล: พี่ต้า TTY<br>
+            ✨ มีทั้งหมด 3 ชิ้นงาน ติดตามไฟล์ได้ทาง Task Board ค่า
+          </div>
+        </div>
+      </div>
+
+      <!-- Context 2: Brief Request -->
+      <div style="margin-top: 20px;">
+        <h4 style="font-size: 14px; font-weight: 700; color: #8b5cf6; margin-bottom: 8px;">
+          บริบทที่ 2: ขอลิงก์ส่งบรีฟงานใหม่สำหรับเพื่อนร่วมงานต่างฝ่าย (New Brief Request Link)
+        </h4>
+        <div class="line-chat-box">
+          <div class="chat-bubble bubble-user">
+            น้อง CC ขอลิงก์ฟอร์มส่งบรีฟงานออกแบบหน่อยครับ
+          </div>
+          <div class="chat-bubble bubble-bot">
+            <div class="chat-sender">🤖 น้อง CC</div>
+            📝 <strong>[แบบฟอร์มส่งบรีฟงาน - ทีม CC]</strong> ✨<br>
+            🔗 <strong>ยื่นงานใหม่:</strong> https://ccteam.vercel.app/request<br>
+            🔍 <strong>ติดตามสถานะงาน:</strong> https://ccteam.vercel.app/track<br>
+            กรอกข้อมูลครบถ้วน ทีมงานจะเริ่มดำเนินการทันทีค่า
+          </div>
+        </div>
+      </div>
+
+      <!-- Context 3: Risk & Anomaly Audit -->
+      <div style="margin-top: 20px;">
+        <h4 style="font-size: 14px; font-weight: 700; color: #dc2626; margin-bottom: 8px;">
+          บริบทที่ 3: สแกนความผิดปกติของระบบและงานเกินกำหนด (Risk & Anomaly Audit)
+        </h4>
+        <div class="line-chat-box">
+          <div class="chat-bubble bubble-user">
+            น้อง CC เช็คความผิดปกติหรือจุดเสี่ยงในระบบให้หน่อย
+          </div>
+          <div class="chat-bubble bubble-bot">
+            <div class="chat-sender">🤖 น้อง CC</div>
+            ⚠️ <strong>[สแกนจุดเฝ้าระวังของระบบ]</strong><br>
+            • งานที่ยังไม่มีผู้รับผิดชอบ: <strong>0 งาน</strong> ✅ ครบถ้วนทุกใบงาน<br>
+            • งานเกินกำหนดส่ง (Overdue): <strong>1 งาน</strong> 👉 รหัส <code>CC-2026-0019</code> แบนเนอร์ TECH UP (สถานะ: รอลูกค้าตรวจพรูฟ) ✨
+          </div>
+        </div>
+      </div>
+
+      <!-- Context 4: Assignee & Contact Lookup -->
+      <div style="margin-top: 20px;">
+        <h4 style="font-size: 14px; font-weight: 700; color: #0284c7; margin-bottom: 8px;">
+          บริบทที่ 4: ค้นหาผู้รับผิดชอบงานและช่องทางติดต่อเร่งด่วน (Task Assignee & Contact Lookup)
+        </h4>
+        <div class="line-chat-box">
+          <div class="chat-bubble bubble-user">
+            น้อง CC ใครดูแลงานถ่ายวิดีโอ RSP นวัตกรรม ขอเบอร์ติดต่อด้วยครับ
+          </div>
+          <div class="chat-bubble bubble-bot">
+            <div class="chat-sender">🤖 น้อง CC</div>
+            👤 <strong>[ผู้รับผิดชอบโครงการ]</strong><br>
+            • <strong>ผู้ดูแล:</strong> นางสาวสุดารัตน์ คำแสน (ลูกอิน STK) — พนักงานผลิตสื่อวิดีโอสร้างสรรค์<br>
+            • <strong>เบอร์โทร:</strong> 084-2228965<br>
+            • <strong>อีเมล:</strong> sudarat.k@cmu.ac.th ✨
+          </div>
+        </div>
+      </div>
+
+      <!-- Context 5: Save Cost & Performance Milestone -->
+      <div style="margin-top: 20px;">
+        <h4 style="font-size: 14px; font-weight: 700; color: #16a34a; margin-bottom: 8px;">
+          บริบทที่ 5: สรุปภาพรวมมูลค่าประหยัดงบประมาณ (Save Cost & Performance Milestone)
+        </h4>
+        <div class="line-chat-box">
+          <div class="chat-bubble bubble-user">
+            น้อง CC ขอสรุปยอด Save Cost ของทีม CC ล่าสุดหน่อยครับ
+          </div>
+          <div class="chat-bubble bubble-bot">
+            <div class="chat-sender">🤖 น้อง CC</div>
+            📈 <strong>[สรุปภาพรวมผลงานทีม CC]</strong> 🏆<br>
+            • มูลค่า Save Cost รวม: <strong>฿2,004,750</strong> (จาก 52 ชิ้นงาน)<br>
+            • กำไรสุทธิโครงการ PM: <strong>฿2,119,750</strong><br>
+            • ส่งมอบตรงเวลา: <strong>100%</strong> (ดูรายละเอียดได้ที่ Insights Portal ค่า) ✨
+          </div>
+        </div>
+      </div>
+
+      <!-- Context 6: Creative & Trend Brainstorming -->
+      <div style="margin-top: 20px;">
+        <h4 style="font-size: 14px; font-weight: 700; color: #d97706; margin-bottom: 8px;">
+          บริบทที่ 6: ขอไอเดียและแนวคิดสำหรับงานสร้างสรรค์ (On-Demand Creative Brainstorming)
+        </h4>
+        <div class="line-chat-box">
+          <div class="chat-bubble bubble-user">
+            น้อง CC ขอไอเดียทำคอนเทนต์เปิดตัวผลิตภัณฑ์เกษตรแปรรูปให้ดูทันสมัยหน่อย
+          </div>
+          <div class="chat-bubble bubble-bot">
+            <div class="chat-sender">🤖 น้อง CC</div>
+            💡 <strong>[Creative Idea Sparks 🎨]</strong><br>
+            1. <strong>Short-form "Farm to Fork" POV:</strong> ถ่ายวิดีโอแบบมุมมองบุคคลที่หนึ่ง เล่าสตอรี่จากไร่สู่แล็บวิจัย STeP ดนตรี Lo-fi สบายตา<br>
+            2. <strong>Deconstruct Graphic:</strong> แยกองค์ประกอบสารอาหารด้วยภาพ 3D สไตล์ Modern Minimalist ให้ความรู้สึกเป็นวิทยาศาสตร์ที่จับต้องได้<br>
+            🔗 ดูเคสอ้างอิงเพิ่มเติมได้ที่ KM คลังความรู้ในระบบหลังบ้านค่า ✨
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- SECTION 10: การจัดการหลังบ้าน ADMIN SETUP -->
+    <section id="sec-admin-setup" class="section-card page-break">
+      <div class="section-header">
+        <div class="section-icon">10</div>
         <div>
           <h2 class="section-title">การตั้งค่าระบบหลังบ้าน (Admin Setup & Maintenance)</h2>
           <div class="section-desc">สงวนสิทธิ์เฉพาะผู้มีสิทธิ์ Admin (คลิกปุ่มรูปฟันเฟือง ⚙️ บนหน้า Dashboard) แสดงตัวอย่างภาพจริงครบทุกแท็บ</div>
@@ -1265,7 +1826,7 @@
         </div>
         <img src="/manual_assets/shot_setup_team.png" alt="หน้าต่างตั้งค่า Manage Team สำหรับ Admin">
       </div>
-      <div class="img-caption">ภาพที่ 9.1: แท็บ Manage Team สำหรับเพิ่ม/แก้ไขรายชื่อทีมงาน 14 คน กำหนดบทบาท Admin / Assignee / Executive</div>
+      <div class="img-caption">ภาพที่ 10.1: แท็บ Manage Team สำหรับเพิ่ม/แก้ไขรายชื่อทีมงาน กำหนดบทบาท Admin / Assignee / Executive</div>
 
       <!-- Tab 2: Service Pricing -->
       <div class="browser-mockup">
@@ -1279,7 +1840,7 @@
         </div>
         <img src="/manual_assets/shot_setup_pricing.png" alt="หน้าต่างตั้งค่า Service Pricing สำหรับ Admin">
       </div>
-      <div class="img-caption">ภาพที่ 9.2: แท็บ Service Pricing สำหรับปรับเปลี่ยนรายการบริการ และราคากลางอ้างอิงของแต่ละยูนิต</div>
+      <div class="img-caption">ภาพที่ 10.2: แท็บ Service Pricing สำหรับปรับเปลี่ยนรายการบริการ และราคากลางอ้างอิงของแต่ละยูนิต</div>
 
       <!-- Tab 3: OKR Targets -->
       <div class="browser-mockup">
@@ -1293,7 +1854,7 @@
         </div>
         <img src="/manual_assets/shot_setup_okr.png" alt="หน้าต่างตั้งค่า OKR Targets สำหรับ Admin">
       </div>
-      <div class="img-caption">ภาพที่ 9.3: แท็บ OKR Targets สำหรับกำหนดเป้าหมายเชิงผลลัพธ์ (R & KR) ประจำปีเพื่อใช้คำนวณในรายงาน TAP</div>
+      <div class="img-caption">ภาพที่ 10.3: แท็บ OKR Targets สำหรับกำหนดเป้าหมายเชิงผลลัพธ์ (R & KR) ประจำปีเพื่อใช้คำนวณในรายงาน TAP</div>
 
       <!-- Tab 4: Storage Quota -->
       <div class="browser-mockup">
@@ -1307,13 +1868,13 @@
         </div>
         <img src="/manual_assets/shot_setup_storage.png" alt="หน้าต่างตั้งค่า Storage Quota & Auto Purge สำหรับ Admin">
       </div>
-      <div class="img-caption">ภาพที่ 9.4: แท็บ Storage & Auto Purge ตรวจสอบพื้นที่ฐานข้อมูลและกดปุ่มล้างไฟล์แนบงานเก่าเพื่อคืนพื้นที่ฟรี 100%</div>
+      <div class="img-caption">ภาพที่ 10.4: แท็บ Storage & Auto Purge ตรวจสอบพื้นที่ฐานข้อมูลและกดปุ่มล้างไฟล์แนบงานเก่าเพื่อคืนพื้นที่ฟรี 100%</div>
     </section>
 
-    <!-- SECTION 10: FAQ & TROUBLESHOOTING -->
+    <!-- SECTION 11: FAQ & TROUBLESHOOTING -->
     <section id="sec-faq" class="section-card page-break">
       <div class="section-header">
-        <div class="section-icon">10</div>
+        <div class="section-icon">11</div>
         <div>
           <h2 class="section-title">คำถามที่พบบ่อยและวิธีแก้ปัญหา (FAQ & Troubleshooting)</h2>
           <div class="section-desc">วิธีแก้ไขปัญหาการใช้งานทั่วไปที่พบบ่อย</div>
@@ -1336,7 +1897,7 @@
       <p>
         <strong>ทีมสร้างสรรค์และการสื่อสาร (CC TEAM)</strong><br>
         อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (STeP)<br>
-        อีเมล: <a href="mailto:adchanapong@step.cmu.ac.th">adchanapong@step.cmu.ac.th</a> หรือสอบถามผ่านกลุ่ม LINE CC TEAM
+        อีเมล: <a href="mailto:adchanapong@step.cmu.ac.th">adchanapong@step.cmu.ac.th</a>
       </p>
     </section>
 

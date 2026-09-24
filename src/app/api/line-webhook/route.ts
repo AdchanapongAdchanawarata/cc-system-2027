@@ -113,7 +113,7 @@ async function handleLineEvent(
 
     // If user just called/mentioned "น้อง CC" without any query
     if (isGroup && !queryText && !isRegistration) {
-      replyText = `ฮายค่าพี่! มีอะไรให้น้อง CC ช่วยบอกได้เลยน้าา ✨🌸`;
+      replyText = `ฮายค่าพี่! มีข้อมูลงานอะไรให้น้อง CC ช่วยเช็คแจ้งได้เลยค่า ✨`;
     }
     // 3. Ending words & quick receipts: STAY SILENT to let the chat rest!
     else if (
@@ -126,13 +126,13 @@ async function handleLineEvent(
       text === "ขอบคุณ" || text === "ขอบคุณครับ" || text === "ขอบคุณค่ะ" || text === "ขอบใจ" ||
       text === "แต๊งกิ้ว" || text === "thank" || text === "thanks"
     ) {
-      replyText = `ยินดีค่าบ 💖`;
+      replyText = `ยินดีค่าบ ✨`;
     }
     // 2.1 Group Registration Commands
     else if (lowerRaw.includes("ลงทะเบียน noty") || lowerRaw.includes("bind noty")) {
       if (groupId) {
         await saveLineGroupId("noty", groupId);
-        replyText = `✅ [ลงทะเบียนสำเร็จ]\nผูกกลุ่มนี้เป็น "Creative step (NOTY)" เรียบร้อยค่า! น้อง CC จะคอยส่งแจ้งเตือนบรีฟใหม่และ Morning Brief ให้ตรงเวลาน้าา 🌸`;
+        replyText = `✅ [ลงทะเบียนสำเร็จ]\nผูกกลุ่มนี้เป็น "Creative step (NOTY)" เรียบร้อยค่า! น้อง CC จะคอยส่งแจ้งเตือนบรีฟใหม่และ Morning Brief ให้ตรงเวลานะคะ ✨`;
       } else {
         replyText = `⚠️ คำสั่งนี้ใช้สำหรับลงทะเบียนใน "กลุ่ม LINE" เท่านั้นค่า`;
       }
@@ -152,11 +152,11 @@ async function handleLineEvent(
     // 2.3 Ask for Brief Link (Compact & Non-cluttering)
     else if (text.includes("บรีฟ") || text.includes("ขอลิงก์") || text.includes("ฟอร์ม") || text.includes("ส่งงาน") || text.includes("brief")) {
       const origin = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || "https://cc-insights.step.cmu.ac.th");
-      replyText = `📝 [แบบฟอร์มส่งบรีฟงานทีม CC] 💖✨\n🔗 ยื่นงานใหม่: ${origin}/request\n🔍 เช็กสถานะงาน: ${origin}/track\nส่งกำลังใจให้พี่ๆ ทุกคนค่าา อย่าลืมพักสายตาด้วยน้า 🧋`;
+      replyText = `📝 [แบบฟอร์มส่งบรีฟงานทีม CC] ✨\n🔗 ยื่นงานใหม่: ${origin}/request\n🔍 เช็กสถานะงาน: ${origin}/track`;
     }
     // 2.4 Capability & Help Guide
     else if (text.includes("ฟังก์ชัน") || text.includes("แนะนำตัว") || text.includes("ช่วยอะไร") || text.includes("เมนู") || text.includes("คำสั่ง")) {
-      replyText = `🤖 น้อง CC ช่วยอะไรได้บ้าง:\n• "ขอบรีฟ" (ขอลิงก์ส่งงาน)\n• "งานด่วน" / "งานวันนี้" (เช็คเดดไลน์)\n• "งานค้าง" / "ความผิดปกติ" (ตรวจระบบ)\n• หรือชวนคุยเล่น คิดไอเดีย สุขภาพ ได้หมดเลยค่าา ✨🌸`;
+      replyText = `🤖 รวมคำสั่งคุยกับน้อง CC:\n• "ขอบรีฟ" (ขอลิงก์ส่งงาน)\n• "งานด่วน" / "งานวันนี้" (เช็คเดดไลน์)\n• "งานค้าง" / "ความผิดปกติ" (ตรวจระบบ)\n• "ขอไอเดีย" / "สุขภาพ" (ข้อมูลสร้างสรรค์และการดูแลตนเอง)\n• หรือถามข้อมูลทีมงาน/เบอร์โทรได้ทันทีค่า ✨`;
     }
     // 2.5 Query AI Engine / Rule Engine for other questions
     else {

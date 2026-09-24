@@ -2118,11 +2118,11 @@ export default function IsoReportDetail() {
       {/* 2. 6-TAB CAPSULE NAVIGATION (ISO 9001 SYSTEM, WI & STAKEHOLDERS)          */}
       {/* ========================================================================= */}
       <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-2xs">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 bg-slate-100 p-1 rounded-2xl border border-slate-200 gap-1">
+        <div className="flex overflow-x-auto no-scrollbar sm:grid sm:grid-cols-3 lg:grid-cols-6 bg-slate-100 p-1 rounded-2xl border border-slate-200 gap-1">
           <button
             onClick={() => handleTabChange("risk-analysis")}
             title="1. การวิเคราะห์ความเสี่ยงและตัวชี้วัด KRI"
-            className={`justify-center px-2 py-2.5 text-xs md:text-sm font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer text-center ${
+            className={`shrink-0 sm:shrink flex-1 min-w-[125px] sm:min-w-0 justify-center px-2.5 py-2.5 text-xs md:text-sm font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer text-center ${
               activeTab === "risk-analysis"
                 ? "bg-[#E03131] text-white shadow-xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
@@ -2135,7 +2135,7 @@ export default function IsoReportDetail() {
           <button
             onClick={() => handleTabChange("swot-stakeholders")}
             title="2. การวิเคราะห์บริบทองค์กร SWOT และผู้มีส่วนได้ส่วนเสีย"
-            className={`justify-center px-2 py-2.5 text-xs md:text-sm font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer text-center ${
+            className={`shrink-0 sm:shrink flex-1 min-w-[125px] sm:min-w-0 justify-center px-2.5 py-2.5 text-xs md:text-sm font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer text-center ${
               activeTab === "swot-stakeholders"
                 ? "bg-[#E03131] text-white shadow-xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
@@ -2148,7 +2148,7 @@ export default function IsoReportDetail() {
           <button
             onClick={() => handleTabChange("risk-register")}
             title="3. ความเสี่ยงและโอกาสของทีม CC และเมทริกซ์ TOWS"
-            className={`justify-center px-2 py-2.5 text-xs md:text-sm font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer text-center ${
+            className={`shrink-0 sm:shrink flex-1 min-w-[125px] sm:min-w-0 justify-center px-2.5 py-2.5 text-xs md:text-sm font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer text-center ${
               activeTab === "risk-register"
                 ? "bg-[#E03131] text-white shadow-xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
@@ -2161,7 +2161,7 @@ export default function IsoReportDetail() {
           <button
             onClick={() => handleTabChange("wi")}
             title="4. ระบบติดตามขั้นตอนปฏิบัติงานตามคู่มือ WI"
-            className={`justify-center px-2 py-2.5 text-xs md:text-sm font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer text-center ${
+            className={`shrink-0 sm:shrink flex-1 min-w-[125px] sm:min-w-0 justify-center px-2.5 py-2.5 text-xs md:text-sm font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer text-center ${
               activeTab === "wi"
                 ? "bg-[#E03131] text-white shadow-xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
@@ -2174,7 +2174,7 @@ export default function IsoReportDetail() {
           <button
             onClick={() => handleTabChange("stakeholders")}
             title="5. ทะเบียนผู้มีส่วนได้ส่วนเสีย การประเมินผล และพัฒนาบริการ (ISO 9001:2015 ข้อ 4.2)"
-            className={`justify-center px-2 py-2.5 text-xs md:text-sm font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer text-center ${
+            className={`shrink-0 sm:shrink flex-1 min-w-[125px] sm:min-w-0 justify-center px-2.5 py-2.5 text-xs md:text-sm font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer text-center ${
               activeTab === "stakeholders"
                 ? "bg-[#E03131] text-white shadow-xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
@@ -2187,7 +2187,7 @@ export default function IsoReportDetail() {
           <button
             onClick={() => handleTabChange("requirements-evidence")}
             title="6. ตารางวิเคราะห์ความสอดคล้องข้อกำหนด ISO 9001:2015 และคลังหลักฐาน"
-            className={`justify-center px-2 py-2.5 text-xs md:text-sm font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer text-center ${
+            className={`shrink-0 sm:shrink flex-1 min-w-[125px] sm:min-w-0 justify-center px-2.5 py-2.5 text-xs md:text-sm font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer text-center ${
               activeTab === "requirements-evidence"
                 ? "bg-[#E03131] text-white shadow-xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
@@ -2205,22 +2205,22 @@ export default function IsoReportDetail() {
       {activeTab === "risk-analysis" && (
         <div className="space-y-6">
           {/* Header Card */}
-          <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200 shadow-2xs space-y-5">
+          <div className="bg-white p-4 sm:p-7 rounded-3xl border border-slate-200 shadow-2xs space-y-5">
             {/* Top Bar: Badge, Reference File & Far-Right Download Button */}
-            <div className="flex items-center justify-between gap-4 pb-3 border-b border-slate-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
               <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3">
-                <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 whitespace-nowrap inline-flex items-center gap-1.5 w-fit">
-                  <ShieldCheck size={13} />
-                  <span>เอกสารแนบ 1: แบบฟอร์มวิเคราะห์ความเสี่ยงและแผนการจัดการความเสี่ยง CC</span>
+                <span className="text-xs font-mono font-bold px-3 py-1.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 inline-flex items-center gap-1.5 w-fit">
+                  <ShieldCheck size={13} className="shrink-0" />
+                  <span className="break-words">เอกสารแนบ 1: แบบฟอร์มวิเคราะห์ความเสี่ยงและแผนการจัดการความเสี่ยง CC</span>
                 </span>
-                <span className="text-xs text-slate-500 font-mono">
+                <span className="text-xs text-slate-500 font-mono break-all sm:break-normal">
                   ไฟล์อ้างอิง: <strong className="text-slate-700">1_วิเคราะห์ความเสี่ยงและแผนการจัดการความเสี่ยง CC.docx</strong>
                 </span>
               </div>
               <button
                 type="button"
                 onClick={handleExportTab1Excel}
-                className="ml-auto px-4 py-2 rounded-full bg-[#0F9D58] hover:bg-[#0B8043] text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95 transition-all shrink-0"
+                className="w-full sm:w-auto px-4 py-2 rounded-full bg-[#0F9D58] hover:bg-[#0B8043] text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-95 transition-all shrink-0"
                 title="ดาวน์โหลด Excel รายงานการวิเคราะห์ความเสี่ยงและแผนการจัดการความเสี่ยง"
               >
                 <Download size={14} className="shrink-0" />
@@ -2234,10 +2234,10 @@ export default function IsoReportDetail() {
                 <span>🎯</span>
                 <span>ประเด็นความเสี่ยงตามเอกสารฉบับที่ 1:</span>
               </span>
-              <div className="inline-flex p-1 bg-white rounded-xl border border-slate-200 shadow-2xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 p-1 bg-white rounded-xl border border-slate-200 shadow-2xs gap-1 w-full sm:w-auto">
                 <button
                   onClick={() => setRiskDimension("reputation")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  className={`px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer text-center ${
                     riskDimension === "reputation"
                       ? "bg-rose-600 text-white shadow-xs"
                       : "text-slate-600 hover:text-slate-900"
@@ -2247,7 +2247,7 @@ export default function IsoReportDetail() {
                 </button>
                 <button
                   onClick={() => setRiskDimension("operational")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  className={`px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer text-center ${
                     riskDimension === "operational"
                       ? "bg-blue-600 text-white shadow-xs"
                       : "text-slate-600 hover:text-slate-900"
@@ -2798,20 +2798,20 @@ export default function IsoReportDetail() {
           {/* Header Card */}
           <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200 shadow-2xs space-y-6">
             {/* Top Bar: Badge, Reference File & Far-Right Download Button */}
-            <div className="flex items-center justify-between gap-4 pb-3 border-b border-slate-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
               <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3">
-                <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap inline-flex items-center gap-1.5 w-fit">
-                  <Users size={13} />
-                  <span>เอกสารแนบ 2: การวิเคราะห์ SWOT ทีมและผู้มีส่วนได้ส่วนเสีย</span>
+                <span className="text-xs font-mono font-bold px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 inline-flex items-center gap-1.5 w-fit">
+                  <Users size={13} className="shrink-0" />
+                  <span className="break-words">เอกสารแนบ 2: การวิเคราะห์ SWOT ทีมและผู้มีส่วนได้ส่วนเสีย</span>
                 </span>
-                <span className="text-xs text-slate-500 font-mono">
+                <span className="text-xs text-slate-500 font-mono break-all sm:break-normal">
                   ไฟล์อ้างอิง: <strong className="text-slate-700">2_SWOT CC.xlsx</strong> (ISO 9001:2015 ข้อกำหนด 4.1 &amp; 4.2)
                 </span>
               </div>
               <button
                 type="button"
                 onClick={handleExportTab2Excel}
-                className="ml-auto px-4 py-2 rounded-full bg-[#0F9D58] hover:bg-[#0B8043] text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95 transition-all shrink-0"
+                className="w-full sm:w-auto px-4 py-2 rounded-full bg-[#0F9D58] hover:bg-[#0B8043] text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-95 transition-all shrink-0"
                 title="ดาวน์โหลด Excel รายงานการวิเคราะห์ SWOT ทีมและผู้มีส่วนได้ส่วนเสีย"
               >
                 <Download size={14} className="shrink-0" />
@@ -2972,20 +2972,20 @@ export default function IsoReportDetail() {
           {/* Main Card */}
           <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200 shadow-2xs space-y-7">
             {/* Top Bar: Badge, Reference File & Far-Right Download Button */}
-            <div className="flex items-center justify-between gap-4 pb-3 border-b border-slate-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
               <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3">
-                <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200 whitespace-nowrap inline-flex items-center gap-1.5 w-fit">
-                  <FileSpreadsheet size={13} />
-                  <span>เอกสารแนบ 3: ความเสี่ยงและโอกาสของทีม CC</span>
+                <span className="text-xs font-mono font-bold px-3 py-1.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 inline-flex items-center gap-1.5 w-fit">
+                  <FileSpreadsheet size={13} className="shrink-0" />
+                  <span className="break-words">เอกสารแนบ 3: ความเสี่ยงและโอกาสของทีม CC</span>
                 </span>
-                <span className="text-xs text-slate-500 font-mono">
+                <span className="text-xs text-slate-500 font-mono break-all sm:break-normal">
                   ไฟล์อ้างอิง: <strong className="text-slate-700">3_ประเมินความเสี่ยงและโอกาส CC.xlsx</strong> (ISO 9001:2015 ข้อกำหนด 6.1)
                 </span>
               </div>
               <button
                 type="button"
                 onClick={handleExportTab3Excel}
-                className="ml-auto px-4 py-2 rounded-full bg-[#0F9D58] hover:bg-[#0B8043] text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95 transition-all shrink-0"
+                className="w-full sm:w-auto px-4 py-2 rounded-full bg-[#0F9D58] hover:bg-[#0B8043] text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-95 transition-all shrink-0"
                 title="ดาวน์โหลด Excel ทะเบียนประเมินความเสี่ยงและโอกาส พร้อมการวิเคราะห์ TOWS"
               >
                 <Download size={14} className="shrink-0" />
@@ -3482,25 +3482,25 @@ export default function IsoReportDetail() {
           {/* Header Card & KPI Summary */}
           <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200 shadow-2xs space-y-6">
             {/* Top Bar: Badge, Standard Ref & Far-Right Download Button */}
-            <div className="flex items-center justify-between gap-4 pb-3 border-b border-slate-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
               <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-red-50 text-[#E03131] border border-red-200 whitespace-nowrap inline-flex items-center gap-1.5 w-fit">
-                    <BookOpen size={13} />
-                    <span>ISO 9001:2015 Requirements &amp; Evidence Mapping</span>
+                  <span className="text-xs font-mono font-bold px-3 py-1.5 rounded-full bg-red-50 text-[#E03131] border border-red-200 inline-flex items-center gap-1.5 w-fit">
+                    <BookOpen size={13} className="shrink-0" />
+                    <span className="break-words">ISO 9001:2015 Requirements &amp; Evidence Mapping</span>
                   </span>
-                  <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 whitespace-nowrap">
+                  <span className="text-xs font-mono font-bold px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 break-words">
                     ระบบบริหารจัดการงานสื่อสาร CC System
                   </span>
                 </div>
-                <span className="text-xs text-slate-500 font-mono">
+                <span className="text-xs text-slate-500 font-mono break-all sm:break-normal">
                   มาตรฐานอ้างอิง: <strong className="text-slate-700">ISO 9001:2015 (หมวด 4 - 10)</strong>
                 </span>
               </div>
               <button
                 type="button"
                 onClick={handleExportTab5Excel}
-                className="ml-auto px-4 py-2 rounded-full bg-[#0F9D58] hover:bg-[#0B8043] text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95 transition-all shrink-0"
+                className="w-full sm:w-auto px-4 py-2 rounded-full bg-[#0F9D58] hover:bg-[#0B8043] text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-95 transition-all shrink-0"
                 title="ดาวน์โหลด Excel ตารางวิเคราะห์ความสอดคล้องข้อกำหนด ISO 9001:2015 และหลักฐานเชิงประจักษ์"
               >
                 <Download size={14} className="shrink-0" />

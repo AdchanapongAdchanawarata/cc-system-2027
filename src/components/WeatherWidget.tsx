@@ -138,7 +138,7 @@ export default function WeatherWidget({ variant = "full" }: { variant?: "full" |
         </div>
 
         {/* Weather Text & Date (Real Weather - No Manual Switchers) */}
-        <div className="text-center font-light tracking-wide text-[#78716c] -mt-4 sm:-mt-5 mb-1 sm:mb-2 relative z-30">
+        <div className="text-center font-light tracking-wide text-[#78716c] -mt-7 sm:-mt-9 md:-mt-11 mb-0 relative z-30">
           <p className="text-xs sm:text-base md:text-lg text-foreground font-normal mb-0.5">{weather.label} & {weather.temp}°C</p>
           <p className="text-[10px] sm:text-xs md:text-sm font-medium text-muted-foreground">{dateString}</p>
         </div>
@@ -146,7 +146,7 @@ export default function WeatherWidget({ variant = "full" }: { variant?: "full" |
       
       {/* Quote */}
       <div className={variant === "hidden" ? "opacity-0" : "opacity-100"}>
-        <div className="mt-0 sm:mt-1 mb-2 sm:mb-3 text-center max-w-3xl mx-auto px-3">
+        <div className="mt-4 sm:mt-6 md:mt-7 mb-2 sm:mb-3 text-center max-w-3xl mx-auto px-3">
           <p className="text-sm sm:text-xl md:text-2xl lg:text-3xl font-serif italic text-foreground mb-0.5 sm:mb-1 leading-snug sm:leading-relaxed">"{quote.text}"</p>
           <p className="text-[10px] sm:text-xs md:text-sm font-medium text-primary tracking-[0.15em] sm:tracking-[0.25em] uppercase">— {quote.author} —</p>
         </div>

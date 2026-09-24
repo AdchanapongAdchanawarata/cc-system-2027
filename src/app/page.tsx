@@ -56,7 +56,7 @@ export default function Home() {
         <div className="flex flex-col items-center text-center group animate-premium-fade" style={{ animationDelay: '200ms' }}>
           <Link href="/request?unit=creative" className="flex flex-col items-center w-full">
             <div className="w-20 h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 rounded-full rams-circle animate-btn-glow shimmer-delay-1 flex items-center justify-center transition-all duration-300 mb-2 sm:mb-3 group-active:scale-95" style={{ animationDelay: '0s' }}>
-              <PenTool className="text-foreground opacity-80 group-hover:opacity-100 group-hover:text-primary transition-colors duration-300 w-7 h-7 sm:w-9 sm:h-9 md:w-12 md:h-12" strokeWidth={1.5} />
+              <PenTool className="text-slate-800 dark:text-neutral-100 opacity-90 group-hover:opacity-100 group-hover:text-primary transition-colors duration-300 w-7 h-7 sm:w-9 sm:h-9 md:w-12 md:h-12" strokeWidth={1.75} />
             </div>
             <h2 className="text-xs sm:text-base md:text-xl font-medium mb-1 sm:mb-2 text-foreground tracking-tight sm:tracking-wide">
               Creative Designer<br/>
@@ -70,7 +70,7 @@ export default function Home() {
         <div className="flex flex-col items-center text-center group animate-premium-fade" style={{ animationDelay: '300ms' }}>
           <Link href="/request?unit=content" className="flex flex-col items-center w-full">
             <div className="w-20 h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 rounded-full rams-circle animate-btn-glow shimmer-delay-2 flex items-center justify-center transition-all duration-300 mb-2 sm:mb-3 group-active:scale-95" style={{ animationDelay: '6s' }}>
-              <Video className="text-foreground opacity-80 group-hover:opacity-100 group-hover:text-primary transition-colors duration-300 w-7 h-7 sm:w-9 sm:h-9 md:w-12 md:h-12" strokeWidth={1.5} />
+              <Video className="text-slate-800 dark:text-neutral-100 opacity-90 group-hover:opacity-100 group-hover:text-primary transition-colors duration-300 w-7 h-7 sm:w-9 sm:h-9 md:w-12 md:h-12" strokeWidth={1.75} />
             </div>
             <h2 className="text-xs sm:text-base md:text-xl font-medium mb-1 sm:mb-2 text-foreground tracking-tight sm:tracking-wide">
               Content Creator<br/>
@@ -84,7 +84,7 @@ export default function Home() {
         <div className="flex flex-col items-center text-center group animate-premium-fade" style={{ animationDelay: '400ms' }}>
           <Link href="/request?unit=pr" className="flex flex-col items-center w-full">
             <div className="w-20 h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 rounded-full rams-circle animate-btn-glow shimmer-delay-3 flex items-center justify-center transition-all duration-300 mb-2 sm:mb-3 group-active:scale-95" style={{ animationDelay: '3s' }}>
-              <Mic className="text-foreground opacity-80 group-hover:opacity-100 group-hover:text-primary transition-colors duration-300 w-7 h-7 sm:w-9 sm:h-9 md:w-12 md:h-12" strokeWidth={1.5} />
+              <Mic className="text-slate-800 dark:text-neutral-100 opacity-90 group-hover:opacity-100 group-hover:text-primary transition-colors duration-300 w-7 h-7 sm:w-9 sm:h-9 md:w-12 md:h-12" strokeWidth={1.75} />
             </div>
             <h2 className="text-xs sm:text-base md:text-xl font-medium mb-1 sm:mb-2 text-foreground tracking-tight sm:tracking-wide">
               PR<br/>

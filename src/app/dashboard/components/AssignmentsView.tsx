@@ -85,6 +85,9 @@ export default function AssignmentsView() {
   // In-Progress Email Draft Modal state
   const [pendingInProgressBrief, setPendingInProgressBrief] = useState<Brief | null>(null);
 
+  // Mobile Kanban Column Tab Switcher State
+  const [mobileStatusTab, setMobileStatusTab] = useState<string>("pending");
+
   const supabase = createClient();
 
   // Listen to History Manager changes
@@ -594,10 +597,10 @@ export default function AssignmentsView() {
     .sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   return (
-    <div className="w-full flex flex-col h-[calc(100vh-140px)] min-h-[580px] mb-4 bg-surface rounded-2xl border border-surface-border shadow-xs overflow-hidden p-4 md:p-6 animate-in fade-in duration-200">
+    <div className="w-full flex flex-col h-[calc(100dvh-120px)] md:h-[calc(100vh-140px)] min-h-[520px] md:min-h-[580px] mb-4 bg-surface rounded-2xl border border-surface-border shadow-xs overflow-hidden p-3 sm:p-4 md:p-6 animate-in fade-in duration-200">
       
       {/* Top Header */}
-      <div className="flex flex-col gap-3.5 mb-5 pb-4 border-b border-surface-border print:hidden shrink-0">
+      <div className="flex flex-col gap-3.5 mb-4 sm:mb-5 pb-3 sm:pb-4 border-b border-surface-border print:hidden shrink-0">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2.5">
@@ -616,15 +619,15 @@ export default function AssignmentsView() {
       </div>
 
       {/* Header & Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-5 gap-4 shrink-0">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-3 shrink-0">
         
         {/* Left: Unit Filter Pills */}
-        <div className="flex bg-white p-1 rounded-full border border-surface-border shadow-sm overflow-x-auto">
+        <div className="flex bg-white p-1 rounded-full border border-surface-border shadow-sm overflow-x-auto no-scrollbar">
           {["All CC", "Creative", "Content", "PR", "Internal"].map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all whitespace-nowrap ${
+              className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium rounded-full transition-all whitespace-nowrap ${
                 filter === f ? "bg-[#E03131] text-white shadow-sm font-semibold" : "text-muted-foreground hover:bg-slate-50"
               }`}
             >
@@ -634,7 +637,7 @@ export default function AssignmentsView() {
         </div>
 
         {/* Right: History Controls (Undo / Redo 50 steps), Trash Bin & Search */}
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           
           {/* History Controls: Back ↩ & Forward ↪ */}
           <div className="flex items-center bg-white border border-slate-200 rounded-full p-1 shadow-sm gap-1">
@@ -695,11 +698,11 @@ export default function AssignmentsView() {
           </button>
 
           {/* Search Bar */}
-          <div className="relative">
+          <div className="relative flex-1 min-w-[140px] sm:flex-initial">
             <input 
               type="text" 
               placeholder="ค้นหา รหัส, ชื่อ, ข้อความ..." 
-              className="pl-9 pr-4 py-1.5 text-sm rounded-full border border-slate-200 focus:outline-none focus:border-primary w-52 md:w-60 shadow-sm bg-white"
+              className="pl-9 pr-4 py-1.5 text-xs sm:text-sm rounded-full border border-slate-200 focus:outline-none focus:border-primary w-full sm:w-52 md:w-60 shadow-sm bg-white"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -718,12 +721,40 @@ export default function AssignmentsView() {
         </div>
       )}
 
+      {/* Mobile Kanban Column Switcher (Visible on mobile/tablet, hidden on md+) */}
+      <div className="flex md:hidden items-center bg-slate-100 p-1.5 rounded-2xl gap-1.5 mb-3 shrink-0 overflow-x-auto no-scrollbar border border-slate-200 shadow-2xs">
+        {COLUMNS.map((col) => {
+          const count = displayBriefs.filter(b => b.status === col.id).length;
+          const isActive = mobileStatusTab === col.id;
+          return (
+            <button
+              key={col.id}
+              onClick={() => setMobileStatusTab(col.id)}
+              className={`shrink-0 flex-1 min-w-fit py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                isActive
+                  ? "bg-white text-slate-900 shadow-sm border border-slate-200"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              <span>{col.shortLabel}</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                isActive ? "bg-slate-900 text-white" : "bg-slate-200 text-slate-600"
+              }`}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Kanban Board */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-4 gap-4 overflow-hidden h-full">
+      <div className="flex-1 min-h-0 flex flex-col md:grid md:grid-cols-4 gap-4 overflow-hidden h-full">
         {COLUMNS.map(col => (
           <div 
             key={col.id} 
-            className="w-full flex flex-col h-full min-h-0 bg-slate-100/50 rounded-xl p-2 transition-colors border border-transparent hover:border-slate-200"
+            className={`w-full flex-col h-full min-h-0 bg-slate-100/50 rounded-xl p-2 sm:p-2.5 transition-colors border border-transparent hover:border-slate-200 ${
+              mobileStatusTab === col.id ? "flex" : "hidden md:flex"
+            }`}
             onDragOver={handleDragOver}
             onDrop={(e) => handleDrop(e, col.id)}
           >

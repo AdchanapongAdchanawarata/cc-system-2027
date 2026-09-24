@@ -159,38 +159,40 @@ a, button, input, select, textarea {
 
 @media (prefers-color-scheme: dark) {
   .rams-circle {
-  background: linear-gradient(135deg, #ffffff, #e5e5e5);
-  border: 1px solid #d4d4d8;
-  box-shadow: 
-    -8px -8px 16px rgba(255,255,255,1),
-    8px 8px 16px rgba(0,0,0,0.08),
-    inset 0px 2px 4px rgba(255,255,255,1),
-    inset 0px -2px 4px rgba(0,0,0,0.05);
-  position: relative;
-  transition: all 0.2s ease;
-}
-.rams-circle::after {
-  content: '';
-  position: absolute;
-  top: 15%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background-color: var(--primary);
-  box-shadow: inset 1px 1px 2px rgba(0,0,0,0.3), 0 1px 2px rgba(255,255,255,0.8);
-  opacity: 0;
-  transition: opacity 300ms ease, transform 300ms ease;
-}
-.group:hover .rams-circle::after {
-  opacity: 1;
-  transform: translateX(-50%) scale(1.1);
-}
+    background: linear-gradient(135deg, #27272a, #18181b);
+    border: 1px solid #3f3f46;
+    box-shadow: 
+      -4px -4px 12px rgba(255,255,255,0.04),
+      6px 6px 16px rgba(0,0,0,0.6),
+      inset 0px 1px 2px rgba(255,255,255,0.1),
+      inset 0px -1px 2px rgba(0,0,0,0.5);
+    position: relative;
+    transition: all 0.2s ease;
+  }
+  .rams-circle::after {
+    content: '';
+    position: absolute;
+    top: 15%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--primary);
+    box-shadow: inset 1px 1px 2px rgba(0,0,0,0.5), 0 0 6px rgba(249,115,22,0.7);
+    opacity: 0;
+    transition: opacity 300ms ease, transform 300ms ease;
+  }
+  .group:hover .rams-circle::after {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.1);
+  }
   .rams-circle:active {
     box-shadow: 
-      inset 5px 5px 10px rgba(0,0,0,0.3),
-      inset -5px -5px 10px rgba(255,255,255,0.02);
+      inset 4px 4px 10px rgba(0,0,0,0.7),
+      inset -2px -2px 6px rgba(255,255,255,0.04);
+    background: linear-gradient(135deg, #18181b, #27272a);
+    transform: translateY(2px);
   }
   .rams-action-btn {
     box-shadow: 
@@ -202,6 +204,16 @@ a, button, input, select, textarea {
     border: 1px solid #27272a;
     box-shadow: 0 15px 35px rgba(0,0,0,0.3);
   }
+}
+
+.dark .rams-circle {
+  background: linear-gradient(135deg, #27272a, #18181b);
+  border: 1px solid #3f3f46;
+  box-shadow: 
+    -4px -4px 12px rgba(255,255,255,0.04),
+    6px 6px 16px rgba(0,0,0,0.6),
+    inset 0px 1px 2px rgba(255,255,255,0.1),
+    inset 0px -1px 2px rgba(0,0,0,0.5);
 }
 
 @keyframes orange-glow {
@@ -560,6 +572,17 @@ a, button, input, select, textarea {
   overflow: hidden;
 }
 
+.rams-circle svg {
+  color: #1e293b;
+  position: relative;
+  z-index: 20;
+  transition: color 200ms ease;
+}
+
+.group:hover .rams-circle svg {
+  color: var(--primary);
+}
+
 .rams-circle::before {
   content: '';
   position: absolute;
@@ -570,13 +593,40 @@ a, button, input, select, textarea {
   background: linear-gradient(
     to right,
     rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.8) 50%,
+    rgba(255, 255, 255, 0.6) 50%,
     rgba(255, 255, 255, 0) 100%
   );
   transform: translateX(-200%) skewX(-30deg);
   animation: shimmer-sweep 12s infinite;
   pointer-events: none;
   z-index: 10;
+}
+
+@media (prefers-color-scheme: dark) {
+  .rams-circle svg {
+    color: #f4f4f5;
+  }
+  .rams-circle::before {
+    background: linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.12) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+  }
+}
+
+.dark .rams-circle svg {
+  color: #f4f4f5;
+}
+
+.dark .rams-circle::before {
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
 }
 
 .shimmer-delay-1::before { animation-delay: 0s; }

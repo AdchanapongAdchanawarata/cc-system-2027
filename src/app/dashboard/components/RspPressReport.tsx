@@ -960,10 +960,10 @@ export default function RspPressReport() {
       {/* TOP TAB NAVIGATION: EXACT RED CAPSULE STYLE MATCHING SYSTEM STANDARD      */}
       {/* ========================================================================= */}
       <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-2xs">
-        <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200">
+        <div className="flex overflow-x-auto no-scrollbar sm:grid sm:grid-cols-2 bg-slate-100 p-1 rounded-2xl border border-slate-200 gap-1">
           <button
             onClick={() => setActiveTab("records")}
-            className={`flex-1 justify-center px-3 py-2.5 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+            className={`flex-1 shrink-0 sm:shrink min-w-fit justify-center px-3 py-2.5 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
               activeTab === "records"
                 ? "bg-[#E03131] text-white shadow-xs font-bold"
                 : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
@@ -975,7 +975,7 @@ export default function RspPressReport() {
 
           <button
             onClick={() => setActiveTab("dashboard")}
-            className={`flex-1 justify-center px-3 py-2.5 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+            className={`flex-1 shrink-0 sm:shrink min-w-fit justify-center px-3 py-2.5 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
               activeTab === "dashboard"
                 ? "bg-[#E03131] text-white shadow-xs font-bold"
                 : "text-slate-600 hover:text-slate-900 hover:bg-white/80"

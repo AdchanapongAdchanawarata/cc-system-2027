@@ -88,7 +88,59 @@ export default function AssignmentsView() {
   // Mobile Kanban Column Tab Switcher State
   const [mobileStatusTab, setMobileStatusTab] = useState<string>("pending");
 
+  // Status Revert Confirmation State
+  const [revertConfirmData, setRevertConfirmData] = useState<{
+    brief: Brief;
+    targetStatus: string;
+    currentStatus: string;
+  } | null>(null);
+  const [revertReason, setRevertReason] = useState("");
+
   const supabase = createClient();
+
+  // Auto-detect logged in employee's unit to preselect tab (Creative / Content / PR / Internal)
+  useEffect(() => {
+    try {
+      const savedUnit = localStorage.getItem("cc_user_unit");
+      const unitMap: Record<string, string> = {
+        creative: "Creative",
+        content: "Content",
+        pr: "PR",
+        internal: "Internal",
+      };
+      if (savedUnit && unitMap[savedUnit.toLowerCase()]) {
+        setFilter(unitMap[savedUnit.toLowerCase()]);
+        return;
+      }
+
+      // Fallback: match by email or name from assignees
+      const savedEmail = localStorage.getItem("cc_user_email");
+      const savedName = localStorage.getItem("cc_user_name");
+      if (savedEmail || savedName) {
+        supabase
+          .from("assignees")
+          .select("unit, email, name")
+          .then(({ data }) => {
+            if (data && data.length > 0) {
+              const matched = data.find(
+                (a) =>
+                  (savedEmail && a.email && a.email.toLowerCase() === savedEmail.toLowerCase()) ||
+                  (savedName && a.name && a.name.includes(savedName))
+              );
+              if (matched && matched.unit) {
+                const u = matched.unit.split("|")[0].toLowerCase();
+                if (unitMap[u]) {
+                  localStorage.setItem("cc_user_unit", u);
+                  setFilter(unitMap[u]);
+                }
+              }
+            }
+          });
+      }
+    } catch (e) {
+      console.warn("Auto tab selection notice:", e);
+    }
+  }, []);
 
   // Listen to History Manager changes
   useEffect(() => {
@@ -203,13 +255,38 @@ export default function AssignmentsView() {
     await supabase.from('briefs').update(updates).eq('id', id);
   };
 
-  const updateField = async (id: string, field: string, value: any, recordHistory: boolean = true) => {
+  const updateField = async (
+    id: string,
+    field: string,
+    value: any,
+    recordHistory: boolean = true,
+    bypassRevertCheck: boolean = false,
+    reason?: string
+  ) => {
     const brief = briefs.find(b => b.id === id);
     if (!brief) return;
 
     // Enforce valid status transition workflow rules
     if (field === 'status') {
       const currentStatus = brief.status || 'pending';
+      if (currentStatus === value) return;
+
+      // Check if this is reverting / moving backwards
+      const isRevert =
+        (currentStatus === 'completed' && value !== 'completed') ||
+        (currentStatus === 'in_progress' && value === 'pending') ||
+        (currentStatus === 'in_progress' && value === 'cancelled') ||
+        (currentStatus === 'cancelled' && (value === 'pending' || value === 'in_progress'));
+
+      if (isRevert && !bypassRevertCheck) {
+        setRevertReason("");
+        setRevertConfirmData({
+          brief,
+          targetStatus: value,
+          currentStatus
+        });
+        return;
+      }
 
       // 1. From 'pending': can only move to 'in_progress' or 'cancelled'
       if (currentStatus === 'pending') {
@@ -230,7 +307,7 @@ export default function AssignmentsView() {
       }
 
       // 2. Intercept in_progress transition to require assignee and draft email modal
-      if (value === 'in_progress') {
+      if (value === 'in_progress' && !bypassRevertCheck) {
         if (!brief.assignee_id) {
           alert(
             "⚠️ ไม่สามารถเริ่มงานได้: กรุณากำหนดผู้รับผิดชอบงาน (Assignee) ก่อนเปลี่ยนสถานะเป็น In Progress\n\n" +
@@ -254,12 +331,18 @@ export default function AssignmentsView() {
     if (field === 'status') {
       if (value === 'in_progress' && !brief.in_progress_at) updates.in_progress_at = now;
       if (value === 'completed' || value === 'cancelled') updates.completed_at = now;
+      if (reason) {
+        const details = { ...(brief.details || {}) };
+        details.status_revert_reason = reason;
+        details.status_reverted_at = now;
+        updates.details = details;
+      }
     }
 
     // Record into HistoryManager (supports 50 operations)
     if (recordHistory && previousValue !== value) {
       const description = field === 'status'
-        ? `ย้าย "${brief.project_name}" ไป ${value}`
+        ? `ย้าย "${brief.project_name}" ไป ${value}${reason ? ` (เหตุผล: ${reason})` : ''}`
         : field === 'assignee_id'
         ? `เปลี่ยนผู้รับผิดชอบ "${brief.project_name}"`
         : `แก้ไข ${field} ของ "${brief.project_name}"`;
@@ -384,6 +467,20 @@ export default function AssignmentsView() {
       showToast(`งาน "${pendingInProgressBrief.project_name}" ยังคงอยู่ที่สถานะ Pending`, "info");
     }
     setPendingInProgressBrief(null);
+  };
+
+  // --- CONFIRM STATUS REVERT (MOVE BACKWARDS) ---
+  const handleConfirmRevertStatus = async () => {
+    if (!revertConfirmData) return;
+    const { brief, targetStatus } = revertConfirmData;
+    const reasonToSave = revertReason.trim();
+    setRevertConfirmData(null);
+
+    await updateField(brief.id, 'status', targetStatus, true, true, reasonToSave);
+    showToast(
+      `⚠️ เลื่อนเปลี่ยนสถานะงาน "${brief.project_name}" เป็น ${targetStatus.toUpperCase()} สำเร็จ (กรุณาแจ้ง PM และหัวหน้าทีม)`,
+      "info"
+    );
   };
 
   const formatDate = (dateString: string) => {
@@ -622,13 +719,13 @@ export default function AssignmentsView() {
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-3 shrink-0">
         
         {/* Left: Unit Filter Pills */}
-        <div className="flex bg-white p-1 rounded-full border border-surface-border shadow-sm overflow-x-auto no-scrollbar">
+        <div className="flex bg-surface p-1 rounded-full border border-surface-border shadow-xs overflow-x-auto no-scrollbar">
           {["All CC", "Creative", "Content", "PR", "Internal"].map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium rounded-full transition-all whitespace-nowrap ${
-                filter === f ? "bg-[#E03131] text-white shadow-sm font-semibold" : "text-muted-foreground hover:bg-slate-50"
+              className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium rounded-full transition-all whitespace-nowrap cursor-pointer ${
+                filter === f ? "bg-[#E03131] text-white shadow-xs font-semibold" : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
               }`}
             >
               {f}
@@ -640,42 +737,42 @@ export default function AssignmentsView() {
         <div className="flex items-center gap-2 flex-wrap">
           
           {/* History Controls: Back ↩ & Forward ↪ */}
-          <div className="flex items-center bg-white border border-slate-200 rounded-full p-1 shadow-sm gap-1">
+          <div className="flex items-center bg-surface border border-surface-border rounded-full p-1 shadow-xs gap-1">
             <button
               onClick={handleUndo}
               disabled={!canUndo}
               className={`p-1.5 rounded-full transition-all flex items-center gap-1 px-2.5 text-xs font-semibold ${
                 canUndo
-                  ? "text-slate-700 hover:bg-slate-100 active:scale-95 cursor-pointer"
-                  : "text-slate-300 cursor-not-allowed opacity-50"
+                  ? "text-foreground hover:bg-muted/50 active:scale-95 cursor-pointer"
+                  : "text-muted-foreground/40 cursor-not-allowed opacity-50"
               }`}
               title={canUndo ? `ย้อนกลับ (Ctrl+Z) - ย้อนได้อีก ${undoCount}/50 ครั้ง` : "ไม่มีประวัติให้ย้อนกลับ"}
             >
               <Undo2 size={15} />
               <span className="hidden sm:inline">Back</span>
               {undoCount > 0 && (
-                <span className="text-[10px] bg-slate-100 text-slate-600 rounded-full px-1.5 py-0.2">
+                <span className="text-[10px] bg-muted text-foreground rounded-full px-1.5 py-0.2">
                   {undoCount}
                 </span>
               )}
             </button>
 
-            <div className="w-[1px] h-4 bg-slate-200" />
+            <div className="w-[1px] h-4 bg-surface-border" />
 
             <button
               onClick={handleRedo}
               disabled={!canRedo}
               className={`p-1.5 rounded-full transition-all flex items-center gap-1 px-2.5 text-xs font-semibold ${
                 canRedo
-                  ? "text-slate-700 hover:bg-slate-100 active:scale-95 cursor-pointer"
-                  : "text-slate-300 cursor-not-allowed opacity-50"
+                  ? "text-foreground hover:bg-muted/50 active:scale-95 cursor-pointer"
+                  : "text-muted-foreground/40 cursor-not-allowed opacity-50"
               }`}
               title={canRedo ? `ไปข้างหน้า (Ctrl+Y / Ctrl+Shift+Z) - ทำซ้ำได้อีก ${redoCount}/50 ครั้ง` : "ไม่มีประวัติให้ไปข้างหน้า"}
             >
               <span className="hidden sm:inline">Forward</span>
               <Redo2 size={15} />
               {redoCount > 0 && (
-                <span className="text-[10px] bg-slate-100 text-slate-600 rounded-full px-1.5 py-0.2">
+                <span className="text-[10px] bg-muted text-foreground rounded-full px-1.5 py-0.2">
                   {redoCount}
                 </span>
               )}
@@ -685,10 +782,10 @@ export default function AssignmentsView() {
           {/* Trash Bin Button with Counter Badge */}
           <button
             onClick={() => setIsTrashOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-slate-200 shadow-sm text-xs font-semibold text-slate-700 hover:border-rose-300 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer relative"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface border border-surface-border shadow-xs text-xs font-semibold text-foreground hover:border-rose-300 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all cursor-pointer relative"
             title="เปิดถังขยะ (Trash Bin) เพื่อดูกระดาษที่ถูกลบ หรือ Restore กู้คืน"
           >
-            <Trash2 size={15} className={trashedBriefs.length > 0 ? "text-rose-500" : "text-slate-400"} />
+            <Trash2 size={15} className={trashedBriefs.length > 0 ? "text-rose-500" : "text-muted-foreground"} />
             <span className="hidden sm:inline">ถังขยะ</span>
             {trashedBriefs.length > 0 && (
               <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px] font-bold">
@@ -702,7 +799,7 @@ export default function AssignmentsView() {
             <input 
               type="text" 
               placeholder="ค้นหา รหัส, ชื่อ, ข้อความ..." 
-              className="pl-9 pr-4 py-1.5 text-xs sm:text-sm rounded-full border border-slate-200 focus:outline-none focus:border-primary w-full sm:w-52 md:w-60 shadow-sm bg-white"
+              className="pl-9 pr-4 py-1.5 text-xs sm:text-sm rounded-full border border-surface-border focus:outline-none focus:border-primary w-full sm:w-52 md:w-60 shadow-xs bg-surface text-foreground"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -760,9 +857,9 @@ export default function AssignmentsView() {
           >
             
             {/* Column Header */}
-            <div className={`flex items-center justify-between mb-3 px-3 py-2 bg-white rounded-md border-t-4 shadow-sm shrink-0 ${col.color}`}>
-              <h3 className="font-semibold text-sm text-slate-700 uppercase tracking-wide">{col.shortLabel}</h3>
-              <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+            <div className={`flex items-center justify-between mb-3 px-3 py-2 bg-surface border border-surface-border rounded-md border-t-4 shadow-2xs shrink-0 ${col.color}`}>
+              <h3 className="font-bold text-sm text-foreground uppercase tracking-wide">{col.shortLabel}</h3>
+              <span className="text-xs font-semibold text-muted-foreground bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
                 {displayBriefs.filter(b => b.status === col.id).length}
               </span>
             </div>
@@ -798,7 +895,7 @@ export default function AssignmentsView() {
                     onDragStart={(e) => handleDragStart(e, brief.id)}
                     onDragEnd={handleDragEnd}
                     onClick={() => setSelectedBrief(brief)}
-                    className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300 transition-all cursor-grab active:cursor-grabbing group flex flex-col relative"
+                    className="bg-surface p-3 rounded-lg border border-surface-border shadow-2xs hover:shadow-md hover:border-slate-300 dark:hover:border-zinc-700 transition-all cursor-grab active:cursor-grabbing group flex flex-col relative"
                   >
                     {/* Sticker Tags */}
                     {isOverdue ? (
@@ -815,7 +912,7 @@ export default function AssignmentsView() {
                     ) : null}
 
                     {/* Task Name - full width without extra right padding unless badge exists */}
-                    <h4 className={`font-medium text-slate-800 text-[13px] leading-snug mb-2 line-clamp-3 break-words ${hasTopBadge ? 'pr-8' : 'pr-0'}`}>
+                    <h4 className={`font-semibold text-foreground text-[13px] leading-snug mb-2 line-clamp-3 break-words ${hasTopBadge ? 'pr-8' : 'pr-0'}`}>
                       <span className={`font-bold mr-1 ${brief.unit?.toLowerCase() === "creative" ? "text-[#8b5cf6]" : brief.unit?.toLowerCase() === "content" ? "text-[#ec4899]" : brief.unit?.toLowerCase() === "pr" ? "text-[#1877F2]" : brief.unit?.toLowerCase() === "internal" ? "text-[#27272a]" : "text-[#00a884]"}`}>{getTaskCode(brief.unit, brief.id)}</span>
                       {/* isWiBreached icon removed per user request */}
                       {isWiAtRisk && (
@@ -997,6 +1094,79 @@ export default function AssignmentsView() {
         onPermanentDelete={handlePermanentDelete}
         onEmptyTrash={handleEmptyTrash}
       />
+
+      {/* Status Revert Confirmation Modal (Request 2) */}
+      {revertConfirmData && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-surface border border-surface-border rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="flex items-start gap-3.5">
+              <div className="p-2.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
+                <AlertCircle size={24} />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base sm:text-lg font-bold text-foreground">
+                  ยืนยันการเลื่อนเปลี่ยนสถานะงาน
+                </h3>
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                  คุณแน่ใจว่าจะเลื่อนเปลี่ยนสถานะใช่มั้ย? เพราะอาจสร้างความสับสนให้กับ PM ผู้รับงาน กรุณาแจ้งเหตุผลให้ PM และหัวหน้าทีม ผู้ช่วยหัวหน้าทีมทราบด้วย
+                </p>
+              </div>
+            </div>
+
+            {/* Task Info Snapshot */}
+            <div className="bg-muted/40 p-3.5 rounded-xl border border-surface-border text-xs space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-foreground font-mono">{getTaskCode(revertConfirmData.brief.unit, revertConfirmData.brief.id)}</span>
+                <span className="text-[11px] text-muted-foreground">{revertConfirmData.brief.coordinator_nickname} ({revertConfirmData.brief.requester_email})</span>
+              </div>
+              <p className="font-medium text-foreground line-clamp-2">{revertConfirmData.brief.project_name}</p>
+              <div className="flex items-center gap-2 pt-1 font-semibold">
+                <span className="px-2.5 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 uppercase text-[10px]">
+                  {revertConfirmData.currentStatus}
+                </span>
+                <span className="text-muted-foreground">➔</span>
+                <span className="px-2.5 py-0.5 rounded-md bg-amber-500 text-white uppercase text-[10px]">
+                  {revertConfirmData.targetStatus}
+                </span>
+              </div>
+            </div>
+
+            {/* Reason Textarea */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground flex items-center justify-between">
+                <span>เหตุผลในการย้อนสถานะงาน:</span>
+                <span className="text-[10.5px] text-muted-foreground font-normal">(แนะนำให้ระบุเพื่อส่งต่อทีม)</span>
+              </label>
+              <textarea
+                value={revertReason}
+                onChange={(e) => setRevertReason(e.target.value)}
+                placeholder="เช่น มีการปรับแก้บรีฟ, รอคอนเฟิร์มข้อมูลจาก PM, รื้อดราฟใหม่..."
+                rows={3}
+                className="w-full text-xs p-3 rounded-xl border border-surface-border bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500/30 resize-none shadow-2xs"
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setRevertConfirmData(null)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold border border-surface-border text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-all cursor-pointer"
+              >
+                ยกเลิก (คงสถานะเดิม)
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmRevertStatus}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <AlertCircle size={14} />
+                <span>ยืนยันการเลื่อนเปลี่ยนสถานะ</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

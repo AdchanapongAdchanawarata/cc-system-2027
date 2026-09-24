@@ -1720,10 +1720,10 @@ ${portalUrl}`;
         </div>
         
         {/* Navigation Tabs Bar - Distributed across full width */}
-        <div className="w-full flex items-center gap-1.5 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/80 shadow-2xs overflow-x-auto">
+        <div className="w-full flex items-center gap-1.5 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/80 shadow-2xs overflow-x-auto no-scrollbar">
           <button
             onClick={() => setActiveTab("workloads")}
-            className={`flex-1 justify-center px-3 py-2 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+            className={`flex-1 shrink-0 sm:shrink min-w-fit justify-center px-3 py-2 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
               activeTab === "workloads" ? "bg-[#E03131] text-white shadow-xs font-bold" : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
             }`}
           >
@@ -1732,7 +1732,7 @@ ${portalUrl}`;
           </button>
           <button
             onClick={() => setActiveTab("goals")}
-            className={`flex-1 justify-center px-3 py-2 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+            className={`flex-1 shrink-0 sm:shrink min-w-fit justify-center px-3 py-2 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
               activeTab === "goals" ? "bg-[#E03131] text-white shadow-xs font-bold" : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
             }`}
           >
@@ -1741,7 +1741,7 @@ ${portalUrl}`;
           </button>
           <button
             onClick={() => setActiveTab("time_efficiency")}
-            className={`flex-1 justify-center px-3 py-2 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+            className={`flex-1 shrink-0 sm:shrink min-w-fit justify-center px-3 py-2 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
               activeTab === "time_efficiency" ? "bg-[#E03131] text-white shadow-xs font-bold" : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
             }`}
           >
@@ -1750,7 +1750,7 @@ ${portalUrl}`;
           </button>
           <button
             onClick={() => setActiveTab("individual_360")}
-            className={`flex-1 justify-center px-3 py-2 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+            className={`flex-1 shrink-0 sm:shrink min-w-fit justify-center px-3 py-2 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
               activeTab === "individual_360" ? "bg-[#E03131] text-white shadow-xs font-bold" : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
             }`}
           >
@@ -1759,7 +1759,7 @@ ${portalUrl}`;
           </button>
           <button
             onClick={() => setActiveTab("executive_report")}
-            className={`flex-1 justify-center px-3 py-2 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+            className={`flex-1 shrink-0 sm:shrink min-w-fit justify-center px-3 py-2 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
               activeTab === "executive_report" ? "bg-[#E03131] text-white shadow-xs font-bold" : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
             }`}
           >
@@ -1779,16 +1779,16 @@ ${portalUrl}`;
           {/* ========================================================================= */}
           {/* UNIFIED TOP FILTER BAR (ACROSS ALL 5 TABS)                                */}
           {/* ========================================================================= */}
-          <div className="bg-white border-2 border-slate-200/90 rounded-2xl p-3.5 sm:p-4 shadow-xs space-y-3 mb-6 print:hidden">
+          <div className="bg-surface border border-surface-border rounded-2xl p-3.5 sm:p-4 shadow-xs space-y-3 mb-6 print:hidden">
             {/* Header */}
-            <div className="flex items-center gap-2 pb-2.5 border-b border-slate-100">
+            <div className="flex items-center gap-2 pb-2.5 border-b border-surface-border">
               <span className="p-1.5 rounded-lg bg-slate-900 text-white shadow-2xs">
                 <Filter size={13} />
               </span>
-              <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
+              <span className="text-xs font-black text-foreground uppercase tracking-wider">
                 ตัวกรองการแสดงผล (Dashboard Filters)
               </span>
-              <span className="text-[11px] text-slate-400 font-normal ml-1 hidden sm:inline">
+              <span className="text-[11px] text-muted-foreground font-normal ml-1 hidden sm:inline">
                 • กำหนดยูนิตและช่วงเวลาสำหรับทุกแท็บ
               </span>
             </div>

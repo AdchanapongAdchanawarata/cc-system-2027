@@ -10,6 +10,7 @@ import DataReportsView from "./components/DataReportsView";
 import SetupModal from "./components/SetupModal";
 import AlertSummary from "./components/AlertSummary";
 import InternalTaskModal from "./components/InternalTaskModal";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function DashboardPage() {
   const [activeView, setActiveView] = useState<"assignments" | "dashboards" | "data-reports" | null>(null);
@@ -107,13 +108,16 @@ export default function DashboardPage() {
           </p>
         </Link>
         
-        {/* Right: Actions & Role Switcher */}
-        <div className="flex items-center gap-3 z-30 shrink-0">
+        {/* Right: Actions, Theme Switcher & Role Switcher */}
+        <div className="flex items-center gap-1.5 sm:gap-3 z-30 shrink-0">
+          {/* Theme Mode Switcher: Light / Dark / Auto */}
+          <ThemeToggle />
+
           {/* Role Switcher Pill */}
           <div className="flex bg-surface border border-surface-border rounded-full p-0.5 shadow-sm">
             <button
               onClick={() => handleToggleRole("admin")}
-              className={`px-3 py-1 text-xs font-semibold rounded-full flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`px-2 sm:px-3 py-1 text-xs font-semibold rounded-full flex items-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
                 currentUserRole === "admin"
                   ? "bg-slate-900 text-white shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
@@ -125,7 +129,7 @@ export default function DashboardPage() {
             </button>
             <button
               onClick={() => handleToggleRole("assignee")}
-              className={`px-3 py-1 text-xs font-semibold rounded-full flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`px-2 sm:px-3 py-1 text-xs font-semibold rounded-full flex items-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
                 currentUserRole === "assignee"
                   ? "bg-primary text-white shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
@@ -141,10 +145,10 @@ export default function DashboardPage() {
           {currentUserRole === "admin" && (
             <button 
               onClick={() => setIsSetupOpen(true)}
-              className="flex items-center justify-center p-2 rounded-full border border-surface-border bg-surface hover:bg-surface-border transition-all shadow-[2px_4px_8px_rgba(0,0,0,0.05),-1px_-1px_4px_rgba(255,255,255,0.8)] hover:shadow-md animate-in fade-in zoom-in-95 duration-200 cursor-pointer"
+              className="flex items-center justify-center p-1.5 sm:p-2 rounded-full border border-surface-border bg-surface hover:bg-surface-border transition-all shadow-[2px_4px_8px_rgba(0,0,0,0.05),-1px_-1px_4px_rgba(255,255,255,0.8)] hover:shadow-md animate-in fade-in zoom-in-95 duration-200 cursor-pointer"
               title="Setup OKRs, Staff & Pricing"
             >
-              <Settings size={20} className="text-foreground" />
+              <Settings size={18} className="text-foreground sm:w-5 sm:h-5" />
             </button>
           )}
 
@@ -278,13 +282,14 @@ export default function DashboardPage() {
         // Show selected view
           <div className="w-full flex-1 min-h-0 flex flex-col animate-premium-fade">
             {!activeSubReport && (
-              <div className="mb-4 shrink-0 print:hidden pt-1">
+              <div className="mb-3 sm:mb-4 shrink-0 print:hidden pt-1">
                 <button 
                     onClick={() => handleSelectView(null)}
-                    className="group flex items-center gap-2 px-5 py-2.5 bg-surface border border-surface-border shadow-sm rounded-full text-sm font-semibold text-foreground hover:text-primary hover:border-primary/30 hover:shadow-md transition-all active:scale-95 w-fit cursor-pointer"
+                    className="group flex items-center gap-1.5 sm:gap-2 px-3.5 py-1.5 sm:px-5 sm:py-2.5 bg-surface border border-surface-border shadow-sm rounded-full text-xs sm:text-sm font-semibold text-foreground hover:text-primary hover:border-primary/30 hover:shadow-md transition-all active:scale-95 w-fit cursor-pointer"
                   >
-                    <ArrowLeft size={18} className="text-muted-foreground group-hover:text-primary transition-colors -ml-1" /> 
-                    Back to Control Center
+                    <ArrowLeft size={16} className="text-muted-foreground group-hover:text-primary transition-colors sm:w-[18px] sm:h-[18px]" /> 
+                    <span className="hidden sm:inline">Back to Control Center</span>
+                    <span className="sm:hidden font-medium">Control Center</span>
                 </button>
               </div>
             )}

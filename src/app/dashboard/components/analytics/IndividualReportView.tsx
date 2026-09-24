@@ -1048,11 +1048,11 @@ export default function IndividualReportView({
                 </div>
 
                 {/* 2-Pillar Breakdown: เดือน (÷12) / ไตรมาส (÷4) ตามปีงบประมาณ */}
-                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100/80">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-slate-100/80">
                   {/* 1. Monthly Target (÷12) */}
-                  <div className="p-2 rounded-xl bg-slate-50 border border-slate-200/70 space-y-1.5">
+                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/70 space-y-1.5">
                     <div className="flex items-center justify-between gap-1">
-                      <span className="text-[10px] font-bold text-slate-600 shrink-0 whitespace-nowrap" title="เป้าเฉลี่ยต่อเดือน (เป้าทั้งปี ÷ 12)">
+                      <span className="text-[10px] font-bold text-slate-600 shrink-0" title="เป้าเฉลี่ยต่อเดือน (เป้าทั้งปี ÷ 12)">
                         เป้าเดือน (÷12)
                       </span>
                       {statusBadge(m.monthlyStatus, 'M')}
@@ -1070,9 +1070,9 @@ export default function IndividualReportView({
                   </div>
 
                   {/* 2. Quarterly Target (÷4) */}
-                  <div className="p-2 rounded-xl bg-slate-50 border border-slate-200/70 space-y-1.5">
+                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/70 space-y-1.5">
                     <div className="flex items-center justify-between gap-1">
-                      <span className="text-[10px] font-bold text-slate-600 shrink-0 whitespace-nowrap" title={`เป้าเฉลี่ยต่อไตรมาส (เป้าทั้งปี ÷ 4) - Q${pacingSummary.currentQuarter}`}>
+                      <span className="text-[10px] font-bold text-slate-600 shrink-0" title={`เป้าเฉลี่ยต่อไตรมาส (เป้าทั้งปี ÷ 4) - Q${pacingSummary.currentQuarter}`}>
                         เป้าไตรมาส Q{pacingSummary.currentQuarter} (÷4)
                       </span>
                       {statusBadge(m.quarterlyStatus, 'Q')}

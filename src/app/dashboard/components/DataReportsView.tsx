@@ -247,27 +247,28 @@ export default function DataReportsView({ onSubReportChange }: DataReportsViewPr
     <div className="w-full flex-1 flex flex-col space-y-5 animate-premium-fade">
       
       {/* Top Navigation & Breadcrumb */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 pt-1 mt-1 border-b border-slate-200">
-        <div className="flex items-center gap-3.5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 sm:pb-4 pt-1 mt-1 border-b border-slate-200 w-full">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3.5">
           <button
             onClick={() => handleSelectReport(null)}
-            className="group flex items-center gap-2 px-5 py-2.5 bg-surface border border-surface-border shadow-sm rounded-full text-sm font-semibold text-foreground hover:text-primary hover:border-primary/30 hover:shadow-md transition-all active:scale-95 cursor-pointer"
+            className="group flex items-center gap-1.5 px-3.5 py-1.5 sm:px-5 sm:py-2.5 bg-surface border border-surface-border shadow-sm rounded-full text-xs sm:text-sm font-semibold text-foreground hover:text-primary hover:border-primary/30 hover:shadow-md transition-all active:scale-95 cursor-pointer"
           >
-            <ArrowLeft size={18} className="text-muted-foreground group-hover:text-primary transition-colors -ml-1" />
-            <span>Back to Back of House</span>
+            <ArrowLeft size={16} className="text-muted-foreground group-hover:text-primary transition-colors" />
+            <span className="hidden sm:inline">Back to Back of House</span>
+            <span className="sm:hidden">Back</span>
           </button>
           
-          <span className="text-slate-300 font-light text-lg">/</span>
+          <span className="text-slate-300 font-light text-sm sm:text-lg">/</span>
 
-          <div className="flex items-center gap-2.5">
-            {currentReport && <currentReport.icon size={24} className="text-[#f97316] shrink-0" strokeWidth={2.2} />}
-            <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">
+          <div className="flex items-center gap-2">
+            {currentReport && <currentReport.icon size={20} className="text-[#f97316] shrink-0" strokeWidth={2.2} />}
+            <h2 className="text-base sm:text-xl md:text-2xl font-black text-slate-900 tracking-tight">
               {currentReport?.title}
             </h2>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <ExportDataDropdown
             reportId={selectedReport}
             reportTitle={currentReport?.title}

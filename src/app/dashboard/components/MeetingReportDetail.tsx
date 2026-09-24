@@ -580,10 +580,10 @@ export default function MeetingReportDetail() {
     <div className="space-y-6 w-full animate-premium-fade">
       {/* Top Tab Navigation: Full-width evenly distributed */}
       <div className="w-full space-y-3 border-b border-slate-200 pb-3">
-        <div className="w-full flex items-center gap-1.5 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/80 shadow-2xs">
+        <div className="w-full flex overflow-x-auto no-scrollbar sm:grid sm:grid-cols-3 items-center gap-1.5 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/80 shadow-2xs">
           <button
             onClick={() => setActiveTab("tasks")}
-            className={`flex-1 justify-center px-3 py-2.5 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+            className={`flex-1 shrink-0 sm:shrink min-w-fit justify-center px-3 py-2.5 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
               activeTab === "tasks"
                 ? "bg-[#E03131] text-white shadow-xs font-bold"
                 : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
@@ -595,7 +595,7 @@ export default function MeetingReportDetail() {
 
           <button
             onClick={() => setActiveTab("analytics")}
-            className={`flex-1 justify-center px-3 py-2.5 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+            className={`flex-1 shrink-0 sm:shrink min-w-fit justify-center px-3 py-2.5 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
               activeTab === "analytics"
                 ? "bg-[#E03131] text-white shadow-xs font-bold"
                 : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
@@ -607,7 +607,7 @@ export default function MeetingReportDetail() {
 
           <button
             onClick={() => setActiveTab("performance")}
-            className={`flex-1 justify-center px-3 py-2.5 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+            className={`flex-1 shrink-0 sm:shrink min-w-fit justify-center px-3 py-2.5 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
               activeTab === "performance"
                 ? "bg-[#E03131] text-white shadow-xs font-bold"
                 : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
@@ -698,15 +698,15 @@ export default function MeetingReportDetail() {
 
           {/* Month Selector Bar with Add Month Button */}
           <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs">
-            <div className="flex items-center justify-between mb-2 px-1">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-2.5 px-1">
               <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                <Calendar size={13} className="text-orange-600" />
-                เลือกรอบการประชุมประจำเดือน (เริ่ม ต.ค. 2026 เป็นต้นไป)
+                <Calendar size={13} className="text-orange-600 shrink-0" />
+                <span>เลือกรอบการประชุมประจำเดือน (เริ่ม ต.ค. 2026 เป็นต้นไป)</span>
               </span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <button
                   onClick={handleAddNewMonth}
-                  className="flex items-center gap-1 px-3 py-1 bg-slate-100 hover:bg-orange-50 hover:text-orange-600 border border-slate-200 hover:border-orange-300 rounded-full text-[11.5px] font-semibold text-slate-700 transition-all cursor-pointer"
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-orange-50 hover:text-orange-600 border border-slate-200 hover:border-orange-300 rounded-xl text-[11.5px] font-semibold text-slate-700 transition-all cursor-pointer whitespace-nowrap"
                   title="กดเพิ่มเดือนถัดไปได้เรื่อยๆ"
                 >
                   <Plus size={12} />
@@ -717,10 +717,10 @@ export default function MeetingReportDetail() {
                     setEditingMeeting(null);
                     setIsNewMeetingModalOpen(true);
                   }}
-                  className="flex items-center gap-1 px-3.5 py-1 bg-[#E03131] hover:bg-[#c92a2a] text-white rounded-full text-[11.5px] font-bold shadow-xs transition-all cursor-pointer"
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-3.5 py-1.5 bg-[#E03131] hover:bg-[#c92a2a] text-white rounded-xl text-[11.5px] font-bold shadow-xs transition-all cursor-pointer whitespace-nowrap"
                 >
                   <Plus size={13} />
-                  <span>+ สร้างวาระการประชุมใหม่</span>
+                  <span>+ สร้างวาระการประชุม</span>
                 </button>
               </div>
             </div>
@@ -2192,54 +2192,62 @@ function MeetingAnalyticsView({
   return (
     <div className="space-y-6 animate-premium-fade">
       {/* Filter Toolbar: Quarter, Month, Year */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <Filter size={15} className="text-orange-600" />
-          <span className="text-xs font-bold text-slate-800">ตัวกรองการวิเคราะห์:</span>
+      <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Filter size={15} className="text-orange-600 shrink-0" />
+            <span className="text-xs font-bold text-slate-800">ตัวกรองการวิเคราะห์:</span>
+          </div>
           
-          <div className="flex items-center gap-1.5 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/80 shadow-2xs">
+          <div className="grid grid-cols-3 sm:flex items-center gap-1 bg-slate-100/90 p-1 sm:p-1.5 rounded-2xl border border-slate-200/80 shadow-2xs w-full sm:w-auto">
             <button
               onClick={() => setFilterMode("quarter")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer text-center whitespace-nowrap ${
                 filterMode === "quarter" ? "bg-[#E03131] text-white shadow-xs font-bold" : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
               }`}
             >
-              รายไตรมาส (Quarter)
+              <span className="sm:hidden">ไตรมาส</span>
+              <span className="hidden sm:inline">รายไตรมาส (Quarter)</span>
             </button>
             <button
               onClick={() => setFilterMode("month")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer text-center whitespace-nowrap ${
                 filterMode === "month" ? "bg-[#E03131] text-white shadow-xs font-bold" : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
               }`}
             >
-              รายเดือน (Monthly)
+              <span className="sm:hidden">รายเดือน</span>
+              <span className="hidden sm:inline">รายเดือน (Monthly)</span>
             </button>
             <button
               onClick={() => setFilterMode("year")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer text-center whitespace-nowrap ${
                 filterMode === "year" ? "bg-[#E03131] text-white shadow-xs font-bold" : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
               }`}
             >
-              รายปี (Yearly)
+              <span className="sm:hidden">รายปี</span>
+              <span className="hidden sm:inline">รายปี (Yearly)</span>
             </button>
           </div>
         </div>
 
         {/* Dynamic Period Selectors */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full md:w-auto">
           {filterMode === "quarter" && (
-            <div className="flex items-center gap-1.5">
+            <div className="grid grid-cols-2 sm:flex items-center gap-1.5 w-full sm:w-auto">
               {["Q1", "Q2", "Q3", "Q4"].map((q) => (
                 <button
                   key={q}
                   onClick={() => setSelectedQuarter(q)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-xl sm:rounded-full text-xs font-bold transition-all cursor-pointer text-center whitespace-nowrap ${
                     selectedQuarter === q
                       ? "bg-orange-600 text-white shadow-2xs"
                       : "bg-slate-100 hover:bg-slate-200 text-slate-700"
                   }`}
                 >
-                  {q} {q === "Q1" ? "(ต.ค.-ธ.ค.)" : q === "Q2" ? "(ม.ค.-มี.ค.)" : q === "Q3" ? "(เม.ย.-มิ.ย.)" : "(ก.ค.-ก.ย.)"}
+                  <span>{q}</span>{" "}
+                  <span className="text-[10.5px] opacity-80 font-normal">
+                    {q === "Q1" ? "(ต.ค.-ธ.ค.)" : q === "Q2" ? "(ม.ค.-มี.ค.)" : q === "Q3" ? "(เม.ย.-มิ.ย.)" : "(ก.ค.-ก.ย.)"}
+                  </span>
                 </button>
               ))}
             </div>

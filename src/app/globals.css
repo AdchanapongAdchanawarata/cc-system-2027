@@ -3,7 +3,9 @@
 
 @custom-variant dark (&:is(.dark *));
 
-:root {
+:root,
+html[data-theme="light"],
+body[data-theme="light"] {
   /* DIETER RAMS STYLE - LIGHT MODE */
   --background: #f4f4f5; /* zinc-100 */
   --foreground: #18181b; /* zinc-900 */
@@ -21,11 +23,13 @@
   --ring: #f97316;
   
   --radius: 0.3rem; /* Slight curve, not fully rounded */
+  color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    /* DIETER RAMS STYLE - DARK MODE */
+  :root:not([data-theme="light"]),
+  html:not([data-theme="light"]) {
+    /* DIETER RAMS STYLE - DARK MODE (SYSTEM) */
     --background: #18181b; /* zinc-900 */
     --foreground: #f4f4f5; /* zinc-100 */
     
@@ -40,7 +44,30 @@
     
     --input: #3f3f46;
     --ring: #ea580c;
+    color-scheme: dark;
   }
+}
+
+:root[data-theme="dark"],
+html.dark,
+html[data-theme="dark"],
+body.dark {
+  /* DIETER RAMS STYLE - DARK MODE (EXPLICIT) */
+  --background: #18181b; /* zinc-900 */
+  --foreground: #f4f4f5; /* zinc-100 */
+  
+  --surface: #27272a; /* zinc-800 */
+  --surface-border: #3f3f46; /* zinc-700 */
+  
+  --primary: #ea580c; /* orange-600 */
+  --primary-foreground: #ffffff;
+  
+  --muted: #27272a; /* zinc-800 */
+  --muted-foreground: #a1a1aa; /* zinc-400 */
+  
+  --input: #3f3f46;
+  --ring: #ea580c;
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -67,6 +94,8 @@
 
 html {
   scrollbar-gutter: stable;
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 body {
@@ -75,6 +104,9 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
 }
 
 /* Subtle transitions for interactive elements */
@@ -82,6 +114,186 @@ a, button, input, select, textarea {
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
+}
+
+/* ========================================================================= */
+/* GLOBAL FORM CONTROLS & CONTRAST SAFEGUARDS                                */
+/* ========================================================================= */
+
+/* Ensure form controls always have high contrast */
+input, textarea, select {
+  color: #0f172a;
+}
+
+/* In Dark Mode: dark background with crisp white text for standard inputs */
+.dark input:not([class*="bg-white"]):not([class*="bg-[#f9f9fb]"]),
+.dark textarea:not([class*="bg-white"]):not([class*="bg-[#f9f9fb]"]),
+.dark select:not([class*="bg-white"]):not([class*="bg-[#f9f9fb]"]),
+[data-theme="dark"] input:not([class*="bg-white"]):not([class*="bg-[#f9f9fb]"]),
+[data-theme="dark"] textarea:not([class*="bg-white"]):not([class*="bg-[#f9f9fb]"]),
+[data-theme="dark"] select:not([class*="bg-white"]):not([class*="bg-[#f9f9fb]"]) {
+  color: #f8fafc !important;
+  background-color: #27272a;
+  border-color: #3f3f46;
+}
+
+/* BUG FIX (media_1790215655696): Inputs with hardcoded light/white backgrounds MUST have dark text */
+input[class*="bg-white"], input[class*="bg-[#f9f9fb]"],
+textarea[class*="bg-white"], textarea[class*="bg-[#f9f9fb]"],
+.bg-white input, .bg-white textarea {
+  color: #0f172a !important;
+}
+
+/* ========================================================================= */
+/* DARK MODE TEXT CONTRAST ENHANCEMENTS (Fixes media_1790216102206, etc.)     */
+/* ========================================================================= */
+.dark .text-slate-900, [data-theme="dark"] .text-slate-900,
+.dark .text-zinc-900, [data-theme="dark"] .text-zinc-900 {
+  color: #f8fafc !important;
+}
+
+.dark .text-slate-800, [data-theme="dark"] .text-slate-800,
+.dark .text-zinc-800, [data-theme="dark"] .text-zinc-800 {
+  color: #f1f5f9 !important;
+}
+
+.dark .text-slate-700, [data-theme="dark"] .text-slate-700,
+.dark .text-zinc-700, [data-theme="dark"] .text-zinc-700 {
+  color: #e2e8f0 !important;
+}
+
+.dark .text-slate-600, [data-theme="dark"] .text-slate-600,
+.dark .text-zinc-600, [data-theme="dark"] .text-zinc-600 {
+  color: #cbd5e1 !important;
+}
+
+.dark .text-slate-500, [data-theme="dark"] .text-slate-500,
+.dark .text-zinc-500, [data-theme="dark"] .text-zinc-500 {
+  color: #94a3b8 !important;
+}
+
+/* Fix dark colored text on dark background in dark mode */
+.dark .text-blue-900, [data-theme="dark"] .text-blue-900,
+.dark .text-blue-800, [data-theme="dark"] .text-blue-800 {
+  color: #60a5fa !important;
+}
+
+.dark .text-blue-700, [data-theme="dark"] .text-blue-700 {
+  color: #93c5fd !important;
+}
+
+.dark .text-purple-900, [data-theme="dark"] .text-purple-900,
+.dark .text-purple-800, [data-theme="dark"] .text-purple-800 {
+  color: #c084fc !important;
+}
+
+.dark .text-purple-700, [data-theme="dark"] .text-purple-700 {
+  color: #d8b4fe !important;
+}
+
+.dark .text-emerald-800, [data-theme="dark"] .text-emerald-800,
+.dark .text-emerald-700, [data-theme="dark"] .text-emerald-700 {
+  color: #34d399 !important;
+}
+
+.dark .text-amber-800, [data-theme="dark"] .text-amber-800,
+.dark .text-amber-700, [data-theme="dark"] .text-amber-700 {
+  color: #fbbf24 !important;
+}
+
+/* Inner containers and badges in dark mode */
+.dark .bg-slate-100, [data-theme="dark"] .bg-slate-100,
+.dark .bg-slate-100\/90, [data-theme="dark"] .bg-slate-100\/90 {
+  background-color: rgba(39, 39, 42, 0.9) !important;
+  border-color: #3f3f46 !important;
+}
+
+.dark .bg-slate-50, [data-theme="dark"] .bg-slate-50,
+.dark .bg-slate-50\/90, [data-theme="dark"] .bg-slate-50\/90,
+.dark .bg-slate-50\/80, [data-theme="dark"] .bg-slate-50\/80,
+.dark .bg-slate-50\/70, [data-theme="dark"] .bg-slate-50\/70 {
+  background-color: rgba(31, 31, 35, 0.8) !important;
+  border-color: #3f3f46 !important;
+}
+
+.dark .border-slate-200, [data-theme="dark"] .border-slate-200,
+.dark .border-slate-200\/80, [data-theme="dark"] .border-slate-200\/80,
+.dark .border-slate-200\/70, [data-theme="dark"] .border-slate-200\/70,
+.dark .border-slate-200\/50, [data-theme="dark"] .border-slate-200\/50,
+.dark .border-slate-100, [data-theme="dark"] .border-slate-100 {
+  border-color: #3f3f46 !important;
+}
+
+/* Colored status badges in Dark Mode */
+.dark .bg-amber-50, [data-theme="dark"] .bg-amber-50,
+.dark .bg-amber-100, [data-theme="dark"] .bg-amber-100 {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+.dark .text-amber-900, [data-theme="dark"] .text-amber-900 {
+  color: #fef3c7 !important;
+}
+
+.dark .bg-emerald-50, [data-theme="dark"] .bg-emerald-50,
+.dark .bg-emerald-100, [data-theme="dark"] .bg-emerald-100 {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+.dark .text-emerald-900, [data-theme="dark"] .text-emerald-900,
+.dark .text-emerald-800, [data-theme="dark"] .text-emerald-800 {
+  color: #d1fae5 !important;
+}
+
+.dark .bg-blue-50, [data-theme="dark"] .bg-blue-50,
+.dark .bg-blue-100, [data-theme="dark"] .bg-blue-100 {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+.dark .bg-purple-50, [data-theme="dark"] .bg-purple-50,
+.dark .bg-purple-100, [data-theme="dark"] .bg-purple-100 {
+  background-color: rgba(168, 85, 247, 0.15) !important;
+  border-color: rgba(168, 85, 247, 0.3) !important;
+}
+
+.dark .bg-orange-50, [data-theme="dark"] .bg-orange-50,
+.dark .bg-orange-50\/70, [data-theme="dark"] .bg-orange-50\/70,
+.dark .bg-orange-100, [data-theme="dark"] .bg-orange-100 {
+  background-color: rgba(249, 115, 22, 0.15) !important;
+  border-color: rgba(249, 115, 22, 0.3) !important;
+}
+.dark .text-orange-800, [data-theme="dark"] .text-orange-800,
+.dark .text-orange-900, [data-theme="dark"] .text-orange-900 {
+  color: #ffedd5 !important;
+}
+
+/* KPI Summary Cards in Dark Mode */
+.dark .text-emerald-950, [data-theme="dark"] .text-emerald-950 {
+  color: #34d399 !important;
+}
+.dark .text-orange-950, [data-theme="dark"] .text-orange-950 {
+  color: #fb923c !important;
+}
+.dark .text-blue-950, [data-theme="dark"] .text-blue-950 {
+  color: #60a5fa !important;
+}
+.dark .text-purple-950, [data-theme="dark"] .text-purple-950 {
+  color: #c084fc !important;
+}
+.dark .text-amber-950, [data-theme="dark"] .text-amber-950 {
+  color: #fbbf24 !important;
+}
+
+/* Rams card dark mode theme support */
+.dark .rams-card, [data-theme="dark"] .rams-card {
+  background: #18181b !important;
+  border: 1px solid #27272a !important;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.3) !important;
+  color: var(--foreground) !important;
+}
+
+.dark .rams-card label, [data-theme="dark"] .rams-card label {
+  color: #f1f5f9 !important;
 }
 
 /* DIETER RAMS SKEUOMORPHIC UI */

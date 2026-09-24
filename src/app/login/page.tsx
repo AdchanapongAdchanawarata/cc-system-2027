@@ -82,6 +82,9 @@ export default function LoginPage() {
       if (parsedProfile.fullName) {
         localStorage.setItem("cc_user_fullname", parsedProfile.fullName);
       }
+      if (parsedProfile.unit) {
+        localStorage.setItem("cc_user_unit", parsedProfile.unit);
+      }
 
       // 3. Optional: Attempt Magic Link in background
       try {

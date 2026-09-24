@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import { getStandardPriceForTask } from "@/utils/pricing";
 import ModernDatePicker from "@/components/ModernDatePicker";
 import ModernSelect from "@/components/ModernSelect";
+import ThemeToggle from "@/components/ThemeToggle";
 
 type UnitType = 'creative' | 'content' | 'pr';
 
@@ -548,8 +549,9 @@ function FormContent() {
             </div>
           </div>
 
-          {/* Copy Form Link Button */}
-          <div className="shrink-0 self-center sm:self-center">
+          {/* Theme Toggle & Copy Form Link Button */}
+          <div className="shrink-0 self-center sm:self-center flex items-center gap-2">
+            <ThemeToggle />
             <button
               type="button"
               onClick={handleCopyLink}
@@ -557,7 +559,7 @@ function FormContent() {
               className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all shadow-2xs border cursor-pointer ${
                 isCopied
                   ? "bg-emerald-50 border-emerald-300 text-emerald-700 ring-2 ring-emerald-200"
-                  : "bg-white border-zinc-200 text-zinc-700 hover:text-zinc-900 hover:border-zinc-300 hover:bg-zinc-50"
+                  : "bg-surface border-surface-border text-foreground hover:border-primary/40 hover:bg-muted/30"
               }`}
             >
               {isCopied ? (

@@ -56,6 +56,15 @@ export default function IDCFormPage() {
   const [submittedCode, setSubmittedCode] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [copiedFormLink, setCopiedFormLink] = useState(false);
+
+  const handleCopyFormLink = () => {
+    if (typeof window !== "undefined") {
+      navigator.clipboard.writeText(window.location.href);
+      setCopiedFormLink(true);
+      setTimeout(() => setCopiedFormLink(false), 2000);
+    }
+  };
 
   const [formData, setFormData] = useState({
     clientName: "",
@@ -163,7 +172,7 @@ export default function IDCFormPage() {
       const serviceLabel = selectedLabels.join(", ") || "งานให้คำปรึกษา";
 
       // 1. Insert into Supabase 'briefs' table (Task รวม - Unit Internal, Assignee: พิม)
-      const taskTitle = `[IDC] ให้คำปรึกษา: ${serviceLabel} - ${formData.companyName.trim()}`;
+      const taskTitle = `[ศูนย์ออกแบบนวัตกรรม] ให้คำปรึกษา: ${serviceLabel} - ${formData.companyName.trim()}`;
 
       const { error: briefError } = await supabase.from('briefs').insert([{
         project_name: taskTitle,
@@ -176,7 +185,7 @@ export default function IDCFormPage() {
         decision_maker: formData.organizationType === 'government' ? 'ภาครัฐ' : 'ภาคเอกชน',
         details: {
           category: 'Design',
-          service_category: 'Innovation Design Center (IDC)',
+          service_category: 'Innovation Design Center',
           idc_code: generatedCode,
           client_name: formData.clientName.trim(),
           company_name: formData.companyName.trim(),
@@ -196,9 +205,9 @@ export default function IDCFormPage() {
           service_other_detail: formData.serviceOtherDetail.trim(),
           piece_count: totalPieces,
           revenue: 0,
-          description: formData.projectBrief.trim() || `คำขอรับคำปรึกษาศูนย์ IDC: ${serviceLabel}\nผู้รับบริการ: ${formData.clientName.trim()} (${formData.companyName.trim()})\nเบอร์โทร: ${formData.phone.trim()}`,
+          description: formData.projectBrief.trim() || `คำขอรับคำปรึกษาศูนย์ออกแบบและพัฒนานวัตกรรม: ${serviceLabel}\nผู้รับบริการ: ${formData.clientName.trim()} (${formData.companyName.trim()})\nเบอร์โทร: ${formData.phone.trim()}`,
           project_brief: formData.projectBrief.trim(),
-          details: formData.projectBrief.trim() || `คำขอรับคำปรึกษาศูนย์ IDC: ${serviceLabel}\nผู้รับบริการ: ${formData.clientName.trim()} (${formData.companyName.trim()})\nเบอร์โทร: ${formData.phone.trim()}`,
+          details: formData.projectBrief.trim() || `คำขอรับคำปรึกษาศูนย์ออกแบบและพัฒนานวัตกรรม: ${serviceLabel}\nผู้รับบริการ: ${formData.clientName.trim()} (${formData.companyName.trim()})\nเบอร์โทร: ${formData.phone.trim()}`,
           survey_token: token,
           survey_sent: false,
           assignee_name: PIM_NAME,
@@ -263,15 +272,49 @@ export default function IDCFormPage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8 font-sans">
-      <div className="max-w-3xl mx-auto space-y-6">
+    <main className="min-h-screen bg-slate-50 py-4 sm:py-8 px-2 sm:px-4 md:px-6 font-sans">
+      <div className="w-full max-w-4xl mx-auto space-y-4 sm:space-y-6">
+        {/* Top Navbar Actions: Back button (Left) and Copy Link button (Right) */}
+        <div className="w-full flex items-center justify-between gap-3">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-semibold bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 shadow-2xs transition-all active:scale-95"
+          >
+            <ArrowLeft size={14} />
+            <span>กลับหน้าหลัก</span>
+          </Link>
+
+          <button
+            type="button"
+            onClick={handleCopyFormLink}
+            title="คัดลอกลิงก์แบบฟอร์มนี้เพื่อแชร์"
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-semibold transition-all shadow-2xs border cursor-pointer active:scale-95 ${
+              copiedFormLink
+                ? "bg-emerald-50 border-emerald-300 text-emerald-700 ring-2 ring-emerald-200"
+                : "bg-white hover:bg-slate-50 border-slate-200 text-slate-700"
+            }`}
+          >
+            {copiedFormLink ? (
+              <>
+                <Check size={14} className="text-emerald-600" />
+                <span>คัดลอกลิงก์แล้ว!</span>
+              </>
+            ) : (
+              <>
+                <Copy size={14} className="text-slate-500" />
+                <span>คัดลอกลิงก์แบบฟอร์ม</span>
+              </>
+            )}
+          </button>
+        </div>
+
         {/* Top Header Card */}
-        <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/80 shadow-xs text-center space-y-2 relative overflow-hidden">
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+        <div className="bg-white p-5 sm:p-7 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs text-center space-y-2 relative overflow-hidden">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
             แบบฟอร์มขอรับคำปรึกษาด้านงานสร้างสรรค์
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 font-medium">
-            ทีมสร้างสรรค์และการสื่อสาร : อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (STeP)
+            ศูนย์ออกแบบและพัฒนานวัตกรรม • ทีมสร้างสรรค์และการสื่อสาร (STeP)
           </p>
         </div>
 
@@ -338,7 +381,7 @@ export default function IDCFormPage() {
           </div>
         ) : (
           /* Intake Form */
-          <form onSubmit={handleSubmit} className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6">
+          <form onSubmit={handleSubmit} className="bg-white p-4 sm:p-8 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-xs space-y-6">
             {/* Section 1: ข้อมูลผู้รับบริการ & สถานประกอบการ */}
             <div className="space-y-4">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-2">

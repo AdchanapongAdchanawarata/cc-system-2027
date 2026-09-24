@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import { Cloud, CloudRain, Sun, RefreshCw } from "lucide-react";
 
 // WMO Weather interpretation codes
-function getWeatherStatus(code: number) {
-  if (code <= 3) return { label: "Sunny", type: "sunny" };
-  if (code >= 45 && code <= 48) return { label: "Cloudy", type: "cloudy" };
+function getWeatherStatus(code: number): { label: string; type: "sunny" | "cloudy" | "rainy" } {
+  if (code === 0 || code === 1) return { label: "Sunny", type: "sunny" };
+  if (code === 2) return { label: "Partly Cloudy", type: "cloudy" };
+  if (code === 3) return { label: "Overcast", type: "cloudy" };
+  if (code >= 45 && code <= 48) return { label: "Foggy", type: "cloudy" };
   if (code >= 51 && code <= 67) return { label: "Rainy", type: "rainy" };
   if (code >= 71 && code <= 77) return { label: "Snow", type: "cloudy" };
-  if (code >= 80 && code <= 99) return { label: "Stormy", type: "rainy" };
+  if (code >= 80 && code <= 99) return { label: "Rainy", type: "rainy" };
   return { label: "Partly Cloudy", type: "cloudy" };
 }
 
@@ -24,22 +26,43 @@ const QUOTES = [
 ];
 
 export default function WeatherWidget({ variant = "full" }: { variant?: "full" | "quoteOnly" | "hidden" }) {
-  const [weather, setWeather] = useState({ temp: 32, label: "Sunny", type: "sunny" });
+  const [weather, setWeather] = useState<{ temp: number; label: string; type: "sunny" | "cloudy" | "rainy" }>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("cc_weather_cache");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && typeof parsed.temp === "number") {
+            return { temp: parsed.temp, label: parsed.label, type: parsed.type };
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    return { temp: 28, label: "Chiang Mai", type: "cloudy" };
+  });
   const [loading, setLoading] = useState(true);
   const [quoteIndex, setQuoteIndex] = useState(0);
   const [dateString, setDateString] = useState("");
 
-  const fetchWeather = async (lat = 13.75, lon = 100.5167) => {
+  const fetchWeather = async (lat = 18.7961, lon = 98.9793) => {
     setLoading(true);
     try {
       const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code`);
       const data = await res.json();
-      const status = getWeatherStatus(data.current.weather_code);
-      setWeather({
-        temp: Math.round(data.current.temperature_2m),
-        label: status.label,
-        type: status.type,
-      });
+      if (data && data.current) {
+        const status = getWeatherStatus(data.current.weather_code);
+        const newWeather = {
+          temp: Math.round(data.current.temperature_2m),
+          label: status.label,
+          type: status.type,
+        };
+        setWeather(newWeather);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("cc_weather_cache", JSON.stringify({ ...newWeather, timestamp: Date.now() }));
+        }
+      }
     } catch (error) {
       console.error("Failed to fetch weather", error);
     } finally {
@@ -48,18 +71,30 @@ export default function WeatherWidget({ variant = "full" }: { variant?: "full" |
   };
 
   useEffect(() => {
+    // Try immediate read from localStorage
+    try {
+      const saved = localStorage.getItem("cc_weather_cache");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed.temp === "number") {
+          setWeather({ temp: parsed.temp, label: parsed.label, type: parsed.type });
+        }
+      }
+    } catch (e) {}
+
+    // Check geolocation or fallback to Chiang Mai (STeP)
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           fetchWeather(position.coords.latitude, position.coords.longitude);
         },
         (error) => {
-          console.warn("Geolocation denied/failed, falling back to default.", error);
-          fetchWeather(); // defaults to Bangkok
-        }
+          fetchWeather(18.7961, 98.9793);
+        },
+        { timeout: 4000 }
       );
     } else {
-      fetchWeather();
+      fetchWeather(18.7961, 98.9793);
     }
 
     setQuoteIndex(Math.floor(Date.now() / 86400000) % QUOTES.length);

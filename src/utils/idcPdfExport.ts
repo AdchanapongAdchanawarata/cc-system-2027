@@ -126,7 +126,7 @@ export function exportIDCFullPdf(options: ExportIDCPdfOptions) {
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <title>รายงานสรุปศูนย์ออกแบบนวัตกรรม (IDC) - 4 หน้าฉบับสมบูรณ์</title>
+  <title>รายงานสรุปศูนย์ออกแบบและพัฒนานวัตกรรม - 4 หน้าฉบับสมบูรณ์</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Prompt:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -583,7 +583,7 @@ export function exportIDCFullPdf(options: ExportIDCPdfOptions) {
   <!-- Screen Top Bar (Hidden in Print) -->
   <div class="no-print">
     <div style="font-family: 'Prompt', sans-serif; font-weight: 700; font-size: 13px;">
-      📄 รายงานสรุปศูนย์ออกแบบนวัตกรรม (IDC) ครอบคลุม 3 ส่วน • ฉบับสมบูรณ์ 4 หน้ามาตรฐาน A4
+      📄 รายงานสรุปศูนย์ออกแบบและพัฒนานวัตกรรม ครอบคลุม 3 ส่วน • ฉบับสมบูรณ์ 4 หน้ามาตรฐาน A4
     </div>
     <div style="display: flex; gap: 8px;">
       <button class="btn btn-secondary" onclick="window.close()">ปิดหน้าต่าง</button>
@@ -602,7 +602,7 @@ export function exportIDCFullPdf(options: ExportIDCPdfOptions) {
       <div class="report-header">
         <div class="brand-bar">
           <div>
-            <h1 class="org-title">รายงานสรุปผลการดำเนินงาน ศูนย์ออกแบบนวัตกรรม (IDC)</h1>
+            <h1 class="org-title">รายงานสรุปผลการดำเนินงาน ศูนย์ออกแบบและพัฒนานวัตกรรม</h1>
             <div class="org-subtitle">ทีมสร้างสรรค์และการสื่อสาร (Creative and Communication)</div>
             <div class="org-dept">อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (STeP)</div>
           </div>
@@ -617,7 +617,7 @@ export function exportIDCFullPdf(options: ExportIDCPdfOptions) {
       <!-- Executive Summary Ribbon -->
       <div class="summary-ribbon">
         <div>
-          <strong>ภาพรวม 2 ระบบ:</strong> รายรับรวม IDC + PM = <strong style="color: #fb923c; font-size: 9.5pt;">฿${swotAndTowsAnalysis.totalCombinedRevenue.toLocaleString()}</strong>
+          <strong>ภาพรวม 2 ระบบ:</strong> รายรับรวมศูนย์ออกแบบและพัฒนานวัตกรรม + PM = <strong style="color: #fb923c; font-size: 9.5pt;">฿${swotAndTowsAnalysis.totalCombinedRevenue.toLocaleString()}</strong>
         </div>
         <div>
           <strong>7.5x Economic IMPACT:</strong> <strong style="color: #60a5fa; font-size: 9.5pt;">฿${(swotAndTowsAnalysis.totalCombinedImpact / 1000000).toFixed(2)}M</strong>
@@ -742,7 +742,7 @@ export function exportIDCFullPdf(options: ExportIDCPdfOptions) {
 
     <!-- Page 1 Footer -->
     <div class="page-footer">
-      <div>รายงานศูนย์ออกแบบนวัตกรรม (IDC) • ทีมสร้างสรรค์และการสื่อสาร (STeP)</div>
+      <div>รายงานศูนย์ออกแบบและพัฒนานวัตกรรม • ทีมสร้างสรรค์และการสื่อสาร (STeP)</div>
       <div>หน้า 1 จาก 4 (ส่วนที่ 1: ชุดข้อมูล 5 Core KPIs)</div>
     </div>
   </div>
@@ -754,7 +754,7 @@ export function exportIDCFullPdf(options: ExportIDCPdfOptions) {
     <div class="page-content">
       <!-- Mini Header Bar -->
       <div class="page-top-bar">
-        <div><strong>ศูนย์ออกแบบนวัตกรรม (IDC)</strong> • ทีมสร้างสรรค์และการสื่อสาร (STeP)</div>
+        <div><strong>ศูนย์ออกแบบและพัฒนานวัตกรรม</strong> • ทีมสร้างสรรค์และการสื่อสาร (STeP)</div>
         <div>ช่วงเวลา: ${filterText} | หน้า 2 จาก 4</div>
       </div>
 
@@ -864,7 +864,7 @@ export function exportIDCFullPdf(options: ExportIDCPdfOptions) {
 
     <!-- Page 2 Footer -->
     <div class="page-footer">
-      <div>รายงานศูนย์ออกแบบนวัตกรรม (IDC) • ทีมสร้างสรรค์และการสื่อสาร (STeP)</div>
+      <div>รายงานศูนย์ออกแบบและพัฒนานวัตกรรม • ทีมสร้างสรรค์และการสื่อสาร (STeP)</div>
       <div>หน้า 2 จาก 4 (ส่วนที่ 2: โครงการ PM งานออกแบบ)</div>
     </div>
   </div>
@@ -876,7 +876,7 @@ export function exportIDCFullPdf(options: ExportIDCPdfOptions) {
     <div class="page-content">
       <!-- Mini Header Bar -->
       <div class="page-top-bar">
-        <div><strong>ศูนย์ออกแบบนวัตกรรม (IDC)</strong> • ทีมสร้างสรรค์และการสื่อสาร (STeP)</div>
+        <div><strong>ศูนย์ออกแบบและพัฒนานวัตกรรม</strong> • ทีมสร้างสรรค์และการสื่อสาร (STeP)</div>
         <div>ช่วงเวลา: ${filterText} | หน้า 3 จาก 4</div>
       </div>
 
@@ -988,7 +988,7 @@ export function exportIDCFullPdf(options: ExportIDCPdfOptions) {
 
     <!-- Page 3 Footer -->
     <div class="page-footer">
-      <div>รายงานศูนย์ออกแบบนวัตกรรม (IDC) • ทีมสร้างสรรค์และการสื่อสาร (STeP)</div>
+      <div>รายงานศูนย์ออกแบบและพัฒนานวัตกรรม • ทีมสร้างสรรค์และการสื่อสาร (STeP)</div>
       <div>หน้า 3 จาก 4 (ส่วนที่ 3: แดชบอร์ด &amp; การวิเคราะห์ SWOT Analysis)</div>
     </div>
   </div>
@@ -1000,7 +1000,7 @@ export function exportIDCFullPdf(options: ExportIDCPdfOptions) {
     <div class="page-content">
       <!-- Mini Header Bar -->
       <div class="page-top-bar">
-        <div><strong>ศูนย์ออกแบบนวัตกรรม (IDC)</strong> • ทีมสร้างสรรค์และการสื่อสาร (STeP)</div>
+        <div><strong>ศูนย์ออกแบบและพัฒนานวัตกรรม</strong> • ทีมสร้างสรรค์และการสื่อสาร (STeP)</div>
         <div>ช่วงเวลา: ${filterText} | หน้า 4 จาก 4</div>
       </div>
 

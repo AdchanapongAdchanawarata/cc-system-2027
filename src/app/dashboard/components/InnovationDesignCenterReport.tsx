@@ -98,7 +98,7 @@ export const IDC_BUSINESS_TYPE_OPTIONS: ModernSelectOption[] = [
 ];
 
 export const IDC_SERVICE_FILTER_OPTIONS: ModernSelectOption[] = [
-  { value: "all", label: "ทุกประเภทบริการ", desc: "แสดงงานทุกประเภทการให้บริการของศูนย์ IDC" },
+  { value: "all", label: "ทุกประเภทบริการ", desc: "แสดงงานทุกประเภทการให้บริการของศูนย์ออกแบบและพัฒนานวัตกรรม" },
   { value: "consultation", label: "เข้ารับคำปรึกษา", desc: "การให้คำปรึกษาเชิงลึกด้านการออกแบบและนวัตกรรม" },
   { value: "product_design", label: "ออกแบบผลิตภัณฑ์", desc: "บริการออกแบบผลิตภัณฑ์อุตสาหกรรมและเชิงพาณิชย์" },
   { value: "packaging_design", label: "ออกแบบบรรจุภัณฑ์", desc: "บริการพัฒนาโครงสร้างและกราฟิกบรรจุภัณฑ์" },
@@ -115,13 +115,13 @@ export const IDC_BUSINESS_FILTER_OPTIONS: ModernSelectOption[] = [
 
 export const IDC_ASSIGNEE_OPTIONS: ModernSelectOption[] = [
   { value: "รอมอบหมาย", label: "⏳ รอมอบหมาย", desc: "ยังไม่ได้ระบุผู้รับผิดชอบงาน" },
-  { value: "จ๊อบ AA", label: "จ๊อบ AA", desc: "ทีมงานศูนย์นวัตกรรมการออกแบบ IDC" },
-  { value: "วา WK", label: "วา WK", desc: "ทีมงานศูนย์นวัตกรรมการออกแบบ IDC" },
-  { value: "จอย RL", label: "จอย RL", desc: "ทีมงานศูนย์นวัตกรรมการออกแบบ IDC" },
-  { value: "พิม AC", label: "พิม AC", desc: "ทีมงานศูนย์นวัตกรรมการออกแบบ IDC" },
-  { value: "เยียร์ LLP", label: "เยียร์ LLP", desc: "ทีมงานศูนย์นวัตกรรมการออกแบบ IDC" },
-  { value: "นิน MTN", label: "นิน MTN", desc: "ทีมงานศูนย์นวัตกรรมการออกแบบ IDC" },
-  { value: "ก้อง IK", label: "ก้อง IK", desc: "ทีมงานศูนย์นวัตกรรมการออกแบบ IDC" }
+  { value: "จ๊อบ AA", label: "จ๊อบ AA", desc: "ทีมงานศูนย์ออกแบบและพัฒนานวัตกรรม" },
+  { value: "วา WK", label: "วา WK", desc: "ทีมงานศูนย์ออกแบบและพัฒนานวัตกรรม" },
+  { value: "จอย RL", label: "จอย RL", desc: "ทีมงานศูนย์ออกแบบและพัฒนานวัตกรรม" },
+  { value: "พิม AC", label: "พิม AC", desc: "ทีมงานศูนย์ออกแบบและพัฒนานวัตกรรม" },
+  { value: "เยียร์ LLP", label: "เยียร์ LLP", desc: "ทีมงานศูนย์ออกแบบและพัฒนานวัตกรรม" },
+  { value: "นิน MTN", label: "นิน MTN", desc: "ทีมงานศูนย์ออกแบบและพัฒนานวัตกรรม" },
+  { value: "ก้อง IK", label: "ก้อง IK", desc: "ทีมงานศูนย์ออกแบบและพัฒนานวัตกรรม" }
 ];
 
 export const IDC_EDIT_STATUS_OPTIONS: ModernSelectOption[] = [
@@ -347,7 +347,9 @@ function isIDCBrief(b: any): boolean {
   return Boolean(
     idcCode ||
     name.startsWith("[IDC]") ||
+    name.startsWith("[ศูนย์ออกแบบนวัตกรรม]") ||
     sCat.includes("Innovation Design Center") ||
+    sCat.includes("ศูนย์ออกแบบ") ||
     sCat.includes("IDC") ||
     cat.includes("IDC")
   );
@@ -1368,7 +1370,7 @@ export default function InnovationDesignCenterReport({
         : `ช่วงเวลา: ${timeframe}`;
 
     // Title / Metadata
-    lines.push(`"รายงานการวิเคราะห์เชิงกลยุทธ์ แดชบอร์ด และ SWOT / TOWS Matrix - ทีมสร้างสรรค์และการสื่อสาร (IDC)"`);
+    lines.push(`"รายงานการวิเคราะห์เชิงกลยุทธ์ แดชบอร์ด และ SWOT / TOWS Matrix - ศูนย์ออกแบบและพัฒนานวัตกรรม"`);
     lines.push(`"ช่วงเวลาที่เลือก: ${timeframeText}"`);
     lines.push(`"วันที่ส่งออก: ${new Date().toLocaleDateString("th-TH")} ${new Date().toLocaleTimeString("th-TH")}"`);
     lines.push("");
@@ -1501,7 +1503,7 @@ export default function InnovationDesignCenterReport({
     // 1. Insert into Supabase 'briefs' table as an Internal Task assigned to Pim
     try {
       const supabase = createClient();
-      const taskTitle = `[IDC] ให้คำปรึกษา: ${serviceLabel} - ${formData.companyName.trim()}`;
+      const taskTitle = `[ศูนย์ออกแบบนวัตกรรม] ให้คำปรึกษา: ${serviceLabel} - ${formData.companyName.trim()}`;
 
       const { data: insertedData, error: briefError } = await supabase.from('briefs').insert([{
         project_name: taskTitle,
@@ -1515,7 +1517,7 @@ export default function InnovationDesignCenterReport({
         details: {
           date: today,
           category: 'Design',
-          service_category: 'Innovation Design Center (IDC)',
+          service_category: 'Innovation Design Center',
           idc_code: newCode,
           client_name: formData.clientName.trim(),
           company_name: formData.companyName.trim(),
@@ -1535,9 +1537,9 @@ export default function InnovationDesignCenterReport({
           service_other_detail: formData.serviceOtherDetail.trim(),
           piece_count: totalPieces,
           revenue: 0,
-          description: formData.projectBrief.trim() || `คำขอรับคำปรึกษาศูนย์ IDC: ${serviceLabel}\nผู้รับบริการ: ${formData.clientName.trim()} (${formData.companyName.trim()})\nเบอร์โทร: ${formData.phone.trim()}`,
+          description: formData.projectBrief.trim() || `คำขอรับคำปรึกษาศูนย์ออกแบบและพัฒนานวัตกรรม: ${serviceLabel}\nผู้รับบริการ: ${formData.clientName.trim()} (${formData.companyName.trim()})\nเบอร์โทร: ${formData.phone.trim()}`,
           project_brief: formData.projectBrief.trim(),
-          details: formData.projectBrief.trim() || `คำขอรับคำปรึกษาศูนย์ IDC: ${serviceLabel}\nผู้รับบริการ: ${formData.clientName.trim()} (${formData.companyName.trim()})\nเบอร์โทร: ${formData.phone.trim()}`,
+          details: formData.projectBrief.trim() || `คำขอรับคำปรึกษาศูนย์ออกแบบและพัฒนานวัตกรรม: ${serviceLabel}\nผู้รับบริการ: ${formData.clientName.trim()} (${formData.companyName.trim()})\nเบอร์โทร: ${formData.phone.trim()}`,
           survey_token: newToken,
           survey_sent: false,
           assignee_name: PIM_NAME,
@@ -1601,7 +1603,7 @@ export default function InnovationDesignCenterReport({
       projectBrief: ""
     });
 
-    alert(`✅ บันทึกข้อมูลคำขอเข้ารับบริการสำเร็จ!\n\n📋 รหัสคำขอ: ${newCode}\n📌 ข้อมูลแสดงในตารางชุดข้อมูล IDC และขึ้นไปที่ Kanban Board รวม (ประเภทงาน Internal / ผู้รับผิดชอบ พิม AC) เรียบร้อยแล้วครับ`);
+    alert(`✅ บันทึกข้อมูลคำขอเข้ารับบริการสำเร็จ!\n\n📋 รหัสคำขอ: ${newCode}\n📌 ข้อมูลแสดงในตารางชุดข้อมูลศูนย์ออกแบบและพัฒนานวัตกรรม และขึ้นไปที่ Kanban Board รวม (ประเภทงาน Internal / ผู้รับผิดชอบ พิม AC) เรียบร้อยแล้วครับ`);
     setActiveTab("records");
   };
 
@@ -1888,7 +1890,7 @@ export default function InnovationDesignCenterReport({
   const handleCopyLineSurvey = (record: IDCRecord) => {
     const link = getSurveyLink(record);
     const serviceTitle = record.serviceMain === "consultation" ? "การให้คำปรึกษาด้านนวัตกรรมและการออกแบบ" : "งานออกแบบ";
-    const text = `เรียน คุณ${record.clientName} (${record.companyName})\nศูนย์ Innovation Design Center (IDC) อุทยานวิทยาศาสตร์ฯ ขอขอบพระคุณที่เข้ารับบริการ ${serviceTitle} (รหัสงาน ${record.code})\n\nเพื่อการพัฒนาและปรับปรุงคุณภาพการให้คำปรึกษา ขอความอนุเคราะห์ท่านตอบแบบประเมินความพึงพอใจในการเข้ารับคำปรึกษา (ใช้เวลาเพียง 1 นาที) ได้ที่ลิงก์นี้:\n${link}\n\nขอขอบพระคุณเป็นอย่างยิ่งครับ/ค่ะ`;
+    const text = `เรียน คุณ${record.clientName} (${record.companyName})\nศูนย์ออกแบบและพัฒนานวัตกรรม (Innovation Design Center) อุทยานวิทยาศาสตร์ฯ ขอขอบพระคุณที่เข้ารับบริการ ${serviceTitle} (รหัสงาน ${record.code})\n\nเพื่อการพัฒนาและปรับปรุงคุณภาพการให้คำปรึกษา ขอความอนุเคราะห์ท่านตอบแบบประเมินความพึงพอใจในการเข้ารับคำปรึกษา (ใช้เวลาเพียง 1 นาที) ได้ที่ลิงก์นี้:\n${link}\n\nขอขอบพระคุณเป็นอย่างยิ่งครับ/ค่ะ`;
 
     navigator.clipboard.writeText(text).then(() => {
       setCopyFeedback("คัดลอกข้อความและลิงก์สำหรับส่งทาง LINE แล้ว!");
@@ -1900,9 +1902,9 @@ export default function InnovationDesignCenterReport({
   const handleSendEmailSurvey = (record: IDCRecord) => {
     const link = getSurveyLink(record);
     const serviceTitle = record.serviceMain === "consultation" ? "การให้คำปรึกษาด้านนวัตกรรมและการออกแบบ" : "การออกแบบ";
-    const subject = encodeURIComponent(`[IDC] แบบประเมินความพึงพอใจในการเข้ารับคำปรึกษา (${record.code}) - ${record.companyName}`);
+    const subject = encodeURIComponent(`[แบบประเมิน] ความพึงพอใจในการเข้ารับคำปรึกษา (${record.code}) - ${record.companyName}`);
     const body = encodeURIComponent(
-      `เรียน คุณ${record.clientName} (${record.companyName})\n\nศูนย์ Innovation Design Center (IDC) อุทยานวิทยาศาสตร์และเทคโนโลยี ขอขอบพระคุณท่านที่ได้เข้ารับบริการ ${serviceTitle} รหัสงาน: ${record.code} จำนวน ${record.pieceCount} ${record.serviceMain === "consultation" ? "ครั้ง" : "ชิ้น"}\n\nเพื่อให้การให้คำปรึกษามีประโยชน์และตอบโจทย์ผู้ประกอบการสูงสุด ขอความอนุเคราะห์ท่านสละเวลาตอบแบบประเมินความพึงพอใจในการเข้ารับคำปรึกษาผ่านลิงก์ด้านล่างนี้:\n${link}\n\nขอแสดงความนับถือ,\nทีมงาน Innovation Design Center (IDC)\nอุทยานวิทยาศาสตร์และเทคโนโลยี`
+      `เรียน คุณ${record.clientName} (${record.companyName})\n\nศูนย์ออกแบบและพัฒนานวัตกรรม (Innovation Design Center) อุทยานวิทยาศาสตร์และเทคโนโลยี ขอขอบพระคุณท่านที่ได้เข้ารับบริการ ${serviceTitle} รหัสงาน: ${record.code} จำนวน ${record.pieceCount} ${record.serviceMain === "consultation" ? "ครั้ง" : "ชิ้น"}\n\nเพื่อให้การให้คำปรึกษามีประโยชน์และตอบโจทย์ผู้ประกอบการสูงสุด ขอความอนุเคราะห์ท่านสละเวลาตอบแบบประเมินความพึงพอใจในการเข้ารับคำปรึกษาผ่านลิงก์ด้านล่างนี้:\n${link}\n\nขอแสดงความนับถือ,\nศูนย์ออกแบบและพัฒนานวัตกรรม (Innovation Design Center)\nอุทยานวิทยาศาสตร์และเทคโนโลยี`
     );
 
     window.open(`mailto:${record.email}?subject=${subject}&body=${body}`, "_blank");
@@ -2585,7 +2587,7 @@ export default function InnovationDesignCenterReport({
             <div>
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-50 text-orange-700 text-xs font-bold border border-orange-200 mb-1.5">
                 <Sparkles size={12} />
-                แบบฟอร์มรับคำขอเข้ารับบริการ (IDC Intake Form)
+                แบบฟอร์มรับคำขอเข้ารับบริการ (Innovation Design Center Intake Form)
               </div>
               <h3 className="text-lg font-black text-slate-900 tracking-tight">
                 แบบฟอร์มสำหรับส่งให้ผู้ประกอบการ หรือ เจ้าหน้าที่บันทึกเข้าระบบ
@@ -4065,10 +4067,10 @@ export default function InnovationDesignCenterReport({
                 </div>
                 <div>
                   <h4 className="text-base font-black text-slate-900">
-                    แบบประเมินความพึงพอใจในการเข้ารับคำปรึกษา (IDC)
+                    แบบประเมินความพึงพอใจในการเข้ารับคำปรึกษา (Innovation Design Center)
                   </h4>
                   <p className="text-xs text-slate-500">
-                    แบบประเมินเฉพาะการเข้ารับคำปรึกษาศูนย์ IDC (KPI 34) | รหัส: {surveyModalRecord.code}
+                    แบบประเมินเฉพาะการเข้ารับคำปรึกษาศูนย์ออกแบบและพัฒนานวัตกรรม (KPI 34) | รหัส: {surveyModalRecord.code}
                   </p>
                 </div>
               </div>

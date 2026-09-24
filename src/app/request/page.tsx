@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, Suspense, useRef, useMemo } from "react";
-import { ArrowRight, CheckCircle2, UploadCloud, X, PenTool, Video, Mic, Copy, Check, Link2 } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, ArrowLeft, CheckCircle2, UploadCloud, X, PenTool, Video, Mic, Copy, Check, Link2 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useSearchParams } from "next/navigation";
 import { getStandardPriceForTask } from "@/utils/pricing";
@@ -461,28 +462,36 @@ function FormContent() {
 
   if (isSuccess) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-8 w-full max-w-2xl mx-auto min-h-[80vh]">
-        <div className="text-center space-y-6">
-          <div className="inline-flex h-20 w-20 bg-primary/10 text-primary rounded-full items-center justify-center mb-4">
+      <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 w-full max-w-2xl mx-auto min-h-[70vh]">
+        <div className="text-center space-y-6 bg-white p-6 sm:p-10 rounded-3xl border border-slate-200 shadow-xl w-full">
+          <div className="inline-flex h-20 w-20 bg-primary/10 text-primary rounded-full items-center justify-center mb-2">
             <CheckCircle2 size={40} />
           </div>
-          <h1 className="text-3xl font-semibold tracking-tight">ส่งใบสั่งงานสำเร็จ</h1>
-          <p className="text-muted-foreground text-lg">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">ส่งใบสั่งงานสำเร็จ</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">
             ระบบได้รับข้อมูลของคุณแล้ว ทีมงานจะดำเนินการตรวจสอบโดยเร็วที่สุด
           </p>
-          <button 
-            onClick={() => { 
-              setIsSuccess(false); 
-              setFiles([]); 
-              setCreativeDraftDate(""); 
-              setCreativeUsageDate(""); 
-              setContentPublishDate(""); 
-              setPrPublishDate(""); 
-            }}
-            className="mt-8 px-6 py-3 bg-surface border border-surface-border text-foreground rounded-full hover:bg-muted transition-colors font-medium"
-          >
-            ส่งใบสั่งงานใหม่
-          </button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
+            <button 
+              onClick={() => { 
+                setIsSuccess(false); 
+                setFiles([]); 
+                setCreativeDraftDate(""); 
+                setCreativeUsageDate(""); 
+                setContentPublishDate(""); 
+                setPrPublishDate(""); 
+              }}
+              className="w-full sm:w-auto px-6 py-2.5 bg-primary text-white rounded-full hover:bg-primary/90 transition-all font-medium text-sm shadow-md cursor-pointer"
+            >
+              ส่งใบสั่งงานใหม่
+            </button>
+            <Link
+              href="/"
+              className="w-full sm:w-auto px-6 py-2.5 bg-surface border border-surface-border text-foreground rounded-full hover:bg-muted transition-colors font-medium text-sm"
+            >
+              กลับหน้าหลัก
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -498,8 +507,8 @@ function FormContent() {
       ),
       desc: "แบบฟอร์มขอรับบริการงานออกแบบสร้างสรรค์ ทั้งในส่วนงานกราฟิกและสื่อสร้างสรรค์ เพื่อสร้างการรับรู้และภาพลักษณ์ที่ดี มากยิ่งขึ้น โดย Creative Designer",
       icon: (
-        <div className="w-24 h-24 rounded-full rams-circle animate-btn-glow flex items-center justify-center relative shrink-0">
-          <PenTool size={44} className="text-slate-800 -rotate-12" strokeWidth={1.5} />
+        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full rams-circle animate-btn-glow flex items-center justify-center relative shrink-0">
+          <PenTool size={40} className="text-slate-800 -rotate-12" strokeWidth={1.5} />
         </div>
       )
     },
@@ -512,8 +521,8 @@ function FormContent() {
       ),
       desc: "แบบฟอร์มขอรับบริการงานสร้างสรรค์คอนเทนต์ ทั้งในส่วนของบทความและวีดีโอสั้น เพื่อสร้างภาพลักษณ์ สนับสนุนองค์กรให้เป็นที่รู้จักในวงกว้าง มากยิ่งขึ้น โดย Content Creator",
       icon: (
-        <div className="w-24 h-24 rounded-full rams-circle animate-btn-glow flex items-center justify-center relative shrink-0">
-          <Video size={44} className="text-slate-800" strokeWidth={1.5} />
+        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full rams-circle animate-btn-glow flex items-center justify-center relative shrink-0">
+          <Video size={40} className="text-slate-800" strokeWidth={1.5} />
         </div>
       )
     },
@@ -526,8 +535,8 @@ function FormContent() {
       ),
       desc: "แบบฟอร์มขอรับบริการงานประชาสัมพันธ์ ทั้งในส่วนของงานเขียนข่าว ถ่ายภาพข่าว ประสานงานนักข่าว สนับสนุนงานอีเว้นท์และอื่นๆในส่วนที่เกี่ยวข้อง โดย PR",
       icon: (
-        <div className="w-24 h-24 rounded-full rams-circle animate-btn-glow flex items-center justify-center relative shrink-0">
-          <Mic size={44} className="text-slate-800" strokeWidth={1.5} />
+        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full rams-circle animate-btn-glow flex items-center justify-center relative shrink-0">
+          <Mic size={40} className="text-slate-800" strokeWidth={1.5} />
         </div>
       )
     }
@@ -537,46 +546,53 @@ function FormContent() {
 
   return (
     <>
-      <div className="mb-4 max-w-3xl mx-auto px-4 md:px-0">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4 text-center sm:text-left">
-            <div className="flex-shrink-0">
-              {currentTitle.icon}
-            </div>
-            <div className="flex flex-col">
-              <h1 className="text-4xl md:text-[42px] font-bold tracking-tight leading-tight text-zinc-900">{currentTitle.title}</h1>
-            </div>
-          </div>
+      {/* Top Navbar Actions: Back button (Left) and Copy Link button (Right) */}
+      <div className="w-full flex items-center justify-between gap-3 mb-4 sm:mb-6">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-semibold bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 shadow-2xs transition-all active:scale-95"
+        >
+          <ArrowLeft size={14} />
+          <span>กลับหน้าหลัก</span>
+        </Link>
 
-          {/* Copy Form Link Button */}
-          <div className="shrink-0 self-center sm:self-center flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleCopyLink}
-              title="คัดลอกลิงก์แบบฟอร์มนี้เพื่อแชร์"
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all shadow-2xs border cursor-pointer ${
-                isCopied
-                  ? "bg-emerald-50 border-emerald-300 text-emerald-700 ring-2 ring-emerald-200"
-                  : "bg-surface border-surface-border text-foreground hover:border-primary/40 hover:bg-muted/30"
-              }`}
-            >
-              {isCopied ? (
-                <>
-                  <Check size={14} className="text-emerald-600" />
-                  <span>คัดลอกลิงก์แล้ว!</span>
-                </>
-              ) : (
-                <>
-                  <Copy size={14} className="text-zinc-500" />
-                  <span>คัดลอกลิงก์แบบฟอร์ม</span>
-                </>
-              )}
-            </button>
+        <button
+          type="button"
+          onClick={handleCopyLink}
+          title="คัดลอกลิงก์แบบฟอร์มนี้เพื่อแชร์"
+          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-semibold transition-all shadow-2xs border cursor-pointer active:scale-95 ${
+            isCopied
+              ? "bg-emerald-50 border-emerald-300 text-emerald-700 ring-2 ring-emerald-200"
+              : "bg-white hover:bg-slate-50 border-slate-200 text-slate-700"
+          }`}
+        >
+          {isCopied ? (
+            <>
+              <Check size={14} className="text-emerald-600" />
+              <span>คัดลอกลิงก์แล้ว!</span>
+            </>
+          ) : (
+            <>
+              <Copy size={14} className="text-slate-500" />
+              <span>คัดลอกลิงก์แบบฟอร์ม</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      <div className="mb-4 sm:mb-6 w-full">
+        <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+          <div className="flex-shrink-0">
+            {currentTitle.icon}
+          </div>
+          <div className="flex flex-col">
+            <h1 className="text-2xl sm:text-4xl md:text-[42px] font-bold tracking-tight leading-tight text-zinc-900">{currentTitle.title}</h1>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl">{currentTitle.desc}</p>
           </div>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} data-keep-white="true" className="space-y-10 rams-card p-10 relative overflow-hidden bg-white text-slate-900 border border-slate-200 shadow-xl">
+      <form onSubmit={handleSubmit} data-keep-white="true" className="space-y-8 sm:space-y-10 rams-card p-4 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl relative overflow-hidden bg-white text-slate-900 border border-slate-200 shadow-xl w-full">
         <div className="absolute top-0 left-0 w-full h-[3px] bg-primary"></div>
         <input type="hidden" name="unit" value={activeUnit} />
 
@@ -807,7 +823,7 @@ function FormContent() {
 
 export default function PublicRequestFormPage() {
   return (
-    <main className="flex-1 p-8 w-full max-w-4xl mx-auto py-12">
+    <main className="flex-1 w-full max-w-4xl mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8">
       <Suspense fallback={<div className="flex justify-center p-12 text-muted-foreground">กำลังโหลดแบบฟอร์ม...</div>}>
         <FormContent />
       </Suspense>

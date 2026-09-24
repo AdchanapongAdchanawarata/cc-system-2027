@@ -210,31 +210,40 @@ export default function RspPressFormPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100/70 py-8 px-4 sm:px-6 lg:px-8 font-sans">
-      <div className="max-w-3xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100/70 py-4 sm:py-8 px-2 sm:px-4 md:px-6 font-sans">
+      <div className="w-full max-w-4xl mx-auto space-y-4 sm:space-y-6">
 
-        {/* Top Navbar Actions */}
-        <div className="flex items-center justify-between gap-3">
+        {/* Top Navbar Actions: Back button (Left) and Copy Link button (Right) */}
+        <div className="w-full flex items-center justify-between gap-3">
           <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-2 px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 shadow-2xs transition-all cursor-pointer"
+            href="/"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-semibold bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 shadow-2xs transition-all active:scale-95"
           >
             <ArrowLeft size={14} />
-            <span>กลับสู่หน้าหลักแดชบอร์ด</span>
+            <span>กลับหน้าหลัก</span>
           </Link>
 
           <button
             type="button"
             onClick={handleCopyShareLink}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95 ${
+            title="คัดลอกลิงก์แบบฟอร์มนี้เพื่อแชร์"
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-semibold transition-all shadow-2xs border cursor-pointer active:scale-95 ${
               copiedLink
-                ? "bg-emerald-600 text-white"
-                : "bg-white hover:bg-slate-50 text-slate-800 border border-slate-200"
+                ? "bg-emerald-50 border-emerald-300 text-emerald-700 ring-2 ring-emerald-200"
+                : "bg-white hover:bg-slate-50 border-slate-200 text-slate-700"
             }`}
-            title="คัดลอกลิงก์สำหรับส่งต่อให้ผู้ประสานงานในเครือข่าย"
           >
-            {copiedLink ? <Check size={14} className="text-white" /> : <Share2 size={14} className="text-blue-600" />}
-            <span>{copiedLink ? "คัดลอกลิงก์สำเร็จแล้ว!" : "คัดลอกลิงก์แชร์ฟอร์ม"}</span>
+            {copiedLink ? (
+              <>
+                <Check size={14} className="text-emerald-600" />
+                <span>คัดลอกลิงก์แล้ว!</span>
+              </>
+            ) : (
+              <>
+                <Copy size={14} className="text-slate-500" />
+                <span>คัดลอกลิงก์แบบฟอร์ม</span>
+              </>
+            )}
           </button>
         </div>
 
@@ -329,7 +338,7 @@ export default function RspPressFormPage() {
             </div>
 
             {/* Form Fields */}
-            <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-8">
+            <form onSubmit={handleSubmit} className="p-4 sm:p-8 space-y-8">
               
               {/* ========================================== */}
               {/* ส่วนที่ 1: ข้อมูลทั่วไป                      */}

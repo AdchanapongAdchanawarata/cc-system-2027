@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, ArrowLeft, CheckCircle2, Copy, Check } from "lucide-react";
 import ModernDatePicker from "@/components/ModernDatePicker";
 import CustomSelect from "@/app/dashboard/components/CustomSelect";
 
@@ -10,6 +11,15 @@ export default function InternalTaskForm() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [dueDate, setDueDate] = useState("");
   const [priority, setPriority] = useState("Medium");
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const handleCopyLink = () => {
+    if (typeof window !== "undefined") {
+      navigator.clipboard.writeText(window.location.href);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -24,34 +34,76 @@ export default function InternalTaskForm() {
 
   if (isSuccess) {
     return (
-      <main className="flex-1 flex flex-col items-center justify-center p-8 w-full max-w-2xl mx-auto min-h-[80vh]">
-        <div className="text-center space-y-6">
-          <div className="inline-flex h-20 w-20 bg-primary/10 text-primary rounded-full items-center justify-center mb-4">
+      <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 w-full max-w-2xl mx-auto min-h-[70vh]">
+        <div className="text-center space-y-6 bg-white p-6 sm:p-10 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-xl w-full">
+          <div className="inline-flex h-20 w-20 bg-primary/10 text-primary rounded-full items-center justify-center mb-2">
             <CheckCircle2 size={40} />
           </div>
-          <h1 className="text-3xl font-semibold tracking-tight">Task Logged</h1>
-          <p className="text-muted-foreground text-lg">
-            Your internal task has been recorded successfully.
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">บันทึกภารกิจสำเร็จ</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            งานภายในของคุณถูกบันทึกเข้าระบบเรียบร้อยแล้ว
           </p>
-          <button 
-            onClick={() => setIsSuccess(false)}
-            className="mt-8 px-6 py-3 bg-surface border border-surface-border text-foreground rounded-md hover:bg-muted transition-colors font-medium"
-          >
-            Log Another Task
-          </button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
+            <button 
+              onClick={() => setIsSuccess(false)}
+              className="w-full sm:w-auto px-6 py-2.5 bg-primary text-white rounded-full hover:bg-primary/90 transition-all font-medium text-sm shadow-md cursor-pointer"
+            >
+              บันทึกงานใหม่
+            </button>
+            <Link
+              href="/dashboard"
+              className="w-full sm:w-auto px-6 py-2.5 bg-surface border border-surface-border text-foreground rounded-full hover:bg-muted transition-colors font-medium text-sm"
+            >
+              กลับสู่แดชบอร์ด
+            </Link>
+          </div>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="flex-1 p-8 w-full max-w-3xl mx-auto py-12">
-      <div className="mb-12 text-center">
-        <h1 className="text-4xl font-semibold tracking-tight mb-3">Internal Task Form</h1>
-        <p className="text-muted-foreground">Log a document, meeting, or miscellaneous task.</p>
+    <main className="flex-1 w-full max-w-4xl mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8">
+      {/* Top Navbar Actions: Back button (Left) and Copy Link button (Right) */}
+      <div className="w-full flex items-center justify-between gap-3 mb-4 sm:mb-6">
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-semibold bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 shadow-2xs transition-all active:scale-95"
+        >
+          <ArrowLeft size={14} />
+          <span>กลับสู่แดชบอร์ด</span>
+        </Link>
+
+        <button
+          type="button"
+          onClick={handleCopyLink}
+          title="คัดลอกลิงก์แบบฟอร์มนี้เพื่อแชร์"
+          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-semibold transition-all shadow-2xs border cursor-pointer active:scale-95 ${
+            copiedLink
+              ? "bg-emerald-50 border-emerald-300 text-emerald-700 ring-2 ring-emerald-200"
+              : "bg-white hover:bg-slate-50 border-slate-200 text-slate-700"
+          }`}
+        >
+          {copiedLink ? (
+            <>
+              <Check size={14} className="text-emerald-600" />
+              <span>คัดลอกลิงก์แล้ว!</span>
+            </>
+          ) : (
+            <>
+              <Copy size={14} className="text-slate-500" />
+              <span>คัดลอกลิงก์แบบฟอร์ม</span>
+            </>
+          )}
+        </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-10 rams-card p-10 relative overflow-hidden">
+      <div className="mb-6 sm:mb-8 text-center">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight mb-2">Internal Task Form</h1>
+        <p className="text-xs sm:text-sm text-muted-foreground">บันทึกภารกิจภายใน เอกสาร การประชุม หรืองานประจำวัน</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-8 sm:space-y-10 rams-card p-4 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl relative overflow-hidden bg-white text-slate-900 border border-slate-200 shadow-xl w-full">
         {/* Physical hardware top edge highlight */}
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-50"></div>
         

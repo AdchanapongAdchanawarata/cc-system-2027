@@ -37,6 +37,13 @@
       padding: 0;
     }
 
+    html, body {
+      overflow-x: hidden;
+      width: 100%;
+      max-width: 100%;
+      position: relative;
+    }
+
     body {
       font-family: 'Prompt', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       color: var(--slate-800);
@@ -47,9 +54,12 @@
 
     /* Layout Containers */
     .container {
+      width: 100%;
       max-width: 980px;
       margin: 0 auto;
       padding: 30px 24px 80px;
+      box-sizing: border-box;
+      overflow-x: hidden;
     }
 
     /* Top Floating Action Bar */
@@ -57,62 +67,75 @@
       position: sticky;
       top: 0;
       z-index: 100;
-      background: rgba(255, 255, 255, 0.94);
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
-      padding: 12px 24px;
+      padding: 8px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.03);
     }
     .floating-bar .logo-badge {
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-weight: 700;
+      gap: 8px;
+      font-weight: 800;
       color: var(--slate-900);
-      font-size: 15px;
+      font-size: 14px;
+      letter-spacing: 0.3px;
     }
     .floating-bar .logo-badge span {
       background: var(--primary);
       color: white;
-      font-size: 11px;
-      padding: 2px 8px;
-      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1.5px 7px;
+      border-radius: 9999px;
       letter-spacing: 0.5px;
     }
     .actions {
       display: flex;
-      gap: 12px;
+      align-items: center;
+      gap: 8px;
     }
-    .btn {
+    .btn-pill {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-size: 13px;
+      gap: 5px;
+      padding: 5px 12px;
+      border-radius: 9999px;
+      font-size: 11.5px;
       font-weight: 600;
       cursor: pointer;
       text-decoration: none;
       transition: all 0.15s ease;
+      white-space: nowrap;
+      line-height: 1.3;
+    }
+    .btn-pill-light {
       border: 1px solid var(--border);
       background: white;
       color: var(--slate-700);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
     }
-    .btn:hover {
+    .btn-pill-light:hover {
       background: var(--slate-50);
       border-color: var(--slate-400);
+      color: var(--slate-900);
     }
-    .btn-primary {
+    .btn-pill-dark {
       background: var(--slate-900);
       color: white;
-      border-color: var(--slate-900);
+      border: 1px solid var(--slate-900);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
-    .btn-primary:hover {
+    .btn-pill-dark:hover {
       background: var(--slate-800);
-      color: white;
+      border-color: var(--slate-800);
     }
 
     /* Document Header & Cover */
@@ -146,21 +169,26 @@
       border-radius: 30px;
       margin-bottom: 20px;
       letter-spacing: 0.5px;
+      max-width: 100%;
+      box-sizing: border-box;
+      word-break: break-word;
     }
     .doc-title {
-      font-size: clamp(26px, 4vw, 38px);
+      font-size: clamp(22px, 4vw, 36px);
       font-weight: 900;
       color: var(--slate-950);
       line-height: 1.25;
       margin-bottom: 16px;
       letter-spacing: -0.5px;
-      text-wrap: balance;
+      word-break: break-word;
     }
     .doc-title .title-brand {
-      white-space: nowrap;
+      white-space: normal;
+      word-break: break-word;
     }
     .doc-title .title-sub {
-      white-space: nowrap;
+      white-space: normal;
+      word-break: break-word;
     }
     .doc-subtitle {
       font-size: 17px;
@@ -254,6 +282,10 @@
       margin-bottom: 32px;
       box-shadow: var(--shadow-sm);
       page-break-inside: avoid;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow-x: hidden;
     }
     .section-header {
       display: flex;
@@ -317,10 +349,14 @@
       align-items: center;
       gap: 12px;
       border-bottom: 1px solid var(--slate-200);
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
     }
     .browser-dots {
       display: flex;
       gap: 6px;
+      flex-shrink: 0;
     }
     .browser-dot {
       width: 10px;
@@ -338,8 +374,12 @@
       font-size: 11px;
       color: #475569;
       flex: 1;
+      min-width: 0;
       max-width: 480px;
       font-family: monospace;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .browser-mockup img {
       width: 100%;
@@ -498,6 +538,8 @@
     /* Responsive Data Tables */
     .table-container {
       width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
       margin: 16px 0;
@@ -611,23 +653,37 @@
         font-size: 14px;
       }
       .container {
-        padding: 16px 12px 60px;
+        padding: 14px 12px 60px;
+        max-width: 100%;
+        overflow-x: hidden;
       }
       .floating-bar {
-        padding: 8px 12px;
-        flex-direction: column;
-        gap: 8px;
-        align-items: stretch;
+        padding: 6px 14px;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: 6px;
+      }
+      .floating-bar .logo-badge {
+        font-size: 13px;
+        gap: 6px;
+      }
+      .floating-bar .logo-badge span {
+        font-size: 9px;
+        padding: 1px 6px;
       }
       .floating-bar .actions {
-        justify-content: space-between;
-        width: 100%;
+        gap: 6px;
+        width: auto;
       }
-      .floating-bar .btn {
-        flex: 1;
-        justify-content: center;
-        padding: 7px 10px;
-        font-size: 12px;
+      .floating-bar .btn-pill {
+        padding: 3.5px 10px;
+        font-size: 10.5px;
+      }
+      .meta-tag {
+        font-size: 11px;
+        padding: 4px 12px;
+        line-height: 1.4;
       }
       .doc-header {
         padding: 28px 16px;
@@ -737,14 +793,14 @@
   <!-- Floating Bar -->
   <div class="floating-bar">
     <div class="logo-badge">
-      CC TEAM <span>BRIEFING & MANAGEMENT</span>
+      CC TEAM <span>MANUAL</span>
     </div>
     <div class="actions">
-      <button onclick="window.print()" class="btn btn-primary">
-        🖨️ พิมพ์ / บันทึก PDF (Print)
+      <button onclick="window.print()" class="btn-pill btn-pill-dark" title="พิมพ์หรือบันทึกเป็น PDF">
+        🖨️ บันทึก PDF
       </button>
-      <a href="https://ccteam.vercel.app" target="_blank" class="btn">
-        🌐 ไปยังเว็บไซต์จริง
+      <a href="/" class="btn-pill btn-pill-light" title="ไปยังเว็บไซต์หลัก">
+        🌐 ไปหน้าเว็บ
       </a>
     </div>
   </div>
@@ -768,7 +824,7 @@
       <div class="toc-grid">
         <div class="toc-item"><a href="#sec-overview"><span class="toc-num">1</span> ภาพรวมและโครงสร้างสิทธิ์ผู้ใช้งาน (Desktop & Mobile)</a></div>
         <div class="toc-item"><a href="#sec-requester"><span class="toc-num">2</span> คู่มือการส่งงาน 3 ยูนิตหลัก (ไม่ต้อง Login)</a></div>
-        <div class="toc-item"><a href="#sec-special-forms"><span class="toc-num">3</span> แบบฟอร์มเฉพาะทาง (IDC & RSP Press Form)</a></div>
+        <div class="toc-item"><a href="#sec-special-forms"><span class="toc-num">3</span> แบบฟอร์มเฉพาะทาง (Innovation Design Center & RSP Press Form)</a></div>
         <div class="toc-item"><a href="#sec-tracking"><span class="toc-num">4</span> การติดตามสถานะงานและการประเมินผล</a></div>
         <div class="toc-item"><a href="#sec-staff-login"><span class="toc-num">5</span> การเข้าสู่ระบบทีมงาน (Strict Whitelist)</a></div>
         <div class="toc-item"><a href="#sec-dashboard"><span class="toc-num">6</span> การบริหารงานและจ่ายงาน (Tasks Board)</a></div>
@@ -958,7 +1014,7 @@
         </div>
       </div>
 
-      <h3>1. แบบฟอร์มขอรับบริการ IDC (Innovation Design Center)</h3>
+      <h3>1. แบบฟอร์มขอรับคำปรึกษาด้านงานสร้างสรรค์ (Innovation Design Center)</h3>
       <p>
         สำหรับหน่วยงานหรือผู้ประกอบการที่ต้องการขอรับคำปรึกษา ออกแบบโมเดล 3D หรือขึ้นรูปบรรจุภัณฑ์เชิงนวัตกรรม:
         <br>
@@ -974,9 +1030,9 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/idc-form</div>
         </div>
-        <img src="/manual_assets/shot_idc_details.png" alt="แบบฟอร์มขอรับบริการ IDC">
+        <img src="/manual_assets/shot_idc_details.png" alt="แบบฟอร์มขอรับคำปรึกษาด้านงานสร้างสรรค์ ศูนย์ออกแบบและพัฒนานวัตกรรม">
       </div>
-      <div class="img-caption">ภาพที่ 3.1: หน้าแบบฟอร์มขอรับบริการ IDC สำหรับงานที่ปรึกษาออกแบบบรรจุภัณฑ์และพัฒนาผลิตภัณฑ์นวัตกรรม</div>
+      <div class="img-caption">ภาพที่ 3.1: หน้าแบบฟอร์มขอรับคำปรึกษาด้านงานสร้างสรรค์ สำหรับงานออกแบบบรรจุภัณฑ์และพัฒนาผลิตภัณฑ์นวัตกรรม</div>
 
       <h3 style="margin-top: 24px;">2. แบบฟอร์มข่าวกิจกรรมเครือข่าย RSP Press Form</h3>
       <p>
@@ -1196,7 +1252,7 @@
               <td>ติดตามงานประชุมและมติไม่ตกหล่น</td>
             </tr>
             <tr>
-              <td><strong>2. Innovation Design Center (IDC) Report</strong></td>
+              <td><strong>2. Innovation Design Center Report</strong></td>
               <td>รายงานสถิติงานออกแบบผลงานนวัตกรรมต้นแบบ บรรจุภัณฑ์ และสถิติการใช้งานห้องแล็บ</td>
               <td>วัดผลผลิตนวัตกรรมกายภาพของ STeP</td>
             </tr>
@@ -1266,11 +1322,11 @@
         </div>
       </div>
 
-      <!-- 7.2 Innovation Design Center (IDC) Report -->
+      <!-- 7.2 Innovation Design Center Report -->
       <div style="margin-top: 36px;">
         <h3 style="display: flex; align-items: center; gap: 8px;">
           <span style="background: #fef3c7; color: #b45309; font-size: 12px; padding: 2px 10px; border-radius: 20px;">โมดูลที่ 2</span>
-          2. Innovation Design Center (IDC) Report
+          2. Innovation Design Center Report (ศูนย์ออกแบบและพัฒนานวัตกรรม)
         </h3>
         <p>รายงานสถิติงานออกแบบผลงานนวัตกรรมต้นแบบ บรรจุภัณฑ์ และสถิติการใช้งานห้องปฏิบัติการแล็บ พร้อมสถิติมูลค่าที่ทีม CC ช่วยสร้างสรรค์ให้กับอุทยานวิทยาศาสตร์ฯ:</p>
         <div class="browser-mockup">
@@ -1284,14 +1340,14 @@
           </div>
           <img src="/manual_assets/shot_boh_idc.png" alt="หน้า Innovation Design Center Report">
         </div>
-        <div class="img-caption">ภาพที่ 7.3: หน้า IDC Report แสดงสถิติงานต้นแบบนวัตกรรม รายการสิ่งประดิษฐ์ บรรจุภัณฑ์ และการใช้งานห้องแล็บ</div>
+        <div class="img-caption">ภาพที่ 7.3: หน้า Innovation Design Center Report แสดงสถิติงานต้นแบบนวัตกรรม รายการสิ่งประดิษฐ์ บรรจุภัณฑ์ และการใช้งานห้องแล็บ</div>
         <div class="callout callout-info" style="margin-top: 12px;">
           <div class="callout-title">💡 วิธีใช้งาน Innovation Design Center Report</div>
           <ol style="margin-left: 18px; margin-top: 6px; font-size: 13.5px; line-height: 1.6;">
             <li>คลิกเลือก <strong>Innovation Design Center Report</strong> จากหน้า Back of House</li>
             <li>ดูแท็บ <strong>Records</strong> เพื่อสืบค้นรายการชิ้นงานนวัตกรรมต้นแบบและผู้ขอรับบริการ</li>
             <li>ดูแท็บ <strong>Dashboard</strong> เพื่อประเมินสถิติเชิงปริมาณและมูลค่าเชิงพาณิชย์</li>
-            <li>กดปุ่ม <strong>Export Report</strong> เพื่อดาวน์โหลดสรุปผลงาน IDC ไปประกอบรายงานประจำปี</li>
+            <li>กดปุ่ม <strong>Export Report</strong> เพื่อดาวน์โหลดสรุปผลงาน Innovation Design Center ไปประกอบรายงานประจำปี</li>
           </ol>
         </div>
       </div>

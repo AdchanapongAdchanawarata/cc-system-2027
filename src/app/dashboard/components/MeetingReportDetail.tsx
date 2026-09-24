@@ -678,20 +678,22 @@ export default function MeetingReportDetail() {
               </button>
             </div>
 
-            <div className="flex items-center gap-2">
-              <ExportDataDropdown
-                reportId="meeting"
-                reportTitle="รายงานการประชุม (Meeting & Minutes)"
-                buttonText="Export Data"
-              />
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="flex-1 sm:flex-initial">
+                <ExportDataDropdown
+                  reportId="meeting"
+                  reportTitle="รายงานการประชุม (Meeting & Minutes)"
+                  buttonText="Export Data"
+                />
+              </div>
               <a
                 href="/dashboard?view=data-reports&report=iso&tab=requirements-evidence"
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-red-50 to-orange-50 hover:from-red-100 hover:to-orange-100 text-[#E03131] border border-red-200 text-xs font-bold transition-all shadow-2xs group"
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-red-50 to-orange-50 hover:from-red-100 hover:to-orange-100 text-[#E03131] border border-red-200 text-xs font-bold transition-all shadow-2xs group whitespace-nowrap"
                 title="คลิกเพื่อไปที่รายงาน ISO 9001 หมวดข้อกำหนดและหลักฐาน (Tab 6)"
               >
-                <Sparkles size={14} className="text-[#E03131] animate-pulse" />
+                <Sparkles size={13} className="text-[#E03131] animate-pulse shrink-0" />
                 <span>ข้อกำหนด ISO 9001 (Tab 6)</span>
-                <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+                <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform shrink-0" />
               </a>
             </div>
           </div>
@@ -764,17 +766,17 @@ export default function MeetingReportDetail() {
             
             {/* Column 1: แบบร่าง (Draft) */}
             <div className="bg-slate-50/70 dark:bg-zinc-900/60 p-4 rounded-2xl border border-slate-200/90 dark:border-zinc-800 shadow-2xs space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-zinc-800">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2 pb-3 border-b border-slate-200 dark:border-zinc-800">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
                   <h4 className="text-sm font-black text-slate-900 dark:text-zinc-100">
                     แบบร่างการประชุม (Draft)
                   </h4>
-                  <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-[11px] font-bold">
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-[11px] font-bold whitespace-nowrap shrink-0">
                     {draftMeetings.length} รายการ
                   </span>
                 </div>
-                <span className="text-[11px] text-slate-400 dark:text-zinc-500 font-light">
+                <span className="text-[11px] text-slate-400 dark:text-zinc-500 font-light pl-4.5 sm:pl-0">
                   เตรียมวาระและผู้จดบันทึก
                 </span>
               </div>
@@ -814,17 +816,17 @@ export default function MeetingReportDetail() {
 
             {/* Column 2: ส่งบันทึกการประชุมแล้ว (Sent) */}
             <div className="bg-slate-50/70 dark:bg-zinc-900/60 p-4 rounded-2xl border border-slate-200/90 dark:border-zinc-800 shadow-2xs space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-zinc-800">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2 pb-3 border-b border-slate-200 dark:border-zinc-800">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
                   <h4 className="text-sm font-black text-slate-900 dark:text-zinc-100">
-                    ส่งบันทึกการประชุมแล้ว (Sent to Team &amp; Executives)
+                    ส่งบันทึกการประชุมแล้ว (Sent)
                   </h4>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-[11px] font-bold">
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-[11px] font-bold whitespace-nowrap shrink-0">
                     {sentMeetings.length} รายการ
                   </span>
                 </div>
-                <span className="text-[11px] text-slate-400 dark:text-zinc-500 font-light">
+                <span className="text-[11px] text-slate-400 dark:text-zinc-500 font-light pl-4.5 sm:pl-0">
                   ส่งอีเมลและรับรองมติ
                 </span>
               </div>

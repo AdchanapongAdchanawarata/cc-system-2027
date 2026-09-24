@@ -387,14 +387,14 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
     isDate?: boolean;
     showTimeSelect?: boolean;
   }) => (
-    <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100">
-      <td className="px-4 py-3 w-1/3 border-r border-slate-100 bg-slate-50/40 align-top">
+    <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 flex flex-col sm:table-row">
+      <td className="px-3 sm:px-4 py-2 sm:py-3 w-full sm:w-1/3 sm:border-r border-slate-100 bg-slate-50/40 align-top">
         <div className="flex items-center gap-2 text-slate-600">
           {icon}
           <span className="font-semibold text-xs uppercase tracking-wider">{label}</span>
         </div>
       </td>
-      <td className="px-3 py-2 w-2/3 align-top">
+      <td className="px-3 sm:px-3 py-2 w-full sm:w-2/3 align-top">
         {isDate ? (
           <div className="relative flex items-center">
             <DatePicker
@@ -449,41 +449,52 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
   );
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-xl flex flex-col overflow-hidden border border-slate-200">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-2 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-4xl max-h-[94vh] sm:max-h-[90vh] rounded-2xl shadow-xl flex flex-col overflow-hidden border border-slate-200">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/60">
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Task Code */}
-            <span className="text-sm font-mono font-bold px-3.5 py-1.5 rounded-full bg-slate-100/90 text-slate-800 border border-slate-300/80 shadow-2xs tracking-wide">
-              {taskCode}
-            </span>
-
-            {/* Unit Badge (Prominent & Clear) */}
-            <span className={`text-xs sm:text-sm font-black px-4 py-1.5 rounded-full uppercase tracking-wider shadow-xs text-white ${
-              unit === 'creative' ? 'bg-[#8b5cf6]' :
-              unit === 'content' ? 'bg-[#ec4899]' :
-              unit === 'pr' ? 'bg-[#1877F2]' :
-              unit === 'internal' ? 'bg-[#27272a]' : 'bg-slate-600'
-            }`}>
-              {unit}
-            </span>
-
-            {/* Service / Category Badge */}
-            {currentCategory && (
-              <span className="text-xs sm:text-sm font-bold px-4 py-1.5 rounded-full bg-amber-50 text-amber-900 border border-amber-300 shadow-2xs">
-                {currentCategory}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 bg-slate-50/70">
+          <div className="flex items-center justify-between w-full sm:w-auto">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Task Code */}
+              <span className="text-xs sm:text-sm font-mono font-bold px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-slate-100 text-slate-800 border border-slate-300/80 shadow-2xs tracking-wide shrink-0">
+                {taskCode}
               </span>
-            )}
+
+              {/* Unit Badge (Prominent & Clear) */}
+              <span className={`text-xs sm:text-sm font-black px-3 py-1 sm:px-4 sm:py-1.5 rounded-full uppercase tracking-wider shadow-xs text-white shrink-0 ${
+                unit === 'creative' ? 'bg-[#8b5cf6]' :
+                unit === 'content' ? 'bg-[#ec4899]' :
+                unit === 'pr' ? 'bg-[#1877F2]' :
+                unit === 'internal' ? 'bg-[#27272a]' : 'bg-slate-600'
+              }`}>
+                {unit}
+              </span>
+
+              {/* Service / Category Badge */}
+              {currentCategory && (
+                <span className="text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-300 shadow-2xs leading-tight inline-block max-w-[200px] sm:max-w-none truncate sm:whitespace-normal">
+                  {currentCategory}
+                </span>
+              )}
+            </div>
+
+            {/* Mobile close button (top right) */}
+            <button
+              onClick={onClose}
+              className="sm:hidden p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors cursor-pointer shrink-0 ml-2"
+              title="ปิดหน้าต่าง"
+            >
+              <X size={20} />
+            </button>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
               type="button"
               onClick={handleCopyTaskLink}
               title="คัดลอกลิงก์ตรวจสอบสถานะและรายละเอียดงานนี้"
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-full transition-all border shadow-xs cursor-pointer ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-full transition-all border shadow-xs cursor-pointer whitespace-nowrap shrink-0 ${
                 copiedTaskLink
                   ? "bg-emerald-50 text-emerald-700 border-emerald-300 ring-2 ring-emerald-200"
                   : "text-slate-700 bg-white border-slate-200 hover:bg-slate-50"
@@ -491,25 +502,27 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
             >
               {copiedTaskLink ? (
                 <>
-                  <Check size={14} className="text-emerald-600" />
-                  <span>คัดลอกลิงก์งานแล้ว!</span>
+                  <Check size={14} className="text-emerald-600 shrink-0" />
+                  <span>คัดลอกลิงก์แล้ว!</span>
                 </>
               ) : (
                 <>
-                  <Copy size={14} className="text-slate-500" />
+                  <Copy size={14} className="text-slate-500 shrink-0" />
                   <span>คัดลอกลิงก์งาน</span>
                 </>
               )}
             </button>
             <button
               onClick={handleDownloadPDF}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-full hover:bg-slate-50 transition-colors shadow-xs cursor-pointer"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-full hover:bg-slate-50 transition-colors shadow-xs cursor-pointer whitespace-nowrap shrink-0"
             >
-              <Download size={14} /> Download PDF
+              <Download size={14} className="shrink-0" /> 
+              <span>Download PDF</span>
             </button>
             <button
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors cursor-pointer"
+              className="hidden sm:flex p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors cursor-pointer shrink-0"
+              title="ปิดหน้าต่าง"
             >
               <X size={20} />
             </button>
@@ -1145,8 +1158,8 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
               <tbody className="divide-y divide-slate-100">
                 
                 {/* 0. Category / Service (ประเภทงาน) Row */}
-                <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 bg-amber-50/20">
-                  <td className="px-4 py-3 w-1/3 border-r border-slate-100 bg-slate-50/40 align-middle">
+                <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 bg-amber-50/20 flex flex-col sm:table-row">
+                  <td className="px-3 sm:px-4 py-2 sm:py-3 w-full sm:w-1/3 sm:border-r border-slate-100 bg-slate-50/40 align-middle">
                     <div className="flex items-center gap-2 text-slate-700">
                       <Layers size={14} className="text-amber-600 shrink-0" />
                       <div>
@@ -1155,7 +1168,7 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                       </div>
                     </div>
                   </td>
-                  <td className="px-3 py-2 w-2/3">
+                  <td className="px-3 sm:px-4 py-2 sm:py-2.5 w-full sm:w-2/3">
                     <ModernSelect
                       className="w-full text-xs font-bold bg-white border border-amber-200 rounded-lg px-2.5 py-1.5 shadow-xs"
                       placeholder="เลือกประเภทงาน..."
@@ -1169,8 +1182,8 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                 </tr>
 
                 {/* 1. Organization (หน่วยงาน) Row */}
-                <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 bg-indigo-50/10">
-                  <td className="px-4 py-3 w-1/3 border-r border-slate-100 bg-slate-50/40 align-middle">
+                <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 bg-indigo-50/10 flex flex-col sm:table-row">
+                  <td className="px-3 sm:px-4 py-2 sm:py-3 w-full sm:w-1/3 sm:border-r border-slate-100 bg-slate-50/40 align-middle">
                     <div className="flex items-center gap-2 text-slate-700">
                       <Building2 size={14} className="text-indigo-600 shrink-0" />
                       <div>
@@ -1179,7 +1192,7 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                       </div>
                     </div>
                   </td>
-                  <td className="px-3 py-2.5 w-2/3">
+                  <td className="px-3 sm:px-4 py-2 sm:py-2.5 w-full sm:w-2/3">
                     {(() => {
                       const rawTeam = (brief.decision_maker || brief.details?.team || "").toString().trim().toUpperCase();
                       const isMain3Brief = ['creative', 'content', 'pr'].includes((unit || '').toLowerCase());
@@ -1423,15 +1436,15 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                           placeholder="เช่น CC-2567-001"
                         />
                         {/* Sector: Government (R7) vs Private (R8) */}
-                        <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 bg-blue-50/20">
-                          <td className="px-4 py-3 w-1/3 border-r border-slate-100 bg-slate-50/40 align-middle">
+                        <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 bg-blue-50/20 flex flex-col sm:table-row">
+                          <td className="px-3 sm:px-4 py-2 sm:py-3 w-full sm:w-1/3 sm:border-r border-slate-100 bg-slate-50/40 align-middle">
                             <div className="flex items-center gap-2 text-slate-700">
                               <Briefcase size={14} className="text-blue-600 shrink-0" />
                               <span className="font-semibold text-xs uppercase tracking-wider">ประเภทบริการ (R7/R8 & TIP)</span>
                             </div>
                           </td>
-                          <td className="px-3 py-2 w-2/3">
-                            <div className="flex items-center gap-2">
+                          <td className="px-3 sm:px-4 py-2 sm:py-2.5 w-full sm:w-2/3">
+                            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
                               <button
                                 type="button"
                                 onClick={() => onUpdateField(brief.id, 'details', { ...brief.details, client_sector: 'government' })}
@@ -1485,15 +1498,15 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                           placeholder="0"
                         />
                         {/* Work Type: DESIGN / CONTENT / PR */}
-                        <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 bg-[#F4F4F2]/50">
-                          <td className="px-4 py-3 w-1/3 border-r border-slate-100 bg-slate-50/40 align-middle">
+                        <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 bg-[#F4F4F2]/50 flex flex-col sm:table-row">
+                          <td className="px-3 sm:px-4 py-2 sm:py-3 w-full sm:w-1/3 sm:border-r border-slate-100 bg-slate-50/40 align-middle">
                             <div className="flex items-center gap-2 text-[#3F3F46]">
                               <Sparkles size={14} className="text-[#71717A] shrink-0" />
                               <span className="font-semibold text-xs uppercase tracking-wider font-mono">ประเภทงาน PM (Work Type)</span>
                             </div>
                           </td>
-                          <td className="px-3 py-2 w-2/3">
-                            <div className="flex items-center gap-2">
+                          <td className="px-3 sm:px-4 py-2 sm:py-2.5 w-full sm:w-2/3">
+                            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
                               {(['creative', 'content', 'pr'] as const).map(wType => {
                                 const active = (brief.details?.pm_work_type || 'creative') === wType;
                                 const label = wType === 'creative' ? 'DESIGN' : wType === 'content' ? 'CONTENT' : 'PR';
@@ -1524,14 +1537,14 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                         </tr>
 
                         {/* Work Sub-category dropdown */}
-                        <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100">
-                          <td className="px-4 py-3 w-1/3 border-r border-slate-100 bg-slate-50/40 align-middle">
+                        <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 flex flex-col sm:table-row">
+                          <td className="px-3 sm:px-4 py-2 sm:py-3 w-full sm:w-1/3 sm:border-r border-slate-100 bg-slate-50/40 align-middle">
                             <div className="flex items-center gap-2 text-[#3F3F46]">
                               <Tag size={14} className="text-[#71717A] shrink-0" />
                               <span className="font-semibold text-xs uppercase tracking-wider font-mono">บริการย่อย / ขอบเขตงาน</span>
                             </div>
                           </td>
-                          <td className="px-3 py-2 w-2/3">
+                          <td className="px-3 sm:px-4 py-2 sm:py-2.5 w-full sm:w-2/3">
                             <select
                               value={brief.details?.pm_work_category || brief.details?.service_category || ''}
                               onChange={(e) => {
@@ -1805,13 +1818,13 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
-          <div className="text-xs text-slate-400">
+        <div className="px-4 sm:px-6 py-3 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+          <div className="text-[11px] sm:text-xs text-slate-400 text-center sm:text-left">
             *ข้อมูลทั้งหมดบันทึกลงระบบอัตโนมัติเมื่อกดพิมพ์หรือแก้ไข
           </div>
           <button
             onClick={onClose}
-            className="px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs rounded-lg transition-colors"
+            className="w-full sm:w-auto px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-xl transition-colors cursor-pointer"
           >
             ปิดหน้าต่าง (Close)
           </button>

@@ -2256,13 +2256,13 @@ export default function InnovationDesignCenterReport({
             </div>
 
             {/* Sub-Filters */}
-            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 text-xs">
-              <span className="text-slate-500 font-medium flex items-center gap-1">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 pt-2 border-t border-slate-100 text-xs">
+              <span className="text-slate-500 font-medium flex items-center gap-1 shrink-0">
                 <Filter size={12} /> ตัวกรอง:
               </span>
 
               {/* Service Filter */}
-              <div className="w-56">
+              <div className="w-full sm:w-52 md:w-56">
                 <ModernSelect
                   value={filterService}
                   onChange={val => setFilterService(val)}
@@ -2275,7 +2275,7 @@ export default function InnovationDesignCenterReport({
               </div>
 
               {/* Business Filter */}
-              <div className="w-56">
+              <div className="w-full sm:w-52 md:w-56">
                 <ModernSelect
                   value={filterBusinessType}
                   onChange={val => setFilterBusinessType(val)}
@@ -2288,7 +2288,7 @@ export default function InnovationDesignCenterReport({
               </div>
 
               {/* Status Filter */}
-              <div className="w-48">
+              <div className="w-full sm:w-44 md:w-48">
                 <ModernSelect
                   value={filterStatus}
                   onChange={val => setFilterStatus(val)}
@@ -2308,40 +2308,40 @@ export default function InnovationDesignCenterReport({
                     setFilterStatus("all");
                     setSearchTerm("");
                   }}
-                  className="text-xs text-orange-600 hover:text-orange-700 underline ml-2 cursor-pointer font-medium"
+                  className="text-xs text-orange-600 hover:text-orange-700 underline sm:ml-2 cursor-pointer font-medium self-start sm:self-auto"
                 >
                   ล้างตัวกรอง
                 </button>
               )}
 
-              <span className="ml-auto text-slate-400 text-[11.5px]">
+              <span className="w-full sm:w-auto sm:ml-auto text-slate-400 text-[11.5px] text-left sm:text-right pt-1 sm:pt-0">
                 แสดง {filteredRecords.length} จากทั้งหมด {records.length} รายการ
               </span>
             </div>
           </div>
 
-          {/* Dataset Table View - 100% width, no horizontal scroll */}
+          {/* Dataset Table View - Horizontally scrollable on mobile, never squished */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-            <div className="w-full overflow-hidden">
-              <table className="w-full table-fixed text-left border-collapse text-xs">
+            <div className="w-full overflow-x-auto custom-scrollbar">
+              <table className="min-w-[880px] w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-slate-50/90 border-b border-slate-200 text-slate-600 font-bold text-[11px]">
-                    <th className="py-2.5 pl-4 pr-2 w-[10%] text-left">รหัส/วันที่</th>
-                    <th className="py-2.5 px-2.5 w-[23%] text-left font-extrabold text-slate-800">ผู้รับบริการ / สถานประกอบการ</th>
-                    <th className="py-2.5 px-2 w-[9.5%] text-left">หน่วยงาน/ธุรกิจ</th>
-                    <th className="py-2.5 px-2 w-[17%] text-left">ประเภทการเข้ารับบริการ</th>
-                    <th className="py-2.5 px-1.5 w-[6%] text-center">
+                    <th className="py-2.5 pl-4 pr-2 w-[100px] text-left whitespace-nowrap">รหัส/วันที่</th>
+                    <th className="py-2.5 px-2.5 min-w-[200px] text-left font-extrabold text-slate-800 whitespace-nowrap">ผู้รับบริการ / สถานประกอบการ</th>
+                    <th className="py-2.5 px-2 w-[110px] text-left whitespace-nowrap">หน่วยงาน/ธุรกิจ</th>
+                    <th className="py-2.5 px-2 min-w-[150px] text-left whitespace-nowrap">ประเภทการเข้ารับบริการ</th>
+                    <th className="py-2.5 px-1.5 w-[75px] text-center whitespace-nowrap">
                       <span title="(31) KPI ผลงาน รวมชิ้นงานและคำปรึกษา">(31) ผลงาน</span>
                     </th>
-                    <th className="py-2.5 px-1.5 w-[7.5%] text-right">
+                    <th className="py-2.5 px-1.5 w-[90px] text-right whitespace-nowrap">
                       <span title="(30) KPI รายได้ ที่ assignee กรอก">(30) รายได้</span>
                     </th>
-                    <th className="py-2.5 px-1.5 w-[7.5%] text-center">ผู้รับผิดชอบ</th>
-                    <th className="py-2.5 px-1 w-[7%] text-center">สถานะ</th>
-                    <th className="py-2.5 px-1.5 w-[6.5%] text-center">
+                    <th className="py-2.5 px-1.5 w-[95px] text-center whitespace-nowrap">ผู้รับผิดชอบ</th>
+                    <th className="py-2.5 px-1 w-[90px] text-center whitespace-nowrap">สถานะ</th>
+                    <th className="py-2.5 px-1.5 w-[80px] text-center whitespace-nowrap">
                       <span title="(34) ลิงก์ประเมินความพึงพอใจ">(34) พอใจ</span>
                     </th>
-                    <th className="py-2.5 pl-1.5 pr-4 w-[6%] text-center">จัดการ</th>
+                    <th className="py-2.5 pl-1.5 pr-4 w-[75px] text-center whitespace-nowrap">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -3874,19 +3874,19 @@ export default function InnovationDesignCenterReport({
 
           {/* Data Table */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-            <div className="w-full overflow-hidden">
-              <table className="w-full table-fixed text-left border-collapse text-xs">
+            <div className="w-full overflow-x-auto custom-scrollbar">
+              <table className="min-w-[850px] w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-slate-50/90 border-b border-slate-200 text-[11px] font-bold text-slate-600">
-                    <th className="py-2.5 px-2 w-[11%]">รหัส / วันที่</th>
-                    <th className="py-2.5 px-2 w-[24%] font-extrabold text-slate-800">ชื่องานโครงการ (Project Name)</th>
-                    <th className="py-2.5 px-2 w-[15%]">บริการย่อย Design</th>
-                    <th className="py-2.5 px-1.5 w-[7.5%] text-center">ภาคส่วน</th>
-                    <th className="py-2.5 px-1.5 w-[9.5%] text-center">ผู้รับผิดชอบ</th>
-                    <th className="py-2.5 px-1.5 w-[8.5%] text-right">รายรับ (บาท)</th>
-                    <th className="py-2.5 px-1.5 w-[7.5%] text-right">ต้นทุน (บาท)</th>
-                    <th className="py-2.5 px-1.5 w-[8.5%] text-right">กำไรสุทธิ (บาท)</th>
-                    <th className="py-2.5 px-1 w-[8%] text-center">สถานะ</th>
+                    <th className="py-2.5 px-2 w-[110px] whitespace-nowrap">รหัส / วันที่</th>
+                    <th className="py-2.5 px-2 min-w-[200px] font-extrabold text-slate-800 whitespace-nowrap">ชื่องานโครงการ (Project Name)</th>
+                    <th className="py-2.5 px-2 min-w-[140px] whitespace-nowrap">บริการย่อย Design</th>
+                    <th className="py-2.5 px-1.5 w-[85px] text-center whitespace-nowrap">ภาคส่วน</th>
+                    <th className="py-2.5 px-1.5 w-[95px] text-center whitespace-nowrap">ผู้รับผิดชอบ</th>
+                    <th className="py-2.5 px-1.5 w-[90px] text-right whitespace-nowrap">รายรับ (บาท)</th>
+                    <th className="py-2.5 px-1.5 w-[90px] text-right whitespace-nowrap">ต้นทุน (บาท)</th>
+                    <th className="py-2.5 px-1.5 w-[95px] text-right whitespace-nowrap">กำไรสุทธิ (บาท)</th>
+                    <th className="py-2.5 px-1 w-[85px] text-center whitespace-nowrap">สถานะ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">

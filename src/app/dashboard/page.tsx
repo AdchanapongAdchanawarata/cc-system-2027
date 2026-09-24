@@ -101,9 +101,11 @@ export default function DashboardPage() {
       {/* Top Navigation Bar */}
       <div className="w-full flex flex-row justify-between items-center mb-4 sm:mb-6 pb-2 animate-premium-fade print:hidden relative z-30">
         {/* Left: Logo */}
-        <Link href="/" className="text-left flex flex-col min-w-0 pr-2">
-          <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight text-foreground leading-none">CC TEAM</h1>
-          <p className="text-muted-foreground text-[10px] sm:text-xs md:text-sm mt-0.5 sm:mt-1 font-medium truncate">
+        <Link href="/" className="text-left inline-flex flex-col w-fit min-w-0 pr-2 select-none group">
+          <h1 className="text-2xl sm:text-3xl md:text-[38px] font-black tracking-[0.055em] text-foreground leading-none group-hover:text-primary transition-colors">
+            CC TEAM
+          </h1>
+          <p className="text-muted-foreground text-[8.5px] sm:text-[10.5px] md:text-[13px] font-medium tracking-[0.005em] mt-1 leading-none whitespace-nowrap">
             Briefing & Management System
           </p>
         </Link>

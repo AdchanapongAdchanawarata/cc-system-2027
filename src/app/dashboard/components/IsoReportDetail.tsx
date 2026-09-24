@@ -1905,24 +1905,24 @@ export default function IsoReportDetail() {
       {/* ========================================================================= */}
       {/* 1. TOP SUMMARY BANNER & LIVE SYSTEM METRICS (สนับสนุนระบบ ISO)            */}
       {/* ========================================================================= */}
-      <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200 shadow-2xs space-y-5">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+      <div className="bg-surface p-5 sm:p-6 rounded-3xl border border-surface-border shadow-2xs space-y-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-surface-border pb-5">
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-200">
-              <ShieldCheck size={14} className="text-emerald-600" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-bold border border-emerald-500/20">
+              <ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400" />
               <span>ISO 9001:2015 Quality &amp; Risk Management System</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
               ระบบบริหารคุณภาพและจัดการความเสี่ยงทีม CC (ISO Report)
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               ชุดข้อมูลตรงตามเอกสารทางการ 3 ฉบับ (1_วิเคราะห์ความเสี่ยงและแผนการจัดการความเสี่ยง CC, 2_SWOT CC, 3_ประเมินความเสี่ยงและโอกาส CC) พร้อมวิเคราะห์ผลสัมฤทธิ์จากระบบจริง
             </p>
           </div>
 
           <button
             onClick={handleExportCsv}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer active:scale-95 shrink-0 self-start md:self-auto"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-foreground text-background hover:opacity-90 text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer active:scale-95 shrink-0 self-start md:self-auto"
           >
             <Download size={14} />
             <span>ส่งออกตารางความเสี่ยง (CSV)</span>
@@ -1930,7 +1930,7 @@ export default function IsoReportDetail() {
         </div>
 
         {/* Timeframe & Date Range Filter Toolbar (Matching System Standard) */}
-        <div className="bg-slate-50/80 p-3 sm:p-3.5 rounded-2xl border border-slate-200/80 flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="bg-surface-muted p-3 sm:p-3.5 rounded-2xl border border-surface-border flex flex-col md:flex-row md:items-center justify-between gap-3">
           {/* Left: Timeframe Presets */}
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
@@ -2205,16 +2205,16 @@ export default function IsoReportDetail() {
       {activeTab === "risk-analysis" && (
         <div className="space-y-6">
           {/* Header Card */}
-          <div className="bg-white p-4 sm:p-7 rounded-3xl border border-slate-200 shadow-2xs space-y-5">
+          <div className="bg-surface p-4 sm:p-7 rounded-3xl border border-surface-border shadow-2xs space-y-5">
             {/* Top Bar: Badge, Reference File & Far-Right Download Button */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-surface-border">
               <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3">
-                <span className="text-xs font-mono font-bold px-3 py-1.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 inline-flex items-center gap-1.5 w-fit">
+                <span className="text-xs font-mono font-bold px-3 py-1.5 rounded-full bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20 inline-flex items-center gap-1.5 w-fit">
                   <ShieldCheck size={13} className="shrink-0" />
                   <span className="break-words">เอกสารแนบ 1: แบบฟอร์มวิเคราะห์ความเสี่ยงและแผนการจัดการความเสี่ยง CC</span>
                 </span>
-                <span className="text-xs text-slate-500 font-mono break-all sm:break-normal">
-                  ไฟล์อ้างอิง: <strong className="text-slate-700">1_วิเคราะห์ความเสี่ยงและแผนการจัดการความเสี่ยง CC.docx</strong>
+                <span className="text-xs text-muted-foreground font-mono break-all sm:break-normal">
+                  ไฟล์อ้างอิง: <strong className="text-foreground">1_วิเคราะห์ความเสี่ยงและแผนการจัดการความเสี่ยง CC.docx</strong>
                 </span>
               </div>
               <button
@@ -2229,18 +2229,18 @@ export default function IsoReportDetail() {
             </div>
 
             {/* Risk Dimension Selector (Dieter Rams Capsule) */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-200">
-              <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-surface-muted rounded-2xl border border-surface-border">
+              <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
                 <span>🎯</span>
                 <span>ประเด็นความเสี่ยงตามเอกสารฉบับที่ 1:</span>
               </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 p-1 bg-white rounded-xl border border-slate-200 shadow-2xs gap-1 w-full sm:w-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 p-1 bg-surface rounded-xl border border-surface-border shadow-2xs gap-1 w-full sm:w-auto">
                 <button
                   onClick={() => setRiskDimension("reputation")}
                   className={`px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer text-center ${
                     riskDimension === "reputation"
                       ? "bg-rose-600 text-white shadow-xs"
-                      : "text-slate-600 hover:text-slate-900"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   ด้านความน่าเชื่อถือขององค์กร (Reputation)
@@ -2250,7 +2250,7 @@ export default function IsoReportDetail() {
                   className={`px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer text-center ${
                     riskDimension === "operational"
                       ? "bg-blue-600 text-white shadow-xs"
-                      : "text-slate-600 hover:text-slate-900"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   ด้านการปฏิบัติการ (Operational)
@@ -2261,37 +2261,37 @@ export default function IsoReportDetail() {
             {/* Content for Reputation Risk */}
             {riskDimension === "reputation" && (
               <div className="space-y-5 animate-premium-fade">
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/70">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                <div className="p-4 bg-surface-muted rounded-2xl border border-surface-border">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">
                     ประเด็นความเสี่ยง (Risk Issue 1)
                   </span>
-                  <h3 className="text-base sm:text-lg font-black text-slate-900 leading-snug">
+                  <h3 className="text-base sm:text-lg font-black text-foreground leading-snug">
                     ไม่สามารถปรับตัวให้เท่าทันองค์ความรู้และทักษะด้านงานสร้างสรรค์ที่มีการเปลี่ยนแปลงอย่างรวดเร็วในปัจจุบัน
                   </h3>
                 </div>
 
                 {/* 1) สาเหตุหลัก ปัจจัยภายใน & ภายนอก */}
                 <div className="space-y-2 pt-2">
-                  <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center font-bold">1</span>
+                  <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold">1</span>
                     <span>สาเหตุหลักจากปัจจัยภายในและปัจจัยภายนอกที่นำไปสู่ความเสี่ยง</span>
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-200/70 space-y-2">
-                      <span className="text-xs font-bold text-amber-800 flex items-center gap-1.5">
+                    <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-2">
+                      <span className="text-xs font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
                         <span>🏢</span> ปัจจัยภายใน (Internal Factors)
                       </span>
-                      <ol className="list-decimal list-inside space-y-1.5 text-xs text-slate-700 leading-relaxed font-medium">
+                      <ol className="list-decimal list-inside space-y-1.5 text-xs text-foreground/90 leading-relaxed font-medium">
                         <li>ไม่มีการติดตาม และกำกับดูแลการเปลี่ยนแปลงความต้องการของผู้ใช้บริการ ที่เปลี่ยนไปตามเทรนด์งานสร้างสรรค์ คอนเทนต์และ PR ให้ทันสมัยอยู่เสมอ</li>
                         <li>อุปกรณ์ในการทำงานและความสามารถในการทำงานของบุคลากร ไม่สามารถตอบโจทย์ และสอดคล้องกับความต้องการของผู้ใช้บริการ</li>
                         <li>ความรวดเร็วของการให้บริการไม่ทันต่อความต้องการของผู้ใช้บริการ</li>
                       </ol>
                     </div>
-                    <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-200/70 space-y-2">
-                      <span className="text-xs font-bold text-blue-800 flex items-center gap-1.5">
+                    <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 space-y-2">
+                      <span className="text-xs font-bold text-blue-700 dark:text-blue-400 flex items-center gap-1.5">
                         <span>🌐</span> ปัจจัยภายนอก (External Factors)
                       </span>
-                      <ol className="list-decimal list-inside space-y-1.5 text-xs text-slate-700 leading-relaxed font-medium">
+                      <ol className="list-decimal list-inside space-y-1.5 text-xs text-foreground/90 leading-relaxed font-medium">
                         <li>เทรนด์ เครื่องมือที่เกี่ยวข้องกับงานสร้างสรรค์มีการเปลี่ยนแปลงอย่างรวดเร็วในโลกปัจจุบัน</li>
                         <li>กฎเกณฑ์ กติกา เงื่อนไขความต้องการ/ความคาดหวังของผู้ใช้บริการและแหล่งทุนมีการปรับเปลี่ยนไปตามความต้องการของตลาด</li>
                       </ol>
@@ -2301,11 +2301,11 @@ export default function IsoReportDetail() {
 
                 {/* 2) ผลกระทบของความเสี่ยงต่อหน่วยงาน */}
                 <div className="space-y-2 pt-2">
-                  <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center font-bold">2</span>
+                  <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold">2</span>
                     <span>ผลกระทบของความเสี่ยงต่อหน่วยงาน</span>
                   </h4>
-                  <div className="p-3.5 bg-rose-50/50 rounded-2xl border border-rose-200/70 text-xs text-slate-800 font-medium space-y-1">
+                  <div className="p-3.5 bg-rose-500/10 rounded-2xl border border-rose-500/20 text-xs text-foreground/90 font-medium space-y-1">
                     <p>1. ไม่สามารถบรรลุวัตถุประสงค์ขององค์กร</p>
                     <p>2. ภาพลักษณ์ขององค์กรเสียหาย ขาดความน่าเชื่อถือและความไว้วางใจต่อผู้รับบริการ</p>
                   </div>
@@ -2313,8 +2313,8 @@ export default function IsoReportDetail() {
 
                 {/* 3) ตัวชี้วัดความเสี่ยง KRI */}
                 <div id="sec-tab1-kri" className="space-y-2 pt-2 scroll-mt-24">
-                  <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center font-bold">3</span>
+                  <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold">3</span>
                     <span>ตัวชี้วัดความเสี่ยง/ตัวบ่งชี้ความเสี่ยง/สัญญาณเตือนภัย (KRI)</span>
                   </h4>
                   <div className="bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden text-xs">

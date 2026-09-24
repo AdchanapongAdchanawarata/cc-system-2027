@@ -567,16 +567,16 @@ export default function IndividualReportView({
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-slate-700">รายงาน:</span>
-            <span className="text-xs font-semibold text-slate-500">
+            <span className="text-xs font-semibold text-muted">
               รายงานสรุปผลงานและประสิทธิภาพรายบุคคล • ประจำเดือน {new Date().toLocaleDateString('th-TH', { month: 'long', year: 'numeric' })}
             </span>
           </div>
-          <div className="h-4 w-[1px] bg-slate-200 hidden sm:block" />
-          <span className="text-xs font-bold text-slate-700">เลือกดูโปรไฟล์:</span>
+          <div className="h-4 w-[1px] bg-surface-border hidden sm:block" />
+          <span className="text-xs font-bold text-foreground">เลือกดูโปรไฟล์:</span>
           <select
             value={currentProfileMember.assignee_id}
             onChange={(e) => onSelectMember(e.target.value)}
-            className="bg-white border border-surface-border text-xs rounded-full px-4 py-2 font-bold text-slate-800 shadow-2xs cursor-pointer focus:outline-none focus:border-primary transition-all hover:border-slate-400"
+            className="bg-surface border border-surface-border text-xs rounded-full px-4 py-2 font-bold text-foreground shadow-2xs cursor-pointer focus:outline-none focus:border-primary transition-all hover:border-slate-400"
           >
             {sortedMemberList.map((m) => (
               <option key={m.assignee_id} value={m.assignee_id}>
@@ -810,7 +810,7 @@ export default function IndividualReportView({
             <button
               onClick={() => setPacingMetricFilter('all')}
               className={`px-3 py-1 text-xs font-bold rounded-xl transition-all ${
-                pacingMetricFilter === 'all' ? 'bg-white text-slate-900 shadow-2xs font-black' : 'text-slate-600 hover:text-slate-900'
+                pacingMetricFilter === 'all' ? 'bg-surface text-foreground shadow-2xs font-black border border-surface-border' : 'text-muted hover:text-foreground'
               }`}
             >
               ทั้งหมด ({pacingSummary.metrics.length})
@@ -818,7 +818,7 @@ export default function IndividualReportView({
             <button
               onClick={() => setPacingMetricFilter('R')}
               className={`px-3 py-1 text-xs font-bold rounded-xl transition-all ${
-                pacingMetricFilter === 'R' ? 'bg-white text-blue-700 shadow-2xs font-black' : 'text-slate-600 hover:text-slate-900'
+                pacingMetricFilter === 'R' ? 'bg-surface text-blue-600 dark:text-blue-400 shadow-2xs font-black border border-surface-border' : 'text-muted hover:text-foreground'
               }`}
             >
               🎯 KR / R ({pacingSummary.metrics.filter((m) => m.type === 'R').length})
@@ -826,7 +826,7 @@ export default function IndividualReportView({
             <button
               onClick={() => setPacingMetricFilter('TIP')}
               className={`px-3 py-1 text-xs font-bold rounded-xl transition-all ${
-                pacingMetricFilter === 'TIP' ? 'bg-white text-amber-700 shadow-2xs font-black' : 'text-slate-600 hover:text-slate-900'
+                pacingMetricFilter === 'TIP' ? 'bg-surface text-amber-600 dark:text-amber-400 shadow-2xs font-black border border-surface-border' : 'text-muted hover:text-foreground'
               }`}
             >
               ✨ KPI / TIP ({pacingSummary.metrics.filter((m) => m.type === 'TIP').length})
@@ -1509,23 +1509,23 @@ export default function IndividualReportView({
           </div>
 
           {/* Toggle Tab */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+          <div className="flex items-center bg-muted/10 p-1 rounded-xl border border-surface-border">
             <button
               onClick={() => setSpeedTab('fastest')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                speedTab === 'fastest' ? 'bg-white text-emerald-800 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                speedTab === 'fastest' ? 'bg-surface text-emerald-600 dark:text-emerald-400 shadow-xs border border-surface-border' : 'text-muted hover:text-foreground'
               }`}
             >
-              <Zap size={13} className="text-emerald-600" />
+              <Zap size={13} className="text-emerald-600 dark:text-emerald-400" />
               <span>เร็วสุด 10 อันดับ ({top10Fastest.length})</span>
             </button>
             <button
               onClick={() => setSpeedTab('slowest')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                speedTab === 'slowest' ? 'bg-white text-amber-800 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                speedTab === 'slowest' ? 'bg-surface text-amber-600 dark:text-amber-400 shadow-xs border border-surface-border' : 'text-muted hover:text-foreground'
               }`}
             >
-              <Clock size={13} className="text-amber-600" />
+              <Clock size={13} className="text-amber-600 dark:text-amber-400" />
               <span>นานสุด 10 อันดับ ({top10Slowest.length})</span>
             </button>
           </div>
@@ -1814,70 +1814,70 @@ export default function IndividualReportView({
       {/* MODAL: MONTHLY REPORT AUTO-DISPATCH (ระบบส่งไฟล์สรุปทุกสิ้นเดือน) */}
       {/* ========================================================================= */}
       {showDispatchModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150 no-print">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150 no-print">
+          <div className="bg-surface rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-surface-border space-y-4">
             <div className="flex justify-between items-start">
               <div>
-                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <Mail size={18} className="text-indigo-600" />
+                <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                  <Mail size={18} className="text-indigo-600 dark:text-indigo-400" />
                   <span>ระบบส่งรายงานผลงานอัตโนมัติทุกสิ้นเดือน</span>
                 </h3>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-muted mt-1">
                   ระบบจะสร้างไฟล์สรุปผลงานของ <strong>{currentProfileMember.name}</strong> และจัดส่งไปยังผู้เกี่ยวข้องทุกๆ สิ้นเดือน เวลา 18:00 น.
                 </p>
               </div>
               <button
                 onClick={() => setShowDispatchModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100"
+                className="text-muted hover:text-foreground p-1 rounded-full hover:bg-muted/10 transition-colors"
               >
                 ✕
               </button>
             </div>
 
             {/* Recipient Roster */}
-            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2.5">
-              <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+            <div className="p-3.5 bg-muted/5 rounded-2xl border border-surface-border space-y-2.5">
+              <div className="text-[11px] font-bold text-muted uppercase tracking-wider">
                 รายชื่อผู้รับรายงาน 4 กลุ่มเป้าหมาย:
               </div>
               <div className="space-y-2 text-xs">
-                <div className="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-200/60">
+                <div className="flex items-center justify-between p-2 bg-surface rounded-xl border border-surface-border">
                   <div>
-                    <div className="font-bold text-slate-800">1. เจ้าของรายงาน (Assignee)</div>
-                    <div className="text-[10px] text-slate-500">
+                    <div className="font-bold text-foreground">1. เจ้าของรายงาน (Assignee)</div>
+                    <div className="text-[10px] text-muted">
                       {currentMemberProfile?.fullName || currentProfileMember.name} 
                       {currentMemberProfile?.position ? ` • ${currentMemberProfile.position}` : ` • ${currentProfileMember.unit} Unit`}
                       {currentMemberProfile?.phone && ` • โทร ${currentMemberProfile.phone}`}
                     </div>
                   </div>
-                  <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">พร้อมส่ง</span>
+                  <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">พร้อมส่ง</span>
                 </div>
 
-                <div className="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-200/60">
+                <div className="flex items-center justify-between p-2 bg-surface rounded-xl border border-surface-border">
                   <div>
-                    <div className="font-bold text-slate-800">2. หัวหน้าทีม (Team Lead)</div>
-                    <div className="text-[10px] text-slate-500">นายอัจชนะพงษ์ อัจชนะวราทา (จ๊อบ AA) • หัวหน้าทีม (Team Leader) • โทร 062-4166396</div>
+                    <div className="font-bold text-foreground">2. หัวหน้าทีม (Team Lead)</div>
+                    <div className="text-[10px] text-muted">นายอัจชนะพงษ์ อัจชนะวราทา (จ๊อบ AA) • หัวหน้าทีม (Team Leader) • โทร 062-4166396</div>
                   </div>
-                  <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">พร้อมส่ง</span>
+                  <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">พร้อมส่ง</span>
                 </div>
 
-                <div className="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-200/60">
+                <div className="flex items-center justify-between p-2 bg-surface rounded-xl border border-surface-border">
                   <div>
-                    <div className="font-bold text-slate-800">3. ผู้ช่วยหัวหน้าทีม (Assistant Lead)</div>
-                    <div className="text-[10px] text-slate-500">นางสาววาสิตา กอบธัญกิจ (วา WK) • ผู้ช่วยหัวหน้าทีม (Assistant Team Leader) • โทร 085-1071229</div>
+                    <div className="font-bold text-foreground">3. ผู้ช่วยหัวหน้าทีม (Assistant Lead)</div>
+                    <div className="text-[10px] text-muted">นางสาววาสิตา กอบธัญกิจ (วา WK) • ผู้ช่วยหัวหน้าทีม (Assistant Team Leader) • โทร 085-1071229</div>
                   </div>
-                  <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">พร้อมส่ง</span>
+                  <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">พร้อมส่ง</span>
                 </div>
 
-                <div className="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-200/60">
+                <div className="flex items-center justify-between p-2 bg-surface rounded-xl border border-surface-border">
                   <div>
-                    <div className="font-bold text-slate-800">4. คณะผู้บริหาร (Executive Management)</div>
-                    <div className="text-[10px] text-slate-500">
+                    <div className="font-bold text-foreground">4. คณะผู้บริหาร (Executive Management)</div>
+                    <div className="text-[10px] text-muted">
                       {executiveMembers && executiveMembers.length > 0
                         ? executiveMembers.map(e => `${e.fullName || e.name} (${e.position || 'ผู้บริหาร'})`).join(', ')
                         : 'คณะกรรมการบริหารและผู้อำนวยการฝ่าย (Executive Board)'}
                     </div>
                   </div>
-                  <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
                     {executiveMembers && executiveMembers.length > 0 ? `${executiveMembers.length} ท่าน` : 'พร้อมส่ง'}
                   </span>
                 </div>

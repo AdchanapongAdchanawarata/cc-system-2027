@@ -423,23 +423,23 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
       {/* ========================================================================= */}
       {/* 3. CELEBRATION & GRATITUDE: HEROES WHO LIFT THE TEAM */}
       {/* ========================================================================= */}
-      <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+      <div className="bg-surface rounded-3xl border border-surface-border p-6 shadow-xs space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-surface-border pb-4">
           <div>
-            <span className="text-xs font-bold text-rose-600 uppercase tracking-wider flex items-center gap-1.5">
+            <span className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
               <Award size={16} />
               ชื่นชมและส่งต่อคำขอบคุณ
             </span>
-            <h3 className="text-lg font-black text-slate-900 mt-1">
+            <h3 className="text-lg font-black text-foreground mt-1">
               ขอบคุณคนเก่ง & เพื่อนช่วยเพื่อนในทีม
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-muted mt-0.5">
               ทุกผลงานที่สำเร็จ มีเพื่อนร่วมทีมคอยซัพพอร์ตและเติมเต็มให้กันเสมอ
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
-              <Gift size={13} className="text-amber-600" />
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20">
+              <Gift size={13} className="text-amber-600 dark:text-amber-400" />
               ส่งต่อพลังบวกให้กันทุกสัปดาห์
             </span>
           </div>
@@ -448,23 +448,23 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           
           {/* Champion Column 1: Support Champions (งานช่วยสูงสุด) */}
-          <div className="bg-gradient-to-b from-rose-50/60 via-white to-rose-50/30 rounded-2xl border border-rose-200/80 p-4.5 space-y-3 shadow-2xs">
+          <div className="bg-gradient-to-b from-rose-500/10 via-surface to-rose-500/5 rounded-2xl border border-rose-500/20 p-4.5 space-y-3 shadow-2xs">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="p-2 rounded-xl bg-rose-100 text-rose-700">
+                <span className="p-2 rounded-xl bg-rose-500/15 text-rose-600 dark:text-rose-400">
                   <Heart size={18} />
                 </span>
                 <div>
-                  <h4 className="font-bold text-sm text-slate-900">งานช่วยสูงสุด</h4>
-                  <p className="text-[11px] text-rose-700 font-medium">Top Support Champions</p>
+                  <h4 className="font-bold text-sm text-foreground">งานช่วยสูงสุด</h4>
+                  <p className="text-[11px] text-rose-600 dark:text-rose-400 font-medium">Top Support Champions</p>
                 </div>
               </div>
-              <span className="text-xs font-bold text-rose-600 bg-rose-100/80 px-2 py-0.5 rounded-full">
+              <span className="text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-500/15 px-2 py-0.5 rounded-full">
                 #ลมใต้ปีก
               </span>
             </div>
 
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <p className="text-xs text-muted leading-relaxed">
               ขอขอบคุณสมาชิกที่เข้าไปเป็นผู้ช่วยในงานของเพื่อนมากที่สุด คอยสนับสนุนไม่ให้เพื่อนต้องโดดเดี่ยว:
             </p>
 
@@ -473,22 +473,22 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
                 <div
                   key={m.assignee_id}
                   onClick={() => onSelectMember && onSelectMember(m.assignee_id)}
-                  className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-rose-100 hover:border-rose-300 hover:bg-rose-50/50 transition-all cursor-pointer shadow-2xs"
+                  className="flex items-center justify-between p-2.5 rounded-xl bg-surface border border-rose-500/20 hover:border-rose-500/40 hover:bg-rose-500/5 transition-all cursor-pointer shadow-2xs"
                 >
                   <div className="flex items-center gap-2.5">
                     <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${
-                      idx === 0 ? "bg-amber-400 text-amber-950" : idx === 1 ? "bg-slate-300 text-slate-800" : "bg-amber-700/20 text-amber-900"
+                      idx === 0 ? "bg-amber-400 text-amber-950" : idx === 1 ? "bg-slate-300 text-slate-800" : "bg-amber-700/20 text-amber-900 dark:text-amber-200"
                     }`}>
                       {idx + 1}
                     </span>
                     <div>
-                      <div className="font-bold text-xs text-slate-900">{m.name}</div>
-                      <div className="text-[10px] text-slate-500 capitalize">{m.unit} Unit</div>
+                      <div className="font-bold text-xs text-foreground">{m.name}</div>
+                      <div className="text-[10px] text-muted capitalize">{m.unit} Unit</div>
                     </div>
                   </div>
                   <div className="text-right font-mono">
-                    <div className="text-xs font-bold text-rose-700">ช่วย {m.assistantTaskCount} งาน</div>
-                    <div className="text-[10px] text-emerald-700">฿{m.assistantSaveCost.toLocaleString()}</div>
+                    <div className="text-xs font-bold text-rose-600 dark:text-rose-400">ช่วย {m.assistantTaskCount} งาน</div>
+                    <div className="text-[10px] text-emerald-600 dark:text-emerald-400">฿{m.assistantSaveCost.toLocaleString()}</div>
                   </div>
                 </div>
               ))}
@@ -496,23 +496,23 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
           </div>
 
           {/* Champion Column 2: Reliability Champions (ส่งตรงเวลาสูงสุด) */}
-          <div className="bg-gradient-to-b from-blue-50/60 via-white to-blue-50/30 rounded-2xl border border-blue-200/80 p-4.5 space-y-3 shadow-2xs">
+          <div className="bg-gradient-to-b from-blue-500/10 via-surface to-blue-500/5 rounded-2xl border border-blue-500/20 p-4.5 space-y-3 shadow-2xs">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="p-2 rounded-xl bg-blue-100 text-blue-700">
+                <span className="p-2 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400">
                   <ShieldCheck size={18} />
                 </span>
                 <div>
-                  <h4 className="font-bold text-sm text-slate-900">ส่งตรงเวลาสูงสุด</h4>
-                  <p className="text-[11px] text-blue-700 font-medium">Reliability Champions</p>
+                  <h4 className="font-bold text-sm text-foreground">ส่งตรงเวลาสูงสุด</h4>
+                  <p className="text-[11px] text-blue-600 dark:text-blue-400 font-medium">Reliability Champions</p>
                 </div>
               </div>
-              <span className="text-xs font-bold text-blue-600 bg-blue-100/80 px-2 py-0.5 rounded-full">
+              <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-500/15 px-2 py-0.5 rounded-full">
                 #เป๊ะรอบด้าน
               </span>
             </div>
 
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <p className="text-xs text-muted leading-relaxed">
               ขอขอบคุณสมาชิกที่มีความรับผิดชอบยอดเยี่ยม ส่งมอบงานตรงเวลาอย่างสม่ำเสมอและบริหารเวลาได้อย่างลงตัว:
             </p>
 
@@ -521,22 +521,22 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
                 <div
                   key={m.assignee_id}
                   onClick={() => onSelectMember && onSelectMember(m.assignee_id)}
-                  className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-blue-100 hover:border-blue-300 hover:bg-blue-50/50 transition-all cursor-pointer shadow-2xs"
+                  className="flex items-center justify-between p-2.5 rounded-xl bg-surface border border-blue-500/20 hover:border-blue-500/40 hover:bg-blue-500/5 transition-all cursor-pointer shadow-2xs"
                 >
                   <div className="flex items-center gap-2.5">
                     <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${
-                      idx === 0 ? "bg-amber-400 text-amber-950" : idx === 1 ? "bg-slate-300 text-slate-800" : "bg-amber-700/20 text-amber-900"
+                      idx === 0 ? "bg-amber-400 text-amber-950" : idx === 1 ? "bg-slate-300 text-slate-800" : "bg-amber-700/20 text-amber-900 dark:text-amber-200"
                     }`}>
                       {idx + 1}
                     </span>
                     <div>
-                      <div className="font-bold text-xs text-slate-900">{m.name}</div>
-                      <div className="text-[10px] text-slate-500 capitalize">{m.unit} Unit</div>
+                      <div className="font-bold text-xs text-foreground">{m.name}</div>
+                      <div className="text-[10px] text-muted capitalize">{m.unit} Unit</div>
                     </div>
                   </div>
                   <div className="text-right font-mono">
-                    <div className="text-xs font-bold text-blue-700">ตรงเวลา {m.onTimeRate}%</div>
-                    <div className="text-[10px] text-slate-500">เฉลี่ย {m.avgTurnaroundDays} วัน</div>
+                    <div className="text-xs font-bold text-blue-600 dark:text-blue-400">ตรงเวลา {m.onTimeRate}%</div>
+                    <div className="text-[10px] text-muted">เฉลี่ย {m.avgTurnaroundDays} วัน</div>
                   </div>
                 </div>
               ))}
@@ -544,23 +544,23 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
           </div>
 
           {/* Champion Column 3: High Value Creators (ประหยัดงบสูงสุด) */}
-          <div className="bg-gradient-to-b from-emerald-50/60 via-white to-emerald-50/30 rounded-2xl border border-emerald-200/80 p-4.5 space-y-3 shadow-2xs">
+          <div className="bg-gradient-to-b from-emerald-500/10 via-surface to-emerald-500/5 rounded-2xl border border-emerald-500/20 p-4.5 space-y-3 shadow-2xs">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="p-2 rounded-xl bg-emerald-100 text-emerald-700">
+                <span className="p-2 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                   <Sparkles size={18} />
                 </span>
                 <div>
-                  <h4 className="font-bold text-sm text-slate-900">ประหยัดงบสูงสุด</h4>
-                  <p className="text-[11px] text-emerald-700 font-medium">Value Creation Champions</p>
+                  <h4 className="font-bold text-sm text-foreground">ประหยัดงบสูงสุด</h4>
+                  <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">Value Creation Champions</p>
                 </div>
               </div>
-              <span className="text-xs font-bold text-emerald-600 bg-emerald-100/80 px-2 py-0.5 rounded-full">
+              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded-full">
                 #สร้างสรรค์คุ้มค่า
               </span>
             </div>
 
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <p className="text-xs text-muted leading-relaxed">
               ขอขอบคุณพลังความคิดสร้างสรรค์อันยอดเยี่ยมที่ช่วยขับเคลื่อนมูลค่าประหยัด In-House สูงสุดให้แก่องค์กร:
             </p>
 
@@ -569,22 +569,22 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
                 <div
                   key={m.assignee_id}
                   onClick={() => onSelectMember && onSelectMember(m.assignee_id)}
-                  className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-emerald-100 hover:border-emerald-300 hover:bg-emerald-50/50 transition-all cursor-pointer shadow-2xs"
+                  className="flex items-center justify-between p-2.5 rounded-xl bg-surface border border-emerald-500/20 hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all cursor-pointer shadow-2xs"
                 >
                   <div className="flex items-center gap-2.5">
                     <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${
-                      idx === 0 ? "bg-amber-400 text-amber-950" : idx === 1 ? "bg-slate-300 text-slate-800" : "bg-amber-700/20 text-amber-900"
+                      idx === 0 ? "bg-amber-400 text-amber-950" : idx === 1 ? "bg-slate-300 text-slate-800" : "bg-amber-700/20 text-amber-900 dark:text-amber-200"
                     }`}>
                       {idx + 1}
                     </span>
                     <div>
-                      <div className="font-bold text-xs text-slate-900">{m.name}</div>
-                      <div className="text-[10px] text-slate-500 capitalize">{m.unit} Unit</div>
+                      <div className="font-bold text-xs text-foreground">{m.name}</div>
+                      <div className="text-[10px] text-muted capitalize">{m.unit} Unit</div>
                     </div>
                   </div>
                   <div className="text-right font-mono">
-                    <div className="text-xs font-bold text-emerald-800">฿{m.totalSaveCost.toLocaleString()}</div>
-                    <div className="text-[10px] text-slate-500">รวม {m.totalTasksInvolved} งาน</div>
+                    <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400">฿{m.totalSaveCost.toLocaleString()}</div>
+                    <div className="text-[10px] text-muted">รวม {m.totalTasksInvolved} งาน</div>
                   </div>
                 </div>
               ))}
@@ -597,26 +597,26 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
       {/* ========================================================================= */}
       {/* 4. CROSS-TAB INTELLIGENT SYNTHESIS: 4 DIMENSIONS TO SOLVE & GROW */}
       {/* ========================================================================= */}
-      <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+      <div className="bg-surface rounded-3xl border border-surface-border p-6 shadow-xs space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-surface-border pb-4">
           <div>
-            <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-1.5">
+            <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
               <Compass size={16} />
               ชวนคุย 4 มุมมองเพื่อทีมที่ดีขึ้น
             </span>
-            <h3 className="text-lg font-black text-slate-900 mt-1">
+            <h3 className="text-lg font-black text-foreground mt-1">
               สรุปมุมมอง 4 ด้านเพื่อร่วมมือและพัฒนาทีมไปด้วยกัน
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-muted mt-0.5">
               รวมเรื่องดีๆ และแนวทางดูแลกัน เพื่อให้ทำงานร่วมกันอย่างมีความสุข
             </p>
           </div>
 
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-semibold overflow-x-auto">
+          <div className="flex items-center gap-1 bg-muted/10 p-1 rounded-xl border border-surface-border text-xs font-semibold overflow-x-auto">
             <button
               onClick={() => setActiveAnalysisView("all")}
               className={`px-3 py-1.5 rounded-lg transition-all ${
-                activeAnalysisView === "all" ? "bg-white text-slate-900 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
+                activeAnalysisView === "all" ? "bg-surface text-foreground shadow-2xs font-bold border border-surface-border" : "text-muted hover:text-foreground"
               }`}
             >
               ภาพรวมทุกมิติ
@@ -624,7 +624,7 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
             <button
               onClick={() => setActiveAnalysisView("workload")}
               className={`px-3 py-1.5 rounded-lg transition-all ${
-                activeAnalysisView === "workload" ? "bg-white text-slate-900 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
+                activeAnalysisView === "workload" ? "bg-surface text-foreground shadow-2xs font-bold border border-surface-border" : "text-muted hover:text-foreground"
               }`}
             >
               1. จำนวนงาน & มูลค่า
@@ -632,7 +632,7 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
             <button
               onClick={() => setActiveAnalysisView("goals")}
               className={`px-3 py-1.5 rounded-lg transition-all ${
-                activeAnalysisView === "goals" ? "bg-white text-slate-900 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
+                activeAnalysisView === "goals" ? "bg-surface text-foreground shadow-2xs font-bold border border-surface-border" : "text-muted hover:text-foreground"
               }`}
             >
               2. KR/R & TIP
@@ -640,7 +640,7 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
             <button
               onClick={() => setActiveAnalysisView("time")}
               className={`px-3 py-1.5 rounded-lg transition-all ${
-                activeAnalysisView === "time" ? "bg-white text-slate-900 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
+                activeAnalysisView === "time" ? "bg-surface text-foreground shadow-2xs font-bold border border-surface-border" : "text-muted hover:text-foreground"
               }`}
             >
               3. เวลา & สุขภาวะ
@@ -648,7 +648,7 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
             <button
               onClick={() => setActiveAnalysisView("individual")}
               className={`px-3 py-1.5 rounded-lg transition-all ${
-                activeAnalysisView === "individual" ? "bg-white text-slate-900 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
+                activeAnalysisView === "individual" ? "bg-surface text-foreground shadow-2xs font-bold border border-surface-border" : "text-muted hover:text-foreground"
               }`}
             >
               4. รายบุคคล & ศักยภาพ
@@ -661,34 +661,34 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
           
           {/* Dimension 1: From Workloads Tab */}
           {(activeAnalysisView === "all" || activeAnalysisView === "workload") && (
-            <div className="bg-gradient-to-br from-emerald-50/40 via-white to-slate-50/40 rounded-2xl border border-emerald-200/70 p-5 space-y-3">
+            <div className="bg-gradient-to-br from-emerald-500/10 via-surface to-surface rounded-2xl border border-emerald-500/20 p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="p-2 rounded-xl bg-emerald-100 text-emerald-800">
+                  <span className="p-2 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                     <PiggyBank size={18} />
                   </span>
                   <div>
-                    <h4 className="font-bold text-sm text-slate-900">1. ช่วยกันเกลี่ยงานให้สมดุล</h4>
-                    <p className="text-[11px] text-emerald-700 font-medium">จาก: แท็บจำนวนงาน / มูลค่า</p>
+                    <h4 className="font-bold text-sm text-foreground">1. ช่วยกันเกลี่ยงานให้สมดุล</h4>
+                    <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">จาก: แท็บจำนวนงาน / มูลค่า</p>
                   </div>
                 </div>
                 {onNavigateTab && (
                   <button
                     onClick={() => onNavigateTab("workloads")}
-                    className="text-xs text-emerald-700 hover:text-emerald-900 flex items-center gap-1 font-semibold"
+                    className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 font-semibold"
                   >
                     ดูแท็บ 1 <ChevronRight size={14} />
                   </button>
                 )}
               </div>
 
-              <div className="text-xs text-slate-700 space-y-2 leading-relaxed">
-                <div className="p-3 bg-white rounded-xl border border-emerald-100">
-                  <span className="font-bold text-emerald-900 block mb-1">💡 สิ่งที่เห็นในทีม:</span>
+              <div className="text-xs text-foreground/90 space-y-2 leading-relaxed">
+                <div className="p-3 bg-surface rounded-xl border border-emerald-500/20">
+                  <span className="font-bold text-emerald-700 dark:text-emerald-300 block mb-1">💡 สิ่งที่เห็นในทีม:</span>
                   ทีมสร้างมูลค่างานเฉลี่ยได้ถึง ฿{Math.round(orgTotals.totalSaveCost / Math.max(1, briefs.length)).toLocaleString()} บาท/งาน โดยมีอัตราการแบ่งปันงานช่วยสูงถึง {synergyRate}% ของภาระงานทั้งหมด
                 </div>
-                <div className="p-3 bg-white rounded-xl border border-emerald-100">
-                  <span className="font-bold text-slate-900 block mb-1">🌱 ชวนทำด้วยกัน:</span>
+                <div className="p-3 bg-surface rounded-xl border border-emerald-500/20">
+                  <span className="font-bold text-foreground block mb-1">🌱 ชวนทำด้วยกัน:</span>
                   สำหรับงานที่มีมูลค่าสูงและมีความซับซ้อน ให้กำหนดสัดส่วนผู้ช่วยร่วมรับผิดชอบตั้งแต่ขั้นตอนรับบรีฟ เพื่อป้องกันไม่ให้ภาระไปตกอยู่กับผู้รับผิดชอบหลักเพียงคนเดียว
                 </div>
               </div>
@@ -697,34 +697,34 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
 
           {/* Dimension 2: From Goals (KR/TIP) Tab */}
           {(activeAnalysisView === "all" || activeAnalysisView === "goals") && (
-            <div className="bg-gradient-to-br from-purple-50/40 via-white to-slate-50/40 rounded-2xl border border-purple-200/70 p-5 space-y-3">
+            <div className="bg-gradient-to-br from-purple-500/10 via-surface to-surface rounded-2xl border border-purple-500/20 p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="p-2 rounded-xl bg-purple-100 text-purple-800">
+                  <span className="p-2 rounded-xl bg-purple-500/15 text-purple-600 dark:text-purple-400">
                     <Target size={18} />
                   </span>
                   <div>
-                    <h4 className="font-bold text-sm text-slate-900">2. ร่วมมือทำตามเป้าหมาย</h4>
-                    <p className="text-[11px] text-purple-700 font-medium">จาก: แท็บ KR/R , KPI/TIP</p>
+                    <h4 className="font-bold text-sm text-foreground">2. ร่วมมือทำตามเป้าหมาย</h4>
+                    <p className="text-[11px] text-purple-600 dark:text-purple-400 font-medium">จาก: แท็บ KR/R , KPI/TIP</p>
                   </div>
                 </div>
                 {onNavigateTab && (
                   <button
                     onClick={() => onNavigateTab("goals")}
-                    className="text-xs text-purple-700 hover:text-purple-900 flex items-center gap-1 font-semibold"
+                    className="text-xs text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1 font-semibold"
                   >
                     ดูแท็บ 2 <ChevronRight size={14} />
                   </button>
                 )}
               </div>
 
-              <div className="text-xs text-slate-700 space-y-2 leading-relaxed">
-                <div className="p-3 bg-white rounded-xl border border-purple-100">
-                  <span className="font-bold text-purple-900 block mb-1">🎯 สิ่งที่เห็นในทีม:</span>
+              <div className="text-xs text-foreground/90 space-y-2 leading-relaxed">
+                <div className="p-3 bg-surface rounded-xl border border-purple-500/20">
+                  <span className="font-bold text-purple-700 dark:text-purple-300 block mb-1">🎯 สิ่งที่เห็นในทีม:</span>
                   งานที่เชื่อมโยงกับเป้าหมายยุทธศาสตร์มีสัดส่วน {strategicAlignmentRate}% สะท้อนว่าทีมกำลังส่งมอบงานที่ตอบโจทย์ทั้งการบริการภายใน (KR) และเป้าหมายมูลค่าทางธุรกิจ (TIP) อย่างเด่นชัด
                 </div>
-                <div className="p-3 bg-white rounded-xl border border-purple-100">
-                  <span className="font-bold text-slate-900 block mb-1">🚀 ชวนทำด้วยกัน:</span>
+                <div className="p-3 bg-surface rounded-xl border border-purple-500/20">
+                  <span className="font-bold text-foreground block mb-1">🚀 ชวนทำด้วยกัน:</span>
                   ส่งเสริมให้เพื่อนร่วมทีมทุกคนเข้าใจว่างานประจำวันของตนเชื่อมโยงกับความสำเร็จขององค์กรในส่วนใด จะช่วยสร้างความภาคภูมิใจและพลังใจในการสร้างสรรค์ผลงานยิ่งขึ้น
                 </div>
               </div>
@@ -733,34 +733,34 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
 
           {/* Dimension 3: From Time / Efficiency Tab */}
           {(activeAnalysisView === "all" || activeAnalysisView === "time") && (
-            <div className="bg-gradient-to-br from-blue-50/40 via-white to-slate-50/40 rounded-2xl border border-blue-200/70 p-5 space-y-3">
+            <div className="bg-gradient-to-br from-blue-500/10 via-surface to-surface rounded-2xl border border-blue-500/20 p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="p-2 rounded-xl bg-blue-100 text-blue-800">
+                  <span className="p-2 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400">
                     <Clock size={18} />
                   </span>
                   <div>
-                    <h4 className="font-bold text-sm text-slate-900">3. จังหวะการทำงานและการส่งมอบ</h4>
-                    <p className="text-[11px] text-blue-700 font-medium">จาก: แท็บเวลา / สถานะงาน</p>
+                    <h4 className="font-bold text-sm text-foreground">3. จังหวะการทำงานและการส่งมอบ</h4>
+                    <p className="text-[11px] text-blue-600 dark:text-blue-400 font-medium">จาก: แท็บเวลา / สถานะงาน</p>
                   </div>
                 </div>
                 {onNavigateTab && (
                   <button
                     onClick={() => onNavigateTab("time_efficiency")}
-                    className="text-xs text-blue-700 hover:text-blue-900 flex items-center gap-1 font-semibold"
+                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-semibold"
                   >
                     ดูแท็บ 3 <ChevronRight size={14} />
                   </button>
                 )}
               </div>
 
-              <div className="text-xs text-slate-700 space-y-2 leading-relaxed">
-                <div className="p-3 bg-white rounded-xl border border-blue-100">
-                  <span className="font-bold text-blue-900 block mb-1">⏱️ สิ่งที่เห็นในทีม:</span>
+              <div className="text-xs text-foreground/90 space-y-2 leading-relaxed">
+                <div className="p-3 bg-surface rounded-xl border border-blue-500/20">
+                  <span className="font-bold text-blue-700 dark:text-blue-300 block mb-1">⏱️ สิ่งที่เห็นในทีม:</span>
                   อัตราส่งมอบงานตรงเวลา {executiveAnalysis.teamOnTimeRate}% ด้วยระยะเวลาเฉลี่ย {executiveAnalysis.teamAvgTurnaroundDays} วัน สะท้อนถึงมาตรฐานความรับผิดชอบที่สูงมาก
                 </div>
-                <div className="p-3 bg-white rounded-xl border border-blue-100">
-                  <span className="font-bold text-slate-900 block mb-1">💙 แนวทางดูแลกัน:</span>
+                <div className="p-3 bg-surface rounded-xl border border-blue-500/20">
+                  <span className="font-bold text-foreground block mb-1">💙 แนวทางดูแลกัน:</span>
                   สำหรับงานที่เริ่มค้างในสถานะรอนานเกิน 5 วัน ให้เพื่อนหรือหัวหน้ายูนิตประสานสอบถามผู้ขอบรีฟเพื่อช่วยเคลียร์ข้อติดขัด ช่วยให้เจ้าของงานไม่ต้องเผชิญความกดดันเพียงลำพัง
                 </div>
               </div>
@@ -769,34 +769,34 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
 
           {/* Dimension 4: From Individual Report Tab */}
           {(activeAnalysisView === "all" || activeAnalysisView === "individual") && (
-            <div className="bg-gradient-to-br from-amber-50/40 via-white to-slate-50/40 rounded-2xl border border-amber-200/70 p-5 space-y-3">
+            <div className="bg-gradient-to-br from-amber-500/10 via-surface to-surface rounded-2xl border border-amber-500/20 p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="p-2 rounded-xl bg-amber-100 text-amber-800">
+                  <span className="p-2 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
                     <Users size={18} />
                   </span>
                   <div>
-                    <h4 className="font-bold text-sm text-slate-900">4. จุดเด่นและพลังเสริมกัน</h4>
-                    <p className="text-[11px] text-amber-700 font-medium">จาก: แท็บรายงานรายบุคคล</p>
+                    <h4 className="font-bold text-sm text-foreground">4. จุดเด่นและพลังเสริมกัน</h4>
+                    <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">จาก: แท็บรายงานรายบุคคล</p>
                   </div>
                 </div>
                 {onNavigateTab && (
                   <button
                     onClick={() => onNavigateTab("individual_360")}
-                    className="text-xs text-amber-700 hover:text-amber-900 flex items-center gap-1 font-semibold"
+                    className="text-xs text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1 font-semibold"
                   >
                     ดูแท็บ 4 <ChevronRight size={14} />
                   </button>
                 )}
               </div>
 
-              <div className="text-xs text-slate-700 space-y-2 leading-relaxed">
-                <div className="p-3 bg-white rounded-xl border border-amber-100">
-                  <span className="font-bold text-amber-900 block mb-1">🌟 สิ่งที่เห็นในทีม:</span>
+              <div className="text-xs text-foreground/90 space-y-2 leading-relaxed">
+                <div className="p-3 bg-surface rounded-xl border border-amber-500/20">
+                  <span className="font-bold text-amber-700 dark:text-amber-300 block mb-1">🌟 สิ่งที่เห็นในทีม:</span>
                   สมาชิกทั้ง {memberStats.length} คนต่างมีความเชี่ยวชาญเฉพาะตัว (Superpower) ที่โดดเด่น ทั้งด้านกราฟิก, การสร้างสรรค์เนื้อหา, และการประชาสัมพันธ์
                 </div>
-                <div className="p-3 bg-white rounded-xl border border-amber-100">
-                  <span className="font-bold text-slate-900 block mb-1">🤝 ชวนทำด้วยกัน:</span>
+                <div className="p-3 bg-surface rounded-xl border border-amber-500/20">
+                  <span className="font-bold text-foreground block mb-1">🤝 ชวนทำด้วยกัน:</span>
                   จัดให้มีการแลกเปลี่ยนเทคนิคแบบไม่เป็นทางการ (Micro-Knowledge Sharing) 15 นาทีต่อสัปดาห์ เพื่อให้ทุกคนได้ต่อยอดทักษะใหม่ๆ จากเพื่อนร่วมทีมอย่างอบอุ่น
                 </div>
               </div>
@@ -812,48 +812,48 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Box A: Buddy Pairing & Cross-Skilling */}
-        <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs space-y-4 flex flex-col justify-between">
+        <div className="bg-surface rounded-3xl border border-surface-border p-6 shadow-xs space-y-4 flex flex-col justify-between">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-indigo-700 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
                 <HeartHandshake size={16} />
                 การจับคู่บัดดี้ข้ามสายงาน (Cross-Skilling Buddy)
               </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">
                 เรียนรู้และโตไปด้วยกัน
               </span>
             </div>
 
-            <h3 className="text-base font-black text-slate-900">
+            <h3 className="text-base font-black text-foreground">
               ข้อเสนอแนะการเสริมพลังข้ามยูนิต (Creative × Content × PR)
             </h3>
             
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <p className="text-xs text-muted leading-relaxed">
               การจับคู่ทำงานร่วมกันจะช่วยลดข้อจำกัดของแต่ละสายงาน เพิ่มมุมมองสร้างสรรค์ใหม่ๆ และสร้างความเข้าใจอันดีระหว่างเพื่อนร่วมทีม:
             </p>
 
             <div className="space-y-3 pt-1">
               {buddyPairs.map((p, idx) => (
-                <div key={idx} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1.5 text-xs">
-                  <div className="flex items-center justify-between font-bold text-slate-900">
-                    <span className="flex items-center gap-1.5 text-indigo-900">
+                <div key={idx} className="p-3.5 rounded-2xl bg-muted/10 border border-surface-border space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between font-bold text-foreground">
+                    <span className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400">
                       <span>{p.leadMember}</span>
-                      <span className="text-slate-400">↔</span>
+                      <span className="text-muted">↔</span>
                       <span>{p.buddyMember}</span>
                     </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-700 dark:text-indigo-300">
                       คู่หูเสริมพลัง
                     </span>
                   </div>
-                  <div className="font-semibold text-slate-800">✨ หัวข้อ: {p.synergyTopic}</div>
-                  <div className="text-slate-600 text-[11px] leading-relaxed">💡 คุณค่าที่ทีมจะได้รับ: {p.benefit}</div>
+                  <div className="font-semibold text-foreground/90">✨ หัวข้อ: {p.synergyTopic}</div>
+                  <div className="text-muted text-[11px] leading-relaxed">💡 คุณค่าที่ทีมจะได้รับ: {p.benefit}</div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="p-3 bg-indigo-50/70 rounded-2xl border border-indigo-100 text-xs text-indigo-900 flex items-start gap-2 mt-4">
-            <Lightbulb size={16} className="text-indigo-600 shrink-0 mt-0.5" />
+          <div className="p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 text-xs text-indigo-900 dark:text-indigo-200 flex items-start gap-2 mt-4">
+            <Lightbulb size={16} className="text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
             <div>
               <span className="font-bold">เคล็ดลับพลังบวก:</span> บัดดี้ไม่ต้องทำงานแทนกันทั้งหมด เพียงแค่ช่วยรีวิวแนวคิดและส่งกำลังใจให้กันตั้งแต่ต้นทาง จะช่วยลดความกังวลและเพิ่มความมั่นใจได้อย่างมาก
             </div>
@@ -861,29 +861,29 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
         </div>
 
         {/* Box B: Care & Workload Support Hub */}
-        <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs space-y-4 flex flex-col justify-between">
+        <div className="bg-surface rounded-3xl border border-surface-border p-6 shadow-xs space-y-4 flex flex-col justify-between">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-rose-700 uppercase tracking-wider flex items-center gap-1.5">
-                <Heart size={16} className="text-rose-600" />
+              <span className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Heart size={16} className="text-rose-600 dark:text-rose-400" />
                 พื้นที่ดูแลพลังใจและแบ่งเบาภาระงาน (Heartbeat Care Hub)
               </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20">
                 ดูแลกันและกัน
               </span>
             </div>
 
-            <h3 className="text-base font-black text-slate-900">
+            <h3 className="text-base font-black text-foreground">
               โอกาสในการยื่นมือเข้าไปซัพพอร์ตเพื่อนในทีม
             </h3>
 
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <p className="text-xs text-muted leading-relaxed">
               ระบุสถานการณ์ที่เพื่อนร่วมทีมอาจกำลังต้องการความช่วยเหลือ เพื่อให้ทีมสามารถส่งแรงสนับสนุนเข้าไปอย่างอบอุ่นและทันเวลา:
             </p>
 
             <div className="space-y-2.5 pt-1">
               {membersNeedingCare.length === 0 ? (
-                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-center text-xs text-emerald-800 font-medium">
+                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center text-xs text-emerald-700 dark:text-emerald-300 font-medium">
                   🎉 สุขภาวะภาระงานของทุกคนในทีมขณะนี้อยู่ในระดับสมดุลยอดเยี่ยม ไม่มีงานคั่งค้างสะสม!
                 </div>
               ) : (
@@ -891,21 +891,21 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
                   <div
                     key={item.member.assignee_id}
                     onClick={() => onSelectMember && onSelectMember(item.member.assignee_id)}
-                    className="p-3 rounded-2xl bg-rose-50/50 border border-rose-100 hover:border-rose-300 transition-all cursor-pointer text-xs space-y-1"
+                    className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 hover:border-rose-500/40 transition-all cursor-pointer text-xs space-y-1"
                   >
                     <div className="flex items-center justify-between font-bold">
-                      <span className="text-slate-900 flex items-center gap-2">
+                      <span className="text-foreground flex items-center gap-2">
                         <span>{item.member.name}</span>
-                        <span className="text-[10px] text-slate-400 capitalize">({item.member.unit})</span>
+                        <span className="text-[10px] text-muted capitalize">({item.member.unit})</span>
                       </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-mono">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-300 font-mono">
                         กำลังทำ {item.member.inProgressTasks} / รอ {item.member.pendingTasks}
                       </span>
                     </div>
-                    <div className="text-slate-600 text-[11px]">
+                    <div className="text-muted text-[11px]">
                       ❤️ <span className="font-medium">{item.careReason}</span>
                     </div>
-                    <div className="text-rose-700 text-[11px] font-semibold">
+                    <div className="text-rose-600 dark:text-rose-400 text-[11px] font-semibold">
                       🤝 แนวทางเกื้อกูล: {item.suggestedAction}
                     </div>
                   </div>
@@ -914,8 +914,8 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
             </div>
           </div>
 
-          <div className="p-3 bg-rose-50/70 rounded-2xl border border-rose-100 text-xs text-rose-900 flex items-start gap-2 mt-4">
-            <Smile size={16} className="text-rose-600 shrink-0 mt-0.5" />
+          <div className="p-3 bg-rose-500/10 rounded-2xl border border-rose-500/20 text-xs text-rose-900 dark:text-rose-200 flex items-start gap-2 mt-4">
+            <Smile size={16} className="text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
             <div>
               <span className="font-bold">หลักการสำคัญ:</span> การยื่นมือเข้าช่วยไม่ใช่เพราะใครทำไม่ทัน แต่เพราะงานของเราคืองานของทีม ความสำเร็จร่วมกันคือเป้าหมายสูงสุด
             </div>
@@ -927,27 +927,27 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
       {/* ========================================================================= */}
       {/* 6. UNIT-BY-UNIT HARMONY & RISK MITIGATION WITH EMPATHY */}
       {/* ========================================================================= */}
-      <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+      <div className="bg-surface rounded-3xl border border-surface-border p-6 shadow-xs space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-surface-border pb-4">
           <div>
-            <span className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
-              <ShieldCheck size={16} className="text-indigo-600" />
+            <span className="text-xs font-bold text-muted uppercase tracking-wider flex items-center gap-1.5">
+              <ShieldCheck size={16} className="text-indigo-600 dark:text-indigo-400" />
               การบริหารความเสี่ยงด้วยความเข้าใจและการร่วมมือ (Unit Care & Action Steps)
             </span>
-            <h3 className="text-lg font-black text-slate-900 mt-1">
+            <h3 className="text-lg font-black text-foreground mt-1">
               แนวทางการสนับสนุนของแต่ละยูนิต (Creative, Content, PR & Internal)
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-muted mt-0.5">
               วิเคราะห์ความเสี่ยงเชิงโครงสร้าง พร้อมแนวทางที่หัวหน้าทีมและเพื่อนร่วมทีมพร้อมลงไปสนับสนุน
             </p>
           </div>
 
           <div className="flex items-center gap-1.5">
-            <span className="text-xs font-medium text-slate-500">กรองยูนิต:</span>
+            <span className="text-xs font-medium text-muted">กรองยูนิต:</span>
             <select
               value={selectedUnitFocus}
               onChange={(e) => setSelectedUnitFocus(e.target.value)}
-              className="text-xs font-semibold bg-slate-100 border border-slate-200 rounded-xl px-3 py-1.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="text-xs font-semibold bg-surface border border-surface-border rounded-xl px-3 py-1.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
             >
               <option value="all">ทุกยูนิต (All Units)</option>
               <option value="creative">Creative Unit</option>
@@ -964,37 +964,37 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
             .map((alert) => (
               <div
                 key={alert.unit}
-                className="p-4 rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50/80 to-white text-xs space-y-3"
+                className="p-4 rounded-2xl border border-surface-border bg-surface text-xs space-y-3"
               >
-                <div className="flex items-center justify-between font-bold text-slate-900 border-b border-slate-100 pb-2">
-                  <span className="text-sm text-indigo-950 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+                <div className="flex items-center justify-between font-bold text-foreground border-b border-surface-border pb-2">
+                  <span className="text-sm text-foreground flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-indigo-600 dark:bg-indigo-400"></span>
                     <span>{alert.unitLabel}</span>
                   </span>
-                  <span className="text-[11px] font-normal text-slate-500">
-                    ผู้ประสานหลัก: <span className="font-bold text-slate-800">{alert.leadName}</span>
+                  <span className="text-[11px] font-normal text-muted">
+                    ผู้ประสานหลัก: <span className="font-bold text-foreground">{alert.leadName}</span>
                   </span>
                 </div>
 
-                <div className="text-slate-700 leading-relaxed">
-                  <span className="font-bold text-slate-900">📌 สถานการณ์ปัจจุบัน:</span> {alert.situation}
+                <div className="text-foreground/90 leading-relaxed">
+                  <span className="font-bold text-foreground">📌 สถานการณ์ปัจจุบัน:</span> {alert.situation}
                 </div>
 
-                <div className="p-3 bg-indigo-50/60 rounded-xl border border-indigo-100 space-y-1.5">
-                  <span className="font-bold text-indigo-950 block">🤝 แนวทางที่ทีมและ {alert.leadName} ร่วมมือกัน:</span>
-                  <ul className="space-y-1 text-slate-700 pl-1">
+                <div className="p-3 bg-indigo-500/10 rounded-xl border border-indigo-500/20 space-y-1.5">
+                  <span className="font-bold text-indigo-600 dark:text-indigo-400 block">🤝 แนวทางที่ทีมและ {alert.leadName} ร่วมมือกัน:</span>
+                  <ul className="space-y-1 text-foreground/90 pl-1">
                     {alert.actionSteps.map((s, idx) => (
                       <li key={idx} className="flex items-start gap-1.5">
-                        <span className="text-indigo-600 font-bold">•</span>
+                        <span className="text-indigo-600 dark:text-indigo-400 font-bold">•</span>
                         <span>{s}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-100 flex items-center justify-between">
+                <div className="text-[11px] text-muted pt-1 border-t border-surface-border flex items-center justify-between">
                   <span>ความเสี่ยงที่เฝ้าระวัง: {alert.riskImpacts[0] || "การกระจุกตัวของงาน"}</span>
-                  <span className="font-bold text-emerald-700">ทีมพร้อมซัพพอร์ต ✓</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">ทีมพร้อมซัพพอร์ต ✓</span>
                 </div>
               </div>
             ))}
@@ -1004,31 +1004,31 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
       {/* ========================================================================= */}
       {/* 7. INDIVIDUAL TEAM SCORECARD TABLE */}
       {/* ========================================================================= */}
-      <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+      <div className="bg-surface rounded-3xl border border-surface-border p-6 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-surface-border pb-4">
           <div>
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+            <span className="text-xs font-bold text-muted uppercase tracking-wider flex items-center gap-1.5">
               <Users size={16} />
               ตารางสรุปผลงานและความคุ้มค่ารายบุคคล (Holistic Member Scorecard)
             </span>
-            <h3 className="text-base font-black text-slate-900 mt-1">
+            <h3 className="text-base font-black text-foreground mt-1">
               ผลงานรวมทั้งงานหลัก (Owner) และงานช่วย (Assistant) ของทุกคนในทีม
             </h3>
           </div>
-          <div className="text-xs text-slate-500 font-mono">
+          <div className="text-xs text-muted font-mono">
             แสดงสมาชิกทั้งหมด {memberStats.length} คน
           </div>
         </div>
 
-        <div className="border border-slate-200/80 rounded-2xl overflow-hidden shadow-2xs">
+        <div className="border border-surface-border rounded-2xl overflow-hidden shadow-2xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100/90 text-slate-700 font-bold border-b border-slate-200">
+              <thead className="bg-muted/10 text-muted font-bold border-b border-surface-border">
                 <tr>
                   <th className="py-3 px-3.5 text-center">#</th>
                   <th className="py-3 px-3.5">ชื่อ - สังกัด</th>
                   <th className="py-3 px-3.5 text-right">Save Cost รวม</th>
-                  <th className="py-3 px-3.5 text-right text-orange-800">กำไร PM</th>
+                  <th className="py-3 px-3.5 text-right text-orange-600 dark:text-orange-400">กำไร PM</th>
                   <th className="py-3 px-3.5 text-center">สัดส่วนงาน (หลัก / ช่วย)</th>
                   <th className="py-3 px-3.5 text-center">สถานะงาน (ทำ / รอ / เสร็จ)</th>
                   <th className="py-3 px-3.5 text-center">เวลาเฉลี่ย</th>
@@ -1036,40 +1036,40 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
                   <th className="py-3 px-3.5 text-center">ดัชนีหลังบ้าน (BOH)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
+              <tbody className="divide-y divide-surface-border font-medium text-foreground">
                 {memberStats.map((m, idx) => (
                   <tr
                     key={m.assignee_id}
                     onClick={() => onSelectMember && onSelectMember(m.assignee_id)}
-                    className="hover:bg-slate-50/80 transition-colors cursor-pointer"
+                    className="hover:bg-muted/5 transition-colors cursor-pointer"
                   >
-                    <td className="py-3 px-3.5 text-center text-slate-400 font-mono">{idx + 1}</td>
+                    <td className="py-3 px-3.5 text-center text-muted font-mono">{idx + 1}</td>
                     <td className="py-3 px-3.5">
-                      <div className="font-bold text-slate-900">{m.name}</div>
-                      <div className="text-[10px] text-slate-400 capitalize">{m.unit} Unit</div>
+                      <div className="font-bold text-foreground">{m.name}</div>
+                      <div className="text-[10px] text-muted capitalize">{m.unit} Unit</div>
                     </td>
-                    <td className="py-3 px-3.5 text-right font-mono font-bold text-emerald-800">
+                    <td className="py-3 px-3.5 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
                       ฿{m.totalSaveCost.toLocaleString()}
                     </td>
-                    <td className="py-3 px-3.5 text-right font-mono font-bold text-orange-700">
+                    <td className="py-3 px-3.5 text-right font-mono font-bold text-orange-600 dark:text-orange-400">
                       ฿{(m.totalProfit || 0).toLocaleString()}
                     </td>
                     <td className="py-3 px-3.5 text-center font-mono">
-                      <span className="text-slate-900 font-bold">หลัก {m.ownerTaskCount}</span>
-                      <span className="text-slate-300 mx-1">/</span>
-                      <span className="text-rose-600 font-bold">ช่วย {m.assistantTaskCount}</span>
+                      <span className="text-foreground font-bold">หลัก {m.ownerTaskCount}</span>
+                      <span className="text-muted/40 mx-1">/</span>
+                      <span className="text-rose-600 dark:text-rose-400 font-bold">ช่วย {m.assistantTaskCount}</span>
                     </td>
                     <td className="py-3 px-3.5 text-center font-mono text-[11px]">
                       <div className="inline-flex items-center gap-1">
-                        <span className="text-blue-700 font-bold" title="กำลังทำ">{m.inProgressTasks}</span>
-                        <span className="text-slate-300">/</span>
-                        <span className="text-amber-700 font-bold" title="รอเริ่ม">{m.pendingTasks}</span>
-                        <span className="text-slate-300">/</span>
-                        <span className="text-emerald-700 font-bold" title="เสร็จสิ้น">{m.completedTasks}</span>
+                        <span className="text-blue-600 dark:text-blue-400 font-bold" title="กำลังทำ">{m.inProgressTasks}</span>
+                        <span className="text-muted/40">/</span>
+                        <span className="text-amber-600 dark:text-amber-400 font-bold" title="รอเริ่ม">{m.pendingTasks}</span>
+                        <span className="text-muted/40">/</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-bold" title="เสร็จสิ้น">{m.completedTasks}</span>
                         {m.overdueTasksCount > 0 && (
                           <>
-                            <span className="text-slate-300">/</span>
-                            <span className="text-rose-600 font-black" title="ต้องการผู้ช่วยเสริม">⚠️{m.overdueTasksCount}</span>
+                            <span className="text-muted/40">/</span>
+                            <span className="text-rose-600 dark:text-rose-400 font-black" title="ต้องการผู้ช่วยเสริม">⚠️{m.overdueTasksCount}</span>
                           </>
                         )}
                       </div>
@@ -1078,19 +1078,19 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
                       {m.avgTurnaroundDays > 0 ? `${m.avgTurnaroundDays} วัน` : "-"}
                     </td>
                     <td className="py-3 px-3.5 text-center font-mono">
-                      <span className={m.onTimeRate >= 80 ? "text-emerald-700 font-bold" : "text-amber-700 font-bold"}>
+                      <span className={m.onTimeRate >= 80 ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-amber-600 dark:text-amber-400 font-bold"}>
                         {m.onTimeRate}%
                       </span>
                     </td>
                     <td className="py-3 px-3.5 text-center">
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
                         m.citizenshipTier === 'champion'
-                          ? 'bg-amber-100 text-amber-900 border-amber-300'
+                          ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30'
                           : m.citizenshipTier === 'anchor'
-                          ? 'bg-purple-100 text-purple-900 border-purple-300'
+                          ? 'bg-purple-500/15 text-purple-800 dark:text-purple-300 border-purple-500/30'
                           : m.citizenshipTier === 'contributor'
-                          ? 'bg-blue-100 text-blue-900 border-blue-300'
-                          : 'bg-slate-100 text-slate-700 border-slate-200'
+                          ? 'bg-blue-500/15 text-blue-800 dark:text-blue-300 border-blue-500/30'
+                          : 'bg-muted/10 text-muted border-surface-border'
                       }`} title={`คะแนนการมีส่วนร่วมและงานหลังบ้าน BOH: ${m.citizenshipScore}/100`}>
                         <span>{m.citizenshipTier === 'champion' ? '🏆' : m.citizenshipTier === 'anchor' ? '🤝' : m.citizenshipTier === 'contributor' ? '🛡️' : '⚙️'}</span>
                         <span>{m.citizenshipTitle} ({m.citizenshipScore})</span>

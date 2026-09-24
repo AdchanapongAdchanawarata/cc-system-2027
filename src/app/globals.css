@@ -201,7 +201,32 @@ textarea[class*="bg-white"], textarea[class*="bg-[#f9f9fb]"],
   color: #fbbf24 !important;
 }
 
-/* Inner containers and badges in dark mode */
+.dark .text-rose-700, [data-theme="dark"] .text-rose-700,
+.dark .text-rose-800, [data-theme="dark"] .text-rose-800,
+.dark .text-rose-900, [data-theme="dark"] .text-rose-900 {
+  color: #fb7185 !important;
+}
+.dark .text-rose-600, [data-theme="dark"] .text-rose-600 {
+  color: #fda4af !important;
+}
+
+/* Inner containers and cards in dark mode: Automatically convert bg-white cards to dark surface */
+.dark .bg-white:not(input):not(textarea):not(button.keep-white):not([data-keep-white="true"]),
+[data-theme="dark"] .bg-white:not(input):not(textarea):not(button.keep-white):not([data-keep-white="true"]) {
+  background-color: var(--surface) !important;
+  border-color: var(--surface-border) !important;
+}
+
+.dark [class*="via-white"], [data-theme="dark"] [class*="via-white"] {
+  --tw-gradient-via: var(--surface) !important;
+}
+.dark [class*="from-white"], [data-theme="dark"] [class*="from-white"] {
+  --tw-gradient-from: var(--surface) !important;
+}
+.dark [class*="to-white"], [data-theme="dark"] [class*="to-white"] {
+  --tw-gradient-to: var(--surface) !important;
+}
+
 .dark .bg-slate-100, [data-theme="dark"] .bg-slate-100,
 .dark .bg-slate-100\/90, [data-theme="dark"] .bg-slate-100\/90 {
   background-color: rgba(39, 39, 42, 0.9) !important;
@@ -209,58 +234,72 @@ textarea[class*="bg-white"], textarea[class*="bg-[#f9f9fb]"],
 }
 
 .dark .bg-slate-50, [data-theme="dark"] .bg-slate-50,
-.dark .bg-slate-50\/90, [data-theme="dark"] .bg-slate-50\/90,
-.dark .bg-slate-50\/80, [data-theme="dark"] .bg-slate-50\/80,
-.dark .bg-slate-50\/70, [data-theme="dark"] .bg-slate-50\/70 {
+.dark [class*="bg-slate-50"], [data-theme="dark"] [class*="bg-slate-50"] {
   background-color: rgba(31, 31, 35, 0.8) !important;
   border-color: #3f3f46 !important;
 }
 
 .dark .border-slate-200, [data-theme="dark"] .border-slate-200,
-.dark .border-slate-200\/80, [data-theme="dark"] .border-slate-200\/80,
-.dark .border-slate-200\/70, [data-theme="dark"] .border-slate-200\/70,
-.dark .border-slate-200\/50, [data-theme="dark"] .border-slate-200\/50,
-.dark .border-slate-100, [data-theme="dark"] .border-slate-100 {
+.dark [class*="border-slate-200"], [data-theme="dark"] [class*="border-slate-200"],
+.dark .border-slate-100, [data-theme="dark"] .border-slate-100,
+.dark [class*="border-slate-100"], [data-theme="dark"] [class*="border-slate-100"] {
   border-color: #3f3f46 !important;
 }
 
-/* Colored status badges in Dark Mode */
-.dark .bg-amber-50, [data-theme="dark"] .bg-amber-50,
-.dark .bg-amber-100, [data-theme="dark"] .bg-amber-100 {
+/* Colored status & factor boxes in Dark Mode (Internal, External, Risks, Champions) */
+.dark [class*="bg-amber-50"], [data-theme="dark"] [class*="bg-amber-50"],
+.dark [class*="bg-amber-100"], [data-theme="dark"] [class*="bg-amber-100"] {
   background-color: rgba(245, 158, 11, 0.15) !important;
-  border-color: rgba(245, 158, 11, 0.3) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
 }
-.dark .text-amber-900, [data-theme="dark"] .text-amber-900 {
-  color: #fef3c7 !important;
+.dark .text-amber-900, [data-theme="dark"] .text-amber-900,
+.dark .text-amber-800, [data-theme="dark"] .text-amber-800 {
+  color: #fde68a !important;
 }
 
-.dark .bg-emerald-50, [data-theme="dark"] .bg-emerald-50,
-.dark .bg-emerald-100, [data-theme="dark"] .bg-emerald-100 {
+.dark [class*="bg-emerald-50"], [data-theme="dark"] [class*="bg-emerald-50"],
+.dark [class*="bg-emerald-100"], [data-theme="dark"] [class*="bg-emerald-100"] {
   background-color: rgba(16, 185, 129, 0.15) !important;
-  border-color: rgba(16, 185, 129, 0.3) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
 }
 .dark .text-emerald-900, [data-theme="dark"] .text-emerald-900,
 .dark .text-emerald-800, [data-theme="dark"] .text-emerald-800 {
-  color: #d1fae5 !important;
+  color: #a7f3d0 !important;
 }
 
-.dark .bg-blue-50, [data-theme="dark"] .bg-blue-50,
-.dark .bg-blue-100, [data-theme="dark"] .bg-blue-100 {
+.dark [class*="bg-blue-50"], [data-theme="dark"] [class*="bg-blue-50"],
+.dark [class*="bg-blue-100"], [data-theme="dark"] [class*="bg-blue-100"] {
   background-color: rgba(59, 130, 246, 0.15) !important;
-  border-color: rgba(59, 130, 246, 0.3) !important;
+  border-color: rgba(59, 130, 246, 0.35) !important;
 }
 
-.dark .bg-purple-50, [data-theme="dark"] .bg-purple-50,
-.dark .bg-purple-100, [data-theme="dark"] .bg-purple-100 {
+.dark [class*="bg-rose-50"], [data-theme="dark"] [class*="bg-rose-50"],
+.dark [class*="bg-rose-100"], [data-theme="dark"] [class*="bg-rose-100"] {
+  background-color: rgba(244, 63, 94, 0.15) !important;
+  border-color: rgba(244, 63, 94, 0.35) !important;
+}
+
+.dark [class*="bg-purple-50"], [data-theme="dark"] [class*="bg-purple-50"],
+.dark [class*="bg-purple-100"], [data-theme="dark"] [class*="bg-purple-100"] {
   background-color: rgba(168, 85, 247, 0.15) !important;
-  border-color: rgba(168, 85, 247, 0.3) !important;
+  border-color: rgba(168, 85, 247, 0.35) !important;
 }
 
-.dark .bg-orange-50, [data-theme="dark"] .bg-orange-50,
-.dark .bg-orange-50\/70, [data-theme="dark"] .bg-orange-50\/70,
-.dark .bg-orange-100, [data-theme="dark"] .bg-orange-100 {
+.dark [class*="bg-orange-50"], [data-theme="dark"] [class*="bg-orange-50"],
+.dark [class*="bg-orange-100"], [data-theme="dark"] [class*="bg-orange-100"] {
   background-color: rgba(249, 115, 22, 0.15) !important;
-  border-color: rgba(249, 115, 22, 0.3) !important;
+  border-color: rgba(249, 115, 22, 0.35) !important;
+}
+
+/* Numbered Section Badges (1, 2, 3 in ISO and Reports) in Dark Mode */
+.dark span.bg-slate-900.text-white, [data-theme="dark"] span.bg-slate-900.text-white {
+  background-color: #f97316 !important;
+  color: #ffffff !important;
+}
+
+.dark .bg-slate-300.text-slate-800, [data-theme="dark"] .bg-slate-300.text-slate-800 {
+  background-color: #475569 !important;
+  color: #f8fafc !important;
 }
 .dark .text-orange-800, [data-theme="dark"] .text-orange-800,
 .dark .text-orange-900, [data-theme="dark"] .text-orange-900 {
@@ -719,55 +758,53 @@ textarea[class*="bg-white"], textarea[class*="bg-[#f9f9fb]"],
 
 
 @keyframes btn-glow-pulse {
-  0% {
+  0%, 100% {
     box-shadow: 
       -8px -8px 16px rgba(255,255,255,1),
       8px 8px 16px rgba(0,0,0,0.08),
       inset 0px 2px 4px rgba(255,255,255,1),
       inset 0px -2px 4px rgba(0,0,0,0.05),
-      0 0 0px rgba(255, 255, 255, 0);
-    transform: translate(0px, 4px) scale(0.98);
-  }
-  25% {
-    box-shadow: 
-      -8px -8px 16px rgba(255,255,255,1),
-      8px 8px 16px rgba(0,0,0,0.10),
-      inset 0px 2px 4px rgba(255,255,255,1),
-      inset 0px -2px 4px rgba(0,0,0,0.05),
-      0 5px 15px rgba(255, 255, 255, 0.4);
-    transform: translate(4px, -1px) scale(1.01);
+      0 0 16px rgba(255, 255, 255, 0.65);
+    transform: translate(0px, 0px) scale(1);
   }
   50% {
     box-shadow: 
-      -8px -8px 16px rgba(255,255,255,1),
-      8px 8px 16px rgba(0,0,0,0.12),
+      -8px -8px 18px rgba(255,255,255,1),
+      8px 8px 18px rgba(0,0,0,0.12),
       inset 0px 2px 4px rgba(255,255,255,1),
       inset 0px -2px 4px rgba(0,0,0,0.05),
-      0 10px 30px rgba(255, 255, 255, 1);
-    transform: translate(0px, -5px) scale(1.03);
+      0 0 28px rgba(255, 255, 255, 1);
+    transform: translate(0px, -2px) scale(1.02);
   }
-  75% {
+}
+
+@keyframes btn-glow-pulse-dark {
+  0%, 100% {
     box-shadow: 
-      -8px -8px 16px rgba(255,255,255,1),
-      8px 8px 16px rgba(0,0,0,0.10),
-      inset 0px 2px 4px rgba(255,255,255,1),
-      inset 0px -2px 4px rgba(0,0,0,0.05),
-      0 5px 15px rgba(255, 255, 255, 0.4);
-    transform: translate(-4px, -1px) scale(1.01);
+      -6px -6px 18px rgba(255,255,255,0.32),
+      6px 6px 20px rgba(0,0,0,0.85),
+      inset 0px 1px 2px rgba(255,255,255,0.35),
+      inset 0px -1px 2px rgba(0,0,0,0.6),
+      0 0 18px rgba(255, 255, 255, 0.35);
+    transform: translate(0px, 0px) scale(1);
   }
-  100% {
+  50% {
     box-shadow: 
-      -8px -8px 16px rgba(255,255,255,1),
-      8px 8px 16px rgba(0,0,0,0.08),
-      inset 0px 2px 4px rgba(255,255,255,1),
-      inset 0px -2px 4px rgba(0,0,0,0.05),
-      0 0 0px rgba(255, 255, 255, 0);
-    transform: translate(0px, 4px) scale(0.98);
+      -8px -8px 24px rgba(255,255,255,0.6),
+      8px 8px 24px rgba(0,0,0,0.95),
+      inset 0px 1px 3px rgba(255,255,255,0.5),
+      inset 0px -1px 2px rgba(0,0,0,0.6),
+      0 0 34px rgba(255, 255, 255, 0.7);
+    transform: translate(0px, -2px) scale(1.02);
   }
 }
 
 .animate-btn-glow {
-  animation: btn-glow-pulse 12s ease-in-out infinite;
+  animation: btn-glow-pulse 3.5s ease-in-out infinite;
+}
+
+.dark .animate-btn-glow, [data-theme="dark"] .animate-btn-glow {
+  animation: btn-glow-pulse-dark 3.5s ease-in-out infinite;
 }
 
 

@@ -374,21 +374,21 @@ export default function TeamSwotTowsAnalysis({
   return (
     <div className="space-y-6 pt-2">
       {/* Header Card with Real-time Status and Multi-Source Integration Summary */}
-      <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs space-y-4">
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+      <div className="bg-surface p-5 rounded-3xl border border-surface-border shadow-xs space-y-4">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 border-b border-surface-border pb-4">
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 text-xs font-bold border border-rose-200 mb-1">
-              <Sparkles size={12} className="text-rose-600" />
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-700 dark:text-rose-300 text-xs font-bold border border-rose-500/20 mb-1">
+              <Sparkles size={12} className="text-rose-600 dark:text-rose-400" />
               <span>Real-Time Strategic Intelligence</span>
             </div>
-            <h3 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2 flex-wrap">
+            <h3 className="text-lg font-black text-foreground tracking-tight flex items-center gap-2 flex-wrap">
               <span>การวิเคราะห์ SWOT &amp; TOWS Matrix ภาพรวมทีม CC</span>
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 ประมวลผลสดจากข้อมูล Insights
               </span>
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-muted mt-0.5">
               สังเคราะห์ข้อมูลเรียลไทม์จาก <strong>1. จำนวนงาน &amp; Save Cost</strong>, <strong>2. เป้าหมาย KR/TIP</strong>, <strong>3. เวลา &amp; ประสิทธิภาพ</strong>, และ <strong>4. วัฒนธรรมความร่วมมือในทีม</strong>
             </p>
           </div>
@@ -397,17 +397,17 @@ export default function TeamSwotTowsAnalysis({
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 shrink-0">
             {/* Real-time Snapshot Pill Stats */}
             <div className="flex items-center gap-2 text-xs font-mono flex-wrap">
-              <div className="bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 text-center">
-                <span className="text-[10px] text-emerald-600 block font-sans font-semibold">Save Cost รวม</span>
-                <span className="font-bold text-emerald-900">฿{analysis.metrics.saveCost.toLocaleString()}</span>
+              <div className="bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20 text-center">
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 block font-sans font-semibold">Save Cost รวม</span>
+                <span className="font-bold text-emerald-800 dark:text-emerald-200">฿{analysis.metrics.saveCost.toLocaleString()}</span>
               </div>
-              <div className="bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-200 text-center">
-                <span className="text-[10px] text-blue-600 block font-sans font-semibold">ส่งมอบตรงเวลา</span>
-                <span className="font-bold text-blue-900">{analysis.metrics.onTimeRate}%</span>
+              <div className="bg-blue-500/10 px-3 py-1.5 rounded-xl border border-blue-500/20 text-center">
+                <span className="text-[10px] text-blue-600 dark:text-blue-400 block font-sans font-semibold">ส่งมอบตรงเวลา</span>
+                <span className="font-bold text-blue-800 dark:text-blue-200">{analysis.metrics.onTimeRate}%</span>
               </div>
-              <div className="bg-purple-50 px-3 py-1.5 rounded-xl border border-purple-200 text-center">
-                <span className="text-[10px] text-purple-600 block font-sans font-semibold">เพื่อนช่วยเพื่อน</span>
-                <span className="font-bold text-purple-900">{analysis.metrics.collaborationPct}%</span>
+              <div className="bg-purple-500/10 px-3 py-1.5 rounded-xl border border-purple-500/20 text-center">
+                <span className="text-[10px] text-purple-600 dark:text-purple-400 block font-sans font-semibold">เพื่อนช่วยเพื่อน</span>
+                <span className="font-bold text-purple-800 dark:text-purple-200">{analysis.metrics.collaborationPct}%</span>
               </div>
             </div>
 
@@ -429,52 +429,52 @@ export default function TeamSwotTowsAnalysis({
           <div className="flex items-center justify-between mb-3.5">
             <div className="flex items-center gap-2">
               <Target size={17} className="text-[#E03131]" />
-              <h4 className="text-sm font-bold text-slate-900">
+              <h4 className="text-sm font-bold text-foreground">
                 1. การประเมินสภาวะแวดล้อม SWOT Analysis (4 มิติ)
               </h4>
             </div>
-            <span className="text-[11px] text-slate-500 font-medium">
+            <span className="text-[11px] text-muted font-medium">
               ปัจจัยภายใน (จุดแข็ง/จุดอ่อน) &amp; ปัจจัยภายนอก (โอกาส/อุปสรรค)
             </span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* S - Strengths */}
-            <div className="bg-emerald-50/30 rounded-2xl border border-emerald-200/80 p-4 space-y-3">
-              <div className="flex items-center justify-between border-b border-emerald-200/60 pb-2.5">
+            <div className="bg-emerald-500/5 rounded-2xl border border-emerald-500/20 p-4 space-y-3">
+              <div className="flex items-center justify-between border-b border-emerald-500/20 pb-2.5">
                 <div className="flex items-center gap-2">
                   <span className="w-6 h-6 rounded-lg bg-emerald-600 text-white font-black text-xs flex items-center justify-center shadow-2xs">
                     S
                   </span>
                   <div>
-                    <h5 className="text-xs font-black text-emerald-950">
+                    <h5 className="text-xs font-black text-emerald-800 dark:text-emerald-300">
                       Strengths (จุดแข็งภายใน)
                     </h5>
-                    <p className="text-[10.5px] text-emerald-700">ศักยภาพ มาตรฐานความคุ้มค่า และการส่งมอบตรงเวลา</p>
+                    <p className="text-[10.5px] text-emerald-600 dark:text-emerald-400">ศักยภาพ มาตรฐานความคุ้มค่า และการส่งมอบตรงเวลา</p>
                   </div>
                 </div>
-                <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-200">
+                <span className="text-[10px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/20">
                   {analysis.strengths.length} ปัจจัยหลัก
                 </span>
               </div>
 
               <div className="space-y-2.5">
                 {analysis.strengths.map(item => (
-                  <div key={item.id} className="bg-white p-3 rounded-xl border border-emerald-200/60 shadow-2xs space-y-1.5 hover:border-emerald-300 transition-colors">
+                  <div key={item.id} className="bg-surface p-3 rounded-xl border border-emerald-500/20 shadow-2xs space-y-1.5 hover:border-emerald-500/40 transition-colors">
                     <div className="flex items-start justify-between gap-2">
-                      <span className="text-xs font-bold text-slate-900 leading-snug">
+                      <span className="text-xs font-bold text-foreground leading-snug">
                         {item.title}
                       </span>
                       <span className={`text-[9.5px] font-bold px-2 py-0.5 rounded-md border shrink-0 whitespace-nowrap ${item.badgeColor}`}>
                         {item.metric}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                    <p className="text-[11px] text-muted leading-relaxed">
                       {item.desc}
                     </p>
-                    <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-[10px] text-slate-400">
+                    <div className="flex items-center justify-between pt-1 border-t border-surface-border text-[10px] text-muted">
                       <span>ที่มา: {item.source}</span>
-                      <span className="font-mono font-bold text-emerald-600">[{item.id}]</span>
+                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">[{item.id}]</span>
                     </div>
                   </div>
                 ))}
@@ -482,41 +482,41 @@ export default function TeamSwotTowsAnalysis({
             </div>
 
             {/* W - Weaknesses */}
-            <div className="bg-rose-50/30 rounded-2xl border border-rose-200/80 p-4 space-y-3">
-              <div className="flex items-center justify-between border-b border-rose-200/60 pb-2.5">
+            <div className="bg-rose-500/5 rounded-2xl border border-rose-500/20 p-4 space-y-3">
+              <div className="flex items-center justify-between border-b border-rose-500/20 pb-2.5">
                 <div className="flex items-center gap-2">
                   <span className="w-6 h-6 rounded-lg bg-rose-600 text-white font-black text-xs flex items-center justify-center shadow-2xs">
                     W
                   </span>
                   <div>
-                    <h5 className="text-xs font-black text-rose-950">
+                    <h5 className="text-xs font-black text-rose-800 dark:text-rose-300">
                       Weaknesses (จุดอ่อนภายใน)
                     </h5>
-                    <p className="text-[10.5px] text-rose-700">ข้อจำกัด คิวงานคั่งค้าง และจุดที่ต้องเพิ่มความคล่องตัว</p>
+                    <p className="text-[10.5px] text-rose-600 dark:text-rose-400">ข้อจำกัด คิวงานคั่งค้าง และจุดที่ต้องเพิ่มความคล่องตัว</p>
                   </div>
                 </div>
-                <span className="text-[10px] font-bold bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full border border-rose-200">
+                <span className="text-[10px] font-bold bg-rose-500/15 text-rose-700 dark:text-rose-300 px-2 py-0.5 rounded-full border border-rose-500/20">
                   {analysis.weaknesses.length} ประเด็นพัฒนา
                 </span>
               </div>
 
               <div className="space-y-2.5">
                 {analysis.weaknesses.map(item => (
-                  <div key={item.id} className="bg-white p-3 rounded-xl border border-rose-200/60 shadow-2xs space-y-1.5 hover:border-rose-300 transition-colors">
+                  <div key={item.id} className="bg-surface p-3 rounded-xl border border-rose-500/20 shadow-2xs space-y-1.5 hover:border-rose-500/40 transition-colors">
                     <div className="flex items-start justify-between gap-2">
-                      <span className="text-xs font-bold text-slate-900 leading-snug">
+                      <span className="text-xs font-bold text-foreground leading-snug">
                         {item.title}
                       </span>
                       <span className={`text-[9.5px] font-bold px-2 py-0.5 rounded-md border shrink-0 whitespace-nowrap ${item.badgeColor}`}>
                         {item.metric}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                    <p className="text-[11px] text-muted leading-relaxed">
                       {item.desc}
                     </p>
-                    <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-[10px] text-slate-400">
+                    <div className="flex items-center justify-between pt-1 border-t border-surface-border text-[10px] text-muted">
                       <span>ที่มา: {item.source}</span>
-                      <span className="font-mono font-bold text-rose-600">[{item.id}]</span>
+                      <span className="font-mono font-bold text-rose-600 dark:text-rose-400">[{item.id}]</span>
                     </div>
                   </div>
                 ))}
@@ -524,41 +524,41 @@ export default function TeamSwotTowsAnalysis({
             </div>
 
             {/* O - Opportunities */}
-            <div className="bg-blue-50/30 rounded-2xl border border-blue-200/80 p-4 space-y-3">
-              <div className="flex items-center justify-between border-b border-blue-200/60 pb-2.5">
+            <div className="bg-blue-500/5 rounded-2xl border border-blue-500/20 p-4 space-y-3">
+              <div className="flex items-center justify-between border-b border-blue-500/20 pb-2.5">
                 <div className="flex items-center gap-2">
                   <span className="w-6 h-6 rounded-lg bg-blue-600 text-white font-black text-xs flex items-center justify-center shadow-2xs">
                     O
                   </span>
                   <div>
-                    <h5 className="text-xs font-black text-blue-950">
+                    <h5 className="text-xs font-black text-blue-800 dark:text-blue-300">
                       Opportunities (โอกาสภายนอก)
                     </h5>
-                    <p className="text-[10.5px] text-blue-700">อุปสงค์สื่อดิจิทัล โครงการ PM และเทคโนโลยี AI</p>
+                    <p className="text-[10.5px] text-blue-600 dark:text-blue-400">อุปสงค์สื่อดิจิทัล โครงการ PM และเทคโนโลยี AI</p>
                   </div>
                 </div>
-                <span className="text-[10px] font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full border border-blue-200">
+                <span className="text-[10px] font-bold bg-blue-500/15 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full border border-blue-500/20">
                   {analysis.opportunities.length} โอกาสการเติบโต
                 </span>
               </div>
 
               <div className="space-y-2.5">
                 {analysis.opportunities.map(item => (
-                  <div key={item.id} className="bg-white p-3 rounded-xl border border-blue-200/60 shadow-2xs space-y-1.5 hover:border-blue-300 transition-colors">
+                  <div key={item.id} className="bg-surface p-3 rounded-xl border border-blue-500/20 shadow-2xs space-y-1.5 hover:border-blue-500/40 transition-colors">
                     <div className="flex items-start justify-between gap-2">
-                      <span className="text-xs font-bold text-slate-900 leading-snug">
+                      <span className="text-xs font-bold text-foreground leading-snug">
                         {item.title}
                       </span>
                       <span className={`text-[9.5px] font-bold px-2 py-0.5 rounded-md border shrink-0 whitespace-nowrap ${item.badgeColor}`}>
                         {item.metric}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                    <p className="text-[11px] text-muted leading-relaxed">
                       {item.desc}
                     </p>
-                    <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-[10px] text-slate-400">
+                    <div className="flex items-center justify-between pt-1 border-t border-surface-border text-[10px] text-muted">
                       <span>ที่มา: {item.source}</span>
-                      <span className="font-mono font-bold text-blue-600">[{item.id}]</span>
+                      <span className="font-mono font-bold text-blue-600 dark:text-blue-400">[{item.id}]</span>
                     </div>
                   </div>
                 ))}
@@ -566,41 +566,41 @@ export default function TeamSwotTowsAnalysis({
             </div>
 
             {/* T - Threats */}
-            <div className="bg-amber-50/30 rounded-2xl border border-amber-200/80 p-4 space-y-3">
-              <div className="flex items-center justify-between border-b border-amber-200/60 pb-2.5">
+            <div className="bg-amber-500/5 rounded-2xl border border-amber-500/20 p-4 space-y-3">
+              <div className="flex items-center justify-between border-b border-amber-500/20 pb-2.5">
                 <div className="flex items-center gap-2">
                   <span className="w-6 h-6 rounded-lg bg-amber-600 text-white font-black text-xs flex items-center justify-center shadow-2xs">
                     T
                   </span>
                   <div>
-                    <h5 className="text-xs font-black text-amber-950">
+                    <h5 className="text-xs font-black text-amber-800 dark:text-amber-300">
                       Threats (อุปสรรคภายนอก)
                     </h5>
-                    <p className="text-[10.5px] text-amber-700">งานแทรกด่วน ความผันผวนของสื่อ และข้อจำกัดกำลังคน</p>
+                    <p className="text-[10.5px] text-amber-600 dark:text-amber-400">งานแทรกด่วน ความผันผวนของสื่อ และข้อจำกัดกำลังคน</p>
                   </div>
                 </div>
-                <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-200">
+                <span className="text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/20">
                   {analysis.threats.length} ปัจจัยเสี่ยง
                 </span>
               </div>
 
               <div className="space-y-2.5">
                 {analysis.threats.map(item => (
-                  <div key={item.id} className="bg-white p-3 rounded-xl border border-amber-200/60 shadow-2xs space-y-1.5 hover:border-amber-300 transition-colors">
+                  <div key={item.id} className="bg-surface p-3 rounded-xl border border-amber-500/20 shadow-2xs space-y-1.5 hover:border-amber-500/40 transition-colors">
                     <div className="flex items-start justify-between gap-2">
-                      <span className="text-xs font-bold text-slate-900 leading-snug">
+                      <span className="text-xs font-bold text-foreground leading-snug">
                         {item.title}
                       </span>
                       <span className={`text-[9.5px] font-bold px-2 py-0.5 rounded-md border shrink-0 whitespace-nowrap ${item.badgeColor}`}>
                         {item.metric}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                    <p className="text-[11px] text-muted leading-relaxed">
                       {item.desc}
                     </p>
-                    <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-[10px] text-slate-400">
+                    <div className="flex items-center justify-between pt-1 border-t border-surface-border text-[10px] text-muted">
                       <span>ที่มา: {item.source}</span>
-                      <span className="font-mono font-bold text-amber-600">[{item.id}]</span>
+                      <span className="font-mono font-bold text-amber-600 dark:text-amber-400">[{item.id}]</span>
                     </div>
                   </div>
                 ))}
@@ -610,58 +610,58 @@ export default function TeamSwotTowsAnalysis({
         </div>
 
         {/* Section 2: TOWS Strategic Matrix (4 Quadrants) */}
-        <div className="pt-4 border-t border-slate-100">
+        <div className="pt-4 border-t border-surface-border">
           <div className="flex items-center justify-between mb-3.5">
             <div className="flex items-center gap-2">
-              <Compass size={17} className="text-indigo-600" />
-              <h4 className="text-sm font-bold text-slate-900">
+              <Compass size={17} className="text-indigo-600 dark:text-indigo-400" />
+              <h4 className="text-sm font-bold text-foreground">
                 2. เมทริกซ์กำหนดกลยุทธ์เชิงปฏิบัติการ TOWS Strategic Matrix
               </h4>
             </div>
-            <span className="text-[11px] text-slate-500 font-medium">
+            <span className="text-[11px] text-muted font-medium">
               การจับคู่ปัจจัย S-W x O-T กำหนดมาตรการขับเคลื่อน 4 ทิศทาง
             </span>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* SO Strategies */}
-            <div className="bg-emerald-50/25 rounded-2xl border border-emerald-300 p-4 space-y-3">
-              <div className="flex items-center justify-between border-b border-emerald-200 pb-2">
+            <div className="bg-emerald-500/5 rounded-2xl border border-emerald-500/30 p-4 space-y-3">
+              <div className="flex items-center justify-between border-b border-emerald-500/20 pb-2">
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-0.5 rounded-lg bg-emerald-600 text-white font-black text-xs shadow-2xs">
                     SO
                   </span>
                   <div>
-                    <h5 className="text-xs font-black text-emerald-950">
+                    <h5 className="text-xs font-black text-emerald-800 dark:text-emerald-300">
                       {analysis.tows.so.strategy}
                     </h5>
-                    <p className="text-[10.5px] text-emerald-700">{analysis.tows.so.theme}</p>
+                    <p className="text-[10.5px] text-emerald-600 dark:text-emerald-400">{analysis.tows.so.theme}</p>
                   </div>
                 </div>
-                <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-200 shrink-0">
+                <span className="text-[10px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/20 shrink-0">
                   จุดแข็ง x โอกาส
                 </span>
               </div>
 
               <div className="space-y-2.5">
                 {analysis.tows.so.tactics.map(tactic => (
-                  <div key={tactic.code} className="bg-white p-3.5 rounded-xl border border-emerald-200/80 shadow-2xs space-y-2">
+                  <div key={tactic.code} className="bg-surface p-3.5 rounded-xl border border-emerald-500/20 shadow-2xs space-y-2">
                     <div className="flex items-start gap-2">
-                      <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-mono font-bold shrink-0">
+                      <span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-[10px] font-mono font-bold shrink-0">
                         {tactic.code}
                       </span>
-                      <h6 className="text-xs font-bold text-slate-900 leading-snug">
+                      <h6 className="text-xs font-bold text-foreground leading-snug">
                         {tactic.title}
                       </h6>
                     </div>
-                    <p className="text-[11px] text-slate-600 leading-relaxed pl-6">
+                    <p className="text-[11px] text-muted leading-relaxed pl-6">
                       {tactic.detail}
                     </p>
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[10px] pl-6 flex-wrap gap-1">
-                      <span className="text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    <div className="flex items-center justify-between pt-2 border-t border-surface-border text-[10px] pl-6 flex-wrap gap-1">
+                      <span className="text-emerald-700 dark:text-emerald-300 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
                         ปัจจัยเชื่อมโยง: {tactic.links}
                       </span>
-                      <span className="text-slate-400 font-medium">แผนขับเคลื่อนหลัก</span>
+                      <span className="text-muted font-medium">แผนขับเคลื่อนหลัก</span>
                     </div>
                   </div>
                 ))}
@@ -669,43 +669,43 @@ export default function TeamSwotTowsAnalysis({
             </div>
 
             {/* WO Strategies */}
-            <div className="bg-blue-50/25 rounded-2xl border border-blue-300 p-4 space-y-3">
-              <div className="flex items-center justify-between border-b border-blue-200 pb-2">
+            <div className="bg-blue-500/5 rounded-2xl border border-blue-500/30 p-4 space-y-3">
+              <div className="flex items-center justify-between border-b border-blue-500/20 pb-2">
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-0.5 rounded-lg bg-blue-600 text-white font-black text-xs shadow-2xs">
                     WO
                   </span>
                   <div>
-                    <h5 className="text-xs font-black text-blue-950">
+                    <h5 className="text-xs font-black text-blue-800 dark:text-blue-300">
                       {analysis.tows.wo.strategy}
                     </h5>
-                    <p className="text-[10.5px] text-blue-700">{analysis.tows.wo.theme}</p>
+                    <p className="text-[10.5px] text-blue-600 dark:text-blue-400">{analysis.tows.wo.theme}</p>
                   </div>
                 </div>
-                <span className="text-[10px] font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full border border-blue-200 shrink-0">
+                <span className="text-[10px] font-bold bg-blue-500/15 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full border border-blue-500/20 shrink-0">
                   จุดอ่อน x โอกาส
                 </span>
               </div>
 
               <div className="space-y-2.5">
                 {analysis.tows.wo.tactics.map(tactic => (
-                  <div key={tactic.code} className="bg-white p-3.5 rounded-xl border border-blue-200/80 shadow-2xs space-y-2">
+                  <div key={tactic.code} className="bg-surface p-3.5 rounded-xl border border-blue-500/20 shadow-2xs space-y-2">
                     <div className="flex items-start gap-2">
-                      <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 text-[10px] font-mono font-bold shrink-0">
+                      <span className="px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-700 dark:text-blue-300 text-[10px] font-mono font-bold shrink-0">
                         {tactic.code}
                       </span>
-                      <h6 className="text-xs font-bold text-slate-900 leading-snug">
+                      <h6 className="text-xs font-bold text-foreground leading-snug">
                         {tactic.title}
                       </h6>
                     </div>
-                    <p className="text-[11px] text-slate-600 leading-relaxed pl-6">
+                    <p className="text-[11px] text-muted leading-relaxed pl-6">
                       {tactic.detail}
                     </p>
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[10px] pl-6 flex-wrap gap-1">
-                      <span className="text-blue-700 font-semibold bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                    <div className="flex items-center justify-between pt-2 border-t border-surface-border text-[10px] pl-6 flex-wrap gap-1">
+                      <span className="text-blue-700 dark:text-blue-300 font-semibold bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
                         ปัจจัยเชื่อมโยง: {tactic.links}
                       </span>
-                      <span className="text-slate-400 font-medium">มาตรการแก้ไข</span>
+                      <span className="text-muted font-medium">มาตรการแก้ไข</span>
                     </div>
                   </div>
                 ))}
@@ -713,43 +713,43 @@ export default function TeamSwotTowsAnalysis({
             </div>
 
             {/* ST Strategies */}
-            <div className="bg-amber-50/25 rounded-2xl border border-amber-300 p-4 space-y-3">
-              <div className="flex items-center justify-between border-b border-amber-200 pb-2">
+            <div className="bg-amber-500/5 rounded-2xl border border-amber-500/30 p-4 space-y-3">
+              <div className="flex items-center justify-between border-b border-amber-500/20 pb-2">
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-0.5 rounded-lg bg-amber-600 text-white font-black text-xs shadow-2xs">
                     ST
                   </span>
                   <div>
-                    <h5 className="text-xs font-black text-amber-950">
+                    <h5 className="text-xs font-black text-amber-800 dark:text-amber-300">
                       {analysis.tows.st.strategy}
                     </h5>
-                    <p className="text-[10.5px] text-amber-700">{analysis.tows.st.theme}</p>
+                    <p className="text-[10.5px] text-amber-600 dark:text-amber-400">{analysis.tows.st.theme}</p>
                   </div>
                 </div>
-                <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-200 shrink-0">
+                <span className="text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/20 shrink-0">
                   จุดแข็ง x อุปสรรค
                 </span>
               </div>
 
               <div className="space-y-2.5">
                 {analysis.tows.st.tactics.map(tactic => (
-                  <div key={tactic.code} className="bg-white p-3.5 rounded-xl border border-amber-200/80 shadow-2xs space-y-2">
+                  <div key={tactic.code} className="bg-surface p-3.5 rounded-xl border border-amber-500/20 shadow-2xs space-y-2">
                     <div className="flex items-start gap-2">
-                      <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-mono font-bold shrink-0">
+                      <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 text-[10px] font-mono font-bold shrink-0">
                         {tactic.code}
                       </span>
-                      <h6 className="text-xs font-bold text-slate-900 leading-snug">
+                      <h6 className="text-xs font-bold text-foreground leading-snug">
                         {tactic.title}
                       </h6>
                     </div>
-                    <p className="text-[11px] text-slate-600 leading-relaxed pl-6">
+                    <p className="text-[11px] text-muted leading-relaxed pl-6">
                       {tactic.detail}
                     </p>
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[10px] pl-6 flex-wrap gap-1">
-                      <span className="text-amber-700 font-semibold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                    <div className="flex items-center justify-between pt-2 border-t border-surface-border text-[10px] pl-6 flex-wrap gap-1">
+                      <span className="text-amber-700 dark:text-amber-300 font-semibold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
                         ปัจจัยเชื่อมโยง: {tactic.links}
                       </span>
-                      <span className="text-slate-400 font-medium">มาตรการป้องกัน</span>
+                      <span className="text-muted font-medium">มาตรการป้องกัน</span>
                     </div>
                   </div>
                 ))}
@@ -757,43 +757,43 @@ export default function TeamSwotTowsAnalysis({
             </div>
 
             {/* WT Strategies */}
-            <div className="bg-rose-50/25 rounded-2xl border border-rose-300 p-4 space-y-3">
-              <div className="flex items-center justify-between border-b border-rose-200 pb-2">
+            <div className="bg-rose-500/5 rounded-2xl border border-rose-500/30 p-4 space-y-3">
+              <div className="flex items-center justify-between border-b border-rose-500/20 pb-2">
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-0.5 rounded-lg bg-rose-600 text-white font-black text-xs shadow-2xs">
                     WT
                   </span>
                   <div>
-                    <h5 className="text-xs font-black text-rose-950">
+                    <h5 className="text-xs font-black text-rose-800 dark:text-rose-300">
                       {analysis.tows.wt.strategy}
                     </h5>
-                    <p className="text-[10.5px] text-rose-700">{analysis.tows.wt.theme}</p>
+                    <p className="text-[10.5px] text-rose-600 dark:text-rose-400">{analysis.tows.wt.theme}</p>
                   </div>
                 </div>
-                <span className="text-[10px] font-bold bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full border border-rose-200 shrink-0">
+                <span className="text-[10px] font-bold bg-rose-500/15 text-rose-700 dark:text-rose-300 px-2 py-0.5 rounded-full border border-rose-500/20 shrink-0">
                   จุดอ่อน x อุปสรรค
                 </span>
               </div>
 
               <div className="space-y-2.5">
                 {analysis.tows.wt.tactics.map(tactic => (
-                  <div key={tactic.code} className="bg-white p-3.5 rounded-xl border border-rose-200/80 shadow-2xs space-y-2">
+                  <div key={tactic.code} className="bg-surface p-3.5 rounded-xl border border-rose-500/20 shadow-2xs space-y-2">
                     <div className="flex items-start gap-2">
-                      <span className="px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 text-[10px] font-mono font-bold shrink-0">
+                      <span className="px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-700 dark:text-rose-300 text-[10px] font-mono font-bold shrink-0">
                         {tactic.code}
                       </span>
-                      <h6 className="text-xs font-bold text-slate-900 leading-snug">
+                      <h6 className="text-xs font-bold text-foreground leading-snug">
                         {tactic.title}
                       </h6>
                     </div>
-                    <p className="text-[11px] text-slate-600 leading-relaxed pl-6">
+                    <p className="text-[11px] text-muted leading-relaxed pl-6">
                       {tactic.detail}
                     </p>
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[10px] pl-6 flex-wrap gap-1">
-                      <span className="text-rose-700 font-semibold bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                    <div className="flex items-center justify-between pt-2 border-t border-surface-border text-[10px] pl-6 flex-wrap gap-1">
+                      <span className="text-rose-700 dark:text-rose-300 font-semibold bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">
                         ปัจจัยเชื่อมโยง: {tactic.links}
                       </span>
-                      <span className="text-slate-400 font-medium">มาตรการควบคุมความเสี่ยง</span>
+                      <span className="text-muted font-medium">มาตรการควบคุมความเสี่ยง</span>
                     </div>
                   </div>
                 ))}

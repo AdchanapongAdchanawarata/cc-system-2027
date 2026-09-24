@@ -85,7 +85,7 @@ export default function BackOfHouseCitizenshipCard({
   };
 
   return (
-    <div className="bg-white border-2 border-slate-200/90 rounded-2xl shadow-xs overflow-hidden transition-all">
+    <div className="bg-surface border-2 border-surface-border rounded-2xl shadow-xs overflow-hidden transition-all">
       {/* 1. Header / Dieter Rams Instrument Banner */}
       <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-start gap-3">
@@ -129,14 +129,14 @@ export default function BackOfHouseCitizenshipCard({
       </div>
 
       {/* 2. Four Pillars Guide Bar (Expandable) */}
-      <div className="border-b border-slate-200 bg-slate-50/70 p-3 sm:px-5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
-        <div className="flex items-center gap-2 text-slate-700 font-bold">
-          <ShieldCheck size={15} className="text-amber-600" />
+      <div className="border-b border-surface-border bg-muted/5 p-3 sm:px-5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+        <div className="flex items-center gap-2 text-foreground font-bold">
+          <ShieldCheck size={15} className="text-amber-500" />
           <span>โครงสร้างการคำนวณ 4 เสาหลัก (Core Pillars: 25 คะแนน/เสา รวม 100 คะแนนเต็ม)</span>
         </div>
         <button
           onClick={() => setShowPillarsGuide(!showPillarsGuide)}
-          className="text-slate-500 hover:text-slate-900 font-medium flex items-center gap-1 cursor-pointer transition-colors text-[11px]"
+          className="text-muted hover:text-foreground font-medium flex items-center gap-1 cursor-pointer transition-colors text-[11px]"
         >
           <span>{showPillarsGuide ? "ซ่อนรายละเอียดเกณฑ์" : "ดูสูตรการคำนวณ 4 เสา"}</span>
           {showPillarsGuide ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
@@ -144,68 +144,68 @@ export default function BackOfHouseCitizenshipCard({
       </div>
 
       {showPillarsGuide && (
-        <div className="p-4 sm:p-5 bg-slate-50 border-b border-slate-200 animate-in fade-in duration-150">
+        <div className="p-4 sm:p-5 bg-muted/5 border-b border-surface-border animate-in fade-in duration-150">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
             {/* Pillar 1 */}
-            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs space-y-1.5">
-              <div className="flex items-center justify-between text-blue-800 font-bold">
+            <div className="bg-surface p-3.5 rounded-xl border border-surface-border shadow-2xs space-y-1.5">
+              <div className="flex items-center justify-between text-blue-600 dark:text-blue-400 font-bold">
                 <span className="flex items-center gap-1.5">
-                  <Users size={14} className="text-blue-600" />
+                  <Users size={14} className="text-blue-600 dark:text-blue-400" />
                   <span>1. งานเกื้อกูลเพื่อน</span>
                 </span>
-                <span className="bg-blue-100 text-blue-900 font-mono px-1.5 py-0.5 rounded text-[10px]">
+                <span className="bg-blue-500/15 text-blue-700 dark:text-blue-300 font-mono px-1.5 py-0.5 rounded text-[10px]">
                   Max 25 pts
                 </span>
               </div>
-              <p className="text-[11px] text-slate-600 leading-relaxed">
+              <p className="text-[11px] text-muted leading-relaxed">
                 คำนวณจากงานช่วย (Assistant tasks) และสัดส่วนงานช่วยต่องานทั้งหมด ตรวจวัดพฤติกรรมการไม่ทิ้งเพื่อนและการพร้อมซัพพอร์ตโหลดของยูนิต
               </p>
             </div>
 
             {/* Pillar 2 */}
-            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs space-y-1.5">
-              <div className="flex items-center justify-between text-purple-800 font-bold">
+            <div className="bg-surface p-3.5 rounded-xl border border-surface-border shadow-2xs space-y-1.5">
+              <div className="flex items-center justify-between text-purple-600 dark:text-purple-400 font-bold">
                 <span className="flex items-center gap-1.5">
-                  <FileText size={14} className="text-purple-600" />
+                  <FileText size={14} className="text-purple-600 dark:text-purple-400" />
                   <span>2. ปฏิบัติการหลังบ้าน</span>
                 </span>
-                <span className="bg-purple-100 text-purple-900 font-mono px-1.5 py-0.5 rounded text-[10px]">
+                <span className="bg-purple-500/15 text-purple-700 dark:text-purple-300 font-mono px-1.5 py-0.5 rounded text-[10px]">
                   Max 25 pts
                 </span>
               </div>
-              <p className="text-[11px] text-slate-600 leading-relaxed">
+              <p className="text-[11px] text-muted leading-relaxed">
                 คำนวณจากงานภายใน (Internal tasks), งานเอกสาร, จัดซื้อ, เบิกจ่ายบิล และงานส่วนกลางของ STeP/CMU/RSP ที่ไม่มีตัวเลขหน้างานแต่ขับเคลื่อนทีม
               </p>
             </div>
 
             {/* Pillar 3 */}
-            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs space-y-1.5">
-              <div className="flex items-center justify-between text-amber-800 font-bold">
+            <div className="bg-surface p-3.5 rounded-xl border border-surface-border shadow-2xs space-y-1.5">
+              <div className="flex items-center justify-between text-amber-600 dark:text-amber-400 font-bold">
                 <span className="flex items-center gap-1.5">
-                  <Zap size={14} className="text-amber-600" />
+                  <Zap size={14} className="text-amber-600 dark:text-amber-400" />
                   <span>3. วินัยในระบบ</span>
                 </span>
-                <span className="bg-amber-100 text-amber-900 font-mono px-1.5 py-0.5 rounded text-[10px]">
+                <span className="bg-amber-500/15 text-amber-700 dark:text-amber-300 font-mono px-1.5 py-0.5 rounded text-[10px]">
                   Max 25 pts
                 </span>
               </div>
-              <p className="text-[11px] text-slate-600 leading-relaxed">
+              <p className="text-[11px] text-muted leading-relaxed">
                 คำนวณจากความใส่ใจอัปเดตระบบ ไม่อ้อยอิ่งงาน (Zero Stalled Tasks) และไม่มีงานเลยกำหนดเดดไลน์ (Zero Overdue)
               </p>
             </div>
 
             {/* Pillar 4 */}
-            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs space-y-1.5">
-              <div className="flex items-center justify-between text-emerald-800 font-bold">
+            <div className="bg-surface p-3.5 rounded-xl border border-surface-border shadow-2xs space-y-1.5">
+              <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 font-bold">
                 <span className="flex items-center gap-1.5">
-                  <CheckCircle2 size={14} className="text-emerald-600" />
+                  <CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400" />
                   <span>4. คุณภาพปิดงาน</span>
                 </span>
-                <span className="bg-emerald-100 text-emerald-900 font-mono px-1.5 py-0.5 rounded text-[10px]">
+                <span className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-mono px-1.5 py-0.5 rounded text-[10px]">
                   Max 25 pts
                 </span>
               </div>
-              <p className="text-[11px] text-slate-600 leading-relaxed">
+              <p className="text-[11px] text-muted leading-relaxed">
                 คำนวณจาก On-time delivery rate (ส่งมอบงานตรงกำหนดเวลา) และอัตราการปิดงานสำเร็จโดยไม่ถูกยกเลิกกลางคัน
               </p>
             </div>
@@ -214,15 +214,15 @@ export default function BackOfHouseCitizenshipCard({
       )}
 
       {/* 3. Tiers Filter Tabs */}
-      <div className="p-3.5 sm:px-5 border-b border-slate-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="p-3.5 sm:px-5 border-b border-surface-border bg-surface flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-xs font-bold text-slate-500 mr-1">กลุ่มเกียรติยศ:</span>
+          <span className="text-xs font-bold text-muted mr-1">กลุ่มเกียรติยศ:</span>
           <button
             onClick={() => setFilterTier("all")}
             className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
               filterTier === "all"
-                ? "bg-slate-900 text-white shadow-xs"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                ? "bg-primary text-white shadow-xs"
+                : "bg-muted/10 text-muted hover:bg-muted/20"
             }`}
           >
             ทั้งหมด ({sortedMembers.length})
@@ -243,7 +243,7 @@ export default function BackOfHouseCitizenshipCard({
             className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
               filterTier === "anchor"
                 ? "bg-purple-600 text-white shadow-xs"
-                : "bg-purple-50 text-purple-800 border border-purple-200 hover:bg-purple-100"
+                : "bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20 hover:bg-purple-500/20"
             }`}
           >
             <span>🤝 ผู้ส่งเสริมความร่วมมือ</span>
@@ -254,7 +254,7 @@ export default function BackOfHouseCitizenshipCard({
             className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
               filterTier === "contributor"
                 ? "bg-blue-600 text-white shadow-xs"
-                : "bg-blue-50 text-blue-800 border border-blue-200 hover:bg-blue-100"
+                : "bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20 hover:bg-blue-500/20"
             }`}
           >
             <span>🛡️ ผู้สนับสนุนมาตรฐาน</span>
@@ -262,13 +262,13 @@ export default function BackOfHouseCitizenshipCard({
           </button>
         </div>
 
-        <div className="text-[11px] text-slate-500 font-medium">
-          แสดง <strong className="text-slate-900">{filteredMembers.length}</strong> จาก {sortedMembers.length} คน
+        <div className="text-[11px] text-muted font-medium">
+          แสดง <strong className="text-foreground">{filteredMembers.length}</strong> จาก {sortedMembers.length} คน
         </div>
       </div>
 
       {/* 4. Leaderboard Grid */}
-      <div className="p-4 sm:p-5 divide-y divide-slate-100">
+      <div className="p-4 sm:p-5 divide-y divide-surface-border">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
           {filteredMembers.map((member, idx) => {
             const badge = getTierBadgeStyle(member.citizenshipTier);
@@ -279,8 +279,8 @@ export default function BackOfHouseCitizenshipCard({
               <div
                 key={member.assignee_id}
                 onClick={() => onSelectMember && onSelectMember(member.assignee_id)}
-                className={`bg-surface border border-surface-border hover:border-amber-300 rounded-xl p-3.5 sm:p-4 transition-all cursor-pointer group shadow-2xs hover:shadow-xs flex flex-col justify-between ${
-                  isTopRank ? "border-amber-300/80 bg-amber-50/20" : ""
+                className={`bg-surface border border-surface-border hover:border-amber-400 dark:hover:border-amber-500/50 rounded-xl p-3.5 sm:p-4 transition-all cursor-pointer group shadow-2xs hover:shadow-xs flex flex-col justify-between ${
+                  isTopRank ? "border-amber-500/40 bg-amber-500/5" : ""
                 }`}
               >
                 <div>
@@ -289,21 +289,21 @@ export default function BackOfHouseCitizenshipCard({
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${
                         idx === 0
-                          ? "bg-amber-100 text-amber-800 border border-amber-300 shadow-2xs"
+                          ? "bg-amber-500/20 text-amber-800 dark:text-amber-200 border border-amber-500/40 shadow-2xs"
                           : idx === 1
-                          ? "bg-slate-200 text-slate-800"
+                          ? "bg-muted/20 text-foreground"
                           : idx === 2
-                          ? "bg-amber-50 text-amber-900 border border-amber-200"
-                          : "bg-slate-100 text-slate-600"
+                          ? "bg-amber-500/10 text-amber-900 dark:text-amber-300 border border-amber-500/20"
+                          : "bg-muted/10 text-muted"
                       }`}>
                         {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx + 1}`}
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <h4 className="font-bold text-slate-900 text-sm truncate group-hover:text-amber-800 transition-colors">
+                          <h4 className="font-bold text-foreground text-sm truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                             {member.name}
                           </h4>
-                          <span className="text-[10px] font-bold text-slate-500 uppercase px-1.5 py-0.2 rounded bg-slate-100">
+                          <span className="text-[10px] font-bold text-muted uppercase px-1.5 py-0.2 rounded bg-muted/10">
                             {member.unit}
                           </span>
                         </div>
@@ -318,26 +318,26 @@ export default function BackOfHouseCitizenshipCard({
 
                     {/* Total BOH Score Badge */}
                     <div className="text-right shrink-0">
-                      <div className="text-[9.5px] uppercase font-bold text-slate-400 tracking-wider">
+                      <div className="text-[9.5px] uppercase font-bold text-muted tracking-wider">
                         BOH SCORE
                       </div>
-                      <div className="text-xl font-black font-mono text-amber-700 leading-tight">
+                      <div className="text-xl font-black font-mono text-amber-600 dark:text-amber-400 leading-tight">
                         {member.citizenshipScore}
-                        <span className="text-xs font-normal text-slate-400">/100</span>
+                        <span className="text-xs font-normal text-muted">/100</span>
                       </div>
                     </div>
                   </div>
 
                   {/* 4 Pillars Stacked Meter Bar */}
-                  <div className="space-y-1 mb-3 bg-slate-50/80 p-2.5 rounded-lg border border-slate-200/80">
-                    <div className="flex justify-between items-center text-[10px] font-bold text-slate-600">
+                  <div className="space-y-1 mb-3 bg-muted/5 p-2.5 rounded-lg border border-surface-border">
+                    <div className="flex justify-between items-center text-[10px] font-bold text-foreground">
                       <span>คะแนนแยก 4 มิติ:</span>
-                      <span className="font-mono text-slate-500">
+                      <span className="font-mono text-muted">
                         🤝{pillars.peerSupport} | 📋{pillars.internalOps} | ⚡{pillars.systemDiscipline} | 🎯{pillars.qualityClosure}
                       </span>
                     </div>
 
-                    <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden flex gap-0.5 p-[1px] border border-slate-200">
+                    <div className="w-full bg-muted/20 h-2.5 rounded-full overflow-hidden flex gap-0.5 p-[1px] border border-surface-border">
                       {/* Peer Support (Blue) */}
                       <div
                         style={{ width: `${(pillars.peerSupport / 100) * 100}%` }}
@@ -364,42 +364,42 @@ export default function BackOfHouseCitizenshipCard({
                       />
                     </div>
 
-                    <div className="flex justify-between items-center text-[9px] text-slate-500 font-mono pt-0.5">
-                      <span className="text-blue-700">ช่วยเพื่อน ({pillars.peerSupport})</span>
-                      <span className="text-purple-700">งานภายใน ({pillars.internalOps})</span>
-                      <span className="text-amber-700">วินัย ({pillars.systemDiscipline})</span>
-                      <span className="text-emerald-700">ส่งตรง ({pillars.qualityClosure})</span>
+                    <div className="flex justify-between items-center text-[9px] text-muted font-mono pt-0.5">
+                      <span className="text-blue-600 dark:text-blue-400">ช่วยเพื่อน ({pillars.peerSupport})</span>
+                      <span className="text-purple-600 dark:text-purple-400">งานภายใน ({pillars.internalOps})</span>
+                      <span className="text-amber-600 dark:text-amber-400">วินัย ({pillars.systemDiscipline})</span>
+                      <span className="text-emerald-600 dark:text-emerald-400">ส่งตรง ({pillars.qualityClosure})</span>
                     </div>
                   </div>
 
                   {/* Concrete Quantifiable Metrics Grid */}
                   <div className="grid grid-cols-3 gap-1.5 text-center text-[10.5px]">
-                    <div className="p-1.5 bg-slate-50 rounded-lg border border-slate-100">
-                      <div className="text-[9.5px] text-slate-500 font-medium">งานช่วยเกื้อกูล</div>
-                      <div className="font-bold font-mono text-blue-800">
+                    <div className="p-1.5 bg-muted/5 rounded-lg border border-surface-border">
+                      <div className="text-[9.5px] text-muted font-medium">งานช่วยเกื้อกูล</div>
+                      <div className="font-bold font-mono text-blue-700 dark:text-blue-300">
                         {member.assistantTaskCount} งาน
                       </div>
-                      <div className="text-[9px] text-slate-400 font-mono">
+                      <div className="text-[9px] text-muted font-mono">
                         ฿{member.assistantSaveCost.toLocaleString()}
                       </div>
                     </div>
 
-                    <div className="p-1.5 bg-slate-50 rounded-lg border border-slate-100">
-                      <div className="text-[9.5px] text-slate-500 font-medium">งานปฏิบัติการหลังบ้าน</div>
-                      <div className="font-bold font-mono text-purple-800">
+                    <div className="p-1.5 bg-muted/5 rounded-lg border border-surface-border">
+                      <div className="text-[9.5px] text-muted font-medium">งานปฏิบัติการหลังบ้าน</div>
+                      <div className="font-bold font-mono text-purple-700 dark:text-purple-300">
                         {member.internalTasksCount} งาน
                       </div>
-                      <div className="text-[9px] text-slate-400">
+                      <div className="text-[9px] text-muted">
                         STeP/CMU/RSP
                       </div>
                     </div>
 
-                    <div className="p-1.5 bg-slate-50 rounded-lg border border-slate-100">
-                      <div className="text-[9.5px] text-slate-500 font-medium">ส่งงานตรงเวลา</div>
-                      <div className="font-bold font-mono text-emerald-800">
+                    <div className="p-1.5 bg-muted/5 rounded-lg border border-surface-border">
+                      <div className="text-[9.5px] text-muted font-medium">ส่งงานตรงเวลา</div>
+                      <div className="font-bold font-mono text-emerald-700 dark:text-emerald-300">
                         {member.onTimeRate}%
                       </div>
-                      <div className="text-[9px] text-slate-400 font-mono">
+                      <div className="text-[9px] text-muted font-mono">
                         ปิดสำเร็จ {member.completedTasks}
                       </div>
                     </div>
@@ -407,14 +407,14 @@ export default function BackOfHouseCitizenshipCard({
                 </div>
 
                 {/* Footer Insight Note */}
-                <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px] text-slate-500">
-                  <span className="font-medium text-slate-600 truncate">
+                <div className="mt-2.5 pt-2 border-t border-surface-border flex items-center justify-between text-[10.5px] text-muted">
+                  <span className="font-medium text-foreground/80 truncate">
                     {member.citizenshipTier === "champion" && "🌟 โครงเสาหลักช่วยพยุงโหลดทีมสูงสุด"}
                     {member.citizenshipTier === "anchor" && "🤝 เป็นที่พึ่งพาและร่วมมือในการทำงาน"}
                     {member.citizenshipTier === "contributor" && "🛡️ มีวินัยและปฏิบัติตามมาตรฐานระบบดี"}
                     {member.citizenshipTier === "core" && "⚙️ เชี่ยวชาญการผลิตงานหลักของตนเอง"}
                   </span>
-                  <span className="text-amber-700 font-bold group-hover:translate-x-0.5 transition-transform shrink-0 flex items-center gap-0.5">
+                  <span className="text-amber-600 dark:text-amber-400 font-bold group-hover:translate-x-0.5 transition-transform shrink-0 flex items-center gap-0.5">
                     <span>ดูงาน</span>
                     <ArrowRight size={11} />
                   </span>

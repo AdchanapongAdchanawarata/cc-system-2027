@@ -232,7 +232,7 @@ export default function DashboardPage() {
                 onClick={() => handleSelectView("assignments")} 
                 className="flex flex-col items-center group cursor-pointer w-full focus:outline-none transition-all"
               >
-                <div className="w-36 h-36 rounded-full rams-circle animate-btn-glow shimmer-delay-1 flex items-center justify-center transition-all duration-300 mb-3 group-hover:scale-105 group-active:scale-95 shadow-md group-hover:shadow-xl" style={{ animationDelay: '0s' }}>
+                <div className="w-36 h-36 rounded-full rams-circle animate-btn-glow flex items-center justify-center transition-all duration-300 mb-3 group-hover:scale-105 group-active:scale-95 shadow-md group-hover:shadow-xl" style={{ animationDelay: '0s' }}>
                   <LayoutList size={48} className="text-foreground opacity-80 group-hover:opacity-100 group-hover:text-primary transition-colors duration-300" strokeWidth={1.5} />
                 </div>
                 <h2 className="text-xl font-bold mb-2 text-foreground tracking-wide group-hover:text-primary transition-colors">Tasks</h2>
@@ -243,13 +243,13 @@ export default function DashboardPage() {
             </div>
 
             {/* 2. Insights */}
-            <div className="flex flex-col items-center text-center animate-premium-fade" style={{ animationDelay: '300ms' }}>
+            <div className="flex flex-col items-center text-center animate-premium-fade" style={{ animationDelay: '200ms' }}>
               <button 
                 type="button"
                 onClick={() => handleSelectView("dashboards")} 
                 className="flex flex-col items-center group cursor-pointer w-full focus:outline-none transition-all"
               >
-                <div className="w-36 h-36 rounded-full rams-circle animate-btn-glow shimmer-delay-2 flex items-center justify-center transition-all duration-300 mb-3 group-hover:scale-105 group-active:scale-95 shadow-md group-hover:shadow-xl" style={{ animationDelay: '4s' }}>
+                <div className="w-36 h-36 rounded-full rams-circle animate-btn-glow flex items-center justify-center transition-all duration-300 mb-3 group-hover:scale-105 group-active:scale-95 shadow-md group-hover:shadow-xl" style={{ animationDelay: '0s' }}>
                   <LayoutDashboard size={48} className="text-foreground opacity-80 group-hover:opacity-100 group-hover:text-primary transition-colors duration-300" strokeWidth={1.5} />
                 </div>
                 <h2 className="text-xl font-bold mb-2 text-foreground tracking-wide group-hover:text-primary transition-colors">Insights</h2>
@@ -260,13 +260,13 @@ export default function DashboardPage() {
             </div>
 
             {/* 3. Back of House */}
-            <div className="flex flex-col items-center text-center animate-premium-fade" style={{ animationDelay: '400ms' }}>
+            <div className="flex flex-col items-center text-center animate-premium-fade" style={{ animationDelay: '250ms' }}>
               <button 
                 type="button"
                 onClick={() => handleSelectView("data-reports")} 
                 className="flex flex-col items-center group cursor-pointer w-full focus:outline-none transition-all"
               >
-                <div className="w-36 h-36 rounded-full rams-circle animate-btn-glow shimmer-delay-3 flex items-center justify-center transition-all duration-300 mb-3 group-hover:scale-105 group-active:scale-95 shadow-md group-hover:shadow-xl" style={{ animationDelay: '8s' }}>
+                <div className="w-36 h-36 rounded-full rams-circle animate-btn-glow flex items-center justify-center transition-all duration-300 mb-3 group-hover:scale-105 group-active:scale-95 shadow-md group-hover:shadow-xl" style={{ animationDelay: '0s' }}>
                   <FileText size={48} className="text-foreground opacity-80 group-hover:opacity-100 group-hover:text-primary transition-colors duration-300" strokeWidth={1.5} />
                 </div>
                 <h2 className="text-xl font-bold mb-2 text-foreground tracking-wide group-hover:text-primary transition-colors">Back of House</h2>

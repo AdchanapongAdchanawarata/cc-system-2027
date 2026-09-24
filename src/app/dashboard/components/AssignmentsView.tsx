@@ -718,21 +718,21 @@ export default function AssignmentsView() {
     .sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   return (
-    <div className="w-full flex flex-col h-[calc(100dvh-120px)] md:h-[calc(100vh-140px)] min-h-[520px] md:min-h-[580px] mb-4 bg-surface rounded-2xl border border-surface-border shadow-xs overflow-hidden p-3 sm:p-4 md:p-6 animate-in fade-in duration-200">
+    <div className="w-full flex flex-col h-[calc(100dvh-95px)] md:h-[calc(100vh-140px)] min-h-[520px] md:min-h-[580px] mb-2 sm:mb-4 bg-surface rounded-2xl border border-surface-border shadow-xs overflow-hidden p-2.5 sm:p-4 md:p-6 animate-in fade-in duration-200">
       
       {/* Top Header */}
-      <div className="flex flex-col gap-3.5 mb-4 sm:mb-5 pb-3 sm:pb-4 border-b border-surface-border print:hidden shrink-0">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col gap-2 sm:gap-3.5 mb-2.5 sm:mb-5 pb-2.5 sm:pb-4 border-b border-surface-border print:hidden shrink-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-3">
           <div>
-            <div className="flex items-center gap-2.5">
-              <span className="p-2 rounded-xl bg-[#E03131]/10 text-[#E03131]">
-                <LayoutList size={22} />
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 sm:p-2 rounded-xl bg-[#E03131]/10 text-[#E03131]">
+                <LayoutList size={20} className="sm:w-[22px] sm:h-[22px]" />
               </span>
-              <h2 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-foreground">
                 Tasks
               </h2>
             </div>
-            <p className="text-xs md:text-sm text-muted-foreground mt-1">
+            <p className="text-[11px] sm:text-xs md:text-sm text-muted-foreground mt-0.5 sm:mt-1">
               บริหารจัดการงานประจำวันของทีม กระจายภาระงาน (Workloads) และอัปเดตความคืบหน้าโปรเจกต์
             </p>
           </div>
@@ -740,15 +740,15 @@ export default function AssignmentsView() {
       </div>
 
       {/* Header & Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-3 shrink-0">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-2.5 sm:mb-4 gap-2 sm:gap-3 shrink-0">
         
         {/* Left: Unit Filter Pills */}
-        <div className="flex bg-surface p-1 rounded-full border border-surface-border shadow-xs overflow-x-auto no-scrollbar">
+        <div className="flex bg-surface p-1 rounded-full border border-surface-border shadow-xs overflow-x-auto no-scrollbar w-full md:w-auto">
           {["All CC", "Creative", "Content", "PR", "Internal"].map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium rounded-full transition-all whitespace-nowrap cursor-pointer ${
+              className={`px-3 sm:px-4 py-1 text-xs sm:text-sm font-medium rounded-full transition-all whitespace-nowrap cursor-pointer shrink-0 ${
                 filter === f ? "bg-[#E03131] text-white shadow-xs font-semibold" : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
               }`}
             >
@@ -757,79 +757,82 @@ export default function AssignmentsView() {
           ))}
         </div>
 
-        {/* Right: History Controls (Undo / Redo 50 steps), Trash Bin & Search */}
-        <div className="flex items-center gap-2 flex-wrap">
+        {/* Right: History Controls, Trash Bin & Search */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto">
           
-          {/* History Controls: Back ↩ & Forward ↪ */}
-          <div className="flex items-center bg-surface border border-surface-border rounded-full p-1 shadow-xs gap-1">
-            <button
-              onClick={handleUndo}
-              disabled={!canUndo}
-              className={`p-1.5 rounded-full transition-all flex items-center gap-1 px-2.5 text-xs font-semibold ${
-                canUndo
-                  ? "text-foreground hover:bg-muted/50 active:scale-95 cursor-pointer"
-                  : "text-muted-foreground/40 cursor-not-allowed opacity-50"
-              }`}
-              title={canUndo ? `ย้อนกลับ (Ctrl+Z) - ย้อนได้อีก ${undoCount}/50 ครั้ง` : "ไม่มีประวัติให้ย้อนกลับ"}
-            >
-              <Undo2 size={15} />
-              <span className="hidden sm:inline">Back</span>
-              {undoCount > 0 && (
-                <span className="text-[10px] bg-muted text-foreground rounded-full px-1.5 py-0.2">
-                  {undoCount}
-                </span>
-              )}
-            </button>
-
-            <div className="w-[1px] h-4 bg-surface-border" />
-
-            <button
-              onClick={handleRedo}
-              disabled={!canRedo}
-              className={`p-1.5 rounded-full transition-all flex items-center gap-1 px-2.5 text-xs font-semibold ${
-                canRedo
-                  ? "text-foreground hover:bg-muted/50 active:scale-95 cursor-pointer"
-                  : "text-muted-foreground/40 cursor-not-allowed opacity-50"
-              }`}
-              title={canRedo ? `ไปข้างหน้า (Ctrl+Y / Ctrl+Shift+Z) - ทำซ้ำได้อีก ${redoCount}/50 ครั้ง` : "ไม่มีประวัติให้ไปข้างหน้า"}
-            >
-              <span className="hidden sm:inline">Forward</span>
-              <Redo2 size={15} />
-              {redoCount > 0 && (
-                <span className="text-[10px] bg-muted text-foreground rounded-full px-1.5 py-0.2">
-                  {redoCount}
-                </span>
-              )}
-            </button>
-          </div>
-
-          {/* Trash Bin Button with Counter Badge */}
-          <button
-            onClick={() => setIsTrashOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface border border-surface-border shadow-xs text-xs font-semibold text-foreground hover:border-rose-300 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all cursor-pointer relative"
-            title="เปิดถังขยะ (Trash Bin) เพื่อดูกระดาษที่ถูกลบ หรือ Restore กู้คืน"
-          >
-            <Trash2 size={15} className={trashedBriefs.length > 0 ? "text-rose-500" : "text-muted-foreground"} />
-            <span className="hidden sm:inline">ถังขยะ</span>
-            {trashedBriefs.length > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px] font-bold">
-                {trashedBriefs.length}
-              </span>
-            )}
-          </button>
-
-          {/* Search Bar */}
-          <div className="relative flex-1 min-w-[140px] sm:flex-initial">
+          {/* Search Bar - Full width on mobile */}
+          <div className="relative w-full sm:w-56 md:w-60 order-1 sm:order-2">
             <input 
               type="text" 
               placeholder="ค้นหา รหัส, ชื่อ, ข้อความ..." 
-              className="pl-9 pr-4 py-1.5 text-xs sm:text-sm rounded-full border border-surface-border focus:outline-none focus:border-primary w-full sm:w-52 md:w-60 shadow-xs bg-surface text-foreground"
+              className="pl-8 sm:pl-9 pr-3 sm:pr-4 py-1.5 text-xs sm:text-sm rounded-full border border-surface-border focus:outline-none focus:border-primary w-full shadow-xs bg-surface text-foreground"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <svg className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
+          </div>
+
+          {/* Action Pills Row on Mobile */}
+          <div className="flex items-center justify-between sm:justify-start gap-2 order-2 sm:order-1">
+            {/* History Controls: Back ↩ & Forward ↪ */}
+            <div className="flex items-center bg-surface border border-surface-border rounded-full p-0.5 sm:p-1 shadow-xs gap-1">
+              <button
+                onClick={handleUndo}
+                disabled={!canUndo}
+                className={`p-1 sm:p-1.5 rounded-full transition-all flex items-center gap-1 px-2 text-xs font-semibold ${
+                  canUndo
+                    ? "text-foreground hover:bg-muted/50 active:scale-95 cursor-pointer"
+                    : "text-muted-foreground/40 cursor-not-allowed opacity-50"
+                }`}
+                title={canUndo ? `ย้อนกลับ (Ctrl+Z) - ย้อนได้อีก ${undoCount}/50 ครั้ง` : "ไม่มีประวัติให้ย้อนกลับ"}
+              >
+                <Undo2 size={13} className="sm:w-[15px] sm:h-[15px]" />
+                <span className="hidden sm:inline">Back</span>
+                {undoCount > 0 && (
+                  <span className="text-[9px] sm:text-[10px] bg-muted text-foreground rounded-full px-1.5 py-0.2">
+                    {undoCount}
+                  </span>
+                )}
+              </button>
+
+              <div className="w-[1px] h-3.5 bg-surface-border" />
+
+              <button
+                onClick={handleRedo}
+                disabled={!canRedo}
+                className={`p-1 sm:p-1.5 rounded-full transition-all flex items-center gap-1 px-2 text-xs font-semibold ${
+                  canRedo
+                    ? "text-foreground hover:bg-muted/50 active:scale-95 cursor-pointer"
+                    : "text-muted-foreground/40 cursor-not-allowed opacity-50"
+                }`}
+                title={canRedo ? `ไปข้างหน้า (Ctrl+Y / Ctrl+Shift+Z) - ทำซ้ำได้อีก ${redoCount}/50 ครั้ง` : "ไม่มีประวัติให้ไปข้างหน้า"}
+              >
+                <span className="hidden sm:inline">Forward</span>
+                <Redo2 size={13} className="sm:w-[15px] sm:h-[15px]" />
+                {redoCount > 0 && (
+                  <span className="text-[9px] sm:text-[10px] bg-muted text-foreground rounded-full px-1.5 py-0.2">
+                    {redoCount}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Trash Bin Button with Counter Badge */}
+            <button
+              onClick={() => setIsTrashOpen(true)}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-surface border border-surface-border shadow-xs text-xs font-semibold text-foreground hover:border-rose-300 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer relative"
+              title="เปิดถังขยะ (Trash Bin) เพื่อดูกระดาษที่ถูกลบ หรือ Restore กู้คืน"
+            >
+              <Trash2 size={13} className={trashedBriefs.length > 0 ? "text-rose-500" : "text-muted-foreground"} />
+              <span>ถังขยะ</span>
+              {trashedBriefs.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[9.5px] sm:text-[10px] font-bold">
+                  {trashedBriefs.length}
+                </span>
+              )}
+            </button>
           </div>
 
         </div>
@@ -842,23 +845,27 @@ export default function AssignmentsView() {
         </div>
       )}
 
-      {/* Mobile Kanban Column Switcher (Visible on mobile/tablet, hidden on md+) */}
-      <div className="flex md:hidden items-center bg-slate-100 p-1.5 rounded-2xl gap-1.5 mb-3 shrink-0 overflow-x-auto no-scrollbar border border-slate-200 shadow-2xs">
+      {/* Mobile Kanban Column Switcher: 4-Column Grid, Zero Horizontal Overflow, 100% Fit */}
+      <div className="grid grid-cols-4 md:hidden bg-slate-100 p-1 rounded-2xl gap-1 mb-2.5 shrink-0 border border-slate-200 shadow-2xs w-full">
         {COLUMNS.map((col) => {
           const count = displayBriefs.filter(b => b.status === col.id).length;
           const isActive = mobileStatusTab === col.id;
+          const mobileLabel = 
+            col.id === 'pending' ? 'Pending' :
+            col.id === 'in_progress' ? 'Progress' :
+            col.id === 'completed' ? 'Done' : 'Cancel';
           return (
             <button
               key={col.id}
               onClick={() => setMobileStatusTab(col.id)}
-              className={`shrink-0 flex-1 min-w-fit py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
+              className={`w-full py-1.5 px-0.5 rounded-xl text-[10.5px] sm:text-xs font-bold transition-all flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 cursor-pointer ${
                 isActive
-                  ? "bg-white text-slate-900 shadow-sm border border-slate-200"
+                  ? "bg-white text-slate-900 shadow-xs border border-slate-200"
                   : "text-slate-500 hover:text-slate-800"
               }`}
             >
-              <span>{col.shortLabel}</span>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+              <span className="truncate">{mobileLabel}</span>
+              <span className={`px-1.5 py-0.2 rounded-full text-[9px] sm:text-[10px] font-bold ${
                 isActive ? "bg-slate-900 text-white" : "bg-slate-200 text-slate-600"
               }`}>
                 {count}
@@ -880,8 +887,8 @@ export default function AssignmentsView() {
             onDrop={(e) => handleDrop(e, col.id)}
           >
             
-            {/* Column Header */}
-            <div className={`flex items-center justify-between mb-3 px-3.5 py-2.5 rounded-xl border border-t-4 shadow-2xs shrink-0 ${col.headerBg}`}>
+            {/* Column Header: Hidden on mobile (since top tab switcher already displays it); Visible on md+ */}
+            <div className={`hidden md:flex items-center justify-between mb-3 px-3.5 py-2.5 rounded-xl border border-t-4 shadow-2xs shrink-0 ${col.headerBg}`}>
               <h3 className="font-bold text-sm uppercase tracking-wide">{col.shortLabel}</h3>
               <span className={`text-xs font-bold px-2 py-0.5 rounded-full shadow-2xs ${col.badgeBg}`}>
                 {displayBriefs.filter(b => b.status === col.id).length}

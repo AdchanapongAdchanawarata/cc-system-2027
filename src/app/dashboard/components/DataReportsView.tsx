@@ -197,7 +197,7 @@ export default function DataReportsView({ onSubReportChange }: DataReportsViewPr
         </div>
 
         {/* 8 Rams Circular Buttons Grid (4 Columns on Desktop) */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-6 sm:gap-8 md:gap-10 w-full max-w-6xl px-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-3.5 sm:gap-8 md:gap-10 w-full max-w-6xl px-1 sm:px-4">
           {reports.map((report) => {
             const Icon = report.icon;
             return (
@@ -212,10 +212,10 @@ export default function DataReportsView({ onSubReportChange }: DataReportsViewPr
                   className="flex flex-col items-center group cursor-pointer w-full focus:outline-none transition-all"
                 >
                   {/* Dieter Rams Skeuomorphic Circular Button */}
-                  <div className="w-28 h-28 sm:w-32 md:w-36 sm:h-32 md:h-36 rounded-full rams-circle animate-btn-glow flex items-center justify-center transition-all duration-300 mb-3 sm:mb-4 group-hover:scale-105 group-active:scale-95 shadow-md group-hover:shadow-xl relative">
+                  <div className="w-24 h-24 sm:w-32 md:w-36 sm:h-32 md:h-36 rounded-full rams-circle animate-btn-glow flex items-center justify-center transition-all duration-300 mb-2 sm:mb-4 group-hover:scale-105 group-active:scale-95 shadow-md group-hover:shadow-xl relative">
                     <Icon 
-                      size={40} 
-                      className="text-slate-800 opacity-80 group-hover:opacity-100 group-hover:text-primary transition-colors duration-300" 
+                      size={34} 
+                      className="text-slate-800 opacity-80 group-hover:opacity-100 group-hover:text-primary transition-colors duration-300 sm:w-10 sm:h-10" 
                       strokeWidth={1.5} 
                     />
                   </div>

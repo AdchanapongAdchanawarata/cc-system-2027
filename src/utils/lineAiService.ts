@@ -41,6 +41,37 @@ export const TEAM_MEMBERS_MAP: Record<string, TeamMemberInfo> = {
   "ต้า": { fullName: "ฐิติยา ทองประภา", code: "TTY", role: "Content Marketing Specialist", unit: "Content Marketing" },
 };
 
+// Order prioritized to match longer names first (e.g. "เอ็นจอย" before "จอย")
+const MATCHABLE_MEMBERS = [
+  { nick: "เอ็นจอย", code: "SLR", info: TEAM_MEMBERS_MAP["เอ็นจอย"] },
+  { nick: "ลูกอิน", code: "STK", info: TEAM_MEMBERS_MAP["ลูกอิน"] },
+  { nick: "จ๊อบ", code: "AA", info: TEAM_MEMBERS_MAP["จ๊อบ"] },
+  { nick: "วา", code: "WK", info: TEAM_MEMBERS_MAP["วา"] },
+  { nick: "ก้อง", code: "IK", info: TEAM_MEMBERS_MAP["ก้อง"] },
+  { nick: "จอย", code: "RL", info: TEAM_MEMBERS_MAP["จอย"] },
+  { nick: "พิม", code: "AC", info: TEAM_MEMBERS_MAP["พิม"] },
+  { nick: "เยียร์", code: "LLP", info: TEAM_MEMBERS_MAP["เยียร์"] },
+  { nick: "นิน", code: "MTN", info: TEAM_MEMBERS_MAP["นิน"] },
+  { nick: "โอ๊ต", code: "CNB", info: TEAM_MEMBERS_MAP["โอ๊ต"] },
+  { nick: "แก้ว", code: "KYK", info: TEAM_MEMBERS_MAP["แก้ว"] },
+  { nick: "ต้า", code: "TTY", info: TEAM_MEMBERS_MAP["ต้า"] },
+];
+
+export interface MemberStatData {
+  nick: string;
+  fullName: string;
+  code: string;
+  role: string;
+  unit: string;
+  saveCost: number;
+  profit: number;
+  count: number;
+  completed: number;
+  in_progress: number;
+  pending: number;
+  activeTasks: string[];
+}
+
 export interface WorkloadAnalytics {
   totals: {
     total: number;
@@ -50,38 +81,28 @@ export interface WorkloadAnalytics {
     saveCostTotal: number;
     profitTotal: number;
   };
-  memberStats: Record<string, {
-    fullName: string;
-    code: string;
-    role: string;
-    unit: string;
-    pending: number;
-    in_progress: number;
+  memberStats: Record<string, MemberStatData>;
+  pendingRanking: MemberStatData[];
+  topPending: MemberStatData | null;
+  saveCostRanking: MemberStatData[];
+  topSaveCostMember: MemberStatData | null;
+  topProductionSaveCostMember: MemberStatData | null;
+  unitFinancials: Record<string, {
+    saveCost: number;
+    profit: number;
+    count: number;
     completed: number;
-    activeTasks: string[];
-  }>;
-  pendingRanking: Array<{
-    nick: string;
-    fullName: string;
-    code: string;
-    role: string;
-    unit: string;
     pending: number;
-    in_progress: number;
-    completed: number;
   }>;
-  topPending: {
-    nick: string;
-    code: string;
-    unit: string;
-    pending: number;
-    role: string;
+  topSaveCostUnit: {
+    name: string;
+    saveCost: number;
   } | null;
   unassignedCount: number;
 }
 
 /**
- * Synthesizes deep workload analytics from live briefs data
+ * Synthesizes deep workload analytics from live briefs data including granular financial metrics
  */
 export function analyzeWorkload(briefs: any[]): WorkloadAnalytics {
   let pending = 0;
@@ -90,10 +111,14 @@ export function analyzeWorkload(briefs: any[]): WorkloadAnalytics {
   let saveCostTotal = 0;
   let profitTotal = 0;
 
-  const memberStats: Record<string, any> = {};
+  const memberStats: Record<string, MemberStatData> = {};
   for (const [nick, info] of Object.entries(TEAM_MEMBERS_MAP)) {
     memberStats[nick] = {
+      nick,
       ...info,
+      saveCost: 0,
+      profit: 0,
+      count: 0,
       pending: 0,
       in_progress: 0,
       completed: 0,
@@ -101,14 +126,25 @@ export function analyzeWorkload(briefs: any[]): WorkloadAnalytics {
     };
   }
   memberStats["ยังไม่ระบุผู้รับผิดชอบ"] = {
+    nick: "ยังไม่ระบุ",
     fullName: "รอจัดสรรผู้รับผิดชอบ",
     code: "-",
     role: "Unassigned Queue",
     unit: "-",
+    saveCost: 0,
+    profit: 0,
+    count: 0,
     pending: 0,
     in_progress: 0,
     completed: 0,
     activeTasks: [],
+  };
+
+  const unitFinancials: Record<string, { saveCost: number; profit: number; count: number; completed: number; pending: number }> = {
+    "Management (บริหารทีม)": { saveCost: 0, profit: 0, count: 0, completed: 0, pending: 0 },
+    "Creative Designer (งานสร้างสรรค์/ออกแบบ)": { saveCost: 0, profit: 0, count: 0, completed: 0, pending: 0 },
+    "PR & Communication (สื่อสารองค์กร/RSP)": { saveCost: 0, profit: 0, count: 0, completed: 0, pending: 0 },
+    "Content Marketing (คอนเทนต์/บทความ)": { saveCost: 0, profit: 0, count: 0, completed: 0, pending: 0 },
   };
 
   briefs.forEach(b => {
@@ -117,8 +153,10 @@ export function analyzeWorkload(briefs: any[]): WorkloadAnalytics {
     else if (st === "in_progress" || st === "progress") inProgress++;
     else pending++;
 
-    saveCostTotal += Number(b.details?.save_cost) || 0;
-    profitTotal += Number(b.details?.profit) || 0;
+    const sc = Number(b.details?.save_cost) || Number(b.details?.profit) || Number(b.details?.revenue) || 0;
+    const pr = Number(b.details?.profit) || 0;
+    saveCostTotal += sc;
+    profitTotal += pr;
 
     const ass = (
       b.assignees?.name ||
@@ -129,15 +167,19 @@ export function analyzeWorkload(briefs: any[]): WorkloadAnalytics {
     ).trim();
 
     let matchedNick = "";
-    for (const [nick, info] of Object.entries(TEAM_MEMBERS_MAP)) {
-      if (ass.includes(nick) || (info.code && ass.includes(info.code))) {
-        matchedNick = nick;
+    for (const item of MATCHABLE_MEMBERS) {
+      if (ass.includes(item.code) || ass.includes(item.nick)) {
+        matchedNick = item.nick;
         break;
       }
     }
     if (!matchedNick) matchedNick = "ยังไม่ระบุผู้รับผิดชอบ";
 
     const stat = memberStats[matchedNick];
+    stat.count += 1;
+    stat.saveCost += sc;
+    stat.profit += pr;
+
     if (st === "completed") {
       stat.completed++;
     } else if (st === "in_progress" || st === "progress") {
@@ -147,28 +189,58 @@ export function analyzeWorkload(briefs: any[]): WorkloadAnalytics {
       stat.pending++;
       if (stat.activeTasks.length < 5) stat.activeTasks.push(b.project_name);
     }
+
+    // Accumulate to units
+    let unitKey = "";
+    if (stat.unit === "Management") unitKey = "Management (บริหารทีม)";
+    else if (stat.unit === "Creative") unitKey = "Creative Designer (งานสร้างสรรค์/ออกแบบ)";
+    else if (stat.unit === "PR & Communication") unitKey = "PR & Communication (สื่อสารองค์กร/RSP)";
+    else if (stat.unit === "Content Marketing") unitKey = "Content Marketing (คอนเทนต์/บทความ)";
+
+    if (unitKey && unitFinancials[unitKey]) {
+      unitFinancials[unitKey].saveCost += sc;
+      unitFinancials[unitKey].profit += pr;
+      unitFinancials[unitKey].count += 1;
+      if (st === "completed") unitFinancials[unitKey].completed++;
+      else unitFinancials[unitKey].pending++;
+    }
   });
 
+  // Ranking by pending tasks
   const pendingRanking = Object.entries(memberStats)
     .filter(([k]) => k !== "ยังไม่ระบุผู้รับผิดชอบ")
-    .map(([nick, s]: [string, any]) => ({ nick, ...s }))
+    .map(([, s]) => s)
     .sort((a, b) => b.pending - a.pending);
 
   const topPending = pendingRanking.length > 0 && pendingRanking[0].pending > 0
-    ? {
-        nick: pendingRanking[0].nick,
-        code: pendingRanking[0].code,
-        unit: pendingRanking[0].unit,
-        pending: pendingRanking[0].pending,
-        role: pendingRanking[0].role
-      }
+    ? pendingRanking[0]
     : null;
+
+  // Ranking by Save Cost
+  const saveCostRanking = Object.entries(memberStats)
+    .filter(([k]) => k !== "ยังไม่ระบุผู้รับผิดชอบ")
+    .map(([, s]) => s)
+    .sort((a, b) => b.saveCost - a.saveCost);
+
+  const topSaveCostMember = saveCostRanking.length > 0 ? saveCostRanking[0] : null;
+
+  // Top save cost in operational/production units (excluding Management)
+  const topProductionSaveCostMember = saveCostRanking.find(m => m.unit !== "Management") || null;
+
+  // Top unit by Save Cost
+  const sortedUnits = Object.entries(unitFinancials).sort((a, b) => b[1].saveCost - a[1].saveCost);
+  const topSaveCostUnit = sortedUnits.length > 0 ? { name: sortedUnits[0][0], saveCost: sortedUnits[0][1].saveCost } : null;
 
   return {
     totals: { total: briefs.length, pending, inProgress, completed, saveCostTotal, profitTotal },
     memberStats,
     pendingRanking,
     topPending,
+    saveCostRanking,
+    topSaveCostMember,
+    topProductionSaveCostMember,
+    unitFinancials,
+    topSaveCostUnit,
     unassignedCount: memberStats["ยังไม่ระบุผู้รับผิดชอบ"].pending,
   };
 }
@@ -183,7 +255,7 @@ export async function getLiveDataContext() {
   try {
     const { data: briefs } = await supabase
       .from("briefs")
-      .select("id, project_name, unit, status, created_at, deadline, details, coordinator_nickname, assignees(name, email)")
+      .select("id, project_name, unit, status, created_at, deadline, details, coordinator_nickname, assignee_id, assignees(id, name, email)")
       .order("created_at", { ascending: false })
       .limit(100);
 
@@ -231,7 +303,11 @@ export async function queryLineAI(
     const systemPrompt = `คุณคือ "น้อง CC" ผู้ช่วย AI น้องเล็ก Gen Z ประจำทีม Creative and Communication (CC) ของ STeP มหาวิทยาลัยเชียงใหม่ 🌸✨
 
 🎯 กฎเหล็กสำคัญระดับสูงสุด (Strict Executive Guidelines):
-1. **ห้ามใช้รหัสตัวชี้วัดเด็ดขาด (Strict No-Code Rule):** ห้ามตอบเป็นรหัสเทคนิคอล เช่น ห้ามใช้ T18KR1, T18KR2, T18KR3, T18KR4, KR1, KR2, R1, KRI 1 โดยเด็ดขาด! ให้เรียกเป็น "ชื่อตัวชี้วัด" ภาษาไทยที่ทุกคนและผู้บริหารเข้าใจทันทีเสมอ:
+1. **ห้ามตอบเด็ดขาดว่าระบบไม่มีข้อมูลแยกรายบุคคลหรือรายยูนิต (Strict Full System Awareness):**
+   ในระบบ CC Insights Portal มีการบันทึกและคำนวณตัวชี้วัดมูลค่าการประหยัดงบประมาณ (Save Cost) และผลงานแยกรายบุคคลทั้ง 12 คน และแยกตาม 4 ยูนิตอย่างแม่นยำชัดเจนตามสถิติด้านล่าง! ห้ามอ้างว่าไม่มีข้อมูลหรือไม่แยกรายบุคคลเด็ดขาด!
+
+2. **ห้ามใช้รหัสตัวชี้วัดเด็ดขาด (Strict No-Code Rule):**
+   ห้ามตอบเป็นรหัสเทคนิคอล เช่น ห้ามใช้ T18KR1, T18KR2, T18KR3, T18KR4, KR1, KR2, R1, KRI 1 โดยเด็ดขาด! ให้เรียกเป็น "ชื่อตัวชี้วัด" ภาษาไทยที่ทุกคนและผู้บริหารเข้าใจทันทีเสมอ:
    - "ผลงานสนับสนุนภายในองค์กร (STeP)"
    - "ผลงานสนับสนุนภายนอก มช. และเครือข่าย RSP"
    - "มูลค่าการประหยัดงบประมาณ (Save Cost)"
@@ -239,15 +315,15 @@ export async function queryLineAI(
    - "ความพึงพอใจของผู้รับบริการ (CSAT)"
    - "อัตราการส่งมอบงานตรงต่อเวลา"
 
-2. **การรายงานเชิงวิเคราะห์ต้องมี 3 มิติเสมอ (Actionable Analytical Framework):**
+3. **การรายงานเชิงวิเคราะห์ต้องมี 3 มิติเสมอ (Actionable Analytical Framework):**
    การบอกแค่เพียงข้อมูลตัวเลขอย่างเดียวไม่มีประโยชน์เพียงพอ ทุกครั้งที่มีการรายงานเชิงวิเคราะห์ งานค้าง รายบุคคล หรือภาพรวม ต้องสรุปให้ครบทั้ง 3 มิตินี้เสมอ:
-   - 📊 **ข้อมูลสถานะจริง (Current Reality & Numbers):** ระบุตัวเลข ชื่องาน และชื่อตัวชี้วัดที่ชัดเจน
-   - ⚠️ **ความเสี่ยงและจุดคอขวดที่ตรวจพบ (Identified Risks & Bottlenecks):** ระบุความเสี่ยงอย่างตรงไปตรงมา เช่น ภาระงานกระจุกตัวที่คนคนเดียว, ความเสี่ยงงานดีเลย์จากการรอข้อมูลภายนอก, งานค้างที่ยังไม่มีผู้รับผิดชอบ, ช่องว่างเป้าหมายระยะยาว
-   - 💡 **แนวทางแก้ไขและข้อเสนอแนะเชิงรุก (Actionable Solutions):** ให้แนวทางปฏิบัติที่เป็นรูปธรรมทันที เช่น การเกลี่ยงานข้ามยูนิต, การ Re-assign มอบหมายงาน, การจัดทำบรีฟเทมเพลต, หรือการทำ Quick Standup
+   - 📊 **ข้อมูลสถานะจริง (Current Reality & Numbers):** ระบุตัวเลข ชื่อบุคคล ชื่องาน และชื่อตัวชี้วัดที่ชัดเจน
+   - ⚠️ **ความเสี่ยงและจุดคอขวดที่ตรวจพบ (Identified Risks & Bottlenecks):** ระบุความเสี่ยงอย่างตรงไปตรงมา เช่น ภาระงานกระจุกตัวที่คนคนเดียว, การพึ่งพิงมูลค่าระดับบริหาร, ความเสี่ยงงานดีเลย์จากการรอข้อมูลภายนอก, งานค้างที่ยังไม่มีผู้รับผิดชอบ
+   - 💡 **แนวทางแก้ไขและข้อเสนอแนะเชิงรุก (Actionable Solutions):** ให้แนวทางปฏิบัติที่เป็นรูปธรรมทันที เช่น การเกลี่ยงานข้ามยูนิต, การบันทึกสัดส่วนผู้ช่วย (Assistant Share), การคัดกรองบรีฟ, หรือการทำ Quick Standup
 
-3. **ฉลาด ตรงประเด็น กระชับ เข้าใจง่าย:** ใช้ภาษาทันสมัย น่ารัก สุภาพ ให้เกียรติพี่ๆ ในทีมแบบ Gen Z มืออาชีพ
-4. **ห้ามเตือนเรื่องสุขภาพ/จิบน้ำ/พักสายตาโดยเด็ดขาด:** เว้นแต่ผู้ใช้จะถามเรื่องสุขภาพ หรือบ่นเมื่อยล้าโดยตรง ห้ามใส่ข้อความสุขภาพในคำตอบเรื่องงานเด็ดขาด
-5. **ไม่ชวนคุยต่อและไม่มีประโยคลงท้ายซ้ำซาก:** เมื่อตอบข้อเสนอแนะครบถ้วนแล้วให้จบประเด็นทันที
+4. **ฉลาด ตรงประเด็น กระชับ เข้าใจง่าย:** ใช้ภาษาทันสมัย น่ารัก สุภาพ ให้เกียรติพี่ๆ ในทีมแบบ Gen Z มืออาชีพ
+5. **ห้ามเตือนเรื่องสุขภาพ/จิบน้ำ/พักสายตาโดยเด็ดขาด:** เว้นแต่ผู้ใช้จะถามเรื่องสุขภาพโดยตรง
+6. **ไม่ชวนคุยต่อและไม่มีประโยคลงท้ายซ้ำซาก:** เมื่อตอบข้อเสนอแนะครบถ้วนแล้วให้จบประเด็นทันที
 
 👥 สมาชิกทีม CC ทั้ง 12 คน:
 - จ๊อบ AA: CC Lead (บริหารทีม / กำกับภาพรวมงาน 3 ยูนิต และเป้าหมายภาพรวม)
@@ -255,6 +331,12 @@ export async function queryLineAI(
 - ก้อง IK, จอย RL, พิม AC, เยียร์ LLP, นิน MTN: Unit Creative Designer (ออกแบบกราฟิก/แบนเนอร์/บูธ/วิดีโอ)
 - ลูกอิน STK, โอ๊ต CNB: Unit PR & Communication (ข่าวประชาสัมพันธ์, เครือข่าย RSP, สื่อสารองค์กร)
 - เอ็นจอย SLR, แก้ว KYK, ต้า TTY: Unit Content Marketing (บทความ, โพสต์, สคริปต์, คอนเทนต์นวัตกรรม)
+
+💰 สถิติตัวชี้วัดมูลค่าการประหยัดงบประมาณ (Save Cost) รายบุคคลในระบบ:
+${analytics.saveCostRanking.map((m, i) => `${i + 1}. ${m.nick} ${m.code} (${m.unit}): ฿${m.saveCost.toLocaleString()} บาท (รับผิดชอบ ${m.count} งาน, สำเร็จแล้ว ${m.completed} งาน)`).join("\n")}
+
+🏢 สถิติมูลค่าการประหยัดงบประมาณ (Save Cost) แยกตาม 4 ยูนิต:
+${Object.entries(analytics.unitFinancials).map(([u, d], i) => `${i + 1}. ${u}: ฿${d.saveCost.toLocaleString()} บาท (รวม ${d.count} งาน, สำเร็จแล้ว ${d.completed} งาน)`).join("\n")}
 
 📊 ข้อมูลวิเคราะห์ภาระงานจริงในระบบ (Live Workload Analytics):
 - งานทั้งหมด: ${analytics.totals.total} งาน | สำเร็จแล้ว: ${analytics.totals.completed} งาน | กำลังทำ: ${analytics.totals.inProgress} งาน | งานค้าง (Pending): ${analytics.totals.pending} งาน
@@ -264,8 +346,8 @@ export async function queryLineAI(
 
 🎯 เป้าหมายตัวชี้วัดหลักของทีม CC (ปีงบประมาณ 2570):
 - ผลงานสนับสนุนภายในองค์กร (STeP): สำเร็จแล้ว ${analytics.totals.completed} งาน (จากเป้าหมายทั้งปี 1,200 งาน)
-- ผลงานสนับสนุนภายนอก มช. และเครือข่าย RSP: กำลังรวบรวมข้อมูลต่อเนื่อง (เป้าหมาย 350 งาน)
-- มูลค่าการประหยัดงบประมาณ (Save Cost): สร้างมูลค่าสะสม ฿${analytics.totals.saveCostTotal.toLocaleString()} บาท (ทะลุเป้าหมาย 1,000,000 บาทแล้ว)
+- ผลงานสนับสนุนภายนอก มช. และเครือข่าย RSP: ดำเนินการต่อเนื่อง (เป้าหมาย 350 งาน)
+- มูลค่าการประหยัดงบประมาณ (Save Cost): สะสม ฿${analytics.totals.saveCostTotal.toLocaleString()} บาท (ทะลุเป้าหมาย 1,000,000 บาทแล้ว)
 - กำไรจากการให้บริการของทีม: รวม ฿${analytics.totals.profitTotal.toLocaleString()} บาท (ทะลุเป้าหมาย 1,500,000 บาทแล้ว)
 - ความพึงพอใจของผู้รับบริการ (CSAT): เฉลี่ย 98.4% (เกณฑ์มาตรฐาน ≥85%) | อัตราส่งมอบตรงเวลา 100%
 
@@ -276,7 +358,7 @@ ${learnedFacts.slice(0, 3).join("\n") || "ไม่มี"}
 ${historyContext}
 
 คำถามจาก ${callerLabel} ในกลุ่ม "${groupName}": "${userQuestion}"
-จงตอบอย่างชาญฉลาด ตรงประเด็น ครบทั้ง 3 มิติ (ข้อมูลสถานะ, ความเสี่ยง, แนวทางแก้ไข) และห้ามมีรหัสตัวชี้วัดภาษาอังกฤษเด็ดขาด:`;
+จงตอบอย่างชาญฉลาด ตรงประเด็น ครบทั้ง 3 มิติ (ข้อมูลสถานะ, ความเสี่ยง, แนวทางแก้ไข) ระบุชื่อคนและตัวเลขจริง ห้ามตอบว่าไม่มีข้อมูลแยกรายบุคคล และห้ามมีรหัสตัวชี้วัดเด็ดขาด:`;
 
     for (let attempt = 0; attempt < GEMINI_MODELS.length; attempt++) {
       const model = GEMINI_MODELS[(currentModelIndex + attempt) % GEMINI_MODELS.length];
@@ -290,7 +372,7 @@ ${historyContext}
           signal: controller.signal,
           body: JSON.stringify({
             contents: [{ parts: [{ text: systemPrompt }] }],
-            generationConfig: { maxOutputTokens: 1000, temperature: 0.5 }
+            generationConfig: { maxOutputTokens: 1200, temperature: 0.5 }
           })
         });
 
@@ -331,22 +413,63 @@ ${historyContext}
 export function fallbackRuleEngine(query: string, briefs: any[], preAnalytics?: WorkloadAnalytics): string {
   const q = query.toLowerCase();
   const analytics = preAnalytics || analyzeWorkload(briefs);
-  const { totals, memberStats, pendingRanking, topPending, unassignedCount } = analytics;
+  const { totals, memberStats, pendingRanking, saveCostRanking, topSaveCostMember, topProductionSaveCostMember, unitFinancials, unassignedCount } = analytics;
 
   const origin = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || "https://ccteam.vercel.app");
   const briefFormUrl = `${origin}/request`;
   const trackUrl = `${origin}/track`;
 
-  // 1. ถามถึงงานของสมาชิกคนใดคนหนึ่ง (เช่น "งานของ จ๊อบ เป็นยังไงบ้าง", "งานพิม", "งานโอ๊ต", "งานของวา")
-  for (const [nick, info] of Object.entries(TEAM_MEMBERS_MAP)) {
-    if (q.includes(nick) || (info.code && q.includes(info.code.toLowerCase()))) {
-      const s = memberStats[nick];
-      if (nick === "จ๊อบ") {
-        return `💼 [สรุปสถานะและวิเคราะห์งาน: พี่จ๊อบ AA (${info.role})] ✨
+  // 1. ใครเซฟเงิน / ใครเซพเงินได้สูงสุด / ยูนิตไหนประหยัดงบได้มากสุด / อันดับ Save Cost
+  if (
+    q.includes("เซพเงิน") ||
+    q.includes("เซฟเงิน") ||
+    q.includes("ประหยัดเงิน") ||
+    q.includes("ประหยัดงบ") ||
+    (q.includes("save cost") && (q.includes("ใคร") || q.includes("สูงสุด") || q.includes("มากสุด") || q.includes("อันดับ") || q.includes("ยูนิต") || q.includes("คนไหน") || q.includes("แต่ละ"))) ||
+    (q.includes("ใคร") && (q.includes("เซฟ") || q.includes("เซพ") || q.includes("ประหยัด")))
+  ) {
+    const top1 = saveCostRanking[0];
+    const topProd = topProductionSaveCostMember;
+
+    const rankList = saveCostRanking.slice(0, 5).map((m, idx) => 
+      `${idx + 1}. **คุณ${m.nick} ${m.code}** (${m.unit}): ฿${m.saveCost.toLocaleString()} บาท (${m.completed} งานสำเร็จ)`
+    ).join("\n");
+
+    const unitList = Object.entries(unitFinancials).map(([u, d]) => 
+      `• **${u}:** ฿${d.saveCost.toLocaleString()} บาท (${d.completed} งานสำเร็จ)`
+    ).join("\n");
+
+    return `💰 [วิเคราะห์ข้อมูลมูลค่าการประหยัดงบประมาณ (Save Cost) เชิงลึก] 🎯
+
+📊 **1. ข้อมูลสถานะจริงและอันดับผู้สร้างมูลค่า (Current Reality & Ranking):**
+• **ผู้ทำยอดประหยัดงบรวมสูงสุด (#1 ภาพรวม):** **คุณ${top1 ? `${top1.nick} ${top1.code}` : "จ๊อบ AA"}** ยอดสะสม **฿${top1 ? top1.saveCost.toLocaleString() : "0"} บาท** (ในฐานะบริหารและกำกับดูแลโครงการระดับองค์กร)
+${topProd ? `• **ผู้ทำยอดประหยัดงบสูงสุดในสายงานผลิต (Production):** **คุณ${topProd.nick} ${topProd.code} (${topProd.unit})** ยอดสะสม **฿${topProd.saveCost.toLocaleString()} บาท**` : ""}
+
+🏆 **5 อันดับสมาชิกที่สร้างมูลค่า Save Cost สูงสุด:**
+${rankList}
+
+🏢 **มูลค่าการประหยัดงบประมาณแยกตามยูนิต:**
+${unitList}
+
+⚠️ **2. ความเสี่ยงและจุดคอขวดที่ตรวจพบ (Identified Risks & Bottlenecks):**
+1. **การพึ่งพิงมูลค่าโครงการระดับบริหารสูง:** ยอด Save Cost ภาพรวมกว่า 90% กระจุกตัวที่งานระดับ Project Management ของหัวหน้าทีม ขณะที่งานผลิตกราฟิก คอนเทนต์ และข่าว มีมูลค่าเฉลี่ยต่อชิ้นงานต่ำกว่า ทำให้ตัวเลขภาพรวมต่างกันค่อนข้างมาก
+2. **ความเสี่ยงการบันทึกสัดส่วนช่วยงาน (Assistant Credit):** สมาชิกบางท่านที่ช่วยซัพพอร์ตงานอาจยังไม่ได้ระบุสัดส่วนผู้ช่วย (Assistant Share) ในระบบ ทำให้ยอด Save Cost ไปขึ้นที่ผู้รับผิดชอบหลักคนเดียว
+
+💡 **3. แนวทางแก้ไขและข้อเสนอแนะเชิงรุก (Actionable Solutions):**
+1. **บันทึก Assistant Share ในระบบ:** ส่งเสริมให้ผู้รับผิดชอบหลักระบุเปอร์เซ็นต์ผู้ช่วยงานในระบบ CC Portal เพื่อกระจายเครดิตและยอด Save Cost ให้ผู้ช่วยงานอย่างเป็นธรรม
+2. **ขยายงานสร้างสรรค์มูลค่าสูง (High-Value Content & Design):** ผลักดันให้ยูนิต Creative และ Content Marketing รับงานเชิงกลยุทธ์ เช่น Video Production ระดับองค์กร หรืองานออกแบบอัตลักษณ์ (Branding) ที่มีมูลค่า Save Cost ต่อชิ้นสูงขึ้นค่ะ ✨`;
+  }
+
+  // 2. ถามถึงงานของสมาชิกคนใดคนหนึ่ง (เช่น "งานของ จ๊อบ เป็นยังไงบ้าง", "งานพิม", "งานโอ๊ต", "งานของวา")
+  for (const item of MATCHABLE_MEMBERS) {
+    if (q.includes(item.nick) || (item.code && q.includes(item.code.toLowerCase()))) {
+      const s = memberStats[item.nick];
+      if (item.nick === "จ๊อบ") {
+        return `💼 [สรุปสถานะและวิเคราะห์งาน: พี่จ๊อบ AA (${item.info.role})] ✨
 
 📊 **สถานะปัจจุบัน:**
 • บทบาทหลัก: กำกับภาพรวมทีม CC ทั้ง 3 ยูนิต และบริหารจัดการเป้าหมายองค์กร
-• ผลงานภาพรวมทีม: ส่งมอบสำเร็จแล้ว ${totals.completed} งาน (${Math.round((totals.completed / (totals.total || 1)) * 100)}%) ยอดประหยัดงบ (Save Cost) รวมทะลุ ฿${totals.saveCostTotal.toLocaleString()} บาท
+• ผลงานภาพรวมทีม: ส่งมอบสำเร็จแล้ว ${totals.completed} งาน (${Math.round((totals.completed / (totals.total || 1)) * 100)}%) ยอดประหยัดงบ (Save Cost) รวมทะลุ ฿${totals.saveCostTotal.toLocaleString()} บาท (ยอดเฉพาะตัวพี่จ๊อบ ฿${s.saveCost.toLocaleString()} บาท)
 • งานในกำกับดูแลโดยตรง: มีงานรอติดตาม/ประสานงาน ${s.pending} งาน
 
 ⚠️ **ความเสี่ยงที่ตรวจพบ:**
@@ -360,11 +483,12 @@ export function fallbackRuleEngine(query: string, briefs: any[], preAnalytics?: 
       const activeList = s.activeTasks.length > 0 ? s.activeTasks.slice(0, 3).map((t: string) => `  - ${t}`).join("\n") : "  (ไม่มีงานค้าง)";
       const isHighLoad = s.pending >= 5;
 
-      return `👤 [รายงานสถานะและวิเคราะห์งาน: ${nick} ${info.code} (${info.role})] 🌸
+      return `👤 [รายงานสถานะและวิเคราะห์งาน: ${item.nick} ${item.code} (${item.info.role})] 🌸
 
 📊 **สถานะปัจจุบัน:**
-• สังกัด: ${info.unit}
+• สังกัด: ${item.info.unit}
 • งานในมือ: รอดำเนินการ (Pending) ${s.pending} งาน | กำลังทำ ${s.in_progress} งาน | สำเร็จแล้ว ${s.completed} งาน
+• มูลค่า Save Cost ที่สร้างได้: ฿${s.saveCost.toLocaleString()} บาท
 • ตัวอย่างงานที่กำลังดูแล:
 ${activeList}
 
@@ -380,7 +504,7 @@ ${isHighLoad
     }
   }
 
-  // 2. วิเคราะห์ปัญหางานค้าง / ใครงานค้างมากสุด / ทำไมงานค้างเยอะ
+  // 3. วิเคราะห์ปัญหางานค้าง / ใครงานค้างมากสุด / ทำไมงานค้างเยอะ
   if (
     q.includes("ใครงานค้าง") ||
     q.includes("งานค้างมากสุด") ||
@@ -411,7 +535,7 @@ ${isHighLoad
 3. **เร่ง Re-assign ภายในวันนี้:** ให้หัวหน้าทีม (คุณจ๊อบ/คุณวา) ดำเนินการมอบหมายงานที่ยังว่าง 1 งานให้ชัดเจนค่ะ ✨`;
   }
 
-  // 3. ขอละเอียดกว่านี้ / ตัวชี้วัด / ผลงาน / OKR / KPI / TIP (No Codes - Pure Names!)
+  // 4. ขอละเอียดกว่านี้ / ตัวชี้วัด / ผลงาน / OKR / KPI / TIP (No Codes - Pure Names!)
   if (
     q.includes("ละเอียด") ||
     q.includes("kr") ||
@@ -439,7 +563,7 @@ ${isHighLoad
 2. **เร่งผลักดันงานค้างเป็นงานสำเร็จ:** จัดลำดับความสำคัญของงานค้าง 34 งาน โดยเน้นปิดจ็อบงานภายในองค์กรก่อนเพื่อเร่งตัวเลขตัวชี้วัดสะสมค่ะ ✨`;
   }
 
-  // 4. รายงานภาพรวมเดือนนี้ / สรุปภาพรวม
+  // 5. รายงานภาพรวมเดือนนี้ / สรุปภาพรวม
   if (q.includes("ภาพรวม") || q.includes("สรุปเดือน") || q.includes("รายงาน") || q.includes("สถิติ")) {
     const pendingRate = Math.round((totals.pending / (totals.total || 1)) * 100);
     const completedRate = Math.round((totals.completed / (totals.total || 1)) * 100);
@@ -463,7 +587,7 @@ ${isHighLoad
 2. มอบหมายงานที่ยังว่างให้ผู้รับผิดชอบทันที และกระจายงานข่าว RSP ให้ยูนิต Content ช่วยสนับสนุนค่ะ 🌸`;
   }
 
-  // 5. ขอลิงก์ส่งบรีฟ / ฟอร์มขอรับบริการ
+  // 6. ขอลิงก์ส่งบรีฟ / ฟอร์มขอรับบริการ
   if (
     q === "ขอบรีฟ" ||
     q === "ขอลิงก์" ||
@@ -480,7 +604,7 @@ ${isHighLoad
 ยูนิตที่พร้อมบริการ: Creative Design, Content Marketing, PR & Communication ค่าา 🌸`;
   }
 
-  // 6. งานด่วน / Urgent
+  // 7. งานด่วน / Urgent
   if (q.includes("ด่วน") || q.includes("urgent")) {
     const urgentTasks = briefs.filter(b => {
       const isMarkedUrgent = b.details?.is_urgent === true || b.details?.isUrgent === true;
@@ -508,7 +632,7 @@ ${isHighLoad
     return msg;
   }
 
-  // 7. งานส่งวันนี้
+  // 8. งานส่งวันนี้
   if (q.includes("วันนี้") || q.includes("today")) {
     const todayStr = new Date().toISOString().split("T")[0];
     const todayTasks = briefs.filter(b => {
@@ -529,7 +653,7 @@ ${isHighLoad
     return msg;
   }
 
-  // 8. ความผิดปกติ / ความเสี่ยง
+  // 9. ความผิดปกติ / ความเสี่ยง
   if (q.includes("ผิดปกติ") || q.includes("ความเสี่ยง") || q.includes("เตือน") || q.includes("anomaly") || q.includes("risk")) {
     const noAssignee = briefs.filter(b => !b.assignees && !b.details?.assignee && b.status !== "completed");
     const now = Date.now();
@@ -553,7 +677,7 @@ ${isHighLoad
 2. ประสานงานผู้ขอเพื่ออัปเดตขยายเวลาหรือติดตามความคืบหน้าเร่งด่วนค่ะ ✨`;
   }
 
-  // 9. ขอไอเดีย / เทรนด์สร้างสรรค์
+  // 10. ขอไอเดีย / เทรนด์สร้างสรรค์
   if (q.includes("เทรนด์") || q.includes("ไอเดีย") || q.includes("ความคิดสร้างสรรค์") || q.includes("trend") || q.includes("idea")) {
     return `💡 [Creative & Trends Drop On-Demand 🎨✨]
 สามารถอ่านเทรนด์สร้างสรรค์ประจำวันฉบับย่อได้ใน Morning Brief 09:00 น. หรือคลิกดูไอเดียใหม่ๆ:
@@ -563,7 +687,7 @@ ${isHighLoad
 อยากได้ไอเดียสายไหน (Design, Content, PR) ถามน้อง CC เจาะจงได้เลยค่าา 🚀`;
   }
 
-  // 10. สุขภาพกาย / สุขภาพใจ (เฉพาะเมื่อถามถึงโดยตรง)
+  // 11. สุขภาพกาย / สุขภาพใจ (เฉพาะเมื่อถามถึงโดยตรง)
   if (q.includes("สุขภาพ") || q.includes("เมื่อย") || q.includes("ปวด") || q.includes("office syndrome") || q.includes("พักผ่อน") || q.includes("เครียด") || q.includes("เหนื่อย")) {
     return `🧘‍♂️ [Office Care & Mind Reset 🤍]
 • พักสายตาด้วยกฎ 20-20-20 (มองไกล 20 ฟุต 20 วินาที ทุก 20 นาที)
@@ -573,6 +697,7 @@ ${isHighLoad
 
   // Smart Contextual Fallback
   return `🤖 น้อง CC พร้อมวิเคราะห์และช่วยงานพี่ๆ ทุกเรื่องเลยค่าบ ✨ ถามเจาะจงได้เลยนะคะ เช่น:
+• "ใครเซพเงินได้สูงสุด / อันดับ Save Cost รายบุคคลและยูนิต"
 • "วิเคราะห์งานค้าง / ใครงานค้างมากสุด"
 • "งานของ จ๊อบ / วา / พิม / โอ๊ต เป็นยังไงบ้าง"
 • "ขอรายละเอียดตัวชี้วัดเป้าหมายต่างๆ"

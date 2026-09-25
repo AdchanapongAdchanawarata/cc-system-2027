@@ -605,11 +605,13 @@ export default function AssignmentsView() {
 
   // --- PERMANENT DELETE ---
   const handlePermanentDelete = async (id: string) => {
+    const target = briefs.find(b => b.id === id);
     setBriefs(prev => prev.filter(b => b.id !== id));
     await supabase.from('briefs').update({
       status: 'purged',
       details: {
-        is_deleted: true,
+        ...(target?.details || {}),
+        is_deleted: false,
         is_permanently_deleted: true,
         purged_at: new Date().toISOString()
       }
@@ -619,15 +621,24 @@ export default function AssignmentsView() {
 
   // --- EMPTY TRASH ---
   const handleEmptyTrash = async () => {
-    const trashedIds = briefs.filter(b => b.details?.is_deleted && b.status !== 'purged').map(b => b.id);
-    if (trashedIds.length === 0) return;
+    const trashedBriefsToPurge = briefs.filter(b => b.details?.is_deleted && b.status !== 'purged');
+    if (trashedBriefsToPurge.length === 0) return;
 
+    const trashedIds = trashedBriefsToPurge.map(b => b.id);
     setBriefs(prev => prev.filter(b => !trashedIds.includes(b.id)));
-    for (let i = 0; i < trashedIds.length; i += 50) {
-      const chunk = trashedIds.slice(i, i + 50);
-      await supabase.from('briefs').update({
-        status: 'purged'
-      }).in('id', chunk);
+    for (let i = 0; i < trashedBriefsToPurge.length; i += 20) {
+      const chunk = trashedBriefsToPurge.slice(i, i + 20);
+      await Promise.all(chunk.map(b => 
+        supabase.from('briefs').update({
+          status: 'purged',
+          details: {
+            ...(b.details || {}),
+            is_deleted: false,
+            is_permanently_deleted: true,
+            purged_at: new Date().toISOString()
+          }
+        }).eq('id', b.id)
+      ));
     }
     showToast(`ล้างถังขยะเรียบร้อยแล้ว (${trashedIds.length} รายการ)`, "info");
   };

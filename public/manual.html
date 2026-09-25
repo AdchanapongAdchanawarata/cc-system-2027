@@ -320,6 +320,46 @@
       margin-top: 4px;
     }
 
+    
+    .module-heading {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 28px 0 10px;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--slate-900);
+      line-height: 1.4;
+    }
+    .module-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      flex-shrink: 0;
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      line-height: 1.25;
+      letter-spacing: 0.3px;
+    }
+    .tab-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      flex-shrink: 0;
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      line-height: 1.25;
+      letter-spacing: 0.3px;
+      border: 1px solid transparent;
+    }
+
     /* Subheadings */
     h3 {
       font-size: 16px;
@@ -649,6 +689,16 @@
 
     /* Mobile Responsive Styles */
     @media (max-width: 768px) {
+      .module-heading {
+        font-size: 14.5px;
+        gap: 8px;
+        margin: 20px 0 8px;
+      }
+      .module-badge, .tab-badge {
+        font-size: 10px;
+        padding: 2px 8px;
+      }
+
       body {
         font-size: 14px;
       }
@@ -1311,9 +1361,9 @@
       
       <!-- 7.1 Meeting Report -->
       <div style="margin-top: 32px;">
-        <h3 style="display: flex; align-items: center; gap: 8px;">
-          <span style="background: #e0e7ff; color: #4338ca; font-size: 12px; padding: 2px 10px; border-radius: 20px;">โมดูลที่ 1</span>
-          1. Meeting Report (บันทึกการประชุมทีม CC)
+        <h3 class="module-heading">
+          <span class="module-badge" style="background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe;">โมดูลที่ 1</span>
+          <span>Meeting Report (บันทึกการประชุมทีม CC)</span>
         </h3>
         <p>บันทึกการประชุมประจำสัปดาห์ สรุปมติที่ประชุม ข้อสั่งการเร่งด่วน พร้อมระบบติดตามผลการดำเนินงาน (Action Items) เพื่อให้งานขับเคลื่อนต่อเนื่องและไม่ตกหล่น:</p>
         <div class="browser-mockup">
@@ -1341,9 +1391,9 @@
 
       <!-- 7.2 Innovation Design Center Report -->
       <div style="margin-top: 36px;">
-        <h3 style="display: flex; align-items: center; gap: 8px;">
-          <span style="background: #fef3c7; color: #b45309; font-size: 12px; padding: 2px 10px; border-radius: 20px;">โมดูลที่ 2</span>
-          2. Innovation Design Center Report (ศูนย์ออกแบบและพัฒนานวัตกรรม)
+        <h3 class="module-heading">
+          <span class="module-badge" style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a;">โมดูลที่ 2</span>
+          <span>Innovation Design Center Report (ศูนย์ออกแบบและพัฒนานวัตกรรม)</span>
         </h3>
         <p>รายงานสถิติงานออกแบบผลงานนวัตกรรมต้นแบบ บรรจุภัณฑ์ และสถิติการใช้งานห้องปฏิบัติการแล็บ พร้อมสถิติมูลค่าที่ทีม CC ช่วยสร้างสรรค์ให้กับอุทยานวิทยาศาสตร์ฯ:</p>
         <div class="browser-mockup">
@@ -1371,9 +1421,9 @@
 
       <!-- 7.3 RSP Press Report -->
       <div style="margin-top: 36px;">
-        <h3 style="display: flex; align-items: center; gap: 8px;">
-          <span style="background: #d1fae5; color: #047857; font-size: 12px; padding: 2px 10px; border-radius: 20px;">โมดูลที่ 3</span>
-          3. RSP Press Report (ข่าวประชาสัมพันธ์เครือข่าย)
+        <h3 class="module-heading">
+          <span class="module-badge" style="background: #d1fae5; color: #047857; border: 1px solid #a7f3d0;">โมดูลที่ 3</span>
+          <span>RSP Press Report (ข่าวประชาสัมพันธ์เครือข่าย)</span>
         </h3>
         <p>รายงานรวบรวมข่าวสารประชาสัมพันธ์เครือข่ายอุทยานวิทยาศาสตร์ภาคเหนือ (RSP) สรุปยอดเผยแพร่ผ่านสื่อมวลชนชั้นนำ และผลสัมฤทธิ์การสร้างการรับรู้:</p>
         <div class="browser-mockup">
@@ -1401,9 +1451,9 @@
 
       <!-- 7.4 ISO Report -->
       <div style="margin-top: 36px;">
-        <h3 style="display: flex; align-items: center; gap: 8px;">
-          <span style="background: #e0f2fe; color: #0369a1; font-size: 12px; padding: 2px 10px; border-radius: 20px;">โมดูลที่ 4</span>
-          4. ISO Report (เอกสารระบบคุณภาพ ISO & WI)
+        <h3 class="module-heading">
+          <span class="module-badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;">โมดูลที่ 4</span>
+          <span>ISO Report (เอกสารระบบคุณภาพ ISO & WI)</span>
         </h3>
         <p>เอกสารระบบคุณภาพ ISO 9001 ขั้นตอนการปฏิบัติงานมาตรฐาน (Work Instructions - WI) การตรวจประเมินความเสี่ยง และดัชนีชี้วัดคุณภาพการให้บริการ:</p>
         <div class="browser-mockup">
@@ -1431,9 +1481,9 @@
 
       <!-- 7.5 KM คลังความรู้ -->
       <div style="margin-top: 36px;">
-        <h3 style="display: flex; align-items: center; gap: 8px;">
-          <span style="background: #fae8ff; color: #86198f; font-size: 12px; padding: 2px 10px; border-radius: 20px;">โมดูลที่ 5</span>
-          5. KM คลังความรู้ (Knowledge Management)
+        <h3 class="module-heading">
+          <span class="module-badge" style="background: #fae8ff; color: #86198f; border: 1px solid #f5d0fe;">โมดูลที่ 5</span>
+          <span>KM คลังความรู้ (Knowledge Management)</span>
         </h3>
         <p>ศูนย์รวมองค์ความรู้ นวัตกรรมเครื่องมือสร้างสรรค์ AI Weekly Creative Trends บทความเทคนิค และแนวทางการยกระดับทักษะของทีม CC:</p>
         <div class="browser-mockup">
@@ -1461,9 +1511,9 @@
 
       <!-- 7.6 Team Action Plan (TAP) -->
       <div style="margin-top: 36px;">
-        <h3 style="display: flex; align-items: center; gap: 8px;">
-          <span style="background: #ffedd5; color: #c2410c; font-size: 12px; padding: 2px 10px; border-radius: 20px;">โมดูลที่ 6</span>
-          6. แผนดำเนินงานของทีม (Team Action Plan - TAP)
+        <h3 class="module-heading">
+          <span class="module-badge" style="background: #ffedd5; color: #c2410c; border: 1px solid #fed7aa;">โมดูลที่ 6</span>
+          <span>แผนดำเนินงานของทีม (Team Action Plan - TAP)</span>
         </h3>
         <p>แผนการดำเนินงานประจำปี ติดตาม Timeline และผู้รับผิดชอบ สอดรับกับตัวชี้วัด OKRs และเป้าหมายยุทธศาสตร์ระดับองค์กรของอุทยานฯ:</p>
         <div class="browser-mockup">
@@ -1491,9 +1541,9 @@
 
       <!-- 7.7 Work Links -->
       <div style="margin-top: 36px;">
-        <h3 style="display: flex; align-items: center; gap: 8px;">
-          <span style="background: #f1f5f9; color: #334155; font-size: 12px; padding: 2px 10px; border-radius: 20px;">โมดูลที่ 7</span>
-          7. ลิ้งค์อื่นๆ ที่เกี่ยวข้อง (Work Links)
+        <h3 class="module-heading">
+          <span class="module-badge" style="background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;">โมดูลที่ 7</span>
+          <span>Work Links (ศูนย์รวมลิงก์ระบบงานภายนอก)</span>
         </h3>
         <p>ศูนย์รวมลิงก์เครื่องมือและไฟล์ทำงานส่วนกลาง คลาวด์ไดรฟ์ แหล่งรวมฟอนต์ โลโก้องค์กร และแบบฟอร์มทางการ ช่วยให้เข้าถึงทรัพยากรได้อย่างรวดเร็ว:</p>
         <div class="browser-mockup">
@@ -1521,9 +1571,9 @@
 
       <!-- 7.8 Activity Log -->
       <div style="margin-top: 36px;">
-        <h3 style="display: flex; align-items: center; gap: 8px;">
-          <span style="background: #fce7f3; color: #be185d; font-size: 12px; padding: 2px 10px; border-radius: 20px;">โมดูลที่ 8</span>
-          8. Activity Log (บันทึกกิจกรรมและความแอคทีฟ)
+        <h3 class="module-heading">
+          <span class="module-badge" style="background: #fce7f3; color: #be185d; border: 1px solid #fbcfe8;">โมดูลที่ 8</span>
+          <span>Activity Log (บันทึกกิจกรรมและภารกิจประจำวัน)</span>
         </h3>
         <p>บันทึกประวัติกิจกรรมการทำงาน การเข้าใช้งานระบบ การจ่ายงาน และการอัปเดตสถานะงาน เพื่อความโปร่งใสและสามารถตรวจสอบย้อนหลังได้ทุกขั้นตอน:</p>
         <div class="browser-mockup">
@@ -1565,7 +1615,10 @@
       </p>
 
       <!-- Tab 1: Workloads & Save Cost -->
-      <h3>แท็บที่ 1: จำนวนงาน / มูลค่า (Workloads & Save Cost)</h3>
+      <h3 class="module-heading">
+        <span class="tab-badge" style="background: #f5f3ff; color: #6d28d9; border-color: #ddd6fe;">แท็บที่ 1</span>
+        <span>จำนวนงาน / มูลค่า (Workloads & Save Cost)</span>
+      </h3>
       <p>แสดงสถิติมูลค่าการประหยัดงบประมาณ (Save Cost) สะสมจากการผลิตสื่อเองภายในทีม, กำไรสุทธิจากโครงการที่รับบริหารจัดการ (PM Projects), จำนวนงานทั้งหมดพร้อมสถานะ, และสถิติงานเกื้อกูล (Assist Cross-Skilling):</p>
       
       <div class="browser-mockup">
@@ -1582,7 +1635,10 @@
       <div class="img-caption">ภาพที่ 8.1: แท็บที่ 1 จำนวนงาน/มูลค่า แสดงยอด Save Cost ฿2,004,750, กำไร PM ฿2,119,750 และภาระงาน 52 ชิ้นงาน</div>
 
       <!-- Tab 2: Goals & OKRs -->
-      <h3>แท็บที่ 2: ตัวชี้วัดความสำเร็จ 🎯 KR/R , KPI/TIP ทีม CC</h3>
+      <h3 class="module-heading">
+        <span class="tab-badge" style="background: #ecfdf5; color: #047857; border-color: #a7f3d0;">แท็บที่ 2</span>
+        <span>ตัวชี้วัดความสำเร็จ 🎯 KR/R , KPI/TIP ทีม CC</span>
+      </h3>
       <p>ประมวลผลความคืบหน้าของตัวชี้วัดระดับผลลัพธ์ (Key Results & Result Objectives), ตัวชี้วัด TIP ยุทธศาสตร์และนวัตกรรม, ผลประเมินความพึงพอใจ 5 มิติจากผู้รับบริการ (Satisfaction Score) และสัดส่วนกำไร PM แยกตามภาครัฐและเอกชน:</p>
 
       <div class="browser-mockup">
@@ -1599,7 +1655,10 @@
       <div class="img-caption">ภาพที่ 8.2: แท็บที่ 2 ตัวชี้วัดความสำเร็จ KR/R และ KPI/TIP แสดงเปอร์เซ็นต์ความสำเร็จ KR (26%), TIP (77%) และความพึงพอใจเฉลี่ย 90.8%</div>
 
       <!-- Tab 3: Time & Efficiency -->
-      <h3>แท็บที่ 3: เวลา / สถานะงาน (Time & Efficiency)</h3>
+      <h3 class="module-heading">
+        <span class="tab-badge" style="background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe;">แท็บที่ 3</span>
+        <span>เวลา / สถานะงาน (Time & Efficiency)</span>
+      </h3>
       <p>วิเคราะห์ความเร็วในการผลิตงานเฉลี่ย (Turnaround Days per Task), อัตราการส่งมอบตรงเวลา (On-Time Delivery Rate 100%), ดัชนีประสิทธิภาพ Save Cost เฉลี่ยต่อ 1 งานที่ปิดสำเร็จ (฿62,648), พร้อมแดชบอร์ดประเมินความเร็วและความเสี่ยงแยกตามรายยูนิต (Sub-Unit Velocity & Risk):</p>
 
       <div class="browser-mockup">
@@ -1616,7 +1675,10 @@
       <div class="img-caption">ภาพที่ 8.3: แท็บที่ 3 เวลา/สถานะงาน แสดงความเร็วเฉลี่ย 3.5 วัน/งาน อัตราตรงเวลา 100% และระดับความเสี่ยงของแต่ละยูนิต</div>
 
       <!-- Tab 4: Individual 360 Report -->
-      <h3>แท็บที่ 4: รายงานรายบุคคล 360 (Individual Performance & Profile) 🌟 ไฮไลท์สำคัญ</h3>
+      <h3 class="module-heading">
+        <span class="tab-badge" style="background: #fffbeb; color: #b45309; border-color: #fde68a;">แท็บที่ 4</span>
+        <span>รายงานรายบุคคล 360 (Individual Performance & Profile) 🌟 ไฮไลท์สำคัญ</span>
+      </h3>
       <p>
         รายงานสรุปผลงานเชิงลึกรายบุคคล 360 องศา ออกแบบเพื่อประเมินศักยภาพ ความคุ้มค่า และการพัฒนาทักษะของบุคลากรในทีม CC เป็นรายบุคคล (ครบทั้ง 12 สมาชิก) 
         โดยภาพตัวอย่างแสดงโปรไฟล์ของ <strong>คุณจ๊อบ AA (นายอัจชนะพงษ์ อัจชนะวราทา)</strong> ผู้สร้างมูลค่า <strong>Save Cost สูงสุดอันดับ 1 ของทีม ถึง ฿881,500</strong> จาก 52 โครงการที่เกี่ยวข้อง:
@@ -1647,7 +1709,10 @@
       </div>
 
       <!-- Tab 5: Executive Team Overview -->
-      <h3>แท็บที่ 5: รายงานรวมทีม / ผู้บริหาร (Executive Team Overview)</h3>
+      <h3 class="module-heading">
+        <span class="tab-badge" style="background: #f8fafc; color: #334155; border-color: #cbd5e1;">แท็บที่ 5</span>
+        <span>รายงานรวมทีม / ผู้บริหาร (Executive Team Overview)</span>
+      </h3>
       <p>รายงานสรุปภาพรวมระดับผู้บริหาร แสดงดัชนีชี้วัด 4 ด้านสำคัญ: วัฒนธรรมความร่วมมือในทีม (สัดส่วนงานช่วย 25% ไม่ทิ้งใครโดดเดี่ยว), มูลค่าความคุ้มค่าและผลประโยชน์ทางการเงินสุทธิ (Save Cost & Net Profit), สถิติการส่งมอบงานตรงเวลา 100%, และความสอดคล้องกับทิศทางเป้าหมายองค์กร:</p>
 
       <div class="browser-mockup">
@@ -1888,6 +1953,10 @@
       </div>
 
       <!-- Tab 1: Manage Team -->
+      <h3 class="module-heading">
+        <span class="tab-badge" style="background: #f1f5f9; color: #0f172a; border-color: #cbd5e1;">แท็บที่ 1</span>
+        <span>Manage Team (จัดการรายชื่อ สิทธิ์ และบทบาททีมงาน)</span>
+      </h3>
       <div class="browser-mockup">
         <div class="browser-chrome">
           <div class="browser-dots">
@@ -1902,6 +1971,10 @@
       <div class="img-caption">ภาพที่ 10.1: แท็บ Manage Team สำหรับเพิ่ม/แก้ไขรายชื่อทีมงาน กำหนดบทบาท Admin / Assignee / Executive</div>
 
       <!-- Tab 2: Service Pricing -->
+      <h3 class="module-heading">
+        <span class="tab-badge" style="background: #fff7ed; color: #c2410c; border-color: #ffedd5;">แท็บที่ 2</span>
+        <span>Service Pricing (ตั้งค่าราคากลางอ้างอิงแต่ละยูนิต)</span>
+      </h3>
       <div class="browser-mockup">
         <div class="browser-chrome">
           <div class="browser-dots">
@@ -1916,6 +1989,10 @@
       <div class="img-caption">ภาพที่ 10.2: แท็บ Service Pricing สำหรับปรับเปลี่ยนรายการบริการ และราคากลางอ้างอิงของแต่ละยูนิต</div>
 
       <!-- Tab 3: OKR Targets -->
+      <h3 class="module-heading">
+        <span class="tab-badge" style="background: #ecfdf5; color: #047857; border-color: #a7f3d0;">แท็บที่ 3</span>
+        <span>OKR Targets (กำหนดเป้าหมายเชิงผลลัพธ์ประจำปี)</span>
+      </h3>
       <div class="browser-mockup">
         <div class="browser-chrome">
           <div class="browser-dots">
@@ -1930,6 +2007,10 @@
       <div class="img-caption">ภาพที่ 10.3: แท็บ OKR Targets สำหรับกำหนดเป้าหมายเชิงผลลัพธ์ (R & KR) ประจำปีเพื่อใช้คำนวณในรายงาน TAP</div>
 
       <!-- Tab 4: Storage Quota -->
+      <h3 class="module-heading">
+        <span class="tab-badge" style="background: #f5f3ff; color: #7c3aed; border-color: #ede9fe;">แท็บที่ 4</span>
+        <span>Storage Quota & Auto Purge (ตรวจสอบพื้นที่และล้างไฟล์เก่า)</span>
+      </h3>
       <div class="browser-mockup">
         <div class="browser-chrome">
           <div class="browser-dots">

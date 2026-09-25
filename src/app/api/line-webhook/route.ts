@@ -149,14 +149,35 @@ async function handleLineEvent(
       const groupRole = groupId === notyGroupId ? "Creative step (NOTY)" : (groupId === execGroupId ? "CC TEAM" : "ยังไม่ได้ผูกกลุ่ม");
       replyText = `📌 ข้อมูล ID ระบบ LINE:\n• Group ID: ${groupId || "ไม่ใช่แชทกลุ่ม"}\n• บทบาทกลุ่ม: ${groupRole}`;
     }
-    // 2.3 Ask for Brief Link (Compact & Non-cluttering)
-    else if (text.includes("บรีฟ") || text.includes("ขอลิงก์") || text.includes("ฟอร์ม") || text.includes("ส่งงาน") || text.includes("brief")) {
-      const origin = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || "https://cc-insights.step.cmu.ac.th");
+    // 2.3 Ask for Brief Link (Only when explicitly requesting the form/link)
+    else if (
+      text === "ขอบรีฟ" ||
+      text === "ขอลิงก์" ||
+      text === "ลิงก์" ||
+      text === "ลิงก์บรีฟ" ||
+      text === "แบบฟอร์ม" ||
+      text === "ส่งงาน" ||
+      text === "ขอแบบฟอร์ม" ||
+      text.includes("ขอลิงก์บรีฟ") ||
+      text.includes("ขอแบบฟอร์ม") ||
+      text.includes("ลิงก์ส่งงาน") ||
+      text.includes("ส่งงานที่ไหน") ||
+      text.includes("ขอฟอร์ม")
+    ) {
+      const origin = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || "https://ccteam.vercel.app");
       replyText = `📝 [แบบฟอร์มส่งบรีฟงานทีม CC] ✨\n🔗 ยื่นงานใหม่: ${origin}/request\n🔍 เช็กสถานะงาน: ${origin}/track`;
     }
     // 2.4 Capability & Help Guide
-    else if (text.includes("ฟังก์ชัน") || text.includes("แนะนำตัว") || text.includes("ช่วยอะไร") || text.includes("เมนู") || text.includes("คำสั่ง")) {
-      replyText = `🤖 รวมคำสั่งคุยกับน้อง CC:\n• "ขอบรีฟ" (ขอลิงก์ส่งงาน)\n• "งานด่วน" / "งานวันนี้" (เช็คเดดไลน์)\n• "งานค้าง" / "ความผิดปกติ" (ตรวจระบบ)\n• "ขอไอเดีย" / "สุขภาพ" (ข้อมูลสร้างสรรค์และการดูแลตนเอง)\n• หรือถามข้อมูลทีมงาน/เบอร์โทรได้ทันทีค่า ✨`;
+    else if (
+      text === "ช่วยอะไร" ||
+      text === "ช่วยอะไรได้บ้าง" ||
+      text === "เมนู" ||
+      text === "คำสั่ง" ||
+      text === "ฟังก์ชัน" ||
+      text === "แนะนำตัว" ||
+      text.includes("ทำอะไรได้บ้าง")
+    ) {
+      replyText = `🤖 น้อง CC ยินดีช่วยเหลือค่าบ ✨ พี่ๆ สามารถถามได้ทั้ง:\n• "วิเคราะห์งานค้าง / ใครงานค้างมากสุด"\n• "งานของ จ๊อบ / วา / พิม / โอ๊ต เป็นยังไงบ้าง"\n• "ขอรายละเอียดค่า R KR ต่างๆ"\n• "รายงานภาพรวมเดือนนี้"\n• "ขอบรีฟ" หรือเช็กสถานะงานได้ตลอดเลยค่า 🌸`;
     }
     // 2.5 Query AI Engine / Rule Engine for other questions
     else {

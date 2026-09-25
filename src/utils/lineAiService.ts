@@ -149,6 +149,8 @@ export function analyzeWorkload(briefs: any[]): WorkloadAnalytics {
   };
 
   briefs.forEach(b => {
+    if (b.status === "purged" || b.details?.is_permanently_deleted) return;
+
     const st = b.status || "pending";
     if (st === "completed") completed++;
     else if (st === "in_progress" || st === "progress") inProgress++;
@@ -257,6 +259,7 @@ export async function getLiveDataContext() {
     const { data: briefs } = await supabase
       .from("briefs")
       .select("id, project_name, unit, status, created_at, deadline, details, coordinator_nickname, assignee_id, assignees(id, name, email)")
+      .neq("status", "purged")
       .order("created_at", { ascending: false });
 
     return { briefs: briefs || [], totalCount: briefs?.length || 0 };

@@ -1025,21 +1025,21 @@
         </div>
         <img src="/manual_assets/shot_request_step1.png" alt="ฟอร์มส่งงาน Creative Designer ว่าง" loading="lazy" decoding="async">
       </div>
-      <div class="img-caption">ภาพที่ 2.1: ฟอร์มส่งงาน Creative Designer แสดงช่องกรอกข้อมูลผู้ขอรับบริการ, เมนูเลือกสังกัด และหมวดหมู่บริการ</div>
+      <div class="img-caption">ภาพที่ 2.1: ฟอร์มส่งงาน Creative Designer หน้าแรก แสดงช่องกรอกข้อมูลผู้ขอรับบริการ, เมนูเลือกสังกัด และหมวดหมู่บริการที่ต้องการ</div>
 
       <!-- Screenshot: Creative Step 2 (Filled with sample data) -->
-      <div class="browser-mockup">
+      <div class="browser-mockup" style="margin-top: 24px;">
         <div class="browser-chrome">
           <div class="browser-dots">
             <span class="browser-dot dot-red"></span>
             <span class="browser-dot dot-yellow"></span>
             <span class="browser-dot dot-green"></span>
           </div>
-          <div class="browser-address">https://ccteam.vercel.app/request?unit=creative (Filled Demonstration)</div>
+          <div class="browser-address">https://ccteam.vercel.app/request?unit=creative (ตัวอย่างการกรอกข้อมูลงานจริง)</div>
         </div>
         <img src="/manual_assets/shot_request_step2.png" alt="ตัวอย่างการกรอกข้อมูลฟอร์มส่งงานจริง" loading="lazy" decoding="async">
       </div>
-      <div class="img-caption">ภาพที่ 2.2: ตัวอย่างการกรอกข้อมูลงานจริง: ระบุชื่องาน 'FoodFab 2026', สังกัด, ราคากลางประเมิน และวางลิงก์ Google Drive</div>
+      <div class="img-caption">ภาพที่ 2.2: ตัวอย่างการกรอกข้อมูลงานจริง: ระบุชื่อผู้ติดต่อ 'แอน (EIC)', ชื่องาน 'นิทรรศการ FoodFab Lanna 2026', สังกัด, ราคากลางประเมิน และวางลิงก์ Google Drive ข้อมูล</div>
 
       <!-- Screenshot: Content Form -->
       <div class="browser-mockup">
@@ -1453,28 +1453,210 @@
       <div style="margin-top: 36px;">
         <h3 class="module-heading">
           <span class="module-badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;">โมดูลที่ 4</span>
-          <span>ISO Report (เอกสารระบบคุณภาพ ISO & WI)</span>
+          <span>ISO Report & WI Task Tracking (ระบบบริหารคุณภาพ ISO 9001 & แทร็กงานตามขั้นตอน WI)</span>
         </h3>
-        <p>เอกสารระบบคุณภาพ ISO 9001 ขั้นตอนการปฏิบัติงานมาตรฐาน (Work Instructions - WI) การตรวจประเมินความเสี่ยง และดัชนีชี้วัดคุณภาพการให้บริการ:</p>
-        <div class="browser-mockup">
-          <div class="browser-chrome">
-            <div class="browser-dots">
-              <span class="browser-dot dot-red"></span>
-              <span class="browser-dot dot-yellow"></span>
-              <span class="browser-dot dot-green"></span>
+        <p>ศูนย์รวมระบบบริหารคุณภาพมาตรฐานสากล ISO 9001:2015 ของทีม CC เชื่อมโยงระเบียบปฏิบัติงานมาตรฐาน (Work Instructions - WI) เข้ากับการปฏิบัติงานจริงในทุกขั้นตอน พร้อมระบบประเมินความเสี่ยง การทบทวนฝ่ายบริหาร และคลังหลักฐานการตรวจประเมินแบบดิจิทัลครบวงจร:</p>
+
+        <!-- SUBSECTION: WI Tracking with Tasks -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 24px; margin-top: 20px;">
+          <h4 style="font-size: 16px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 9999px; background: #0284c7;"></span>
+            <span>ความพิเศษของการ Tracking WI กับงานจริง (Task-WI Realtime Integration)</span>
+          </h4>
+          <p style="font-size: 13.5px; color: #475569; line-height: 1.6; margin-bottom: 16px;">
+            ระบบ CC Insights Portal มีความพิเศษที่<strong>เหนือกว่าระบบบันทึกเอกสารทั่วไป</strong> โดยทำการเชื่อมโยงสถานะงานจริงบนกระดานบอร์ด (Pending, In Progress, Completed) เข้าสู่ขั้นตอนของระเบียบปฏิบัติงาน (Work Instruction) แบบ <em>Dynamic Step Detection</em> อัตโนมัติ โดยแบ่งตาม 4 ระเบียบปฏิบัติงานหลัก:
+          </p>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 20px;">
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+              <div style="font-weight: 700; color: #0284c7; font-size: 13.5px; margin-bottom: 6px;">📢 WI-CC-001: งานบริการประชาสัมพันธ์ (6 ขั้นตอน)</div>
+              <div style="font-size: 12px; color: #64748b; line-height: 1.5;">
+                • เอกสารกำกับ: <strong>FM-CC-001</strong><br>
+                • ขั้นตอน: รับฟอร์ม (1 วัน) → มอบหมาย (15 นาที) → หารือบรีฟ (2 ชม.+) → ตรวจร่างข้อความ/สื่อ (15 นาที) → เผยแพร่ (30 นาที) → ประเมินความพึงพอใจ 5 ดาว (30 นาที)
+              </div>
             </div>
-            <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=iso</div>
+
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+              <div style="font-weight: 700; color: #b45309; font-size: 13.5px; margin-bottom: 6px;">🎬 WI-CC-003: งานผลิตสื่อสร้างสรรค์ (6 ขั้นตอน)</div>
+              <div style="font-size: 12px; color: #64748b; line-height: 1.5;">
+                • เอกสารกำกับ: <strong>FM-CC-008</strong><br>
+                • ขั้นตอน: รับฟอร์ม (1 วัน) → มอบหมายผลิตสื่อ (15 นาที) → หารือบรีฟเชิงลึก (2 ชม.+) → ส่งตรวจดราฟต์ Artwork (15 นาที) → เผยแพร่สื่อตามช่องทาง (30 นาที) → ประเมินผล (30 นาที)
+              </div>
+            </div>
+
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+              <div style="font-weight: 700; color: #7c3aed; font-size: 13.5px; margin-bottom: 6px;">🎨 WI-CC-004: งานออกแบบภายในองค์กร (7 ขั้นตอน)</div>
+              <div style="font-size: 12px; color: #64748b; line-height: 1.5;">
+                • เอกสารกำกับ: <strong>FM-CC-010</strong><br>
+                • ขั้นตอน: รับฟอร์ม (1 วัน) → มอบหมายดีไซเนอร์ (15 นาที) → หารือแนวคิด Concept (1 วัน+) → ออกแบบร่าง (1 วัน+) → <strong>ตรวจทานผ่าน AD Gate (30 นาที)</strong> → ส่งมอบ (30 นาที) → ทบทวนเสร็จสิ้น
+              </div>
+            </div>
+
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+              <div style="font-weight: 700; color: #047857; font-size: 13.5px; margin-bottom: 6px;">🏢 WI-CC-005: งานออกแบบภายนอกองค์กร (8 ขั้นตอน)</div>
+              <div style="font-size: 12px; color: #64748b; line-height: 1.5;">
+                • เอกสารกำกับ: <strong>FM-CC-011 / FM-CC-005 / FM-AF-008</strong><br>
+                • ขั้นตอน: รับความต้องการ → รับโจทย์เชิงลึก (2 ชม.) → ใบเสนอราคา (30 นาที) → ชำระเงินมัดจำ/ออกใบเสร็จ (2 วัน) → มอบหมาย → ออกแบบ → <strong>ตรวจทาน AD Gate</strong> → ประเมินผล
+              </div>
+            </div>
           </div>
-          <img src="/manual_assets/shot_boh_iso.png" alt="หน้า ISO Report เอกสารระบบคุณภาพและขั้นตอน WI" loading="lazy" decoding="async">
+
+          <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+            <div style="font-weight: 800; color: #1e40af; font-size: 13px; margin-bottom: 6px;">⭐ 4 ฟังชันก์ความพิเศษของระบบการ Tracking WI ที่เหนือกว่าทั่วไป:</div>
+            <ol style="margin-left: 18px; font-size: 13px; color: #1e3a8a; line-height: 1.6;">
+              <li><strong>Auto SLA & Lead-Time Monitoring:</strong> ตรวจวัดระยะเวลาจริงที่ชิ้นงานดำเนินอยู่ในแต่ละสเต็ป เทียบกับ Lead Time ที่กำหนดไว้ในข้อกำหนด ISO อย่างแม่นยำ พร้อมติดป้ายแจ้งเตือนทันที (Compliant = สีเขียว, Alert = สีส้ม, Non-compliant = สีแดง)</li>
+              <li><strong>Art Director (AD) Review Gate:</strong> มีจุดตรวจควบคุมคุณภาพพิเศษ (Quality Gate) โดยผู้กำกับศิลป์และ PM สำหรับงานออกแบบตาม WI-CC-004 และ WI-CC-005 เพื่อให้มั่นใจในคุณภาพและอัตลักษณ์องค์กร 100% ก่อนส่งมอบ</li>
+              <li><strong>Audit Trail & FM Document Linkage:</strong> เชื่อมโยงรหัสแบบฟอร์มควบคุมคุณภาพ (FM-CC-001, FM-CC-008, FM-CC-010, FM-CC-011, FM-AF-008) เข้ากับไฟล์งานและลิงก์ Drive จริงในแต่ละ Task ทำให้พร้อมรับการตรวจประเมิน ISO จากผู้ตรวจประเมินภายนอกได้ทันที</li>
+              <li><strong>Interactive Step Drill-Down:</strong> คลิกเลือกดูชิ้นงานจริงที่กำลังอยู่ในขั้นตอนนั้นๆ พร้อมแสดงชื่อผู้รับผิดชอบ, หน่วยงานที่ขอรับบริการ, และระยะเวลาที่ใช้ไปแบบละเอียด</li>
+            </ol>
+          </div>
+
+          <!-- Screenshot: WI Tracking -->
+          <div class="browser-mockup">
+            <div class="browser-chrome">
+              <div class="browser-dots">
+                <span class="browser-dot dot-red"></span>
+                <span class="browser-dot dot-yellow"></span>
+                <span class="browser-dot dot-green"></span>
+              </div>
+              <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=iso (Tab: WI Tracking)</div>
+            </div>
+            <img src="/manual_assets/shot_iso_wi_tracking.png" alt="หน้า WI Tracking ตรวจสอบขั้นตอนการปฏิบัติงานและ SLA" loading="lazy" decoding="async">
+          </div>
+          <div class="img-caption">ภาพที่ 7.5: ระบบแทร็กงานตามขั้นตอน Work Instructions (WI Tracking) แสดงขั้นตอน SLA Lead-Time, อัตรา Compliance, และการ์ดงานจริง</div>
         </div>
-        <div class="img-caption">ภาพที่ 7.5: หน้า ISO Report แสดงขั้นตอน WI อัตราส่งงานตรงเวลา (% On-Time) และการบริหารความเสี่ยง</div>
-        <div class="callout callout-info" style="margin-top: 12px;">
-          <div class="callout-title">💡 วิธีใช้งาน ISO Report</div>
+
+        <!-- SUBSECTION: 7 Tabs in ISO Report -->
+        <div style="margin-top: 32px;">
+          <h4 style="font-size: 16px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 9999px; background: #0284c7;"></span>
+            <span>คำอธิบายเจาะลึก 7 แท็บ (Tabs) ในระบบรายงาน ISO Report</span>
+          </h4>
+
+          <div style="display: flex; flex-direction: column; gap: 24px;">
+            
+            <!-- Tab 1: Risk Analysis -->
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                <h5 style="font-size: 15px; font-weight: 800; color: #0f172a;">1. 📊 Risk & Opportunity Analysis (วิเคราะห์ความเสี่ยงและโอกาส)</h5>
+                <span class="badge" style="background:#e0f2fe; color:#0369a1;">ข้อกำหนด 6.1</span>
+              </div>
+              <p style="font-size: 13.5px; color: #475569; line-height: 1.6; margin-bottom: 14px;">
+                แสดงตารางเมทริกซ์ความเสี่ยง 5x5 Matrix (โอกาสเกิด Likelihood x ความรุนแรง Consequence) พร้อมการจัดหมวดหมู่ <strong>11 ประเด็นความเสี่ยงและโอกาสของทีม CC</strong> ตามเอกสาร <em>3_ประเมินความเสี่ยงและโอกาส CC.xlsx</em> โดยแยกเป็นกลยุทธ์ "ลดความเสี่ยง" เช่น การจัดการงานด่วน การเพิ่มทักษะพนักงาน และกลยุทธ์ "โอกาสในการพัฒนา" เช่น การขยายขีดความสามารถงานสร้างสรรค์แข่งขันกับหน่วยงานภายนอก
+              </p>
+              <div class="browser-mockup">
+                <div class="browser-chrome">
+                  <div class="browser-dots">
+                    <span class="browser-dot dot-red"></span>
+                    <span class="browser-dot dot-yellow"></span>
+                    <span class="browser-dot dot-green"></span>
+                  </div>
+                  <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=iso (Tab: Risk Analysis)</div>
+                </div>
+                <img src="/manual_assets/shot_iso_risk_matrix.png" alt="หน้า Risk & Opportunity Analysis เมทริกซ์ 5x5 และ 11 ประเด็นวิเคราะห์" loading="lazy" decoding="async">
+              </div>
+              <div class="img-caption">ภาพที่ 7.6: เมทริกซ์ 5x5 และตารางวิเคราะห์ความเสี่ยง/โอกาส (Risk & Opportunity) 11 ประเด็น พร้อมแนวทางกลยุทธ์</div>
+            </div>
+
+            <!-- Tab 2: SWOT & Stakeholders -->
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                <h5 style="font-size: 15px; font-weight: 800; color: #0f172a;">2. 🧭 SWOT & Context of the Organization (บริบทองค์กรตามข้อกำหนด ISO)</h5>
+                <span class="badge" style="background:#fef3c7; color:#b45309;">ข้อกำหนด 4.1 & 4.2</span>
+              </div>
+              <p style="font-size: 13.5px; color: #475569; line-height: 1.6;">
+                วิเคราะห์ 4 ด้าน จุดแข็ง (Strength), จุดอ่อน (Weakness), โอกาส (Opportunity), และอุปสรรค (Threat) ของทีม CC ในฐานะหน่วยงานสื่อสารและสร้างสรรค์ของอุทยานวิทยาศาสตร์ฯ มช. เชื่อมโยงปัจจัยภายในและภายนอกสู่แผนยุทธศาสตร์องค์กร
+              </p>
+            </div>
+
+            <!-- Tab 3: Risk Register -->
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                <h5 style="font-size: 15px; font-weight: 800; color: #0f172a;">3. 🛡️ Risk Treatment Plan & Risk Register (ทะเบียนความเสี่ยงและแผนปฏิบัติการ)</h5>
+                <span class="badge" style="background:#fee2e2; color:#b91c1c;">ข้อกำหนด 6.1.2</span>
+              </div>
+              <p style="font-size: 13.5px; color: #475569; line-height: 1.6;">
+                ทะเบียนลงบันทึกความเสี่ยงที่ได้รับการจัดลำดับความสำคัญ พร้อมแผนปฏิบัติการจัดการความเสี่ยง (Action Plan), ผู้รับผิดชอบ (Risk Owner), กรอบเวลาดำเนินงาน และดัชนีชี้วัดผลเพื่อลดระดับความเสี่ยงให้อยู่ในเกณฑ์ที่ยอมรับได้ (Acceptable Level)
+              </p>
+            </div>
+
+            <!-- Tab 4: WI Tracking -->
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                <h5 style="font-size: 15px; font-weight: 800; color: #0f172a;">4. ⚡ Work Instructions (WI) & Compliance Monitor (ระบบแทร็กงานตามระเบียบปฏิบัติงาน)</h5>
+                <span class="badge" style="background:#f3e8ff; color:#7c3aed;">ข้อกำหนด 8.1 & 8.5</span>
+              </div>
+              <p style="font-size: 13.5px; color: #475569; line-height: 1.6;">
+                แท็บหลักสำหรับการตรวจสอบความสอดคล้องตามระเบียบปฏิบัติงานจริง สามารถสลับดูระหว่าง 4 ระเบียบปฏิบัติงาน (WI-CC-001, 003, 004, 005) และติดตามสถานะงานที่รันอยู่ในแต่ละ Step แบบ Live Interactive
+              </p>
+            </div>
+
+            <!-- Tab 5: Management Review -->
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                <h5 style="font-size: 15px; font-weight: 800; color: #0f172a;">5. 📈 Management Review (รายงานการประชุมทบทวนฝ่ายบริหาร)</h5>
+                <span class="badge" style="background:#dcfce7; color:#15803d;">ข้อกำหนด 9.3</span>
+              </div>
+              <p style="font-size: 13.5px; color: #475569; line-height: 1.6; margin-bottom: 14px;">
+                สรุปข้อมูลเชิงสถิติที่จำเป็นสำหรับการรายงานผู้บริหารระดับสูงและคณะกรรมการระบบคุณภาพ ประกอบด้วย: อัตราการส่งมอบงานตรงเวลา <strong>100% On-Time Delivery</strong>, คะแนนความพึงพอใจของผู้รับบริการเฉลี่ย <strong>98.4% CSAT</strong>, สถิติข้อร้องเรียน <strong>Zero Complaints (0 ข้อร้องเรียน)</strong> และรายงานแนวทางการปรับปรุงอย่างต่อเนื่อง (Continual Improvement)
+              </p>
+              <div class="browser-mockup">
+                <div class="browser-chrome">
+                  <div class="browser-dots">
+                    <span class="browser-dot dot-red"></span>
+                    <span class="browser-dot dot-yellow"></span>
+                    <span class="browser-dot dot-green"></span>
+                  </div>
+                  <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=iso (Tab: Management Review)</div>
+                </div>
+                <img src="/manual_assets/shot_iso_mgmt_review.png" alt="หน้า Management Review รายงานการประชุมทบทวนฝ่ายบริหาร" loading="lazy" decoding="async">
+              </div>
+              <div class="img-caption">ภาพที่ 7.7: รายงานการประชุมทบทวนฝ่ายบริหาร (Management Review) แสดงสถิติคุณภาพ CSAT และการส่งมอบตรงเวลา</div>
+            </div>
+
+            <!-- Tab 6: Standards Evidence Vault -->
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                <h5 style="font-size: 15px; font-weight: 800; color: #0f172a;">6. 🗂️ Requirements & Standards Evidence Vault (คลังหลักฐานข้อกำหนดคุณภาพ)</h5>
+                <span class="badge" style="background:#f1f5f9; color:#475569;">ข้อกำหนด 7.5 & 9.1</span>
+              </div>
+              <p style="font-size: 13.5px; color: #475569; line-height: 1.6; margin-bottom: 14px;">
+                เช็คลิสต์ตรวจสอบความสอดคล้องตามข้อกำหนด ISO 9001:2015 ทีละข้อ (Clauses Checklist) พร้อมคลังไฟล์หลักฐานและลิงก์เอกสารระบบคุณภาพที่เกี่ยวข้อง ช่วยให้การตรวจประเมินคุณภาพภายใน (Internal Audit) และการตรวจรับรอง (Certification Audit) เป็นไปอย่างรวดเร็วและเป็นระบบ
+              </p>
+              <div class="browser-mockup">
+                <div class="browser-chrome">
+                  <div class="browser-dots">
+                    <span class="browser-dot dot-red"></span>
+                    <span class="browser-dot dot-yellow"></span>
+                    <span class="browser-dot dot-green"></span>
+                  </div>
+                  <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=iso (Tab: Requirements & Evidence)</div>
+                </div>
+                <img src="/manual_assets/shot_iso_evidence.png" alt="หน้าคลังหลักฐานข้อกำหนดคุณภาพ Standards Evidence Vault" loading="lazy" decoding="async">
+              </div>
+              <div class="img-caption">ภาพที่ 7.8: คลังหลักฐานข้อกำหนดคุณภาพ (Standards Evidence Vault) เชื่อมโยงเช็คลิสต์และไฟล์เอกสารอ้างอิง</div>
+            </div>
+
+            <!-- Tab 7: Stakeholders Needs & Expectations -->
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                <h5 style="font-size: 15px; font-weight: 800; color: #0f172a;">7. 🤝 Stakeholders Needs & Expectations (ความคาดหวังของผู้มีส่วนได้ส่วนเสีย)</h5>
+                <span class="badge" style="background:#e0e7ff; color:#4338ca;">ข้อกำหนด 4.2</span>
+              </div>
+              <p style="font-size: 13.5px; color: #475569; line-height: 1.6;">
+                ตารางวิเคราะห์ความต้องการและความคาดหวังของผู้มีส่วนได้ส่วนเสียทั้ง 5 กลุ่มหลัก: ผู้บริหารมหาวิทยาลัยเชียงใหม่, ส่วนงานภายในอุทยานวิทยาศาสตร์ฯ STeP, ผู้ประกอบการและภาคเอกชนภายนอก, เครือข่ายอุทยานวิทยาศาสตร์ภูมิภาค (RSP), และสื่อมวลชน พร้อมระบุมาตรการตอบสนองความคาดหวังอย่างเป็นรูปธรรม
+              </p>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="callout callout-info" style="margin-top: 24px;">
+          <div class="callout-title">💡 ประโยชน์เชิงกลยุทธ์ของระบบ ISO Report & WI Tracking สำหรับทีม CC</div>
           <ol style="margin-left: 18px; margin-top: 6px; font-size: 13.5px; line-height: 1.6;">
-            <li>คลิกเลือก <strong>ISO Report</strong> จากหน้า Back of House</li>
-            <li>ศึกษาขั้นตอน WI แยกตามสายงาน Creative, Content และ PR</li>
-            <li>ตรวจสอบตัวชี้วัดความพึงพอใจและอัตราส่งมอบงานตามข้อกำหนด ISO 9001</li>
-            <li>ใช้เป็นคู่มืออ้างอิงสำหรับการตรวจประเมินคุณภาพภายใน (Internal Audit) ประจำปี</li>
+            <li><strong>ตรวจประเมินระบบคุณภาพได้ทันที (Audit-Ready at Any Time):</strong> ไม่ต้องเสียเวลาเตรียมเอกสารก่อนการ Audit เพราะข้อมูลจริงและไฟล์หลักฐานถูกบันทึกและเชื่อมโยงแบบเรียลไทม์</li>
+            <li><strong>ควบคุมมาตรฐานงานสร้างสรรค์ (Consistent Design & Content Quality):</strong> ระบบ AD Review Gatekeeper ช่วยให้งานที่ออกจากทีม CC ทุกชิ้นได้มาตรฐานอัตลักษณ์องค์กร</li>
+            <li><strong>ป้องกันคอขวดและงานส่งมอบล่าช้า (Bottleneck Prevention):</strong> ระบบ SLA Lead-Time Tracking ช่วยส่งสัญญาณเตือนตั้งแต่ขั้นตอนดราฟต์แรก ทำให้แก้ไขได้ก่อนเลยกำหนดส่งมอบ</li>
           </ol>
         </div>
       </div>

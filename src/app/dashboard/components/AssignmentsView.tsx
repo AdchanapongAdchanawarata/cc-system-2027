@@ -252,14 +252,17 @@ export default function AssignmentsView() {
   }, [filter]);
 
   const fetchData = async () => {
-    let query = supabase.from('briefs').select('*').order('created_at', { ascending: true }); // Ascending for sequence ID calculation
+    let query = supabase.from('briefs').select('*').neq('status', 'purged').order('created_at', { ascending: true }); // Ascending for sequence ID calculation
     
     if (filter !== "All CC") {
       query = query.eq('unit', filter.toLowerCase());
     }
 
     const { data: briefsData } = await query;
-    if (briefsData) setBriefs(briefsData);
+    if (briefsData) {
+      const filtered = briefsData.filter(b => b.status !== 'purged' && !b.details?.is_permanently_deleted);
+      setBriefs(filtered);
+    }
 
     const { data: assigneesData } = await supabase.from('assignees').select('id, name, email, unit').eq('is_active', true);
     if (assigneesData) {
@@ -602,18 +605,30 @@ export default function AssignmentsView() {
 
   // --- PERMANENT DELETE ---
   const handlePermanentDelete = async (id: string) => {
-    await supabase.from('briefs').delete().eq('id', id);
     setBriefs(prev => prev.filter(b => b.id !== id));
+    await supabase.from('briefs').update({
+      status: 'purged',
+      details: {
+        is_deleted: true,
+        is_permanently_deleted: true,
+        purged_at: new Date().toISOString()
+      }
+    }).eq('id', id);
     showToast(`ลบงานออกจากระบบอย่างถาวรแล้ว`, "info");
   };
 
   // --- EMPTY TRASH ---
   const handleEmptyTrash = async () => {
-    const trashedIds = briefs.filter(b => b.details?.is_deleted).map(b => b.id);
+    const trashedIds = briefs.filter(b => b.details?.is_deleted && b.status !== 'purged').map(b => b.id);
     if (trashedIds.length === 0) return;
 
-    await supabase.from('briefs').delete().in('id', trashedIds);
     setBriefs(prev => prev.filter(b => !trashedIds.includes(b.id)));
+    for (let i = 0; i < trashedIds.length; i += 50) {
+      const chunk = trashedIds.slice(i, i + 50);
+      await supabase.from('briefs').update({
+        status: 'purged'
+      }).in('id', chunk);
+    }
     showToast(`ล้างถังขยะเรียบร้อยแล้ว (${trashedIds.length} รายการ)`, "info");
   };
 
@@ -698,11 +713,11 @@ export default function AssignmentsView() {
     return { pendingDays, inProgressDays, completedDays };
   };
 
-  // Trashed briefs
-  const trashedBriefs = briefs.filter(b => b.details?.is_deleted);
+  // Trashed briefs (exclude purged/permanently deleted)
+  const trashedBriefs = briefs.filter(b => b.details?.is_deleted && !b.details?.is_permanently_deleted && b.status !== 'purged');
 
-  // Active briefs (Filter out trashed briefs)
-  const activeBriefs = briefs.filter(b => !b.details?.is_deleted);
+  // Active briefs (Filter out trashed & purged briefs)
+  const activeBriefs = briefs.filter(b => !b.details?.is_deleted && !b.details?.is_permanently_deleted && b.status !== 'purged');
 
   // Sort active briefs descending for display so newest is on top
   const displayBriefs = activeBriefs

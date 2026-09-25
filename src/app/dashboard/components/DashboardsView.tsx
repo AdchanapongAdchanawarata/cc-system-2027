@@ -376,14 +376,14 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
     setLoading(true);
     try {
       const [briefsRes, assigneesRes, okrRes] = await Promise.all([
-        supabase.from("briefs").select("*").order("created_at", { ascending: false }),
+        supabase.from("briefs").select("*").neq("status", "purged").order("created_at", { ascending: false }),
         supabase.from("assignees").select("id, name, unit, is_active").eq("is_active", true),
         supabase.from("okr_settings").select("*").eq("is_active", true)
       ]);
 
       if (briefsRes.data) {
-        // Exclude trashed items from dashboards & metric calculations
-        const activeBriefs = briefsRes.data.filter((b: any) => !b.details?.is_deleted);
+        // Exclude trashed and purged items from dashboards & metric calculations
+        const activeBriefs = briefsRes.data.filter((b: any) => !b.details?.is_deleted && b.status !== "purged" && !b.details?.is_permanently_deleted);
         setBriefs(activeBriefs);
       }
       if (assigneesRes.data) {

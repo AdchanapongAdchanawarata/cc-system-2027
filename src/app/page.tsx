@@ -1,11 +1,29 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { PenTool, Video, Mic } from "lucide-react";
-import WeatherWidget from "@/components/WeatherWidget";
+import { useRouter } from "next/navigation";
+import { PenTool, Video, Mic, ClipboardList, Users, Lock } from "lucide-react";
+import WeatherWidget, { InspirationalQuote } from "@/components/WeatherWidget";
 import HomeMenuDropdown from "@/components/HomeMenuDropdown";
+import AboutTeamModal from "@/components/AboutTeamModal";
 
 export default function Home() {
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const router = useRouter();
+
+  const handleCCLogin = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (typeof window !== "undefined") {
+      const savedEmail = localStorage.getItem("cc_user_email");
+      if (savedEmail) {
+        router.push("/dashboard");
+        return;
+      }
+    }
+    router.push("/login");
+  };
+
   return (
     <main className="flex-1 flex flex-col items-center px-3 py-2 sm:px-6 md:px-8 md:py-3 max-w-6xl mx-auto w-full min-h-screen">
       {/* Top Navigation Bar */}
@@ -19,18 +37,59 @@ export default function Home() {
           </p>
         </div>
         
-        <div className="flex flex-row items-center shrink-0 relative z-30">
-          <HomeMenuDropdown />
+        {/* Desktop Web Navigation: Track Status, About Team, CC Login always visible outside */}
+        <div className="hidden sm:flex items-center gap-2 relative z-30">
+          <Link
+            href="/track"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 shadow-2xs transition-all active:scale-95"
+            title="Track Status"
+          >
+            <ClipboardList size={14} className="text-primary" />
+            <span>Track Status</span>
+          </Link>
+
+          <button
+            type="button"
+            onClick={() => setIsAboutOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 shadow-2xs transition-all active:scale-95 cursor-pointer"
+            title="About Team"
+          >
+            <Users size={14} className="text-violet-600" />
+            <span>About Team</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleCCLogin}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white shadow-2xs transition-all active:scale-95 cursor-pointer"
+            title="CC Login"
+          >
+            <Lock size={13} />
+            <span>CC Login</span>
+          </button>
+        </div>
+
+        {/* Mobile Web Navigation: Compact 3-line circular menu button with dropdown */}
+        <div className="flex sm:hidden items-center shrink-0 relative z-30">
+          <HomeMenuDropdown onOpenAbout={() => setIsAboutOpen(true)} />
         </div>
       </div>
 
-      {/* Dashboard Weather & Quote Widget - Moved to Top */}
+      {/* Dashboard Weather Widget - Top */}
       <div className="w-full animate-premium-fade" style={{ animationDelay: '100ms' }}>
-        <WeatherWidget />
+        <WeatherWidget showQuote={false} />
       </div>
 
-      {/* 3 Circles Section - Responsive 3 Columns on all screens with balanced vertical spacing */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-8 w-full max-w-4xl my-auto py-4 sm:py-8 md:py-10">
+      {/* Inspirational Quote - Centered in whitespace between Weather Widget and 3 Brief Circles */}
+      <div 
+        className="w-full max-w-3xl mx-auto my-auto py-3 sm:py-5 md:py-6 flex items-center justify-center animate-premium-fade"
+        style={{ animationDelay: '150ms' }}
+      >
+        <InspirationalQuote />
+      </div>
+
+      {/* 3 Circles Section - Responsive 3 Columns on all screens */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-8 w-full max-w-4xl pb-4 sm:pb-8">
         
         {/* Unit 1: Creative Designer */}
         <div className="flex flex-col items-center text-center group">
@@ -81,6 +140,13 @@ export default function Home() {
         </div>
 
       </div>
+
+      {/* Controlled About Team Modal */}
+      <AboutTeamModal 
+        isOpen={isAboutOpen} 
+        onOpenChange={setIsAboutOpen} 
+        showTrigger={false} 
+      />
 
       {/* Bottom spacer for balanced vertical alignment */}
       <div className="w-full pb-2 sm:pb-4 mt-auto" />

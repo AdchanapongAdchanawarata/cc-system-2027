@@ -464,14 +464,98 @@ export default function AboutTeamModal({
                       </div>
 
                       {/* Connecting Line Down to Horizontal Branch Bar */}
-                      <div className="w-0.5 h-4 bg-neutral-300 mx-auto" />
+                      <div className="w-0.5 h-4 bg-neutral-300 mx-auto hidden md:block" />
                       
                       {/* Horizontal Branch Bar */}
                       <div className="w-[84%] h-0.5 bg-neutral-300 hidden md:block" />
                     </div>
 
-                    {/* LEVEL 3: 3 CORE BRANCHES (CIRCULAR NETWORK) */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+                    {/* MOBILE VIEW (< md): 3 DISTINCT UNIT CLUSTERS (NO MISLEADING VERTICAL STACK) */}
+                    <div className="block md:hidden w-full max-w-lg mx-auto pt-2 space-y-3.5">
+                      <div className="flex flex-col items-center my-2">
+                        <div className="w-0.5 h-3 bg-neutral-300" />
+                        <span className="text-[10px] font-bold text-neutral-500 bg-neutral-100 border border-neutral-200 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                          3 ยูนิตปฏิบัติการ (3 Core Units)
+                        </span>
+                      </div>
+
+                      {BRANCH_DATA.map((branch) => {
+                        const Icon = branch.icon;
+                        return (
+                          <div 
+                            key={branch.id} 
+                            className="bg-neutral-50/90 rounded-2xl p-3.5 border border-neutral-200/90 shadow-2xs space-y-3"
+                          >
+                            {/* Unit Header Banner */}
+                            <div className="flex items-center justify-between gap-2 pb-2 border-b border-neutral-200/80">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-xl bg-neutral-900 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                                  <Icon size={14} />
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[10px] font-mono font-bold text-[#E03131]">ยูนิตที่ {branch.num}</span>
+                                    <h4 className="text-xs font-black text-neutral-900 leading-tight">{branch.name}</h4>
+                                  </div>
+                                  <span className="text-[10px] font-mono text-neutral-500 block">{branch.sub}</span>
+                                </div>
+                              </div>
+                              <span className="text-[9px] font-mono text-neutral-600 bg-white px-2 py-0.5 rounded-full border border-neutral-200 shrink-0 font-bold">
+                                {branch.count}
+                              </span>
+                            </div>
+
+                            {/* Member Peer Cards Grid */}
+                            <div className="grid grid-cols-2 gap-2">
+                              {branch.members.map((m, idx) => (
+                                <div 
+                                  key={m.code}
+                                  className={`bg-white rounded-xl p-2.5 border border-neutral-200 shadow-2xs flex flex-col items-center text-center hover:border-neutral-400 transition-colors ${
+                                    branch.members.length === 3 && idx === 2 ? "col-span-2 max-w-[200px] mx-auto w-full" : ""
+                                  }`}
+                                >
+                                  <span className="text-[8px] font-semibold text-neutral-600 bg-neutral-100 border border-neutral-200/80 px-2 py-0.5 rounded-full mb-1 leading-none block max-w-full truncate text-center">
+                                    {m.role}
+                                  </span>
+                                  <h6 className="text-[11px] font-black text-neutral-900 mt-0.5 px-0.5 leading-tight flex flex-col items-center">
+                                    <span className="whitespace-nowrap">{m.firstName}</span>
+                                    <span className="whitespace-nowrap">{m.lastName}</span>
+                                  </h6>
+                                  <div className="flex items-center gap-1 mt-1">
+                                    <span className="text-[8.5px] font-mono font-bold text-neutral-800 bg-neutral-100 px-1.5 py-0.2 rounded-full border border-neutral-200">
+                                      {m.nickname}
+                                    </span>
+                                    <span className="text-[8.5px] font-mono font-bold text-neutral-900 bg-neutral-200 px-1.5 py-0.2 rounded-full">
+                                      {m.code}
+                                    </span>
+                                  </div>
+                                  <div className="mt-1.5 pt-1.5 border-t border-neutral-100 flex flex-col items-center gap-0.5 text-[8px] font-mono w-full px-0.5">
+                                    <a
+                                      href={`tel:${m.phone.replace(/-/g, "")}`}
+                                      className="text-neutral-700 hover:text-neutral-900 font-semibold flex items-center gap-0.5"
+                                    >
+                                      <Phone size={7.5} className="text-neutral-400" />
+                                      <span>{m.phone}</span>
+                                    </a>
+                                    <a
+                                      href={`mailto:${m.email}`}
+                                      className="text-neutral-500 hover:text-[#E03131] flex items-center gap-0.5 truncate max-w-[105px]"
+                                      title={m.email}
+                                    >
+                                      <Mail size={7.5} className="text-neutral-400 shrink-0" />
+                                      <span className="truncate">{m.email}</span>
+                                    </a>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* DESKTOP VIEW (>= md): 3 CORE BRANCHES (CIRCULAR NETWORK) */}
+                    <div className="hidden md:grid md:grid-cols-3 gap-4 pt-1">
                       {BRANCH_DATA.map((branch) => {
                         const Icon = branch.icon;
                         return (

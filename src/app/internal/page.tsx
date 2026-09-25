@@ -71,13 +71,13 @@ export default function InternalTaskForm() {
           className="inline-flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-semibold bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 shadow-2xs transition-all active:scale-95"
         >
           <ArrowLeft size={14} />
-          <span>กลับสู่แดชบอร์ด</span>
+          <span>Back</span>
         </Link>
 
         <button
           type="button"
           onClick={handleCopyLink}
-          title="คัดลอกลิงก์แบบฟอร์มนี้เพื่อแชร์"
+          title="Copy link"
           className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-semibold transition-all shadow-2xs border cursor-pointer active:scale-95 ${
             copiedLink
               ? "bg-emerald-50 border-emerald-300 text-emerald-700 ring-2 ring-emerald-200"
@@ -87,12 +87,12 @@ export default function InternalTaskForm() {
           {copiedLink ? (
             <>
               <Check size={14} className="text-emerald-600" />
-              <span>คัดลอกลิงก์แล้ว!</span>
+              <span>Copied!</span>
             </>
           ) : (
             <>
               <Copy size={14} className="text-slate-500" />
-              <span>คัดลอกลิงก์แบบฟอร์ม</span>
+              <span>Copy link</span>
             </>
           )}
         </button>

@@ -281,13 +281,13 @@ export default function IDCFormPage() {
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-semibold bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 shadow-2xs transition-all active:scale-95"
           >
             <ArrowLeft size={14} />
-            <span>กลับหน้าหลัก</span>
+            <span>Back</span>
           </Link>
 
           <button
             type="button"
             onClick={handleCopyFormLink}
-            title="คัดลอกลิงก์แบบฟอร์มนี้เพื่อแชร์"
+            title="Copy link"
             className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-semibold transition-all shadow-2xs border cursor-pointer active:scale-95 ${
               copiedFormLink
                 ? "bg-emerald-50 border-emerald-300 text-emerald-700 ring-2 ring-emerald-200"
@@ -297,12 +297,12 @@ export default function IDCFormPage() {
             {copiedFormLink ? (
               <>
                 <Check size={14} className="text-emerald-600" />
-                <span>คัดลอกลิงก์แล้ว!</span>
+                <span>Copied!</span>
               </>
             ) : (
               <>
                 <Copy size={14} className="text-slate-500" />
-                <span>คัดลอกลิงก์แบบฟอร์ม</span>
+                <span>Copy link</span>
               </>
             )}
           </button>
@@ -372,10 +372,10 @@ export default function IDCFormPage() {
                 ส่งคำขอเพิ่มเติม
               </button>
               <Link
-                href="/dashboard"
+                href="/"
                 className="px-5 py-2.5 bg-[#E03131] hover:bg-[#c92a2a] text-white rounded-xl text-xs font-bold transition-all cursor-pointer w-full sm:w-auto text-center shadow-xs"
               >
-                กลับสู่หน้าหลัก
+                Back
               </Link>
             </div>
           </div>

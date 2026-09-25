@@ -14,7 +14,11 @@ import {
 } from "lucide-react";
 import AboutTeamModal from "@/components/AboutTeamModal";
 
-export default function HomeMenuDropdown() {
+interface HomeMenuDropdownProps {
+  onOpenAbout?: () => void;
+}
+
+export default function HomeMenuDropdown({ onOpenAbout }: HomeMenuDropdownProps = {}) {
   const [isOpen, setIsOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -63,7 +67,11 @@ export default function HomeMenuDropdown() {
 
   const handleOpenAboutTeam = () => {
     setIsOpen(false);
-    setIsAboutOpen(true);
+    if (onOpenAbout) {
+      onOpenAbout();
+    } else {
+      setIsAboutOpen(true);
+    }
   };
 
   return (
@@ -179,40 +187,19 @@ export default function HomeMenuDropdown() {
                 </div>
                 <ChevronRight size={14} className="text-zinc-300 group-hover:text-zinc-700 group-hover:translate-x-0.5 transition-all shrink-0" />
               </a>
-
-              {/* Option 4: Official Manual */}
-              <a
-                href="/manual.html"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setIsOpen(false)}
-                className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-zinc-50 transition-colors text-left group cursor-pointer border-t border-zinc-100/80 pt-2"
-              >
-                <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-100/80 text-emerald-600 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-2xs">
-                  <BookOpen size={15} strokeWidth={2} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-zinc-900 group-hover:text-emerald-600 transition-colors flex items-center gap-1.5">
-                    คู่มือระบบ
-                    <ExternalLink size={10} className="text-zinc-400" />
-                  </div>
-                  <div className="text-[11px] text-zinc-500 truncate">
-                    คู่มือการใช้งานระบบฉบับสมบูรณ์
-                  </div>
-                </div>
-                <ChevronRight size={14} className="text-zinc-300 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all shrink-0" />
-              </a>
             </div>
           </div>
         )}
       </div>
 
-      {/* Controlled About Team Modal without standalone trigger button */}
-      <AboutTeamModal 
-        isOpen={isAboutOpen} 
-        onOpenChange={setIsAboutOpen} 
-        showTrigger={false} 
-      />
+      {/* Controlled About Team Modal without standalone trigger button (only if not controlled externally) */}
+      {!onOpenAbout && (
+        <AboutTeamModal 
+          isOpen={isAboutOpen} 
+          onOpenChange={setIsAboutOpen} 
+          showTrigger={false} 
+        />
+      )}
     </>
   );
 }

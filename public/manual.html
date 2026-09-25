@@ -720,7 +720,24 @@
         gap: 14px;
       }
       .mobile-mockup {
-        max-width: 260px;
+        max-width: 100% !important;
+        border-radius: 14px !important;
+        padding: 4px !important;
+        background: #e2e8f0 !important;
+        border: 1px solid var(--border) !important;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.06) !important;
+        margin: 12px auto !important;
+      }
+      .mobile-screen {
+        border-radius: 10px !important;
+        overflow: hidden !important;
+        background: white !important;
+      }
+      .mobile-screen img {
+        width: 100% !important;
+        height: auto !important;
+        display: block !important;
+        border-radius: 10px !important;
       }
       .flow-grid {
         grid-template-columns: 1fr;
@@ -862,7 +879,7 @@
               </div>
               <div class="browser-address">https://ccteam.vercel.app/</div>
             </div>
-            <img src="/manual_assets/shot_home_desktop.png" alt="หน้าแรก CC TEAM Portal บน Desktop">
+            <img src="/manual_assets/shot_home_desktop.png" alt="หน้าแรก CC TEAM Portal บน Desktop" loading="lazy" decoding="async">
           </div>
           <div class="img-caption">ภาพที่ 1.1: หน้าแรกบนคอมพิวเตอร์ (Desktop View) แสดง 3 วงกลมหลัก และวิดเจ็ตสภาพอากาศ</div>
         </div>
@@ -870,7 +887,7 @@
         <div>
           <div class="mobile-mockup">
             <div class="mobile-screen">
-              <img src="/manual_assets/shot_home_mobile.png" alt="หน้าแรก CC TEAM Portal บนมือถือ">
+              <img src="/manual_assets/shot_home_mobile.png" alt="หน้าแรก CC TEAM Portal บนมือถือ" loading="lazy" decoding="async">
             </div>
           </div>
           <div class="img-caption">ภาพที่ 1.2: หน้าแรกบนมือถือ (Mobile View) ปุ่มกดพอดีนิ้ว</div>
@@ -887,7 +904,7 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/ (About Team Modal)</div>
         </div>
-        <img src="/manual_assets/shot_about_team.png" alt="หน้าต่างแนะนำทีม CC TEAM">
+        <img src="/manual_assets/shot_about_team.png" alt="หน้าต่างแนะนำทีม CC TEAM" loading="lazy" decoding="async">
       </div>
       <div class="img-caption">ภาพที่ 1.3: หน้าต่างแนะนำทีมสร้างสรรค์และการสื่อสาร (About Team Modal) แสดงพันธกิจและช่องทางติดต่อ</div>
 
@@ -956,7 +973,7 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/request?unit=creative</div>
         </div>
-        <img src="/manual_assets/shot_request_step1.png" alt="ฟอร์มส่งงาน Creative Designer ว่าง">
+        <img src="/manual_assets/shot_request_step1.png" alt="ฟอร์มส่งงาน Creative Designer ว่าง" loading="lazy" decoding="async">
       </div>
       <div class="img-caption">ภาพที่ 2.1: ฟอร์มส่งงาน Creative Designer แสดงช่องกรอกข้อมูลผู้ขอรับบริการ, เมนูเลือกสังกัด และหมวดหมู่บริการ</div>
 
@@ -970,7 +987,7 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/request?unit=creative (Filled Demonstration)</div>
         </div>
-        <img src="/manual_assets/shot_request_step2.png" alt="ตัวอย่างการกรอกข้อมูลฟอร์มส่งงานจริง">
+        <img src="/manual_assets/shot_request_step2.png" alt="ตัวอย่างการกรอกข้อมูลฟอร์มส่งงานจริง" loading="lazy" decoding="async">
       </div>
       <div class="img-caption">ภาพที่ 2.2: ตัวอย่างการกรอกข้อมูลงานจริง: ระบุชื่องาน 'FoodFab 2026', สังกัด, ราคากลางประเมิน และวางลิงก์ Google Drive</div>
 
@@ -984,7 +1001,7 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/request?unit=content</div>
         </div>
-        <img src="/manual_assets/shot_request_content.png" alt="ฟอร์มส่งงาน Content Creator">
+        <img src="/manual_assets/shot_request_content.png" alt="ฟอร์มส่งงาน Content Creator" loading="lazy" decoding="async">
       </div>
       <div class="img-caption">ภาพที่ 2.3: ฟอร์มส่งงาน Content Creator รองรับการผลิตคลิปวิดีโอสั้น, สัมภาษณ์บุคคล, และบทความ SEO</div>
 
@@ -998,7 +1015,7 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/request?unit=pr</div>
         </div>
-        <img src="/manual_assets/shot_request_pr.png" alt="ฟอร์มส่งงาน PR & Communications">
+        <img src="/manual_assets/shot_request_pr.png" alt="ฟอร์มส่งงาน PR & Communications" loading="lazy" decoding="async">
       </div>
       <div class="img-caption">ภาพที่ 2.4: ฟอร์มส่งงาน PR & Communications สำหรับเขียนข่าวแจกสื่อ, ถ่ายภาพพิธีการ, และจัดการสื่อมวลชน</div>
 
@@ -1030,7 +1047,7 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/idc-form</div>
         </div>
-        <img src="/manual_assets/shot_idc_details.png" alt="แบบฟอร์มขอรับคำปรึกษาด้านงานสร้างสรรค์ ศูนย์ออกแบบและพัฒนานวัตกรรม">
+        <img src="/manual_assets/shot_idc_details.png" alt="แบบฟอร์มขอรับคำปรึกษาด้านงานสร้างสรรค์ ศูนย์ออกแบบและพัฒนานวัตกรรม" loading="lazy" decoding="async">
       </div>
       <div class="img-caption">ภาพที่ 3.1: หน้าแบบฟอร์มขอรับคำปรึกษาด้านงานสร้างสรรค์ สำหรับงานออกแบบบรรจุภัณฑ์และพัฒนาผลิตภัณฑ์นวัตกรรม</div>
 
@@ -1050,7 +1067,7 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/rsp-press-form</div>
         </div>
-        <img src="/manual_assets/shot_rsp_details.png" alt="แบบฟอร์มข่าวกิจกรรม RSP Press Form">
+        <img src="/manual_assets/shot_rsp_details.png" alt="แบบฟอร์มข่าวกิจกรรม RSP Press Form" loading="lazy" decoding="async">
       </div>
       <div class="img-caption">ภาพที่ 3.2: หน้าแบบฟอร์มข่าวกิจกรรม RSP Press ส่งประเด็นข่าวแจกสื่อมวลชนและภาพกิจกรรมเครือข่าย</div>
     </section>
@@ -1084,7 +1101,7 @@
               </div>
               <div class="browser-address">https://ccteam.vercel.app/track</div>
             </div>
-            <img src="/manual_assets/shot_track_search.png" alt="หน้าติดตามสถานะงานบน Desktop">
+            <img src="/manual_assets/shot_track_search.png" alt="หน้าติดตามสถานะงานบน Desktop" loading="lazy" decoding="async">
           </div>
           <div class="img-caption">ภาพที่ 4.1: หน้าติดตามสถานะงานบน Desktop แสดงช่องค้นหารหัสและประวัติการส่งงาน</div>
         </div>
@@ -1092,7 +1109,7 @@
         <div>
           <div class="mobile-mockup">
             <div class="mobile-screen">
-              <img src="/manual_assets/shot_track_mobile.png" alt="หน้าติดตามสถานะงานบนมือถือ">
+              <img src="/manual_assets/shot_track_mobile.png" alt="หน้าติดตามสถานะงานบนมือถือ" loading="lazy" decoding="async">
             </div>
           </div>
           <div class="img-caption">ภาพที่ 4.2: ค้นหาสถานะงานบนมือถือได้อย่างรวดเร็ว</div>
@@ -1113,7 +1130,7 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/survey</div>
         </div>
-        <img src="/manual_assets/shot_survey_rating.png" alt="แบบประเมินความพึงพอใจงาน">
+        <img src="/manual_assets/shot_survey_rating.png" alt="แบบประเมินความพึงพอใจงาน" loading="lazy" decoding="async">
       </div>
       <div class="img-caption">ภาพที่ 4.3: แบบประเมินความพึงพอใจ (Satisfaction Survey) ให้คะแนน 5 ดาวเพื่อปิดงานและนำเข้าตัวชี้วัด ISO</div>
     </section>
@@ -1150,7 +1167,7 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/login</div>
         </div>
-        <img src="/manual_assets/shot_login_screen.png" alt="หน้าเข้าสู่ระบบ CC Login พร้อมระบบ Strict Whitelist">
+        <img src="/manual_assets/shot_login_screen.png" alt="หน้าเข้าสู่ระบบ CC Login พร้อมระบบ Strict Whitelist" loading="lazy" decoding="async">
       </div>
       <div class="img-caption">ภาพที่ 5.1: หน้าเข้าสู่ระบบ (CC Login) รองรับเฉพาะอีเมลทีมงานที่ระบุใน Manage Team เท่านั้น</div>
     </section>
@@ -1174,7 +1191,7 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/dashboard</div>
         </div>
-        <img src="/manual_assets/shot_control_center.png" alt="หน้าหลัก Control Center Dashboard">
+        <img src="/manual_assets/shot_control_center.png" alt="หน้าหลัก Control Center Dashboard" loading="lazy" decoding="async">
       </div>
       <div class="img-caption">ภาพที่ 6.1: หน้าหลัก Control Center Dashboard แบ่ง 3 ส่วน: Tasks (จัดการงาน), Insights (วิเคราะห์ผลงาน), Data Reports (รายงาน)</div>
 
@@ -1189,7 +1206,7 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/dashboard?view=assignments</div>
         </div>
-        <img src="/manual_assets/shot_tasks_board.png" alt="กระดาน Tasks Board สำหรับจ่ายงานและติดตามสถานะงาน">
+        <img src="/manual_assets/shot_tasks_board.png" alt="กระดาน Tasks Board สำหรับจ่ายงานและติดตามสถานะงาน" loading="lazy" decoding="async">
       </div>
       <div class="img-caption">ภาพที่ 6.2: กระดาน Tasks Board แสดงรายการงาน กรองตามยูนิต ปุ่มจ่ายงาน และแถบติดตามความคืบหน้า</div>
 
@@ -1203,7 +1220,7 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/dashboard (Internal Task Modal)</div>
         </div>
-        <img src="/manual_assets/shot_internal_task.png" alt="หน้าต่างสร้าง Internal Task">
+        <img src="/manual_assets/shot_internal_task.png" alt="หน้าต่างสร้าง Internal Task" loading="lazy" decoding="async">
       </div>
       <div class="img-caption">ภาพที่ 6.3: หน้าต่างสร้าง Internal Task สำหรับงานภายในทีม เช่น Proposal, ซ่อมบำรุง, หรืองานกิจกรรม</div>
     </section>
@@ -1232,7 +1249,7 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports</div>
         </div>
-        <img src="/manual_assets/shot_dashboard_reports_full.png" alt="ศูนย์รวมรายงาน Back of House แสดงครบทั้ง 8 วงกลม">
+        <img src="/manual_assets/shot_dashboard_reports_full.png" alt="ศูนย์รวมรายงาน Back of House แสดงครบทั้ง 8 วงกลม" loading="lazy" decoding="async">
       </div>
       <div class="img-caption">ภาพที่ 7.1: ศูนย์รวมรายงาน Back of House แสดงครบทั้ง 8 โมดูล (แถวบน 4 รายการ และแถวล่าง 4 รายการ สมบูรณ์ 100%)</div>
 
@@ -1308,7 +1325,7 @@
             </div>
             <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=meeting</div>
           </div>
-          <img src="/manual_assets/shot_boh_meeting.png" alt="หน้า Meeting Report บันทึกการประชุมทีม CC">
+          <img src="/manual_assets/shot_boh_meeting.png" alt="หน้า Meeting Report บันทึกการประชุมทีม CC" loading="lazy" decoding="async">
         </div>
         <div class="img-caption">ภาพที่ 7.2: หน้า Meeting Report แสดงรายการบันทึกการประชุม มติสำคัญ และระบบติดตามความคืบหน้ารายสัปดาห์</div>
         <div class="callout callout-info" style="margin-top: 12px;">
@@ -1338,7 +1355,7 @@
             </div>
             <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=design-center</div>
           </div>
-          <img src="/manual_assets/shot_boh_idc.png" alt="หน้า Innovation Design Center Report">
+          <img src="/manual_assets/shot_boh_idc.png" alt="หน้า Innovation Design Center Report" loading="lazy" decoding="async">
         </div>
         <div class="img-caption">ภาพที่ 7.3: หน้า Innovation Design Center Report แสดงสถิติงานต้นแบบนวัตกรรม รายการสิ่งประดิษฐ์ บรรจุภัณฑ์ และการใช้งานห้องแล็บ</div>
         <div class="callout callout-info" style="margin-top: 12px;">
@@ -1368,7 +1385,7 @@
             </div>
             <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=rsp-press</div>
           </div>
-          <img src="/manual_assets/shot_boh_rsp.png" alt="หน้า RSP Press Report ข่าวประชาสัมพันธ์เครือข่าย">
+          <img src="/manual_assets/shot_boh_rsp.png" alt="หน้า RSP Press Report ข่าวประชาสัมพันธ์เครือข่าย" loading="lazy" decoding="async">
         </div>
         <div class="img-caption">ภาพที่ 7.4: หน้า RSP Press Report สรุปรายการข่าวประชาสัมพันธ์ ลิงก์สื่อมวลชน และสถิติการเผยแพร่</div>
         <div class="callout callout-info" style="margin-top: 12px;">
@@ -1398,7 +1415,7 @@
             </div>
             <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=iso</div>
           </div>
-          <img src="/manual_assets/shot_boh_iso.png" alt="หน้า ISO Report เอกสารระบบคุณภาพและขั้นตอน WI">
+          <img src="/manual_assets/shot_boh_iso.png" alt="หน้า ISO Report เอกสารระบบคุณภาพและขั้นตอน WI" loading="lazy" decoding="async">
         </div>
         <div class="img-caption">ภาพที่ 7.5: หน้า ISO Report แสดงขั้นตอน WI อัตราส่งงานตรงเวลา (% On-Time) และการบริหารความเสี่ยง</div>
         <div class="callout callout-info" style="margin-top: 12px;">
@@ -1428,7 +1445,7 @@
             </div>
             <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=km</div>
           </div>
-          <img src="/manual_assets/shot_boh_km.png" alt="หน้า KM คลังความรู้และนวัตกรรม">
+          <img src="/manual_assets/shot_boh_km.png" alt="หน้า KM คลังความรู้และนวัตกรรม" loading="lazy" decoding="async">
         </div>
         <div class="img-caption">ภาพที่ 7.6: หน้า KM คลังความรู้ แสดงบทความการประยุกต์ใช้ AI, เทคนิคงานสื่อสาร และไฟล์แบ่งปันความรู้</div>
         <div class="callout callout-info" style="margin-top: 12px;">
@@ -1458,7 +1475,7 @@
             </div>
             <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=action-plan</div>
           </div>
-          <img src="/manual_assets/shot_boh_tap.png" alt="หน้ารายงานแผนดำเนินงาน Team Action Plan">
+          <img src="/manual_assets/shot_boh_tap.png" alt="หน้ารายงานแผนดำเนินงาน Team Action Plan" loading="lazy" decoding="async">
         </div>
         <div class="img-caption">ภาพที่ 7.7: หน้า Team Action Plan ติดตามความคืบหน้ากิจกรรมรายไตรมาส (Q1 - Q4) และผู้รับผิดชอบ</div>
         <div class="callout callout-info" style="margin-top: 12px;">
@@ -1488,7 +1505,7 @@
             </div>
             <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=work-links</div>
           </div>
-          <img src="/manual_assets/shot_boh_links.png" alt="หน้าศูนย์รวมลิ้งค์อื่นๆ ที่เกี่ยวข้อง Work Links">
+          <img src="/manual_assets/shot_boh_links.png" alt="หน้าศูนย์รวมลิ้งค์อื่นๆ ที่เกี่ยวข้อง Work Links" loading="lazy" decoding="async">
         </div>
         <div class="img-caption">ภาพที่ 7.8: หน้า Work Links รวมลิงก์ Google Drive ส่วนกลาง, แฟ้มโลโก้, เทมเพลต และฟอร์มทางการ</div>
         <div class="callout callout-info" style="margin-top: 12px;">
@@ -1518,7 +1535,7 @@
             </div>
             <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=activity</div>
           </div>
-          <img src="/manual_assets/shot_boh_activity.png" alt="หน้าบันทึกกิจกรรม Activity Log">
+          <img src="/manual_assets/shot_boh_activity.png" alt="หน้าบันทึกกิจกรรม Activity Log" loading="lazy" decoding="async">
         </div>
         <div class="img-caption">ภาพที่ 7.9: หน้า Activity Log แสดงประวัติการดำเนินการ การส่งมอบงาน และความเคลื่อนไหวในระบบ</div>
         <div class="callout callout-info" style="margin-top: 12px;">
@@ -1560,7 +1577,7 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/dashboard?view=dashboards (Tab: จำนวนงาน / มูลค่า)</div>
         </div>
-        <img src="/manual_assets/shot_insight_tab1_workloads.png" alt="หน้า Insights แท็บที่ 1: จำนวนงานและมูลค่าความคุ้มค่า">
+        <img src="/manual_assets/shot_insight_tab1_workloads.png" alt="หน้า Insights แท็บที่ 1: จำนวนงานและมูลค่าความคุ้มค่า" loading="lazy" decoding="async">
       </div>
       <div class="img-caption">ภาพที่ 8.1: แท็บที่ 1 จำนวนงาน/มูลค่า แสดงยอด Save Cost ฿2,004,750, กำไร PM ฿2,119,750 และภาระงาน 52 ชิ้นงาน</div>
 
@@ -1577,7 +1594,7 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/dashboard?view=dashboards (Tab: KR/R , KPI/TIP)</div>
         </div>
-        <img src="/manual_assets/shot_insight_tab2_goals.png" alt="หน้า Insights แท็บที่ 2: ตัวชี้วัดความสำเร็จ KR/R และ KPI/TIP">
+        <img src="/manual_assets/shot_insight_tab2_goals.png" alt="หน้า Insights แท็บที่ 2: ตัวชี้วัดความสำเร็จ KR/R และ KPI/TIP" loading="lazy" decoding="async">
       </div>
       <div class="img-caption">ภาพที่ 8.2: แท็บที่ 2 ตัวชี้วัดความสำเร็จ KR/R และ KPI/TIP แสดงเปอร์เซ็นต์ความสำเร็จ KR (26%), TIP (77%) และความพึงพอใจเฉลี่ย 90.8%</div>
 
@@ -1594,7 +1611,7 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/dashboard?view=dashboards (Tab: เวลา / สถานะงาน)</div>
         </div>
-        <img src="/manual_assets/shot_insight_tab3_time.png" alt="หน้า Insights แท็บที่ 3: เวลาและประสิทธิภาพการส่งมอบงาน">
+        <img src="/manual_assets/shot_insight_tab3_time.png" alt="หน้า Insights แท็บที่ 3: เวลาและประสิทธิภาพการส่งมอบงาน" loading="lazy" decoding="async">
       </div>
       <div class="img-caption">ภาพที่ 8.3: แท็บที่ 3 เวลา/สถานะงาน แสดงความเร็วเฉลี่ย 3.5 วัน/งาน อัตราตรงเวลา 100% และระดับความเสี่ยงของแต่ละยูนิต</div>
 
@@ -1614,7 +1631,7 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/dashboard?view=dashboards (Tab: รายงานรายบุคคล — โปรไฟล์: จ๊อบ AA)</div>
         </div>
-        <img src="/manual_assets/shot_insight_tab4_individual.png" alt="หน้า Insights แท็บที่ 4: รายงานสรุปผลงานรายบุคคล 360 องศา โปรไฟล์ จ๊อบ AA ยอด Save Cost สูงสุด ฿881,500">
+        <img src="/manual_assets/shot_insight_tab4_individual.png" alt="หน้า Insights แท็บที่ 4: รายงานสรุปผลงานรายบุคคล 360 องศา โปรไฟล์ จ๊อบ AA ยอด Save Cost สูงสุด ฿881,500" loading="lazy" decoding="async">
       </div>
       <div class="img-caption">ภาพที่ 8.4: แท็บที่ 4 รายงานรายบุคคล 360 แสดงผลงานคุณจ๊อบ AA ยอด Save Cost สะสม ฿881,500, สัดส่วนงานหลัก/งานช่วย, Velocity กราฟ และปุ่ม Save PDF ออกรายงานทางการ</div>
 
@@ -1642,7 +1659,7 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/dashboard?view=dashboards (Tab: รายงานรวมทีม)</div>
         </div>
-        <img src="/manual_assets/shot_insight_tab5_executive.png" alt="หน้า Insights แท็บที่ 5: รายงานภาพรวมทีมและผู้บริหาร">
+        <img src="/manual_assets/shot_insight_tab5_executive.png" alt="หน้า Insights แท็บที่ 5: รายงานภาพรวมทีมและผู้บริหาร" loading="lazy" decoding="async">
       </div>
       <div class="img-caption">ภาพที่ 8.5: แท็บที่ 5 รายงานภาพรวมทีม/ผู้บริหาร รวม 4 ดัชนีหลักสำหรับนำเสนอในที่ประชุมกรรมการบริหาร</div>
     </section>
@@ -1880,7 +1897,7 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/dashboard (Setup: Manage Team)</div>
         </div>
-        <img src="/manual_assets/shot_setup_team.png" alt="หน้าต่างตั้งค่า Manage Team สำหรับ Admin">
+        <img src="/manual_assets/shot_setup_team.png" alt="หน้าต่างตั้งค่า Manage Team สำหรับ Admin" loading="lazy" decoding="async">
       </div>
       <div class="img-caption">ภาพที่ 10.1: แท็บ Manage Team สำหรับเพิ่ม/แก้ไขรายชื่อทีมงาน กำหนดบทบาท Admin / Assignee / Executive</div>
 
@@ -1894,7 +1911,7 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/dashboard (Setup: Service Pricing)</div>
         </div>
-        <img src="/manual_assets/shot_setup_pricing.png" alt="หน้าต่างตั้งค่า Service Pricing สำหรับ Admin">
+        <img src="/manual_assets/shot_setup_pricing.png" alt="หน้าต่างตั้งค่า Service Pricing สำหรับ Admin" loading="lazy" decoding="async">
       </div>
       <div class="img-caption">ภาพที่ 10.2: แท็บ Service Pricing สำหรับปรับเปลี่ยนรายการบริการ และราคากลางอ้างอิงของแต่ละยูนิต</div>
 
@@ -1908,7 +1925,7 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/dashboard (Setup: OKR Targets)</div>
         </div>
-        <img src="/manual_assets/shot_setup_okr.png" alt="หน้าต่างตั้งค่า OKR Targets สำหรับ Admin">
+        <img src="/manual_assets/shot_setup_okr.png" alt="หน้าต่างตั้งค่า OKR Targets สำหรับ Admin" loading="lazy" decoding="async">
       </div>
       <div class="img-caption">ภาพที่ 10.3: แท็บ OKR Targets สำหรับกำหนดเป้าหมายเชิงผลลัพธ์ (R & KR) ประจำปีเพื่อใช้คำนวณในรายงาน TAP</div>
 
@@ -1922,7 +1939,7 @@
           </div>
           <div class="browser-address">https://ccteam.vercel.app/dashboard (Setup: Storage Quota)</div>
         </div>
-        <img src="/manual_assets/shot_setup_storage.png" alt="หน้าต่างตั้งค่า Storage Quota & Auto Purge สำหรับ Admin">
+        <img src="/manual_assets/shot_setup_storage.png" alt="หน้าต่างตั้งค่า Storage Quota & Auto Purge สำหรับ Admin" loading="lazy" decoding="async">
       </div>
       <div class="img-caption">ภาพที่ 10.4: แท็บ Storage & Auto Purge ตรวจสอบพื้นที่ฐานข้อมูลและกดปุ่มล้างไฟล์แนบงานเก่าเพื่อคืนพื้นที่ฟรี 100%</div>
     </section>

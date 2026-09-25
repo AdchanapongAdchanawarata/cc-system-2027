@@ -25,14 +25,43 @@ const QUOTES = [
   { text: "Everything is designed. Few things are designed well.", author: "Brian Reed" }
 ];
 
-export default function WeatherWidget({ variant = "full" }: { variant?: "full" | "quoteOnly" | "hidden" }) {
+const MAX_WEATHER_CACHE_AGE = 30 * 60 * 1000; // 30 minutes
+
+export function InspirationalQuote() {
+  const [quoteIndex, setQuoteIndex] = useState(0);
+
+  useEffect(() => {
+    setQuoteIndex(Math.floor(Date.now() / 86400000) % QUOTES.length);
+  }, []);
+
+  const quote = QUOTES[quoteIndex];
+
+  return (
+    <div className="text-center max-w-3xl mx-auto px-4 select-none">
+      <p className="text-sm sm:text-base md:text-xl lg:text-2xl font-serif italic text-foreground mb-1 leading-snug sm:leading-relaxed">
+        "{quote.text}"
+      </p>
+      <p className="text-[10px] sm:text-xs md:text-sm font-medium text-primary tracking-[0.15em] sm:tracking-[0.25em] uppercase">
+        — {quote.author} —
+      </p>
+    </div>
+  );
+}
+
+export default function WeatherWidget({ 
+  variant = "full",
+  showQuote = true 
+}: { 
+  variant?: "full" | "quoteOnly" | "hidden";
+  showQuote?: boolean;
+}) {
   const [weather, setWeather] = useState<{ temp: number; label: string; type: "sunny" | "cloudy" | "rainy" }>(() => {
     if (typeof window !== "undefined") {
       try {
         const saved = localStorage.getItem("cc_weather_cache");
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (parsed && typeof parsed.temp === "number") {
+          if (parsed && typeof parsed.temp === "number" && parsed.timestamp && (Date.now() - parsed.timestamp < MAX_WEATHER_CACHE_AGE)) {
             return { temp: parsed.temp, label: parsed.label, type: parsed.type };
           }
         }
@@ -71,12 +100,12 @@ export default function WeatherWidget({ variant = "full" }: { variant?: "full" |
   };
 
   useEffect(() => {
-    // Try immediate read from localStorage
+    // Try immediate read from localStorage with cache validity check
     try {
       const saved = localStorage.getItem("cc_weather_cache");
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && typeof parsed.temp === "number") {
+        if (parsed && typeof parsed.temp === "number" && parsed.timestamp && (Date.now() - parsed.timestamp < MAX_WEATHER_CACHE_AGE)) {
           setWeather({ temp: parsed.temp, label: parsed.label, type: parsed.type });
         }
       }
@@ -180,12 +209,14 @@ export default function WeatherWidget({ variant = "full" }: { variant?: "full" |
       </div>
       
       {/* Quote */}
-      <div className={variant === "hidden" ? "opacity-0" : "opacity-100"}>
-        <div className="mt-4 sm:mt-6 md:mt-7 mb-2 sm:mb-3 text-center max-w-3xl mx-auto px-3">
-          <p className="text-sm sm:text-xl md:text-2xl lg:text-3xl font-serif italic text-foreground mb-0.5 sm:mb-1 leading-snug sm:leading-relaxed">"{quote.text}"</p>
-          <p className="text-[10px] sm:text-xs md:text-sm font-medium text-primary tracking-[0.15em] sm:tracking-[0.25em] uppercase">— {quote.author} —</p>
+      {showQuote && (
+        <div className={variant === "hidden" ? "opacity-0" : "opacity-100"}>
+          <div className="mt-4 sm:mt-6 md:mt-7 mb-2 sm:mb-3 text-center max-w-3xl mx-auto px-3">
+            <p className="text-sm sm:text-xl md:text-2xl lg:text-3xl font-serif italic text-foreground mb-0.5 sm:mb-1 leading-snug sm:leading-relaxed">"{quote.text}"</p>
+            <p className="text-[10px] sm:text-xs md:text-sm font-medium text-primary tracking-[0.15em] sm:tracking-[0.25em] uppercase">— {quote.author} —</p>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

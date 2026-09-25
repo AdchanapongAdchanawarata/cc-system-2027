@@ -1,27 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { PenTool, Video, Mic, Lock } from "lucide-react";
+import { PenTool, Video, Mic } from "lucide-react";
 import WeatherWidget from "@/components/WeatherWidget";
-import AboutTeamModal from "@/components/AboutTeamModal";
+import HomeMenuDropdown from "@/components/HomeMenuDropdown";
 
 export default function Home() {
-  const router = useRouter();
-
-  const handleCCLogin = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (typeof window !== "undefined") {
-      const savedEmail = localStorage.getItem("cc_user_email");
-      if (savedEmail) {
-        // If already logged in, enter dashboard directly with zero stutter
-        router.push("/dashboard");
-        return;
-      }
-    }
-    router.push("/login");
-  };
-
   return (
     <main className="flex-1 flex flex-col items-center px-3 py-2 sm:px-6 md:px-8 md:py-3 max-w-6xl mx-auto w-full min-h-screen">
       {/* Top Navigation Bar */}
@@ -35,14 +19,8 @@ export default function Home() {
           </p>
         </div>
         
-        <div className="flex flex-row items-center gap-1.5 sm:gap-2 shrink-0 relative z-30">
-          <Link 
-            href="/track" 
-            className="flex items-center text-xs sm:text-sm font-medium text-foreground hover:text-primary transition-colors bg-surface px-3 py-1.5 sm:px-5 sm:py-2 rounded-full border border-surface-border shadow-[2px_4px_8px_rgba(0,0,0,0.05),-1px_-1px_4px_rgba(255,255,255,0.8)] hover:shadow-md whitespace-nowrap"
-          >
-            Track Status
-          </Link>
-          <AboutTeamModal />
+        <div className="flex flex-row items-center shrink-0 relative z-30">
+          <HomeMenuDropdown />
         </div>
       </div>
 
@@ -104,17 +82,8 @@ export default function Home() {
 
       </div>
 
-      {/* Bottom CC Login */}
-      <div className="w-full flex items-center justify-center gap-6 pb-4 sm:pb-6 mt-auto pt-4 sm:pt-8 animate-premium-fade" style={{ animationDelay: '500ms' }}>
-        <a 
-          href="/login" 
-          onClick={handleCCLogin}
-          className="flex items-center text-xs sm:text-sm font-medium text-muted-foreground hover:text-primary transition-colors group cursor-pointer py-1 px-3"
-        >
-          <Lock className="mr-1.5 text-muted-foreground/60 group-hover:text-primary transition-colors" size={14} />
-          CC Login
-        </a>
-      </div>
+      {/* Bottom spacer for balanced vertical alignment */}
+      <div className="w-full pb-2 sm:pb-4 mt-auto" />
     </main>
   );
 }

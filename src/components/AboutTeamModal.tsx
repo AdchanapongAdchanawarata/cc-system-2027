@@ -160,11 +160,40 @@ const BRANCH_DATA = [
   }
 ];
 
-export default function AboutTeamModal() {
-  const [isOpen, setIsOpen] = useState(false);
+interface AboutTeamModalProps {
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  showTrigger?: boolean;
+}
+
+export default function AboutTeamModal({
+  isOpen: controlledIsOpen,
+  onOpenChange,
+  showTrigger = true
+}: AboutTeamModalProps = {}) {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<"tree" | "units" | "article">("tree");
   const [expandedUnit, setExpandedUnit] = useState<string | null>(null);
+
+  const isControlled = typeof controlledIsOpen === "boolean";
+  const isOpen = isControlled ? controlledIsOpen : internalIsOpen;
+
+  const handleClose = () => {
+    if (isControlled) {
+      onOpenChange?.(false);
+    } else {
+      setInternalIsOpen(false);
+    }
+  };
+
+  const handleOpen = () => {
+    if (isControlled) {
+      onOpenChange?.(true);
+    } else {
+      setInternalIsOpen(true);
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -185,7 +214,7 @@ export default function AboutTeamModal() {
   // Handle Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsOpen(false);
+      if (e.key === "Escape") handleClose();
     };
     if (isOpen) window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
@@ -194,19 +223,21 @@ export default function AboutTeamModal() {
   return (
     <>
       {/* Trigger Button - Clean Minimalist Pill matching Track Status, cursor pointer & reliable click */}
-      <button
-        type="button"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setIsOpen(true);
-        }}
-        className="flex items-center justify-center text-xs sm:text-sm font-medium text-foreground hover:text-primary transition-colors bg-surface px-3 py-1.5 sm:px-5 sm:py-2 rounded-full border border-surface-border shadow-[2px_4px_8px_rgba(0,0,0,0.05),-1px_-1px_4px_rgba(255,255,255,0.8)] hover:shadow-md cursor-pointer select-none active:scale-95 relative z-30 pointer-events-auto whitespace-nowrap"
-        style={{ cursor: "pointer" }}
-        title="ผังโครงสร้างและบทบาทหน้าที่ทีม CC"
-      >
-        About Team
-      </button>
+      {showTrigger && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleOpen();
+          }}
+          className="flex items-center justify-center text-xs sm:text-sm font-medium text-foreground hover:text-primary transition-colors bg-surface px-3 py-1.5 sm:px-5 sm:py-2 rounded-full border border-surface-border shadow-[2px_4px_8px_rgba(0,0,0,0.05),-1px_-1px_4px_rgba(255,255,255,0.8)] hover:shadow-md cursor-pointer select-none active:scale-95 relative z-30 pointer-events-auto whitespace-nowrap"
+          style={{ cursor: "pointer" }}
+          title="ผังโครงสร้างและบทบาทหน้าที่ทีม CC"
+        >
+          About Team
+        </button>
+      )}
 
       {/* Rendered via Portal directly to body to prevent ANY CSS stacking context issues */}
       {isOpen && mounted && createPortal(
@@ -215,7 +246,7 @@ export default function AboutTeamModal() {
           {/* Solid Opaque Backdrop Blur */}
           <div
             className="fixed inset-0 bg-neutral-950/80 backdrop-blur-md transition-opacity"
-            onClick={() => setIsOpen(false)}
+            onClick={handleClose}
           />
 
           {/* Dieter Rams Minimalist Modal Container */}
@@ -241,7 +272,7 @@ export default function AboutTeamModal() {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsOpen(false)}
+                  onClick={handleClose}
                   className="w-8 h-8 rounded-full border border-neutral-200 hover:border-neutral-400 bg-neutral-50 hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900 flex items-center justify-center transition-all cursor-pointer active:scale-90"
                   title="ปิด (Esc)"
                 >
@@ -737,7 +768,7 @@ export default function AboutTeamModal() {
 
               <button
                 type="button"
-                onClick={() => setIsOpen(false)}
+                onClick={handleClose}
                 className="px-4 py-1.5 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-bold transition-all cursor-pointer active:scale-95 text-xs"
               >
                 ปิดหน้าต่าง

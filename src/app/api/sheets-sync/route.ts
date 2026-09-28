@@ -260,8 +260,10 @@ async function sendSyncEmails(type: 'R' | 'KR', data: { rRows?: SheetDataRRow[];
 // Push to Google Apps Script Webhook
 // ----------------------------------------------------------------------
 
+const DEFAULT_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwgKuPmRorTPJH25vw8pmTCyJudJW3O7kq_5kp3Sa9tjYqHtK2pBDa-K4Fnj8OQZWrt5Q/exec";
+
 async function pushToGoogleSheetWebhook(payload: { type: 'Data_R' | 'Data_KR'; rows: any[] }) {
-  const webhookUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
+  const webhookUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL || DEFAULT_WEBHOOK_URL;
   if (!webhookUrl) {
     return { pushed: false, message: "No GOOGLE_SHEETS_WEBHOOK_URL configured" };
   }
@@ -360,6 +362,8 @@ export async function GET(request: Request) {
     month: getMonthCode(now),
     week: getWeekCode(now),
     fy: getFiscalYear(now),
+    webhookConfigured: Boolean(process.env.GOOGLE_SHEETS_WEBHOOK_URL || DEFAULT_WEBHOOK_URL),
+    googleSheetUrl: "https://docs.google.com/spreadsheets/d/1fjfd7oPCqmfARPjf3XDy1QhcwSbQddMA2C1r0GzxjL0/edit",
     rRowsCount: rRows.length,
     krRowsCount: krRows.length,
     rRows: rRows,

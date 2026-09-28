@@ -197,7 +197,7 @@ export default function DataReportsView({ onSubReportChange }: DataReportsViewPr
         </div>
 
         {/* 8 Rams Circular Buttons Grid (4 Columns on Desktop) */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-3.5 sm:gap-8 md:gap-10 w-full max-w-6xl px-1 sm:px-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-3.5 sm:gap-8 md:gap-10 w-full max-w-7xl px-1 sm:px-4">
           {reports.map((report) => {
             const Icon = report.icon;
             return (

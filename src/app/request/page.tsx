@@ -300,7 +300,8 @@ function FormContent() {
   const [creativeDraftDate, setCreativeDraftDate] = useState("");
   const [creativeUsageDate, setCreativeUsageDate] = useState("");
   const [contentPublishDate, setContentPublishDate] = useState("");
-  const [prEventDatetime, setPrEventDatetime] = useState("");
+  const [prEventStart, setPrEventStart] = useState("");
+  const [prEventEnd, setPrEventEnd] = useState("");
   const [prPublishDate, setPrPublishDate] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -420,10 +421,13 @@ function FormContent() {
 
       // Connect PR event datetime to usage_date and deadline
       if (activeUnit === 'pr') {
-        if (prEventDatetime) {
-          details.event_datetime = prEventDatetime;
-          const dateOnly = prEventDatetime.split(" ")[0];
-          if (!details.usage_date) {
+        const fullEventDatetime = prEventEnd ? `${prEventStart} ถึง ${prEventEnd}` : prEventStart;
+        if (fullEventDatetime) {
+          details.event_datetime = fullEventDatetime;
+          details.event_start = prEventStart;
+          details.event_end = prEventEnd;
+          const dateOnly = prEventStart ? prEventStart.split(" ")[0] : "";
+          if (!details.usage_date && dateOnly) {
             details.usage_date = dateOnly;
           }
         }
@@ -530,7 +534,8 @@ function FormContent() {
                 setCreativeDraftDate(""); 
                 setCreativeUsageDate(""); 
                 setContentPublishDate(""); 
-                setPrEventDatetime("");
+                setPrEventStart("");
+                setPrEventEnd("");
                 setPrPublishDate(""); 
               }}
               className="w-full sm:w-auto px-6 py-2.5 bg-primary text-white rounded-full hover:bg-primary/90 transition-all font-medium text-sm shadow-md cursor-pointer"
@@ -775,29 +780,41 @@ function FormContent() {
                 <label htmlFor="pr_service" className="text-sm font-medium">ประเภทงาน</label>
                 <CategoryDropdown value={selectedPRCategory} onChange={setSelectedPRCategory} categories={PR_CATEGORIES} inputName="details.service" />
               </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label htmlFor="pr_event_datetime" className="text-sm font-medium">วันและเวลาการจัดกิจกรรม</label>
-                  <span className="text-[11px] text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full font-medium border border-orange-200">
-                    เชื่อมกับ Deadline (กำหนดส่ง)
-                  </span>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-sm font-medium">วันและเวลาการจัดกิจกรรม (เริ่ม - ถึง)</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <span className="text-xs text-zinc-500 font-medium">วันและเวลาเริ่มต้น (เริ่ม)</span>
+                    <ModernDatePicker
+                      value={prEventStart}
+                      onChange={(val) => {
+                        setPrEventStart(val);
+                        if (!prPublishDate && val) {
+                          setPrPublishDate(val.split(" ")[0]);
+                        }
+                      }}
+                      showTimeSelect
+                      placeholder="เลือกวันและเวลาเริ่มต้น..."
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs text-zinc-500 font-medium">วันและเวลาสิ้นสุด (ถึง)</span>
+                    <ModernDatePicker
+                      value={prEventEnd}
+                      onChange={setPrEventEnd}
+                      showTimeSelect
+                      placeholder="เลือกวันและเวลาสิ้นสุด (ถ้ามี)..."
+                    />
+                  </div>
                 </div>
-                <ModernDatePicker
-                  value={prEventDatetime}
-                  onChange={(val) => {
-                    setPrEventDatetime(val);
-                    if (!prPublishDate && val) {
-                      setPrPublishDate(val.split(" ")[0]);
-                    }
-                  }}
-                  showTimeSelect
-                  name="details.event_datetime"
-                  id="pr_event_datetime"
-                  placeholder="เลือกวันและเวลาจัดกิจกรรม..."
-                  required
+                <input 
+                  type="hidden" 
+                  name="details.event_datetime" 
+                  value={prEventEnd ? `${prEventStart} ถึง ${prEventEnd}` : prEventStart} 
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 md:col-span-2">
                 <label htmlFor="pr_publish_date" className="text-sm font-medium">วันที่เผยแพร่ข่าว</label>
                 <ModernDatePicker
                   value={prPublishDate}

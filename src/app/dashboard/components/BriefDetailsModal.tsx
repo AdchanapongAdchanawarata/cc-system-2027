@@ -390,7 +390,8 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
 
   const parseDateSafe = (dStr: any): Date | null => {
     if (!dStr) return null;
-    const d = new Date(dStr);
+    const cleanStr = String(dStr).split(" - ")[0].split(" ถึง ")[0].trim();
+    const d = new Date(cleanStr.includes(" ") ? cleanStr.replace(" ", "T") : cleanStr);
     return isNaN(d.getTime()) ? null : d;
   };
 
@@ -1431,14 +1432,74 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
 
                 {unit === 'pr' && (
                   <>
-                    <DetailRow 
-                      icon={<Clock size={14} className="text-indigo-500 shrink-0" />} 
-                      label="วันและเวลาจัดกิจกรรม (Event Date/Time)" 
-                      value={brief.details?.event_datetime} 
-                      fieldKey="event_datetime" 
-                      isDate
-                      showTimeSelect
-                    />
+                    <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 flex flex-col sm:table-row">
+                      <td className="px-3 sm:px-4 py-2 sm:py-3 w-full sm:w-1/3 sm:border-r border-slate-100 bg-slate-50/40 align-top">
+                        <div className="flex items-center gap-2 text-slate-600">
+                          <Clock size={14} className="text-indigo-500 shrink-0" />
+                          <span className="font-semibold text-xs uppercase tracking-wider">วันและเวลาจัดกิจกรรม (เริ่ม - ถึง)</span>
+                        </div>
+                      </td>
+                      <td className="px-3 sm:px-3 py-2 w-full sm:w-2/3 align-top">
+                        <div className="flex flex-col sm:flex-row items-center gap-2">
+                          <div className="w-full sm:w-1/2 flex items-center gap-1.5">
+                            <span className="text-[11px] text-slate-400 font-semibold shrink-0">เริ่ม:</span>
+                            <DatePicker
+                              selected={parseDateSafe(brief.details?.event_start || (brief.details?.event_datetime ? brief.details.event_datetime.split(" ถึง ")[0] : ""))}
+                              onChange={(date: Date | null) => {
+                                const startStr = date 
+                                  ? (new Date(date.getTime() - date.getTimezoneOffset() * 60000)).toISOString().replace("T", " ").substring(0, 16)
+                                  : "";
+                                const endStr = brief.details?.event_end || (brief.details?.event_datetime && brief.details.event_datetime.includes(" ถึง ") ? brief.details.event_datetime.split(" ถึง ")[1] : "");
+                                const combined = endStr ? `${startStr} ถึง ${endStr}` : startStr;
+                                onUpdateField(brief.id, 'details', {
+                                  ...brief.details,
+                                  event_start: startStr,
+                                  event_end: endStr,
+                                  event_datetime: combined,
+                                  usage_date: startStr ? startStr.split(" ")[0] : brief.details?.usage_date
+                                });
+                                if (startStr) {
+                                  onUpdateField(brief.id, 'deadline', startStr.split(" ")[0]);
+                                }
+                              }}
+                              dateFormat="yyyy-MM-dd HH:mm"
+                              showTimeSelect
+                              timeIntervals={15}
+                              isClearable
+                              placeholderText="วันและเวลาเริ่มต้น..."
+                              popperClassName="z-[80] shadow-2xl"
+                              className="w-full text-xs font-semibold text-slate-800 bg-transparent hover:bg-slate-100/80 focus:bg-white border border-transparent hover:border-slate-200 focus:border-primary rounded px-2.5 py-1.5 focus:outline-none cursor-pointer transition-colors"
+                            />
+                          </div>
+                          <div className="w-full sm:w-1/2 flex items-center gap-1.5">
+                            <span className="text-[11px] text-slate-400 font-semibold shrink-0">ถึง:</span>
+                            <DatePicker
+                              selected={parseDateSafe(brief.details?.event_end || (brief.details?.event_datetime && brief.details.event_datetime.includes(" ถึง ") ? brief.details.event_datetime.split(" ถึง ")[1] : ""))}
+                              onChange={(date: Date | null) => {
+                                const endStr = date 
+                                  ? (new Date(date.getTime() - date.getTimezoneOffset() * 60000)).toISOString().replace("T", " ").substring(0, 16)
+                                  : "";
+                                const startStr = brief.details?.event_start || (brief.details?.event_datetime ? brief.details.event_datetime.split(" ถึง ")[0] : "");
+                                const combined = endStr ? `${startStr} ถึง ${endStr}` : startStr;
+                                onUpdateField(brief.id, 'details', {
+                                  ...brief.details,
+                                  event_start: startStr,
+                                  event_end: endStr,
+                                  event_datetime: combined
+                                });
+                              }}
+                              dateFormat="yyyy-MM-dd HH:mm"
+                              showTimeSelect
+                              timeIntervals={15}
+                              isClearable
+                              placeholderText="วันและเวลาสิ้นสุด..."
+                              popperClassName="z-[80] shadow-2xl"
+                              className="w-full text-xs font-semibold text-slate-800 bg-transparent hover:bg-slate-100/80 focus:bg-white border border-transparent hover:border-slate-200 focus:border-primary rounded px-2.5 py-1.5 focus:outline-none cursor-pointer transition-colors"
+                            />
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
                     <DetailRow 
                       icon={<Calendar size={14} className="text-red-500 shrink-0" />} 
                       label="วันที่เผยแพร่ข่าว (Publish Date)" 

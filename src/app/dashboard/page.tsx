@@ -97,14 +97,13 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className={`flex-1 flex flex-col items-center py-2 md:py-3 w-full min-h-screen overflow-x-hidden transition-all ${
-      activeView 
-        ? "w-full max-w-[99vw] px-2 sm:px-4 md:px-6 lg:px-8" 
-        : "max-w-6xl mx-auto px-2.5 sm:px-4 md:px-8"
-    }`}>
-      {/* Top Navigation Bar */}
-      <div className={`w-full flex flex-row justify-between items-center mb-4 sm:mb-6 pb-2 animate-premium-fade print:hidden relative z-30 ${activeView ? 'max-w-full' : 'max-w-6xl'}`}>
-        {/* Left: Logo */}
+    <main className="flex-1 flex flex-col items-center py-2 md:py-3 w-full min-h-screen overflow-x-hidden">
+      <div className={`w-full mx-auto px-3 sm:px-5 md:px-8 transition-all flex flex-col flex-1 ${
+        activeView ? "max-w-[1920px]" : "max-w-6xl"
+      }`}>
+        {/* Top Navigation Bar */}
+        <div className="w-full flex flex-row justify-between items-center mb-3 sm:mb-4 pb-2 animate-premium-fade print:hidden relative z-30">
+          {/* Left: Logo */}
         <Link href="/" className="text-left inline-flex flex-col w-fit min-w-0 pr-2 select-none group">
           <h1 className="text-2xl sm:text-3xl md:text-[38px] font-black tracking-[0.055em] text-foreground leading-none group-hover:text-primary transition-colors">
             CC TEAM
@@ -469,6 +468,7 @@ export default function DashboardPage() {
           )}
         </div>
       )}
+      </div>
 
       {/* Modals */}
       {isSetupOpen && <SetupModal onClose={() => setIsSetupOpen(false)} />}

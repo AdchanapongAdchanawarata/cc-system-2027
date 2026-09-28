@@ -775,7 +775,7 @@ function FormContent() {
           {activeUnit === 'pr' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2 md:col-span-2">
-                <label htmlFor="project_name_pr" className="text-sm font-medium">กิจกรรม</label>
+                <label htmlFor="project_name_pr" className="text-sm font-medium">ชื่อกิจกรรม</label>
                 <input required type="text" id="project_name_pr" name="project_name" className="w-full px-4 py-3 text-sm border border-zinc-200 bg-[#f9f9fb] rounded-full focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]" placeholder="ชื่อกิจกรรม" />
               </div>
               <div className="space-y-2 md:col-span-2">

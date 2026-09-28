@@ -744,29 +744,27 @@ export default function AssignmentsView() {
     .sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   return (
-    <div className="w-full flex flex-col h-[calc(100dvh-95px)] md:h-[calc(100vh-140px)] min-h-[520px] md:min-h-[580px] mb-2 sm:mb-4 bg-surface rounded-2xl border border-surface-border shadow-xs overflow-hidden p-2.5 sm:p-4 md:p-6 animate-in fade-in duration-200">
+    <div className="w-full flex flex-col h-[calc(100dvh-70px)] md:h-[calc(100vh-80px)] min-h-[640px] md:min-h-[760px] mb-2 bg-surface rounded-2xl border border-surface-border shadow-xs overflow-hidden p-2 sm:p-3 md:p-3.5 animate-in fade-in duration-200">
       
       {/* Top Header */}
-      <div className="flex flex-col gap-2 sm:gap-3.5 mb-2.5 sm:mb-5 pb-2.5 sm:pb-4 border-b border-surface-border print:hidden shrink-0">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="p-1.5 sm:p-2 rounded-xl bg-[#E03131]/10 text-[#E03131]">
-                <LayoutList size={20} className="sm:w-[22px] sm:h-[22px]" />
-              </span>
-              <h2 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-foreground">
-                Tasks
-              </h2>
-            </div>
-            <p className="text-[11px] sm:text-xs md:text-sm text-muted-foreground mt-0.5 sm:mt-1">
-              บริหารจัดการงานประจำวันของทีม กระจายภาระงาน (Workloads) และอัปเดตความคืบหน้าโปรเจกต์
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-2 pb-2 border-b border-surface-border print:hidden shrink-0">
+        <div className="flex items-center gap-2">
+          <span className="p-1 sm:p-1.5 rounded-lg bg-[#E03131]/10 text-[#E03131]">
+            <LayoutList size={18} className="sm:w-[20px] sm:h-[20px]" />
+          </span>
+          <div className="flex items-baseline gap-2">
+            <h2 className="text-base sm:text-lg md:text-xl font-bold tracking-tight text-foreground">
+              Tasks
+            </h2>
+            <p className="hidden md:inline text-xs text-muted-foreground">
+              • บริหารจัดการงานประจำวันของทีม กระจายภาระงาน (Workloads) และอัปเดตความคืบหน้าโปรเจกต์
             </p>
           </div>
         </div>
       </div>
 
       {/* Header & Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-2.5 sm:mb-4 gap-2 sm:gap-3 shrink-0">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-2 sm:mb-2.5 gap-2 shrink-0">
         
         {/* Left: Unit Filter Pills */}
         <div className="flex bg-surface p-1 rounded-full border border-surface-border shadow-xs overflow-x-auto no-scrollbar w-full md:w-auto">
@@ -914,15 +912,15 @@ export default function AssignmentsView() {
           >
             
             {/* Column Header: Hidden on mobile (since top tab switcher already displays it); Visible on md+ */}
-            <div className={`hidden md:flex items-center justify-between mb-3 px-3.5 py-2.5 rounded-xl border border-t-4 shadow-2xs shrink-0 ${col.headerBg}`}>
-              <h3 className="font-bold text-sm uppercase tracking-wide">{col.shortLabel}</h3>
+            <div className={`hidden md:flex items-center justify-between mb-2 px-3 py-1.5 rounded-xl border border-t-4 shadow-2xs shrink-0 ${col.headerBg}`}>
+              <h3 className="font-bold text-xs uppercase tracking-wide">{col.shortLabel}</h3>
               <span className={`text-xs font-bold px-2 py-0.5 rounded-full shadow-2xs ${col.badgeBg}`}>
                 {displayBriefs.filter(b => b.status === col.id).length}
               </span>
             </div>
             
             {/* Column Cards */}
-            <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pb-4">
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pb-2 pr-0.5">
               {displayBriefs.filter(b => b.status === col.id).map(brief => {
                 const ages = getTaskAges(brief);
                 
@@ -952,24 +950,23 @@ export default function AssignmentsView() {
                     onDragStart={(e) => handleDragStart(e, brief.id)}
                     onDragEnd={handleDragEnd}
                     onClick={() => setSelectedBrief(brief)}
-                    className="bg-surface p-3 rounded-lg border border-surface-border shadow-2xs hover:shadow-md hover:border-slate-300 dark:hover:border-zinc-700 transition-all cursor-grab active:cursor-grabbing group flex flex-col relative"
+                    className="bg-surface p-2.5 rounded-xl border border-surface-border shadow-2xs hover:shadow-md hover:border-slate-300 dark:hover:border-zinc-700 transition-all cursor-grab active:cursor-grabbing group flex flex-col justify-between relative min-h-[105px] max-h-[108px] select-none"
                   >
                     {/* Sticker Tags */}
                     {isOverdue ? (
-                      <div className="absolute top-2 right-2 w-7 h-7 bg-[#E03131] text-white rounded-full shadow-[0_2px_8px_rgba(224,49,49,0.4)] z-10 flex items-center justify-center border-2 border-white" title="OVERDUE">
-                        <History size={19} strokeWidth={1.75} />
+                      <div className="absolute top-2 right-2 w-6 h-6 bg-[#E03131] text-white rounded-full shadow-[0_2px_8px_rgba(224,49,49,0.4)] z-10 flex items-center justify-center border border-white" title="OVERDUE">
+                        <History size={14} strokeWidth={2} />
                       </div>
                     ) : isUrgent ? (
-                      <div className="absolute top-2 right-2 w-7 h-7 bg-[#FF5722] text-white rounded-full shadow-[0_2px_8px_rgba(255,87,34,0.4)] z-10 flex items-center justify-center border-2 border-white" title="URGENT">
-                        {/* Running Person SVG */}
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="19" height="19" fill="currentColor">
+                      <div className="absolute top-2 right-2 w-6 h-6 bg-[#FF5722] text-white rounded-full shadow-[0_2px_8px_rgba(255,87,34,0.4)] z-10 flex items-center justify-center border border-white" title="URGENT">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
                           <path d="M13.49 5.48c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3.6 13.9l1-4.4 2.1 2v6h2v-7.5l-2.1-2 .6-3c1.3 1.5 3.3 2.5 5.5 2.5v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1l-5.2 2.2v4.7h2v-3.4l1.8-.7-1.6 8.1-4.9-1-.4 2 7 1.4z"/>
                         </svg>
                       </div>
                     ) : null}
 
-                    {/* Task Name - full width without extra right padding unless badge exists */}
-                    <h4 className={`font-semibold text-foreground text-[13px] leading-snug mb-2 line-clamp-3 break-words ${hasTopBadge ? 'pr-8' : 'pr-0'}`}>
+                    {/* Task Name - Uniform 2 lines max */}
+                    <h4 className={`font-semibold text-foreground text-xs leading-snug line-clamp-2 min-h-[34px] max-h-[34px] break-words ${hasTopBadge ? 'pr-7' : 'pr-0'}`}>
                       <span className={`font-bold mr-1 ${
                         brief.unit?.toLowerCase() === "creative" ? "text-[#7c3aed] dark:text-[#c4b5fd]" : 
                         brief.unit?.toLowerCase() === "content" ? "text-[#db2777] dark:text-[#f472b6]" : 
@@ -988,13 +985,12 @@ export default function AssignmentsView() {
                       {brief.project_name}
                     </h4>
                     
-                    <div className="flex flex-col gap-1.5">
-                      
+                    <div className="flex flex-col gap-1">
                       {/* Row 1: Assignee and Date */}
-                      <div className="flex items-center justify-between gap-x-1 gap-y-1 text-xs text-slate-600 dark:text-slate-300 flex-nowrap">
+                      <div className="flex items-center justify-between gap-1 text-xs text-slate-600 dark:text-slate-300 h-5">
                         <div className="flex items-center flex-1 min-w-0">
                           <CustomSelect 
-                            triggerClassName={`text-left text-xs py-0.5 px-0 rounded transition-colors focus:outline-none cursor-pointer w-auto max-w-[135px] truncate ${getAssigneeColorClass(brief.unit, Boolean(brief.assignee_id))}`}
+                            triggerClassName={`text-left text-xs py-0 px-0 rounded transition-colors focus:outline-none cursor-pointer w-auto max-w-[125px] truncate ${getAssigneeColorClass(brief.unit, Boolean(brief.assignee_id))}`}
                             dropdownClassName="w-48"
                             placeholder="Unassigned"
                             value={brief.assignee_id || ""}
@@ -1005,21 +1001,21 @@ export default function AssignmentsView() {
                             ]}
                           />
                         </div>
-                        <div className="flex items-center gap-2 shrink-0 text-[11px]">
+                        <div className="flex items-center gap-1.5 shrink-0 text-[11px]">
                           {brief.status === 'completed' && (
                             <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 font-medium" title="Completed Date">
-                              <CheckCircle2 size={12} />
+                              <CheckCircle2 size={11} />
                               {brief.completed_at ? new Date(brief.completed_at).toLocaleDateString('th-TH', { month: 'short', day: 'numeric' }) : '-'}
                             </span>
                           )}
                           {brief.status === 'cancelled' && (
                             <span className="flex items-center gap-0.5 text-rose-600 dark:text-rose-400 font-medium" title="Canceled Date">
-                              <XCircle size={12} />
+                              <XCircle size={11} />
                               {brief.completed_at ? new Date(brief.completed_at).toLocaleDateString('th-TH', { month: 'short', day: 'numeric' }) : '-'}
                             </span>
                           )}
                           <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
-                            <Flame size={13} className="text-red-500" fill="currentColor" />
+                            <Flame size={12} className="text-red-500" fill="currentColor" />
                             <span>
                               {(brief.deadline || brief.details?.usage_date || brief.details?.publish_date) 
                                 ? formatDate(brief.deadline || brief.details?.usage_date || brief.details?.publish_date) 
@@ -1030,49 +1026,10 @@ export default function AssignmentsView() {
                         </div>
                       </div>
 
-                      {/* Row 1.5: Assistants indicator if any */}
-                      {brief.details?.assistants && brief.details.assistants.some((a: any) => a.assignee_id && Number(a.percentage) > 0) && (
-                        <div className="flex items-center gap-1.5 text-[10px] text-emerald-700 dark:text-emerald-300 bg-emerald-50/90 dark:bg-emerald-950/50 border border-emerald-200/80 dark:border-emerald-800/60 px-2 py-0.5 rounded-full w-fit">
-                          <Users size={11} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-                          <span className="font-semibold">
-                            +{brief.details.assistants.filter((a: any) => a.assignee_id && Number(a.percentage) > 0).length} ผู้ช่วย
-                          </span>
-                          <span className="text-emerald-600/80 dark:text-emerald-400/80 font-mono">
-                            ({brief.details.assistants.reduce((sum: number, a: any) => sum + (Number(a.percentage) || 0), 0)}%)
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Row 1.6: Satisfaction Rating Badge (only on completed tasks) */}
-                      {(brief.status === 'completed' || brief.status === 'complete') && (
-                        brief.details?.satisfaction_scores?.averagePercent !== undefined ? (
-                          <div 
-                            className="flex items-center gap-1 text-[10px] font-bold text-amber-800 dark:text-amber-300 bg-amber-50/95 dark:bg-amber-950/60 border border-amber-200/90 dark:border-amber-800/60 px-2 py-0.5 rounded-full w-fit mt-1 shadow-2xs"
-                            title={brief.details?.satisfaction_scores?.comment ? `ข้อเสนอแนะ: "${brief.details.satisfaction_scores.comment}"` : `ประเมินแล้ว ${brief.details.satisfaction_scores.averagePercent}%`}
-                          >
-                            <Star size={10} className="fill-amber-400 text-amber-500" />
-                            <span>{brief.details.satisfaction_scores.averagePercent}% พึงพอใจ</span>
-                            {brief.details?.satisfaction_scores?.comment && (
-                              <span className="text-[9px] text-amber-600 dark:text-amber-400 font-normal italic truncate max-w-[90px]">
-                                • {brief.details.satisfaction_scores.comment}
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          <div 
-                            className="flex items-center gap-1 text-[10px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50/90 dark:bg-blue-950/60 border border-blue-200/90 dark:border-blue-800/60 px-2 py-0.5 rounded-full w-fit mt-1 shadow-2xs"
-                            title={`ส่งแบบประเมินเข้าอีเมลผู้สั่งงานแล้ว (${brief.requester_email || 'ผู้สั่งงาน'}) แต่ยังไม่ทำแบบประเมิน (คิดเกณฑ์มาตรฐาน 85.0% ชั่วคราว)`}
-                          >
-                            <Mail size={10} className="text-blue-600 dark:text-blue-400" />
-                            <span>ส่งแบบประเมินแล้ว</span>
-                          </div>
-                        )
-                      )}
-
-                      {/* Row 2: Badges & Task Age */}
-                      <div className="flex items-center justify-between gap-1 mt-1">
-                        <div className="flex gap-1 items-center min-w-0 flex-wrap">
-                          <span className={`text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0 ${
+                      {/* Row 2: Badges + Task Age in single unified line */}
+                      <div className="flex items-center justify-between gap-1 h-5 pt-0.5 border-t border-slate-100 dark:border-slate-800/60">
+                        <div className="flex gap-1 items-center min-w-0 overflow-hidden">
+                          <span className={`text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase shrink-0 ${
                             brief.unit?.toLowerCase() === "creative" ? "bg-[#8b5cf6]" : 
                             brief.unit?.toLowerCase() === "content" ? "bg-[#ec4899]" : 
                             brief.unit?.toLowerCase() === "pr" ? "bg-[#1877F2]" : 
@@ -1083,49 +1040,77 @@ export default function AssignmentsView() {
                           </span>
                           {((brief as any).decision_maker || brief.details?.team) && (
                             <span 
-                              className="text-slate-600 dark:text-slate-300 text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-slate-200 dark:border-surface-border bg-slate-50 dark:bg-surface-border/50 uppercase truncate max-w-[85px]"
+                              className="text-slate-600 dark:text-slate-300 text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-slate-200 dark:border-surface-border bg-slate-50 dark:bg-surface-border/50 uppercase truncate max-w-[55px] shrink-0"
                               title={(brief as any).decision_maker || brief.details?.team}
                             >
                               {(brief as any).decision_maker || brief.details?.team}
                             </span>
                           )}
-                          {isWiAtRisk && (
-                            <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded-full border border-amber-200 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 shrink-0" title="มีแนวโน้มหลุดเกณฑ์ WI">
-                              ⚠️ เสี่ยง WI
+                          {/* Assistant Pill */}
+                          {brief.details?.assistants && brief.details.assistants.some((a: any) => a.assignee_id && Number(a.percentage) > 0) && (
+                            <span 
+                              className="inline-flex items-center gap-0.5 text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/60 px-1 py-0.5 rounded-full shrink-0"
+                              title={`ผู้ช่วย: ${brief.details.assistants.map((a: any) => {
+                                const m = assignees.find(as => as.id === a.assignee_id);
+                                return `${m?.name || 'ผู้ช่วย'} (${a.percentage}%)`;
+                              }).join(', ')}`}
+                            >
+                              <Users size={9} className="text-emerald-600 dark:text-emerald-400" />
+                              <span>+{brief.details.assistants.filter((a: any) => a.assignee_id && Number(a.percentage) > 0).length} ({brief.details.assistants.reduce((sum: number, a: any) => sum + (Number(a.percentage) || 0), 0)}%)</span>
                             </span>
+                          )}
+                          {/* Satisfaction Rating / Survey Pill */}
+                          {(brief.status === 'completed' || brief.status === 'complete') && (
+                            brief.details?.satisfaction_scores?.averagePercent !== undefined ? (
+                              <span 
+                                className="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 px-1.5 py-0.5 rounded-full shrink-0"
+                                title={brief.details?.satisfaction_scores?.comment ? `ข้อเสนอแนะ: "${brief.details.satisfaction_scores.comment}"` : `ประเมินแล้ว ${brief.details.satisfaction_scores.averagePercent}%`}
+                              >
+                                <Star size={9} className="fill-amber-400 text-amber-500" />
+                                <span>{brief.details.satisfaction_scores.averagePercent}%</span>
+                              </span>
+                            ) : (
+                              <span 
+                                className="inline-flex items-center gap-0.5 text-[9px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/60 px-1.5 py-0.5 rounded-full shrink-0"
+                                title="ส่งแบบประเมินแล้ว"
+                              >
+                                <Mail size={9} className="text-blue-600 dark:text-blue-400" />
+                                <span>ประเมิน</span>
+                              </span>
+                            )
                           )}
                         </div>
                         
-                        {/* Task Age Indicators and Completed Day */}
-                        <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-medium tracking-tighter shrink-0 ml-auto">
-                          <span title="Days in Pending" className="flex items-center gap-1">
-                            <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b] shadow-xs"></span> {ages.pendingDays}d
+                        {/* Task Age Indicators */}
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-medium tracking-tight shrink-0 ml-auto">
+                          <span title="Days in Pending" className="flex items-center gap-0.5">
+                            <span className="w-2 h-2 rounded-full bg-[#f59e0b]"></span> {ages.pendingDays}d
                           </span>
-                          <span title="Days in Progress" className="flex items-center gap-1">
-                            <span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6] shadow-xs"></span> {ages.inProgressDays}d
+                          <span title="Days in Progress" className="flex items-center gap-0.5">
+                            <span className="w-2 h-2 rounded-full bg-[#3b82f6]"></span> {ages.inProgressDays}d
                           </span>
                         </div>
                       </div>
                     </div>
                       
-                      {/* Quick Actions (Hover) */}
-                      <div className="absolute bottom-2 right-2 flex flex-row items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20 bg-white/80 backdrop-blur-sm p-1 rounded-md shadow-sm">
-                        <button 
-                          onClick={(e) => handleDuplicateTask(e, brief)}
-                          className="p-1.5 bg-white border border-slate-200 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors shadow-sm"
-                          title="Duplicate Task"
-                        >
-                          <Copy size={12} />
-                        </button>
-                        <button 
-                          onClick={(e) => handleDeleteTask(e, brief.id)}
-                          className="p-1.5 bg-white border border-slate-200 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors shadow-sm"
-                          title="Delete Task"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
+                    {/* Quick Actions (Hover) */}
+                    <div className="absolute bottom-1.5 right-1.5 flex flex-row items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm p-0.5 rounded-md shadow-sm border border-slate-200 dark:border-slate-700">
+                      <button 
+                        onClick={(e) => handleDuplicateTask(e, brief)}
+                        className="p-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors shadow-2xs"
+                        title="Duplicate Task"
+                      >
+                        <Copy size={11} />
+                      </button>
+                      <button 
+                        onClick={(e) => handleDeleteTask(e, brief.id)}
+                        className="p-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors shadow-2xs"
+                        title="Delete Task"
+                      >
+                        <Trash2 size={11} />
+                      </button>
                     </div>
+                  </div>
                 );
               })}
             </div>

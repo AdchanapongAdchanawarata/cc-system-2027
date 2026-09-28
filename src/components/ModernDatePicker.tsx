@@ -6,7 +6,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { parseISO, isValid, format } from "date-fns";
 
 interface ModernDatePickerProps {
-  value: string; // ISO date string "YYYY-MM-DD" or ""
+  value: string; // ISO date string "YYYY-MM-DD" or "YYYY-MM-DD HH:mm" or ""
   onChange: (val: string) => void;
   placeholder?: string;
   name?: string;
@@ -17,6 +17,10 @@ interface ModernDatePickerProps {
   align?: "left" | "center";
   disabled?: boolean;
   accentColor?: "orange" | "red";
+  showTimeSelect?: boolean;
+  dateFormat?: string;
+  timeIntervals?: number;
+  timeCaption?: string;
 }
 
 export default function ModernDatePicker({
@@ -29,12 +33,21 @@ export default function ModernDatePicker({
   className = "",
   minDate,
   align = "left",
-  disabled = false
+  disabled = false,
+  showTimeSelect = false,
+  dateFormat,
+  timeIntervals = 15,
+  timeCaption = "เวลา"
 }: ModernDatePickerProps) {
   // Parse date safely without timezone shift
   const selectedDate = useMemo(() => {
     if (!value) return null;
     try {
+      if (value.includes(" ") || value.includes("T") || value.includes(":")) {
+        const isoLike = value.replace(" ", "T");
+        const d = new Date(isoLike);
+        if (isValid(d)) return d;
+      }
       const parts = value.split("-");
       if (parts.length === 3) {
         const year = parseInt(parts[0], 10);
@@ -52,8 +65,13 @@ export default function ModernDatePicker({
 
   const handleChange = (date: Date | null) => {
     if (date) {
-      const formatted = format(date, "yyyy-MM-dd");
-      onChange(formatted);
+      if (showTimeSelect) {
+        const formatted = format(date, "yyyy-MM-dd HH:mm");
+        onChange(formatted);
+      } else {
+        const formatted = format(date, "yyyy-MM-dd");
+        onChange(formatted);
+      }
     } else {
       onChange("");
     }
@@ -77,7 +95,10 @@ export default function ModernDatePicker({
       <DatePicker
         selected={selectedDate}
         onChange={handleChange}
-        dateFormat="yyyy-MM-dd"
+        dateFormat={dateFormat || (showTimeSelect ? "yyyy-MM-dd HH:mm" : "yyyy-MM-dd")}
+        showTimeSelect={showTimeSelect}
+        timeIntervals={timeIntervals}
+        timeCaption={timeCaption}
         placeholderText={placeholder}
         minDate={minDate}
         disabled={disabled}

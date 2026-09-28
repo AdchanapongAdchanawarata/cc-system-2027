@@ -300,6 +300,7 @@ function FormContent() {
   const [creativeDraftDate, setCreativeDraftDate] = useState("");
   const [creativeUsageDate, setCreativeUsageDate] = useState("");
   const [contentPublishDate, setContentPublishDate] = useState("");
+  const [prEventDatetime, setPrEventDatetime] = useState("");
   const [prPublishDate, setPrPublishDate] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -417,8 +418,25 @@ function FormContent() {
 
       details.attachments = uploadedFileUrls;
 
-      // Compute deadline from usage_date, publish_date, or draft_date
-      const computedDeadline = (details.usage_date || details.publish_date || details.draft_date || null) as string | null;
+      // Connect PR event datetime to usage_date and deadline
+      if (activeUnit === 'pr') {
+        if (prEventDatetime) {
+          details.event_datetime = prEventDatetime;
+          const dateOnly = prEventDatetime.split(" ")[0];
+          if (!details.usage_date) {
+            details.usage_date = dateOnly;
+          }
+        }
+      }
+
+      // Compute deadline from usage_date, event_datetime, publish_date, or draft_date
+      const computedDeadline = (
+        details.usage_date || 
+        (details.event_datetime ? details.event_datetime.split(" ")[0] : null) || 
+        details.publish_date || 
+        details.draft_date || 
+        null
+      ) as string | null;
 
       // Insert into briefs table
       const { error: insertError } = await supabase.from('briefs').insert({
@@ -512,6 +530,7 @@ function FormContent() {
                 setCreativeDraftDate(""); 
                 setCreativeUsageDate(""); 
                 setContentPublishDate(""); 
+                setPrEventDatetime("");
                 setPrPublishDate(""); 
               }}
               className="w-full sm:w-auto px-6 py-2.5 bg-primary text-white rounded-full hover:bg-primary/90 transition-all font-medium text-sm shadow-md cursor-pointer"
@@ -757,8 +776,26 @@ function FormContent() {
                 <CategoryDropdown value={selectedPRCategory} onChange={setSelectedPRCategory} categories={PR_CATEGORIES} inputName="details.service" />
               </div>
               <div className="space-y-2">
-                <label htmlFor="pr_event_datetime" className="text-sm font-medium">วันและเวลาการจัดกิจกรรม</label>
-                <input required type="text" id="pr_event_datetime" name="details.event_datetime" className="w-full px-4 py-3 text-sm border border-zinc-200 bg-[#f9f9fb] rounded-full focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]" placeholder="เช่น 15 ส.ค. 09.00 น." />
+                <div className="flex items-center justify-between">
+                  <label htmlFor="pr_event_datetime" className="text-sm font-medium">วันและเวลาการจัดกิจกรรม</label>
+                  <span className="text-[11px] text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full font-medium border border-orange-200">
+                    เชื่อมกับ Deadline (กำหนดส่ง)
+                  </span>
+                </div>
+                <ModernDatePicker
+                  value={prEventDatetime}
+                  onChange={(val) => {
+                    setPrEventDatetime(val);
+                    if (!prPublishDate && val) {
+                      setPrPublishDate(val.split(" ")[0]);
+                    }
+                  }}
+                  showTimeSelect
+                  name="details.event_datetime"
+                  id="pr_event_datetime"
+                  placeholder="เลือกวันและเวลาจัดกิจกรรม..."
+                  required
+                />
               </div>
               <div className="space-y-2">
                 <label htmlFor="pr_publish_date" className="text-sm font-medium">วันที่เผยแพร่ข่าว</label>
@@ -841,9 +878,10 @@ function FormContent() {
                   e.stopPropagation();
                   fileInputRef.current?.click();
                 }}
-                className="bg-zinc-900 text-white hover:bg-[#ff4400] px-5 py-2 rounded-full transition-all text-xs font-bold shadow-xs active:scale-95 cursor-pointer flex items-center gap-1.5"
+                style={{ color: '#ffffff' }}
+                className="bg-zinc-900 hover:bg-[#ff4400] text-white !text-white px-5 py-2 rounded-full transition-all text-xs font-bold shadow-xs active:scale-95 cursor-pointer flex items-center gap-1.5"
               >
-                <span>เลือกไฟล์</span>
+                <span className="text-white !text-white font-bold" style={{ color: '#ffffff' }}>เลือกไฟล์</span>
               </button>
             </div>
             

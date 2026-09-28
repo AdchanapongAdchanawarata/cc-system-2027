@@ -12,7 +12,7 @@ import {
   DollarSign, Briefcase, TrendingUp, Palette, Layers, Flag, ListChecks, 
   Ban, AlertCircle, Paperclip, Plus, Trash2, LifeBuoy, MapPin, Camera, 
   Check, Sparkles, PiggyBank, Star, MessageSquare, Minus, Building2,
-  Landmark, Network, Globe, Link2, Copy
+  Landmark, Network, Globe, Link2, Copy, Loader2
 } from "lucide-react";
 import { getStandardPriceForTask } from "@/utils/pricing";
 import SatisfactionSurveyModal from "./SatisfactionSurveyModal";
@@ -21,6 +21,7 @@ import { OFFICIAL_STEP_TEAMS } from "@/utils/teamAnalytics";
 import { exportBriefToPdf } from "@/utils/briefPdfExport";
 import { getTaskSurveyUrl } from "@/utils/surveyTokens";
 import InProgressEmailModal from "./InProgressEmailModal";
+import { downloadFileWithSaveDialog } from "@/utils/fileDownloader";
 
 const ALL_CATEGORIES_BY_UNIT: Record<string, { name: string; desc: string }[]> = {
   creative: [
@@ -133,10 +134,11 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
     brief.category || 
     "";
 
-  // Effective deadline resolution: prioritize brief.deadline, fallback to usage_date, publish_date, delivery_date
+  // Effective deadline resolution: prioritize brief.deadline, fallback to usage_date, event_datetime, publish_date, delivery_date
   const effectiveDeadline = 
     brief.deadline || 
     brief.details?.usage_date || 
+    (brief.details?.event_datetime ? brief.details.event_datetime.split(" ")[0] : null) ||
     brief.details?.publish_date || 
     brief.details?.delivery_date || 
     null;
@@ -352,6 +354,7 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
   };
 
   const hasAttachments = brief.details?.attachments && brief.details.attachments.length > 0;
+  const [downloadingAttachmentIdx, setDownloadingAttachmentIdx] = useState<number | null>(null);
 
   // Task Age
   const getTaskAges = (b: any) => {
@@ -378,9 +381,10 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
       ...brief.details,
       [key]: val
     });
-    // If usage_date, publish_date, or delivery_date is updated, also sync to brief.deadline!
-    if (key === 'usage_date' || key === 'publish_date' || key === 'delivery_date') {
-      onUpdateField(brief.id, 'deadline', val || null);
+    // If usage_date, publish_date, delivery_date, or event_datetime is updated, also sync to brief.deadline!
+    if (key === 'usage_date' || key === 'publish_date' || key === 'delivery_date' || key === 'event_datetime') {
+      const datePart = val ? (val.includes(" ") ? val.split(" ")[0] : val) : null;
+      onUpdateField(brief.id, 'deadline', datePart || null);
     }
   };
 
@@ -759,9 +763,9 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
                         <label className="text-[11px] text-slate-500 font-semibold">Deadline (กำหนดส่ง)</label>
-                        {(brief.details?.usage_date || brief.details?.publish_date) && (
+                        {(brief.details?.usage_date || brief.details?.publish_date || brief.details?.event_datetime) && (
                           <span className="text-[9.5px] text-orange-600 bg-orange-50 px-1.5 py-0.2 rounded-full font-medium border border-orange-200">
-                            จากวันใช้งานจริง
+                            {brief.unit === 'pr' ? 'จากวันจัดกิจกรรม' : 'จากวันใช้งานจริง'}
                           </span>
                         )}
                       </div>
@@ -773,10 +777,19 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                             const tzOffset = date.getTimezoneOffset() * 60000;
                             const localISOTime = (new Date(date.getTime() - tzOffset)).toISOString().split("T")[0];
                             onUpdateField(brief.id, "deadline", localISOTime);
-                            onUpdateField(brief.id, "details", {
+                            const updatedDetails: any = {
                               ...brief.details,
                               usage_date: localISOTime
-                            });
+                            };
+                            if (brief.unit === 'pr') {
+                              if (brief.details?.event_datetime && brief.details.event_datetime.includes(" ")) {
+                                const timePart = brief.details.event_datetime.split(" ")[1];
+                                updatedDetails.event_datetime = `${localISOTime} ${timePart}`;
+                              } else {
+                                updatedDetails.event_datetime = localISOTime;
+                              }
+                            }
+                            onUpdateField(brief.id, "details", updatedDetails);
                           } else {
                             onUpdateField(brief.id, "deadline", null);
                           }
@@ -1663,17 +1676,33 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                         </div>
                       </a>
 
-                      {/* Small Download Button on the Right */}
-                      <a
-                        href={url}
-                        download={`attachment-${idx + 1}.${ext.toLowerCase()}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="p-1.5 sm:p-2 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-white hover:bg-orange-500 hover:border-orange-500 shadow-2xs transition-all flex items-center justify-center shrink-0 cursor-pointer group/btn"
-                        title="ดาวน์โหลดไฟล์ลงเครื่อง"
+                      {/* Small Download Button on the Right with Save As Location Dialog */}
+                      <button
+                        type="button"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          setDownloadingAttachmentIdx(idx);
+                          try {
+                            const urlWithoutQuery = url.split("?")[0];
+                            const fileExt = urlWithoutQuery.split(".").pop() || ext.toLowerCase();
+                            const rawName = urlWithoutQuery.split("/").pop();
+                            const decodedName = rawName ? decodeURIComponent(rawName) : `attachment-${idx + 1}.${fileExt}`;
+                            await downloadFileWithSaveDialog(url, decodedName);
+                          } finally {
+                            setDownloadingAttachmentIdx(null);
+                          }
+                        }}
+                        disabled={downloadingAttachmentIdx === idx}
+                        className="p-1.5 sm:p-2 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-white hover:bg-[#ff4400] hover:border-[#ff4400] shadow-2xs transition-all flex items-center justify-center shrink-0 cursor-pointer group/btn"
+                        title="เลือกตำแหน่งและบันทึกไฟล์ (Save As)"
                       >
-                        <Download size={14} className="group-hover/btn:scale-110 transition-transform" />
-                      </a>
+                        {downloadingAttachmentIdx === idx ? (
+                          <Loader2 size={14} className="animate-spin text-[#ff4400] group-hover:text-white" />
+                        ) : (
+                          <Download size={14} className="group-hover/btn:scale-110 transition-transform" />
+                        )}
+                      </button>
                     </div>
                   );
                 })}

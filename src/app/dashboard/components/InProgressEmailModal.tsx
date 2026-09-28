@@ -7,7 +7,7 @@ import {
   Calendar, User, Users, FileText, CheckCircle2, ChevronDown, ExternalLink
 } from "lucide-react";
 import CustomSelect from "./CustomSelect";
-import { DEFAULT_MEMBER_METADATA } from "@/utils/memberProfile";
+import { DEFAULT_MEMBER_METADATA, parseMemberRecord } from "@/utils/memberProfile";
 import { OFFICIAL_STEP_TEAMS } from "@/utils/teamAnalytics";
 
 interface InProgressEmailModalProps {
@@ -45,16 +45,7 @@ export default function InProgressEmailModal({
     const targetId = selectedAssigneeId || brief.assignee_id;
     const found = (assignees || []).find((a: any) => a.id === targetId);
     if (!found) return null;
-    const name = found.name || "";
-    const meta = DEFAULT_MEMBER_METADATA[name] || {};
-    return {
-      id: found.id,
-      name,
-      fullName: meta.fullName || found.full_name || name,
-      position: meta.position || found.position || "เจ้าหน้าที่ทีม CC",
-      phone: meta.phone || found.phone || "-",
-      email: found.email || `${name.toLowerCase().replace(/\s+/g, "")}@step.cmu.ac.th`,
-    };
+    return parseMemberRecord(found);
   }, [assignees, brief.assignee_id, selectedAssigneeId]);
 
   // 2. Resolve Assistants (ถ้ามี)
@@ -119,6 +110,53 @@ export default function InProgressEmailModal({
     return Array.from(set);
   }, [assigneeMember, assistantMembers, isInternal]);
 
+  // Requester Name for Salutation
+  const rawRequesterName = (
+    brief.coordinator_nickname ||
+    brief.requester_name ||
+    brief.details?.reporter_name ||
+    brief.details?.client_name ||
+    brief.details?.coordinator_nickname ||
+    brief.details?.contact_name ||
+    ""
+  ).toString().trim();
+  const cleanRequesterName = rawRequesterName.replace(/^คุณ\s*/, '').trim();
+  const salutationTarget = isInternal
+    ? (cleanRequesterName ? `คุณ${cleanRequesterName}` : `คุณ${teamLead.name} (${teamLead.position}) และทีมงาน CC`)
+    : (cleanRequesterName ? `คุณ${cleanRequesterName}` : "คุณผู้สั่งงาน");
+
+  // Polite particle based on Assignee gender (ครับ / ค่ะ)
+  const isAssigneeMale = useMemo(() => {
+    if (!assigneeMember) return false;
+    const fn = (assigneeMember.fullName || "").trim();
+    const n = (assigneeMember.name || "").trim();
+    if (fn.startsWith("นาย") || fn.startsWith("ผศ.ดร.สุริยะ") || fn.includes("อัจชนะพงษ์") || fn.includes("อิศรา")) {
+      return true;
+    }
+    if (n.includes("จ๊อบ") || n.includes("ก้อง") || n.includes("บ่าว")) {
+      return true;
+    }
+    return false;
+  }, [assigneeMember]);
+  const politeWord = isAssigneeMale ? "ครับ" : "ค่ะ";
+
+  // Official Signature Block (ชื่อจริง, ตำแหน่ง, เบอร์โทร)
+  const signatureBlock = useMemo(() => {
+    const lines = ["ขอแสดงความนับถือ,"];
+    if (assigneeMember) {
+      if (assigneeMember.fullName) lines.push(assigneeMember.fullName);
+      if (assigneeMember.position) lines.push(assigneeMember.position);
+      if (assigneeMember.phone && assigneeMember.phone !== "-") {
+        lines.push(`เบอร์โทร: ${assigneeMember.phone}`);
+      }
+    } else {
+      lines.push("ทีมงาน CC");
+      lines.push("ทีมสร้างสรรค์และการสื่อสาร (Creative and Communication - CC)");
+      lines.push("อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (CMU STeP)");
+    }
+    return lines.join("\n");
+  }, [assigneeMember]);
+
   // States
   const [toEmail, setToEmail] = useState(defaultToEmail);
   const [isSending, setIsSending] = useState(false);
@@ -134,7 +172,6 @@ export default function InProgressEmailModal({
   // Generate Email Body with full brief details
   const initialEmailBody = useMemo(() => {
     const pName = brief.project_name || "ไม่ระบุชื่องาน";
-    const coordinator = brief.coordinator_nickname || brief.requester_name || "ผู้สั่งงาน";
     
     // Matched Team
     const rawTeam = (brief.decision_maker || brief.details?.team || "").toString().trim();
@@ -153,17 +190,12 @@ export default function InProgressEmailModal({
     const deadline = brief.deadline ? String(brief.deadline).split("T")[0] : "-";
     const priority = brief.priority || brief.details?.priority || "Medium";
 
-    // Polite particle based on Assignee gender
-    const femaleNames = ["วา", "จอย", "พิม", "เยียร์", "ลูกอิน", "นิน", "โอ๊ต", "เอ็นจอย", "แก้ว", "ต้า"];
-    const isFemale = assigneeMember?.name ? femaleNames.some((n) => assigneeMember.name.includes(n)) : false;
-    const politeWord = isFemale ? "ค่ะ" : "ครับ";
-
     let text = "";
     if (isInternal) {
-      text += `เรียน คุณ${teamLead.name} (${teamLead.position}) และทีมงาน CC\n\n`;
+      text += `เรียน ${salutationTarget}\n\n`;
       text += `ทีมสร้างสรรค์และการสื่อสาร (Creative and Communication - CC TEAM) ขอแจ้งให้ทราบว่า งานภายใน "${pName}" (${taskCode}) ได้รับการจัดสรรผู้รับผิดชอบ และกำลังเริ่มเข้าสู่กระบวนการดำเนินงาน (In Progress) เรียบร้อยแล้ว${politeWord}\n\n`;
     } else {
-      text += `เรียน คุณ${coordinator} และทีมงาน ${requesterTeam}\n\n`;
+      text += `เรียน ${salutationTarget}\n\n`;
       text += `ทีมสร้างสรรค์และการสื่อสาร (Creative and Communication - CC TEAM) ขอแจ้งให้ทราบว่า บรีฟงาน "${pName}" (${taskCode}) ได้รับการจัดสรรผู้รับผิดชอบ และกำลังเริ่มเข้าสู่กระบวนการดำเนินงาน (In Progress) เรียบร้อยแล้ว${politeWord}\n\n`;
     }
 
@@ -236,13 +268,10 @@ export default function InProgressEmailModal({
     }
 
     text += `จึงเรียนมาเพื่อโปรดทราบและเริ่มต้นการดำเนินงานร่วมกัน${politeWord}\n\n`;
-    text += `ขอแสดงความนับถือ,\n`;
-    text += `${assigneeMember ? `${assigneeMember.fullName} (${assigneeMember.name})` : "ทีมงาน CC"}\n`;
-    text += `ทีมสร้างสรรค์และการสื่อสาร (Creative and Communication - CC)\n`;
-    text += `อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (CMU STeP)`;
+    text += `${signatureBlock}`;
 
     return text;
-  }, [brief, taskCode, assigneeMember, assistantMembers, isInternal, unit]);
+  }, [brief, taskCode, assigneeMember, assistantMembers, isInternal, unit, salutationTarget, politeWord, signatureBlock]);
 
   const [emailBody, setEmailBody] = useState(initialEmailBody);
 
@@ -320,15 +349,8 @@ export default function InProgressEmailModal({
 
     let urlBodyText = emailBody;
     if (encodeURIComponent(urlBodyText).length > maxSafeBodyEncodedLength) {
-      const lines = emailBody.split('\n');
-      const intro = lines.slice(0, 4).join('\n');
-      const notice = "\n\n📋 (ทีม CC ได้คัดลอกรายละเอียดบรีฟงานฉบับเต็มลงใน Clipboard ให้เรียบร้อยแล้ว สามารถกด Ctrl+V ในหน้านี้เพื่อวางได้ทันทีครับ)\n\n";
-      const signoff = lines.slice(-4).join('\n');
-      let candidate = intro + notice + signoff;
-      if (encodeURIComponent(candidate).length > maxSafeBodyEncodedLength) {
-        candidate = `เรียน คุณผู้สั่งงานและทีมงาน\n\nทีม CC ได้เริ่มดำเนินงาน "${brief.project_name || 'งาน'}" (${taskCode}) เรียบร้อยแล้วครับ\n(รายละเอียดบรีฟฉบับเต็มถูกคัดลอกลง Clipboard แล้ว สามารถกด Ctrl+V วางได้ทันทีครับ)\n\nขอแสดงความนับถือ,\n${assigneeMember?.fullName || 'ทีมงาน CC'}`;
-      }
-      urlBodyText = candidate;
+      const pName = brief.project_name || 'งาน';
+      urlBodyText = `เรียน ${salutationTarget}\n\nทีม CC ได้เริ่มดำเนินงาน "${pName}" (${taskCode}) เรียบร้อยแล้ว${politeWord}\n\n${signatureBlock}`;
     }
 
     const targetBody = encodeURIComponent(urlBodyText);

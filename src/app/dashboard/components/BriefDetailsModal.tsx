@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import CustomSelect from "./CustomSelect";
 import ModernSelect, { ModernSelectOption } from "@/components/ModernSelect";
 import DatePicker from "react-datepicker";
@@ -107,6 +108,11 @@ type BriefDetailsModalProps = {
 
 export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdateField, onClose }: BriefDetailsModalProps) {
   if (!brief) return null;
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Filter operational assignees (exclude executives from being assigned to tasks)
   const operationalAssignees = useMemo(() => {
@@ -467,9 +473,11 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
     </tr>
   );
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div 
-      className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[100] flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[9999] flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -1981,6 +1989,7 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
         />
       )}
 
-    </div>
+    </div>,
+    document.body
   );
 }

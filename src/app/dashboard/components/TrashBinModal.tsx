@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Trash2, RotateCcw, AlertTriangle, X, Check, RefreshCw, Calendar, ArrowUpRight } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
@@ -31,12 +32,17 @@ export default function TrashBinModal({
   onPermanentDelete,
   onEmptyTrash,
 }: TrashBinModalProps) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const [restoringId, setRestoringId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isEmptying, setIsEmptying] = useState(false);
   const [confirmEmpty, setConfirmEmpty] = useState(false);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const handleRestoreClick = async (id: string) => {
     setRestoringId(id);
@@ -76,7 +82,7 @@ export default function TrashBinModal({
     });
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         
@@ -233,6 +239,7 @@ export default function TrashBinModal({
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

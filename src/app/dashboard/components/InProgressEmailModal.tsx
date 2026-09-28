@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { 
   Mail, Send, X, Copy, Check, AlertCircle, Clock, 
   Calendar, User, Users, FileText, CheckCircle2, ChevronDown 
@@ -25,7 +26,12 @@ export default function InProgressEmailModal({
   onConfirmSend,
   onCancel,
 }: InProgressEmailModalProps) {
-  if (!isOpen || !brief) return null;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !brief || !mounted) return null;
 
   // 1. Resolve Assignee details (คนทำงานของ CC)
   const assigneeMember = useMemo(() => {
@@ -261,7 +267,7 @@ export default function InProgressEmailModal({
     }
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
       <div className="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-zinc-200">
         
@@ -482,6 +488,7 @@ export default function InProgressEmailModal({
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

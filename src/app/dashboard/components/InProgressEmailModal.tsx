@@ -6,6 +6,7 @@ import {
   Mail, Send, X, Copy, Check, AlertCircle, Clock, 
   Calendar, User, Users, FileText, CheckCircle2, ChevronDown 
 } from "lucide-react";
+import CustomSelect from "./CustomSelect";
 import { DEFAULT_MEMBER_METADATA } from "@/utils/memberProfile";
 import { OFFICIAL_STEP_TEAMS } from "@/utils/teamAnalytics";
 
@@ -33,7 +34,11 @@ export default function InProgressEmailModal({
     setMounted(true);
   }, []);
 
-  if (!isOpen || !brief || !mounted) return null;
+  useEffect(() => {
+    if (brief?.assignee_id) {
+      setSelectedAssigneeId(brief.assignee_id);
+    }
+  }, [brief?.assignee_id]);
 
   // 1. Resolve Assignee details (คนทำงานของ CC)
   const assigneeMember = useMemo(() => {
@@ -284,6 +289,8 @@ export default function InProgressEmailModal({
     }
   };
 
+  if (!isOpen || !brief || !mounted) return null;
+
   return createPortal(
     <div className="fixed inset-0 bg-[#181a1c]/90 backdrop-blur-md z-[100] flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
       <div className="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-zinc-200">
@@ -379,26 +386,57 @@ export default function InProgressEmailModal({
                 </span>
               )}
             </div>
-            <div className="relative">
-              <select
-                value={selectedAssigneeId}
-                onChange={(e) => setSelectedAssigneeId(e.target.value)}
-                className="w-full bg-white border border-zinc-200 hover:border-zinc-300 focus:border-[#f97316] focus:ring-2 focus:ring-orange-500/10 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-zinc-900 focus:outline-none transition-all shadow-2xs cursor-pointer appearance-none pr-9"
-              >
-                <option value="">-- กรุณาเลือกผู้รับผิดชอบงานทีม CC --</option>
-                {assignees.map((a: any) => {
+            <CustomSelect
+              value={selectedAssigneeId}
+              onChange={(val) => setSelectedAssigneeId(val)}
+              placeholder="-- กรุณาเลือกผู้รับผิดชอบงานทีม CC --"
+              triggerClassName="w-full text-xs font-semibold bg-white border border-zinc-200 hover:border-zinc-300 focus:border-[#f97316] rounded-xl px-3.5 py-2.5 text-left flex items-center justify-between shadow-2xs h-[40px]"
+              dropdownClassName="w-full max-h-64 shadow-xl rounded-xl border border-zinc-200 p-1"
+              options={[
+                { value: "", label: "-- กรุณาเลือกผู้รับผิดชอบงานทีม CC --" },
+                ...assignees.map((a: any) => {
                   const meta = DEFAULT_MEMBER_METADATA[a.name] || {};
-                  return (
-                    <option key={a.id} value={a.id}>
-                      {a.name} ({meta.fullName || a.full_name || a.name}) - {meta.position || a.position || "ทีม CC"}
-                    </option>
-                  );
-                })}
-              </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400">
-                <ChevronDown size={14} />
-              </div>
-            </div>
+                  const unitColor = 
+                    a.unit?.toLowerCase() === "creative" ? "bg-purple-100 text-purple-700" :
+                    a.unit?.toLowerCase() === "content" ? "bg-pink-100 text-pink-700" :
+                    a.unit?.toLowerCase() === "pr" ? "bg-blue-100 text-blue-700" :
+                    "bg-zinc-100 text-zinc-700";
+                  return {
+                    value: a.id,
+                    label: (
+                      <div className="flex items-center justify-between gap-2 py-0.5 w-full">
+                        <div className="flex items-center gap-2 truncate">
+                          <span className="w-6 h-6 rounded-full bg-slate-100 text-[11px] font-bold flex items-center justify-center shrink-0">
+                            {a.name.slice(0, 1)}
+                          </span>
+                          <div className="truncate">
+                            <span className="font-bold text-xs text-zinc-900 block truncate">{a.name} ({meta.fullName || a.full_name || a.name})</span>
+                            <span className="text-[10.5px] text-zinc-400 block truncate">{meta.position || a.position || "ทีม CC"}</span>
+                          </div>
+                        </div>
+                        {a.unit && (
+                          <span className={`text-[9.5px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0 ${unitColor}`}>
+                            {a.unit}
+                          </span>
+                        )}
+                      </div>
+                    )
+                  };
+                })
+              ]}
+              renderValue={(val) => {
+                const a = assignees.find((item: any) => item.id === val);
+                if (!a) return <span className="text-zinc-400">-- กรุณาเลือกผู้รับผิดชอบงานทีม CC --</span>;
+                const meta = DEFAULT_MEMBER_METADATA[a.name] || {};
+                return (
+                  <div className="flex items-center gap-2 truncate">
+                    <span className="font-bold text-zinc-900">{a.name}</span>
+                    <span className="text-zinc-500 font-normal truncate">({meta.fullName || a.full_name || a.name})</span>
+                    <span className="text-xs text-orange-600 font-medium shrink-0">• {meta.position || a.position || "ทีม CC"}</span>
+                  </div>
+                );
+              }}
+            />
           </div>
 
           {/* Row 0.5: From (Sender - คนทำงานหลัก CC) */}

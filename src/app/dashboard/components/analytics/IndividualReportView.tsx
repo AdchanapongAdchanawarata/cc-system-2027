@@ -38,6 +38,7 @@ import {
 import { BriefTaskLike, MemberStats } from '@/utils/stats';
 import { MemberProfile } from '@/utils/memberProfile';
 import { computeMemberIntelligenceProfile, computeTeamWorkloadInsights } from '@/utils/teamAnalytics';
+import CustomSelect from '../CustomSelect';
 import MemberSpecializationCard from './MemberSpecializationCard';
 import InteractiveDonutChart, { DonutSegment } from '../charts/InteractiveDonutChart';
 import PressureGaugeMeter from '../charts/PressureGaugeMeter';
@@ -573,17 +574,52 @@ export default function IndividualReportView({
           </div>
           <div className="h-4 w-[1px] bg-surface-border hidden sm:block" />
           <span className="text-xs font-bold text-foreground">เลือกดูโปรไฟล์:</span>
-          <select
+          <CustomSelect
             value={currentProfileMember.assignee_id}
-            onChange={(e) => onSelectMember(e.target.value)}
-            className="bg-surface border border-surface-border text-xs rounded-full px-4 py-2 font-bold text-foreground shadow-2xs cursor-pointer focus:outline-none focus:border-primary transition-all hover:border-slate-400"
-          >
-            {sortedMemberList.map((m) => (
-              <option key={m.assignee_id} value={m.assignee_id}>
-                {m.name} ({m.unit})
-              </option>
-            ))}
-          </select>
+            onChange={(val) => onSelectMember(val)}
+            triggerClassName="bg-white dark:bg-zinc-800 border border-surface-border text-xs rounded-full px-4 py-2 font-bold text-foreground shadow-2xs cursor-pointer hover:border-slate-400 transition-all flex items-center justify-between min-w-[200px]"
+            dropdownClassName="w-64 max-h-80 shadow-xl rounded-2xl border border-surface-border p-1.5"
+            options={sortedMemberList.map((m) => {
+              const unitColor = 
+                m.unit?.toLowerCase() === "creative" ? "bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300" :
+                m.unit?.toLowerCase() === "content" ? "bg-pink-100 text-pink-700 dark:bg-pink-950/60 dark:text-pink-300" :
+                m.unit?.toLowerCase() === "pr" ? "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300" :
+                "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300";
+              return {
+                value: m.assignee_id,
+                label: (
+                  <div className="flex items-center justify-between gap-2 w-full py-0.5">
+                    <div className="flex items-center gap-2 truncate">
+                      <span className="w-6 h-6 rounded-full bg-slate-100 dark:bg-zinc-700 text-[11px] font-bold flex items-center justify-center shrink-0">
+                        {m.name.slice(0, 1)}
+                      </span>
+                      <span className="font-bold text-xs truncate">{m.name}</span>
+                    </div>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0 ${unitColor}`}>
+                      {m.unit}
+                    </span>
+                  </div>
+                )
+              };
+            })}
+            renderValue={(val) => {
+              const m = sortedMemberList.find(item => item.assignee_id === val);
+              if (!m) return "เลือกดูโปรไฟล์...";
+              const unitColor = 
+                m.unit?.toLowerCase() === "creative" ? "bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300" :
+                m.unit?.toLowerCase() === "content" ? "bg-pink-100 text-pink-700 dark:bg-pink-950/60 dark:text-pink-300" :
+                m.unit?.toLowerCase() === "pr" ? "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300" :
+                "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300";
+              return (
+                <div className="flex items-center gap-2">
+                  <span className="font-bold">{m.name}</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${unitColor}`}>
+                    {m.unit}
+                  </span>
+                </div>
+              );
+            }}
+          />
         </div>
 
         {/* Button: Save PDF */}
@@ -1700,26 +1736,30 @@ export default function IndividualReportView({
               />
             </div>
 
-            <select
+            <CustomSelect
               value={taskStatusFilter}
-              onChange={(e) => setTaskStatusFilter(e.target.value as any)}
-              className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 text-xs rounded-xl font-medium text-slate-700 focus:outline-none cursor-pointer"
-            >
-              <option value="all">ทุกสถานะ</option>
-              <option value="completed">เสร็จสิ้น</option>
-              <option value="in_progress">กำลังทำ</option>
-              <option value="pending">รอเริ่ม</option>
-            </select>
+              onChange={(val) => setTaskStatusFilter(val as any)}
+              triggerClassName="px-3 py-1.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-xs rounded-xl font-medium text-slate-700 dark:text-slate-200 cursor-pointer flex items-center justify-between min-w-[105px]"
+              dropdownClassName="w-36 shadow-lg rounded-xl"
+              options={[
+                { value: "all", label: "ทุกสถานะ" },
+                { value: "completed", label: "✅ เสร็จสิ้น" },
+                { value: "in_progress", label: "⚡ กำลังทำ" },
+                { value: "pending", label: "⏳ รอเริ่ม" },
+              ]}
+            />
 
-            <select
+            <CustomSelect
               value={taskRoleFilter}
-              onChange={(e) => setTaskRoleFilter(e.target.value as any)}
-              className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 text-xs rounded-xl font-medium text-slate-700 focus:outline-none cursor-pointer"
-            >
-              <option value="all">ทุกบทบาท</option>
-              <option value="owner">งานหลัก</option>
-              <option value="assistant">งานช่วย</option>
-            </select>
+              onChange={(val) => setTaskRoleFilter(val as any)}
+              triggerClassName="px-3 py-1.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-xs rounded-xl font-medium text-slate-700 dark:text-slate-200 cursor-pointer flex items-center justify-between min-w-[105px]"
+              dropdownClassName="w-36 shadow-lg rounded-xl"
+              options={[
+                { value: "all", label: "ทุกบทบาท" },
+                { value: "owner", label: "👑 งานหลัก" },
+                { value: "assistant", label: "🤝 งานช่วย" },
+              ]}
+            />
           </div>
         </div>
 

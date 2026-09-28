@@ -21,6 +21,7 @@ import { OFFICIAL_STEP_TEAMS } from "@/utils/teamAnalytics";
 import { exportBriefToPdf } from "@/utils/briefPdfExport";
 import { getTaskSurveyUrl } from "@/utils/surveyTokens";
 import InProgressEmailModal from "./InProgressEmailModal";
+import CompletedEmailModal from "./CompletedEmailModal";
 import { downloadFileWithSaveDialog } from "@/utils/fileDownloader";
 
 const ALL_CATEGORIES_BY_UNIT: Record<string, { name: string; desc: string }[]> = {
@@ -216,6 +217,7 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
   const [copiedSurvey, setCopiedSurvey] = useState(false);
   const [copiedTaskLink, setCopiedTaskLink] = useState(false);
   const [showInProgressEmailModal, setShowInProgressEmailModal] = useState(false);
+  const [showCompletedEmailModal, setShowCompletedEmailModal] = useState(false);
 
   const handleConfirmInProgressModal = async (emailData: { to: string; cc: string[]; subject: string; body: string; from?: string; senderName?: string; assigneeId?: string }) => {
     onUpdateField(brief.id, "status", "in_progress");
@@ -259,6 +261,49 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
 
   const handleCancelInProgressModal = () => {
     setShowInProgressEmailModal(false);
+  };
+
+  const handleConfirmCompletedModal = async (emailData: { to: string; cc: string[]; subject: string; body: string; from?: string; senderName?: string; assigneeId?: string }) => {
+    onUpdateField(brief.id, "status", "completed");
+    onUpdateField(brief.id, "completed_at", new Date().toISOString());
+    const existingDetails = brief.details || {};
+    const updatedDetails = {
+      ...existingDetails,
+      survey_status: existingDetails.survey_status || 'sent',
+      satisfaction_rate: existingDetails.satisfaction_rate ?? 85.0
+    };
+    onUpdateField(brief.id, "details", updatedDetails);
+
+    if (emailData.to && emailData.to !== brief.requester_email) {
+      onUpdateField(brief.id, "requester_email", emailData.to);
+    }
+
+    const targetAssigneeId = emailData.assigneeId || brief.assignee_id;
+    const assignee = assignees.find((a: any) => a.id === targetAssigneeId);
+    try {
+      await fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'task_completed',
+          briefId: brief.id,
+          taskCode,
+          projectName: brief.project_name,
+          assigneeName: assignee?.name || 'ทีม CC',
+          requesterEmail: emailData.to,
+          requesterName: brief.coordinator_nickname,
+        }),
+      });
+    } catch (err) {
+      console.error('Failed to notify completed email:', err);
+    }
+
+    setShowCompletedEmailModal(false);
+    setSurveyNotifySuccess(`⚡ ส่งมอบงานสำเร็จ! เปิดร่างอีเมลแบบประเมินใน Gmail เรียบร้อยแล้ว (กรุณากด Send ในแท็บ Gmail เพื่อส่งจริง)`);
+  };
+
+  const handleCancelCompletedModal = () => {
+    setShowCompletedEmailModal(false);
   };
 
   const handleCopySurveyLink = async () => {
@@ -695,33 +740,12 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                             return;
                           }
 
-                          onUpdateField(brief.id, "status", val);
                           if (val === "completed") {
-                            onUpdateField(brief.id, "completed_at", new Date().toISOString());
-                            const existingDetails = brief.details || {};
-                            const updatedDetails = {
-                              ...existingDetails,
-                              survey_status: existingDetails.survey_status || 'sent',
-                              satisfaction_rate: existingDetails.satisfaction_rate ?? 85.0
-                            };
-                            onUpdateField(brief.id, "details", updatedDetails);
-
-                            const assignee = assignees.find((a: any) => a.id === brief.assignee_id);
-                            fetch('/api/notify', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({
-                                action: 'task_completed',
-                                briefId: brief.id,
-                                assigneeId: brief.assignee_id,
-                                projectName: brief.project_name,
-                                assigneeName: assignee?.name || 'ทีม CC',
-                                requesterEmail: brief.requester_email,
-                                requesterName: brief.coordinator_nickname
-                              })
-                            }).catch(console.error);
-                            setSurveyNotifySuccess(`ส่งแบบประเมินความพึงพอใจ 5 มิติ ไปยังอีเมล ${brief.requester_email || 'ผู้สั่งงาน'} เรียบร้อยแล้ว (สถานะ: ส่งแบบประเมินความพึงพอใจแล้ว)`);
+                            setShowCompletedEmailModal(true);
+                            return;
                           }
+
+                          onUpdateField(brief.id, "status", val);
                         }}
                         options={
                           (brief.status || 'pending') === 'pending'
@@ -1097,28 +1121,40 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={handleCopySurveyLink}
-                        className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer self-start sm:self-auto shadow-2xs shrink-0 border ${
-                          copiedSurvey
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-300 scale-95"
-                            : "bg-white hover:bg-blue-50 text-blue-700 border-blue-200 hover:border-blue-300"
-                        }`}
-                        title="คัดลอกลิงก์แบบประเมินสำหรับส่งให้ผู้สั่งงาน (PM) โดยตรงทาง LINE หรือช่องทางอื่น"
-                      >
-                        {copiedSurvey ? (
-                          <>
-                            <Check size={13} className="text-emerald-600 stroke-[3]" />
-                            <span>คัดลอกลิงก์แล้ว!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Link2 size={13} className="text-blue-600 stroke-[2.5]" />
-                            <span>คัดลอกลิงก์</span>
-                          </>
-                        )}
-                      </button>
+                      <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setShowCompletedEmailModal(true)}
+                          className="px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs bg-[#EA4335] hover:bg-[#d93025] text-white"
+                          title="เปิดส่งแบบประเมินและแจ้งส่งมอบงานผ่าน Gmail (@step.cmu.ac.th)"
+                        >
+                          <Mail size={13} className="text-white" />
+                          <span>เปิดส่งใน Gmail</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleCopySurveyLink}
+                          className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs border ${
+                            copiedSurvey
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-300 scale-95"
+                              : "bg-white hover:bg-blue-50 text-blue-700 border-blue-200 hover:border-blue-300"
+                          }`}
+                          title="คัดลอกลิงก์แบบประเมินสำหรับส่งให้ผู้สั่งงาน (PM) โดยตรงทาง LINE หรือช่องทางอื่น"
+                        >
+                          {copiedSurvey ? (
+                            <>
+                              <Check size={13} className="text-emerald-600 stroke-[3]" />
+                              <span>คัดลอกลิงก์แล้ว!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Link2 size={13} className="text-blue-600 stroke-[2.5]" />
+                              <span>คัดลอกลิงก์</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   );
                 }
@@ -2068,6 +2104,18 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
           taskCode={taskCode}
           onConfirmSend={handleConfirmInProgressModal}
           onCancel={handleCancelInProgressModal}
+        />
+      )}
+
+      {/* Completed Handover & Survey Email Draft Modal */}
+      {showCompletedEmailModal && (
+        <CompletedEmailModal
+          isOpen={showCompletedEmailModal}
+          brief={brief}
+          assignees={assignees}
+          taskCode={taskCode}
+          onConfirmSend={handleConfirmCompletedModal}
+          onCancel={handleCancelCompletedModal}
         />
       )}
 

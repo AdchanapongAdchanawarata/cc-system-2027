@@ -12,6 +12,7 @@ import {
 import BriefDetailsModal from "./BriefDetailsModal";
 import TrashBinModal from "./TrashBinModal";
 import InProgressEmailModal from "./InProgressEmailModal";
+import CompletedEmailModal from "./CompletedEmailModal";
 import { getStandardPriceForTask } from "@/utils/pricing";
 import { globalHistoryManager } from "@/utils/historyManager";
 
@@ -88,7 +89,21 @@ const getAssigneeColorClass = (unitStr: string, hasAssignee: boolean) => {
 };
 
 export default function AssignmentsView() {
-  const [filter, setFilter] = useState("All CC");
+  const [filter, setFilter] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const savedUnit = localStorage.getItem("cc_user_unit");
+      const unitMap: Record<string, string> = {
+        creative: "Creative",
+        content: "Content",
+        pr: "PR",
+        internal: "Internal",
+      };
+      if (savedUnit && unitMap[savedUnit.toLowerCase()]) {
+        return unitMap[savedUnit.toLowerCase()];
+      }
+    }
+    return "All CC";
+  });
   const [selectedAssigneeIds, setSelectedAssigneeIds] = useState<string[]>([]);
   const [isAssigneeFilterOpen, setIsAssigneeFilterOpen] = useState(false);
   const [briefs, setBriefs] = useState<Brief[]>([]);
@@ -110,6 +125,9 @@ export default function AssignmentsView() {
 
   // In-Progress Email Draft Modal state
   const [pendingInProgressBrief, setPendingInProgressBrief] = useState<Brief | null>(null);
+
+  // Completed Handover & Survey Email Draft Modal state
+  const [pendingCompletedBrief, setPendingCompletedBrief] = useState<Brief | null>(null);
 
   // Mobile Kanban Column Tab Switcher State
   const [mobileStatusTab, setMobileStatusTab] = useState<string>("pending");
@@ -251,16 +269,15 @@ export default function AssignmentsView() {
 
   useEffect(() => {
     fetchData();
-  }, [filter]);
+  }, []);
 
   const fetchData = async () => {
-    let query = supabase.from('briefs').select('*').neq('status', 'purged').order('created_at', { ascending: true }); // Ascending for sequence ID calculation
-    
-    if (filter !== "All CC") {
-      query = query.eq('unit', filter.toLowerCase());
-    }
+    const { data: briefsData } = await supabase
+      .from('briefs')
+      .select('*')
+      .neq('status', 'purged')
+      .order('created_at', { ascending: true }); // Ascending for sequence ID calculation
 
-    const { data: briefsData } = await query;
     if (briefsData) {
       const filtered = briefsData.filter(b => b.status !== 'purged' && !b.details?.is_permanently_deleted);
       setBriefs(filtered);
@@ -338,6 +355,12 @@ export default function AssignmentsView() {
       // 2. Intercept in_progress transition to require draft email modal (and allow assigning inside modal)
       if (value === 'in_progress' && !bypassRevertCheck) {
         setPendingInProgressBrief(brief);
+        return;
+      }
+
+      // 3. Intercept completed transition to require delivery & survey draft email modal (Option 1 via Gmail)
+      if (value === 'completed' && !bypassRevertCheck) {
+        setPendingCompletedBrief(brief);
         return;
       }
     }
@@ -491,6 +514,94 @@ export default function AssignmentsView() {
       showToast(`งาน "${pendingInProgressBrief.project_name}" ยังคงอยู่ที่สถานะ Pending`, "info");
     }
     setPendingInProgressBrief(null);
+  };
+
+  // --- CONFIRM COMPLETED EMAIL & SURVEY DISPATCH ---
+  const handleConfirmCompletedEmail = async (emailData: {
+    to: string;
+    cc: string[];
+    subject: string;
+    body: string;
+    from?: string;
+    senderName?: string;
+    assigneeId?: string;
+  }) => {
+    if (!pendingCompletedBrief) return;
+    const b = pendingCompletedBrief;
+    const taskCode = getTaskCode(b.unit, b.id);
+    const now = new Date().toISOString();
+
+    const existingDetails = b.details || {};
+    const updatedDetails = {
+      ...existingDetails,
+      survey_status: existingDetails.survey_status || "sent",
+      satisfaction_rate: existingDetails.satisfaction_rate ?? 85.0,
+    };
+
+    const updates: any = {
+      status: "completed",
+      completed_at: b.completed_at || now,
+      requester_email: emailData.to || b.requester_email,
+      details: updatedDetails,
+    };
+
+    // Push to history stack
+    globalHistoryManager.push({
+      id: Math.random().toString(36).substring(2, 9),
+      type: "MOVE_STATUS",
+      description: `ส่งมอบงาน "${b.project_name}" (Completed)`,
+      briefId: b.id,
+      timestamp: Date.now(),
+      undo: async () => {
+        await updateFieldInternal(b.id, {
+          status: b.status,
+          completed_at: b.completed_at,
+          details: existingDetails,
+        });
+      },
+      redo: async () => {
+        await updateFieldInternal(b.id, updates);
+      },
+    });
+
+    await updateFieldInternal(b.id, updates);
+
+    // Dispatch completion & survey alert via /api/notify
+    try {
+      await fetch("/api/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "task_completed",
+          briefId: b.id,
+          taskCode,
+          projectName: b.project_name,
+          unit: b.unit,
+          requesterEmail: emailData.to,
+          assigneeName:
+            assignees.find((a) => a.id === b.assignee_id)?.name || "ทีม CC",
+          requesterName: b.coordinator_nickname,
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to notify completed email:", err);
+    }
+
+    showToast(
+      `⚡ ส่งมอบงาน "${b.project_name}" สำเร็จ! เปิดร่างอีเมลแบบประเมินใน Gmail เรียบร้อยแล้ว (กรุณากด Send ในแท็บ Gmail เพื่อส่งจริง)`
+    );
+    setPendingCompletedBrief(null);
+  };
+
+  // --- CANCEL COMPLETED (STAY AT IN-PROGRESS) ---
+  const handleCancelCompleted = () => {
+    if (pendingCompletedBrief) {
+      showToast(
+        `งาน "${pendingCompletedBrief.project_name}" ยังคงอยู่ที่สถานะ In Progress`,
+        "info"
+      );
+    }
+    setPendingCompletedBrief(null);
   };
 
   // --- CONFIRM STATUS REVERT (MOVE BACKWARDS) ---
@@ -730,7 +841,16 @@ export default function AssignmentsView() {
   // Sort active briefs descending for display so newest is on top
   const displayBriefs = activeBriefs
     .filter(b => {
-      // Filter by Assignee (supports multi-select comparison and unassigned)
+      // 1. Strict filter by Unit Tab (All CC, Creative, Content, PR, Internal)
+      if (filter !== "All CC") {
+        const targetUnit = filter.toLowerCase();
+        const briefUnit = (b.unit || "").toLowerCase();
+        if (briefUnit !== targetUnit) {
+          return false;
+        }
+      }
+
+      // 2. Filter by Assignee (supports multi-select comparison and unassigned)
       if (selectedAssigneeIds.length > 0) {
         const matchesPrimary = b.assignee_id && selectedAssigneeIds.includes(b.assignee_id);
         const matchesAssistant = b.details?.assistants && Array.isArray(b.details.assistants) &&
@@ -856,7 +976,8 @@ export default function AssignmentsView() {
                     {/* Member Options with Checkboxes */}
                     {assignees.map((a) => {
                       const isSelected = selectedAssigneeIds.includes(a.id);
-                      const taskCount = activeBriefs.filter(b => b.assignee_id === a.id).length;
+                      const scopedBriefs = filter === "All CC" ? activeBriefs : activeBriefs.filter(b => (b.unit || '').toLowerCase() === filter.toLowerCase());
+                      const taskCount = scopedBriefs.filter(b => b.assignee_id === a.id).length;
                       return (
                         <button
                           key={a.id}
@@ -895,7 +1016,8 @@ export default function AssignmentsView() {
                     {/* Unassigned Option */}
                     {(() => {
                       const isUnassignedSelected = selectedAssigneeIds.includes('unassigned');
-                      const unassignedCount = activeBriefs.filter(b => !b.assignee_id).length;
+                      const scopedBriefs = filter === "All CC" ? activeBriefs : activeBriefs.filter(b => (b.unit || '').toLowerCase() === filter.toLowerCase());
+                      const unassignedCount = scopedBriefs.filter(b => !b.assignee_id).length;
                       return (
                         <button
                           type="button"
@@ -1208,25 +1330,30 @@ export default function AssignmentsView() {
                           </span>
                           {((brief as any).decision_maker || brief.details?.team) && (
                             <span 
-                              className="text-slate-600 dark:text-slate-300 text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-slate-200 dark:border-surface-border bg-slate-50 dark:bg-surface-border/50 uppercase truncate max-w-[55px] shrink-0"
+                              className="text-slate-600 dark:text-slate-300 text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-slate-200 dark:border-surface-border bg-slate-50 dark:bg-surface-border/50 uppercase truncate max-w-[130px] shrink-1 min-w-0"
                               title={(brief as any).decision_maker || brief.details?.team}
                             >
                               {(brief as any).decision_maker || brief.details?.team}
                             </span>
                           )}
-                          {/* Assistant Pill */}
-                          {brief.details?.assistants && brief.details.assistants.some((a: any) => a.assignee_id && Number(a.percentage) > 0) && (
-                            <span 
-                              className="inline-flex items-center gap-0.5 text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/60 px-1 py-0.5 rounded-full shrink-0"
-                              title={`ผู้ช่วย: ${brief.details.assistants.map((a: any) => {
-                                const m = assignees.find(as => as.id === a.assignee_id);
-                                return `${m?.name || 'ผู้ช่วย'} (${a.percentage}%)`;
-                              }).join(', ')}`}
-                            >
-                              <Users size={9} className="text-emerald-600 dark:text-emerald-400" />
-                              <span>+{brief.details.assistants.filter((a: any) => a.assignee_id && Number(a.percentage) > 0).length} ({brief.details.assistants.reduce((sum: number, a: any) => sum + (Number(a.percentage) || 0), 0)}%)</span>
-                            </span>
-                          )}
+                          {/* Assistant Pill (expands when room allows) */}
+                          {brief.details?.assistants && brief.details.assistants.some((a: any) => a.assignee_id && Number(a.percentage) > 0) && (() => {
+                            const activeAsts = brief.details.assistants.filter((a: any) => a.assignee_id && Number(a.percentage) > 0);
+                            const totalPct = activeAsts.reduce((sum: number, a: any) => sum + (Number(a.percentage) || 0), 0);
+                            const firstAst = assignees.find((as: any) => as.id === activeAsts[0]?.assignee_id);
+                            return (
+                              <span 
+                                className="inline-flex items-center gap-0.5 text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/60 px-1 py-0.5 rounded-full shrink-1 min-w-0 max-w-[110px] truncate"
+                                title={`ผู้ช่วย: ${activeAsts.map((a: any) => {
+                                  const m = assignees.find(as => as.id === a.assignee_id);
+                                  return `${m?.name || 'ผู้ช่วย'} (${a.percentage}%)`;
+                                }).join(', ')}`}
+                              >
+                                <Users size={9} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                <span className="truncate">+{activeAsts.length} {activeAsts.length === 1 && firstAst?.name ? `${firstAst.name} ` : ''}({totalPct}%)</span>
+                              </span>
+                            );
+                          })()}
                           {/* Satisfaction Rating / Survey Pill */}
                           {(brief.status === 'completed' || brief.status === 'complete') && (
                             brief.details?.satisfaction_scores?.averagePercent !== undefined ? (
@@ -1238,13 +1365,18 @@ export default function AssignmentsView() {
                                 <span>{brief.details.satisfaction_scores.averagePercent}%</span>
                               </span>
                             ) : (
-                              <span 
-                                className="inline-flex items-center gap-0.5 text-[9px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/60 px-1.5 py-0.5 rounded-full shrink-0"
-                                title="ส่งแบบประเมินแล้ว"
+                              <button 
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPendingCompletedBrief(brief);
+                                }}
+                                className="inline-flex items-center gap-0.5 text-[9px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/60 px-1.5 py-0.5 rounded-full shrink-0 cursor-pointer shadow-2xs transition-colors"
+                                title="คลิกเพื่อเปิดส่งแบบประเมินใน Gmail หรือส่งมอบงาน"
                               >
                                 <Mail size={9} className="text-blue-600 dark:text-blue-400" />
                                 <span>ประเมิน</span>
-                              </span>
+                              </button>
                             )
                           )}
                         </div>
@@ -1306,6 +1438,18 @@ export default function AssignmentsView() {
           taskCode={getTaskCode(pendingInProgressBrief.unit, pendingInProgressBrief.id)}
           onConfirmSend={handleConfirmInProgressEmail}
           onCancel={handleCancelInProgress}
+        />
+      )}
+
+      {/* Completed Handover & Survey Email Draft Modal */}
+      {pendingCompletedBrief && (
+        <CompletedEmailModal
+          isOpen={Boolean(pendingCompletedBrief)}
+          brief={pendingCompletedBrief}
+          assignees={assignees}
+          taskCode={getTaskCode(pendingCompletedBrief.unit, pendingCompletedBrief.id)}
+          onConfirmSend={handleConfirmCompletedEmail}
+          onCancel={handleCancelCompleted}
         />
       )}
 

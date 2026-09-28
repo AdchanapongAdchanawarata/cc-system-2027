@@ -301,42 +301,40 @@ export default function InProgressEmailModal({
       return;
     }
 
-    // Copy to clipboard as safety backup
+    // 1. Copy the 100% full email body to clipboard synchronously
     try {
-      navigator.clipboard.writeText(emailBody);
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        navigator.clipboard.writeText(emailBody);
+      }
     } catch {
       // ignore
     }
 
-    // Open Gmail Compose window immediately (before async await) to avoid popup blocker
+    // 2. Open Gmail Compose with safe URL length strictly under 1,800 characters to prevent blank white screen
     const targetTo = encodeURIComponent(toEmail.trim());
     const targetCc = encodeURIComponent(defaultCcEmails.join(','));
     const targetSubject = encodeURIComponent(emailSubject);
-    const targetBody = encodeURIComponent(emailBody);
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${targetTo}&cc=${targetCc}&su=${targetSubject}&body=${targetBody}`;
+
+    const baseLength = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&to=${targetTo}&cc=${targetCc}&su=${targetSubject}&body=`.length;
+    const maxSafeBodyEncodedLength = Math.max(150, 1800 - baseLength);
+
+    let urlBodyText = emailBody;
+    if (encodeURIComponent(urlBodyText).length > maxSafeBodyEncodedLength) {
+      const lines = emailBody.split('\n');
+      const intro = lines.slice(0, 4).join('\n');
+      const notice = "\n\n📋 (ทีม CC ได้คัดลอกรายละเอียดบรีฟงานฉบับเต็มลงใน Clipboard ให้เรียบร้อยแล้ว สามารถกด Ctrl+V ในหน้านี้เพื่อวางได้ทันทีครับ)\n\n";
+      const signoff = lines.slice(-4).join('\n');
+      let candidate = intro + notice + signoff;
+      if (encodeURIComponent(candidate).length > maxSafeBodyEncodedLength) {
+        candidate = `เรียน คุณผู้สั่งงานและทีมงาน\n\nทีม CC ได้เริ่มดำเนินงาน "${brief.project_name || 'งาน'}" (${taskCode}) เรียบร้อยแล้วครับ\n(รายละเอียดบรีฟฉบับเต็มถูกคัดลอกลง Clipboard แล้ว สามารถกด Ctrl+V วางได้ทันทีครับ)\n\nขอแสดงความนับถือ,\n${assigneeMember?.fullName || 'ทีมงาน CC'}`;
+      }
+      urlBodyText = candidate;
+    }
+
+    const targetBody = encodeURIComponent(urlBodyText);
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&to=${targetTo}&cc=${targetCc}&su=${targetSubject}&body=${targetBody}`;
     
     window.open(gmailUrl, '_blank');
-
-    await handleSubmit();
-  };
-
-  const handleSendAndOpenMailto = async () => {
-    const targetAssigneeId = selectedAssigneeId || brief?.assignee_id;
-    if (!targetAssigneeId) {
-      alert("⚠️ กรุณาเลือกผู้รับผิดชอบงาน (Assignee) ก่อนส่งอีเมลเริ่มงานครับ");
-      return;
-    }
-
-    if (!toEmail || !toEmail.trim()) {
-      alert("กรุณาระบุอีเมลของผู้สั่งงาน (PM)");
-      return;
-    }
-
-    const targetTo = encodeURIComponent(toEmail.trim());
-    const targetCc = encodeURIComponent(defaultCcEmails.join(','));
-    const targetSubject = encodeURIComponent(emailSubject);
-    const targetBody = encodeURIComponent(emailBody);
-    window.location.href = `mailto:${targetTo}?cc=${targetCc}&subject=${targetSubject}&body=${targetBody}`;
 
     await handleSubmit();
   };
@@ -615,44 +613,21 @@ export default function InProgressEmailModal({
 
         {/* Footer actions with Dieter Rams Iconic Red & Matte Black Buttons */}
         <div className="px-6 py-4 border-t border-zinc-200 bg-zinc-50/90 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="w-full sm:w-auto px-4 py-2.5 text-xs font-semibold text-zinc-600 hover:text-zinc-900 bg-white border border-zinc-300 hover:border-zinc-400 rounded-full hover:bg-zinc-50 transition-all cursor-pointer shadow-2xs text-center"
-            >
-              ยกเลิก (คงไว้ที่ Pending)
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={isSending}
-              className="hidden sm:inline-flex px-3 py-2 text-[11.5px] font-medium text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 rounded-full transition-all cursor-pointer disabled:opacity-50"
-              title="เริ่มงานโดยไม่เปิดหน้าต่างอีเมล (กรณีได้แจ้ง PM ผ่านช่องทางอื่นแล้ว)"
-            >
-              เริ่มงานโดยไม่เปิดอีเมล
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="w-full sm:w-auto whitespace-nowrap px-6 py-2.5 text-xs font-bold text-zinc-600 hover:text-zinc-900 bg-white border border-zinc-300 hover:border-zinc-400 rounded-full hover:bg-zinc-50 transition-all cursor-pointer shadow-2xs text-center"
+          >
+            ยกเลิก (คงไว้ที่ Pending)
+          </button>
 
-          <div className="flex flex-wrap items-center justify-end gap-2 w-full sm:w-auto">
-            {/* Secondary Option: Mailto / Outlook app */}
-            <button
-              type="button"
-              onClick={handleSendAndOpenMailto}
-              disabled={isSending}
-              className="px-3.5 py-2.5 text-xs font-semibold text-zinc-700 hover:text-zinc-900 bg-white border border-zinc-300 hover:border-zinc-400 rounded-full transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-2xs"
-              title="เปิดในแอปเมลในเครื่อง เช่น Microsoft Outlook หรือ Apple Mail"
-            >
-              <Send size={12} className="text-zinc-500" />
-              <span>เปิดใน Outlook / แอปเมล</span>
-            </button>
-
+          <div className="flex items-center justify-end w-full sm:w-auto">
             {/* Primary Option 1: Open and Send in Gmail (@step.cmu.ac.th) */}
             <button
               type="button"
               onClick={handleSendAndOpenGmail}
               disabled={isSending}
-              className="px-5 sm:px-6 py-2.5 text-xs font-bold text-white bg-[#EA4335] hover:bg-[#d93025] active:bg-[#c5221f] rounded-full shadow-sm hover:shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              className="w-full sm:w-auto whitespace-nowrap px-6 py-2.5 text-xs font-bold text-white bg-[#EA4335] hover:bg-[#d93025] active:bg-[#c5221f] rounded-full shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               title="ทางเลือกที่ 1: บันทึกเริ่มงานและเปิดร่างอีเมลใน Gmail (@step.cmu.ac.th) เพื่อกด Send ส่งจริง"
             >
               {isSending ? (

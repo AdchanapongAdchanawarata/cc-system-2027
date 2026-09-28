@@ -16,9 +16,25 @@ export default function DashboardPage() {
   const [activeSubReport, setActiveSubReport] = useState<string | null>(null);
   const [isSetupOpen, setIsSetupOpen] = useState(false);
   const [isInternalTaskOpen, setIsInternalTaskOpen] = useState(false);
-  const [currentUserRole, setCurrentUserRole] = useState<"admin" | "assignee">("admin");
-  const [userDisplayName, setUserDisplayName] = useState<string>("");
-  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [currentUserRole, setCurrentUserRole] = useState<"admin" | "assignee">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("cc_user_role");
+      if (saved === "admin" || saved === "assignee") return saved;
+    }
+    return "admin";
+  });
+  const [userDisplayName, setUserDisplayName] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("cc_user_name") || "";
+    }
+    return "";
+  });
+  const [isAuthChecking, setIsAuthChecking] = useState(() => {
+    if (typeof window !== "undefined") {
+      return !localStorage.getItem("cc_user_email");
+    }
+    return false;
+  });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -89,11 +105,7 @@ export default function DashboardPage() {
   };
 
   if (isAuthChecking) {
-    return (
-      <main className="flex-1 flex flex-col items-center justify-center min-h-screen">
-        <div className="w-8 h-8 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
-      </main>
-    );
+    return <main className="flex-1 min-h-screen bg-background" />;
   }
 
   return (

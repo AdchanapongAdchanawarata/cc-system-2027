@@ -14,7 +14,7 @@ interface InProgressEmailModalProps {
   brief: any;
   assignees: any[];
   taskCode: string;
-  onConfirmSend: (emailData: { to: string; cc: string[]; subject: string; body: string; from?: string; senderName?: string }) => Promise<void>;
+  onConfirmSend: (emailData: { to: string; cc: string[]; subject: string; body: string; from?: string; senderName?: string; assigneeId?: string }) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -27,6 +27,8 @@ export default function InProgressEmailModal({
   onCancel,
 }: InProgressEmailModalProps) {
   const [mounted, setMounted] = useState(false);
+  const [selectedAssigneeId, setSelectedAssigneeId] = useState<string>(brief?.assignee_id || "");
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -35,7 +37,8 @@ export default function InProgressEmailModal({
 
   // 1. Resolve Assignee details (คนทำงานของ CC)
   const assigneeMember = useMemo(() => {
-    const found = (assignees || []).find((a: any) => a.id === brief.assignee_id);
+    const targetId = selectedAssigneeId || brief.assignee_id;
+    const found = (assignees || []).find((a: any) => a.id === targetId);
     if (!found) return null;
     const name = found.name || "";
     const meta = DEFAULT_MEMBER_METADATA[name] || {};
@@ -47,7 +50,7 @@ export default function InProgressEmailModal({
       phone: meta.phone || found.phone || "-",
       email: found.email || `${name.toLowerCase().replace(/\s+/g, "")}@step.cmu.ac.th`,
     };
-  }, [assignees, brief.assignee_id]);
+  }, [assignees, brief.assignee_id, selectedAssigneeId]);
 
   // 2. Resolve Assistants (ถ้ามี)
   const assistantMembers = useMemo(() => {
@@ -113,9 +116,9 @@ export default function InProgressEmailModal({
 
   // States
   const [toEmail, setToEmail] = useState(defaultToEmail);
-  const [ccEmails] = useState<string[]>(defaultCcEmails);
   const [isSending, setIsSending] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [hasEditedBody, setHasEditedBody] = useState(false);
 
   // Generate Email Subject
   const emailSubject = useMemo(() => {
@@ -238,6 +241,13 @@ export default function InProgressEmailModal({
 
   const [emailBody, setEmailBody] = useState(initialEmailBody);
 
+  // Automatically update email body when assignee changes (unless user made custom manual edits)
+  useEffect(() => {
+    if (!hasEditedBody) {
+      setEmailBody(initialEmailBody);
+    }
+  }, [initialEmailBody, hasEditedBody]);
+
   const handleCopyBody = () => {
     navigator.clipboard.writeText(emailBody);
     setCopied(true);
@@ -245,6 +255,12 @@ export default function InProgressEmailModal({
   };
 
   const handleSubmit = async () => {
+    const targetAssigneeId = selectedAssigneeId || brief.assignee_id;
+    if (!targetAssigneeId) {
+      alert("⚠️ กรุณาเลือกผู้รับผิดชอบงาน (Assignee) ก่อนส่งอีเมลเริ่มงาน เพื่อให้ข้อมูลในระบบและข้อความแจ้งเริ่มงานสมบูรณ์ครับ");
+      return;
+    }
+
     if (!toEmail || !toEmail.trim()) {
       alert("กรุณาระบุอีเมลของผู้สั่งงาน (PM) เพื่อจัดส่งอีเมลตั้งต้น");
       return;
@@ -254,11 +270,12 @@ export default function InProgressEmailModal({
     try {
       await onConfirmSend({
         to: toEmail.trim(),
-        cc: ccEmails,
+        cc: defaultCcEmails,
         subject: emailSubject,
         body: emailBody,
         from: assigneeMember?.email || "cc@step.cmu.ac.th",
         senderName: assigneeMember?.fullName || assigneeMember?.name || "ทีม CC",
+        assigneeId: targetAssigneeId,
       });
     } catch (err: any) {
       alert("เกิดข้อผิดพลาดในการส่งอีเมล: " + (err.message || "Unknown error"));
@@ -340,7 +357,51 @@ export default function InProgressEmailModal({
         {/* Modal Form Body */}
         <div className="p-6 overflow-y-auto space-y-4 flex-1 text-xs custom-scrollbar">
           
-          {/* Row 0: From (Sender - คนทำงานหลัก CC) */}
+          {/* Row 0: Assignee Selector */}
+          <div className={`space-y-1.5 p-3 rounded-2xl border transition-all ${
+            !selectedAssigneeId 
+              ? "bg-rose-50/70 border-rose-200" 
+              : "bg-orange-50/40 border-orange-200/70"
+          }`}>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-zinc-900 flex items-center gap-1.5">
+                <User size={13} className="text-[#f97316]" />
+                <span>ผู้รับผิดชอบงานจากทีม CC (Assignee)</span>
+                <span className="text-[#E03131] font-bold">*</span>
+              </label>
+              {!selectedAssigneeId ? (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#E03131] text-white">
+                  จำเป็นต้องเลือกคนรับผิดชอบ
+                </span>
+              ) : (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                  กำหนดแล้ว
+                </span>
+              )}
+            </div>
+            <div className="relative">
+              <select
+                value={selectedAssigneeId}
+                onChange={(e) => setSelectedAssigneeId(e.target.value)}
+                className="w-full bg-white border border-zinc-200 hover:border-zinc-300 focus:border-[#f97316] focus:ring-2 focus:ring-orange-500/10 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-zinc-900 focus:outline-none transition-all shadow-2xs cursor-pointer appearance-none pr-9"
+              >
+                <option value="">-- กรุณาเลือกผู้รับผิดชอบงานทีม CC --</option>
+                {assignees.map((a: any) => {
+                  const meta = DEFAULT_MEMBER_METADATA[a.name] || {};
+                  return (
+                    <option key={a.id} value={a.id}>
+                      {a.name} ({meta.fullName || a.full_name || a.name}) - {meta.position || a.position || "ทีม CC"}
+                    </option>
+                  );
+                })}
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400">
+                <ChevronDown size={14} />
+              </div>
+            </div>
+          </div>
+
+          {/* Row 0.5: From (Sender - คนทำงานหลัก CC) */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-zinc-800 flex items-center gap-1.5">
@@ -398,7 +459,7 @@ export default function InProgressEmailModal({
               </span>
             </div>
             <div className="p-2.5 bg-zinc-50/80 border border-zinc-200/80 rounded-2xl flex flex-wrap gap-1.5 items-center min-h-[42px]">
-              {ccEmails.map((email, idx) => (
+              {defaultCcEmails.map((email, idx) => (
                 <span
                   key={idx}
                   className="px-3 py-1 rounded-full bg-white border border-zinc-200 text-zinc-800 text-xs font-medium flex items-center gap-1.5 shadow-2xs"
@@ -449,7 +510,10 @@ export default function InProgressEmailModal({
             <textarea
               rows={10}
               value={emailBody}
-              onChange={(e) => setEmailBody(e.target.value)}
+              onChange={(e) => {
+                setEmailBody(e.target.value);
+                setHasEditedBody(true);
+              }}
               className="w-full bg-white border border-zinc-200 hover:border-zinc-300 focus:border-[#f97316] focus:ring-2 focus:ring-orange-500/10 rounded-2xl p-4 text-xs leading-relaxed text-zinc-800 focus:outline-none transition-all resize-y shadow-2xs custom-scrollbar"
               placeholder="เนื้อหาอีเมล..."
             />

@@ -7,7 +7,7 @@ import {
   UserCircle2, CalendarDays, Tags, KanbanSquare, Flame, 
   CheckCircle2, XCircle, Trash2, Copy, ClockAlert, History, 
   Users, Star, MessageSquare, Undo2, Redo2, RotateCcw, AlertCircle, Mail,
-  LayoutList
+  LayoutList, ChevronDown, Check
 } from "lucide-react";
 import BriefDetailsModal from "./BriefDetailsModal";
 import TrashBinModal from "./TrashBinModal";
@@ -89,6 +89,8 @@ const getAssigneeColorClass = (unitStr: string, hasAssignee: boolean) => {
 
 export default function AssignmentsView() {
   const [filter, setFilter] = useState("All CC");
+  const [selectedAssigneeIds, setSelectedAssigneeIds] = useState<string[]>([]);
+  const [isAssigneeFilterOpen, setIsAssigneeFilterOpen] = useState(false);
   const [briefs, setBriefs] = useState<Brief[]>([]);
   const [assignees, setAssignees] = useState<Assignee[]>([]);
   const [okrs, setOkrs] = useState<OKR[]>([]);
@@ -333,15 +335,8 @@ export default function AssignmentsView() {
         }
       }
 
-      // 2. Intercept in_progress transition to require assignee and draft email modal
+      // 2. Intercept in_progress transition to require draft email modal (and allow assigning inside modal)
       if (value === 'in_progress' && !bypassRevertCheck) {
-        if (!brief.assignee_id) {
-          alert(
-            "⚠️ ไม่สามารถเริ่มงานได้: กรุณากำหนดผู้รับผิดชอบงาน (Assignee) ก่อนเปลี่ยนสถานะเป็น In Progress\n\n" +
-            "📌 เพื่อให้ระบบดึงข้อมูลผู้รับผิดชอบ (ชื่อ, ตำแหน่ง, เบอร์ติดต่อ, อีเมล) ใส่ในร่างอีเมลแจ้งเริ่มงานได้อย่างถูกต้องครับ"
-          );
-          return;
-        }
         setPendingInProgressBrief(brief);
         return;
       }
@@ -430,16 +425,18 @@ export default function AssignmentsView() {
   };
 
   // --- CONFIRM IN-PROGRESS EMAIL DISPATCH ---
-  const handleConfirmInProgressEmail = async (emailData: { to: string; cc: string[]; subject: string; body: string; from?: string; senderName?: string }) => {
+  const handleConfirmInProgressEmail = async (emailData: { to: string; cc: string[]; subject: string; body: string; from?: string; senderName?: string; assigneeId?: string }) => {
     if (!pendingInProgressBrief) return;
     const b = pendingInProgressBrief;
     const taskCode = getTaskCode(b.unit, b.id);
     const now = new Date().toISOString();
-    const assignee = assignees.find(a => a.id === b.assignee_id);
+    const targetAssigneeId = emailData.assigneeId || b.assignee_id;
+    const assignee = assignees.find(a => a.id === targetAssigneeId);
 
     // 1. Update brief in Supabase & local state
     const updates: any = {
       status: 'in_progress',
+      assignee_id: targetAssigneeId,
       in_progress_at: b.in_progress_at || now,
       requester_email: emailData.to || b.requester_email,
     };
@@ -733,6 +730,15 @@ export default function AssignmentsView() {
   // Sort active briefs descending for display so newest is on top
   const displayBriefs = activeBriefs
     .filter(b => {
+      // Filter by Assignee (supports multi-select comparison and unassigned)
+      if (selectedAssigneeIds.length > 0) {
+        const matchesPrimary = b.assignee_id && selectedAssigneeIds.includes(b.assignee_id);
+        const matchesAssistant = b.details?.assistants && Array.isArray(b.details.assistants) &&
+          b.details.assistants.some((ast: any) => selectedAssigneeIds.includes(ast.assignee_id));
+        const matchesUnassigned = selectedAssigneeIds.includes('unassigned') && !b.assignee_id;
+        if (!matchesPrimary && !matchesAssistant && !matchesUnassigned) return false;
+      }
+
       if (!searchQuery) return true;
       const q = searchQuery.toLowerCase();
       const code = getTaskCode(b.unit, b.id).toLowerCase();
@@ -766,19 +772,181 @@ export default function AssignmentsView() {
       {/* Header & Controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-2 sm:mb-2.5 gap-2 shrink-0">
         
-        {/* Left: Unit Filter Pills */}
-        <div className="flex bg-surface p-1 rounded-full border border-surface-border shadow-xs overflow-x-auto no-scrollbar w-full md:w-auto">
-          {["All CC", "Creative", "Content", "PR", "Internal"].map((f) => (
+        {/* Left: Unit Filter Pills + Assignee Multi-filter */}
+        <div className="flex items-center gap-2 flex-wrap w-full md:w-auto">
+          <div className="flex bg-surface p-1 rounded-full border border-surface-border shadow-xs overflow-x-auto no-scrollbar">
+            {["All CC", "Creative", "Content", "PR", "Internal"].map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`px-3 sm:px-4 py-1 text-xs sm:text-sm font-medium rounded-full transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+                  filter === f ? "bg-[#E03131] text-white shadow-xs font-semibold" : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+
+          {/* Assignee Filter Button & Popover */}
+          <div className="relative">
             <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-3 sm:px-4 py-1 text-xs sm:text-sm font-medium rounded-full transition-all whitespace-nowrap cursor-pointer shrink-0 ${
-                filter === f ? "bg-[#E03131] text-white shadow-xs font-semibold" : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+              type="button"
+              onClick={() => setIsAssigneeFilterOpen(!isAssigneeFilterOpen)}
+              className={`px-3 sm:px-3.5 py-1.5 text-xs sm:text-sm font-medium rounded-full border transition-all flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs ${
+                selectedAssigneeIds.length > 0
+                  ? "bg-zinc-900 text-white border-zinc-900 font-semibold"
+                  : "bg-surface border-surface-border text-muted-foreground hover:text-foreground hover:bg-muted/30"
               }`}
             >
-              {f}
+              <Users size={13} className={selectedAssigneeIds.length > 0 ? "text-[#f97316]" : ""} />
+              <span>
+                {selectedAssigneeIds.length === 0
+                  ? "กรองคน"
+                  : selectedAssigneeIds.length === 1
+                  ? (assignees.find(a => a.id === selectedAssigneeIds[0])?.name || (selectedAssigneeIds[0] === 'unassigned' ? 'ยังไม่ระบุคน' : 'กรอง 1 คน'))
+                  : `กรองคน (${selectedAssigneeIds.length})`}
+              </span>
+              <ChevronDown size={12} className={`transition-transform duration-200 ${isAssigneeFilterOpen ? "rotate-180" : ""}`} />
             </button>
-          ))}
+
+            {isAssigneeFilterOpen && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setIsAssigneeFilterOpen(false)} 
+                />
+                <div className="absolute left-0 top-full mt-1.5 w-64 sm:w-72 bg-white rounded-2xl shadow-xl border border-zinc-200 p-2.5 z-50 text-xs animate-in fade-in zoom-in-95 duration-150">
+                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-zinc-100">
+                    <span className="font-bold text-zinc-900 flex items-center gap-1.5">
+                      <Users size={13} className="text-[#f97316]" />
+                      <span>กรองตามผู้รับผิดชอบงาน</span>
+                    </span>
+                    {selectedAssigneeIds.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedAssigneeIds([])}
+                        className="text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:underline cursor-pointer"
+                      >
+                        ล้างตัวกรอง
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="max-h-60 overflow-y-auto space-y-1 custom-scrollbar pr-1">
+                    {/* "All" Option */}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedAssigneeIds([])}
+                      className={`w-full text-left px-2.5 py-1.5 rounded-xl transition-all flex items-center justify-between cursor-pointer ${
+                        selectedAssigneeIds.length === 0
+                          ? "bg-zinc-900 text-white font-bold"
+                          : "hover:bg-zinc-100 text-zinc-700"
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${selectedAssigneeIds.length === 0 ? "bg-[#f97316]" : "bg-zinc-300"}`} />
+                        <span>ทุกคน (All Members)</span>
+                      </span>
+                      {selectedAssigneeIds.length === 0 && <Check size={13} className="text-[#f97316]" />}
+                    </button>
+
+                    <div className="my-1 border-t border-zinc-100" />
+
+                    {/* Member Options with Checkboxes */}
+                    {assignees.map((a) => {
+                      const isSelected = selectedAssigneeIds.includes(a.id);
+                      const taskCount = activeBriefs.filter(b => b.assignee_id === a.id).length;
+                      return (
+                        <button
+                          key={a.id}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedAssigneeIds(selectedAssigneeIds.filter(id => id !== a.id));
+                            } else {
+                              setSelectedAssigneeIds([...selectedAssigneeIds, a.id]);
+                            }
+                          }}
+                          className={`w-full text-left px-2.5 py-1.5 rounded-xl transition-all flex items-center justify-between cursor-pointer ${
+                            isSelected
+                              ? "bg-orange-50 text-orange-950 font-bold border border-orange-200"
+                              : "hover:bg-zinc-50 text-zinc-700"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 truncate mr-1">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {}}
+                              className="w-3.5 h-3.5 rounded text-[#E03131] accent-[#E03131] cursor-pointer"
+                            />
+                            <span className="truncate">{a.name}</span>
+                          </div>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${
+                            isSelected ? "bg-orange-200 text-orange-900" : "bg-zinc-100 text-zinc-500"
+                          }`}>
+                            {taskCount}
+                          </span>
+                        </button>
+                      );
+                    })}
+
+                    {/* Unassigned Option */}
+                    {(() => {
+                      const isUnassignedSelected = selectedAssigneeIds.includes('unassigned');
+                      const unassignedCount = activeBriefs.filter(b => !b.assignee_id).length;
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (isUnassignedSelected) {
+                              setSelectedAssigneeIds(selectedAssigneeIds.filter(id => id !== 'unassigned'));
+                            } else {
+                              setSelectedAssigneeIds([...selectedAssigneeIds, 'unassigned']);
+                            }
+                          }}
+                          className={`w-full text-left px-2.5 py-1.5 rounded-xl transition-all flex items-center justify-between cursor-pointer mt-1 ${
+                            isUnassignedSelected
+                              ? "bg-rose-50 text-rose-950 font-bold border border-rose-200"
+                              : "hover:bg-zinc-50 text-zinc-600"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 truncate mr-1">
+                            <input
+                              type="checkbox"
+                              checked={isUnassignedSelected}
+                              onChange={() => {}}
+                              className="w-3.5 h-3.5 rounded text-[#E03131] accent-[#E03131] cursor-pointer"
+                            />
+                            <span className="truncate">ยังไม่ได้กำหนดคนรับ</span>
+                          </div>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${
+                            isUnassignedSelected ? "bg-rose-200 text-rose-900" : "bg-zinc-100 text-zinc-500"
+                          }`}>
+                            {unassignedCount}
+                          </span>
+                        </button>
+                      );
+                    })()}
+                  </div>
+
+                  <div className="pt-2 mt-2 border-t border-zinc-100 flex items-center justify-between">
+                    <span className="text-[10.5px] text-zinc-400">
+                      ติ๊กเพื่อเทียบงานหลายคนพร้อมกัน
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsAssigneeFilterOpen(false)}
+                      className="px-3 py-1 bg-zinc-900 text-white rounded-lg text-[11px] font-bold hover:bg-zinc-800 transition-colors cursor-pointer"
+                    >
+                      ตกลง
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Right: History Controls, Trash Bin & Search */}

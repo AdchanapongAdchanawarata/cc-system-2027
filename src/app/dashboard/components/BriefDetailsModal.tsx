@@ -217,8 +217,11 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
   const [copiedTaskLink, setCopiedTaskLink] = useState(false);
   const [showInProgressEmailModal, setShowInProgressEmailModal] = useState(false);
 
-  const handleConfirmInProgressModal = async (emailData: { to: string; cc: string[]; subject: string; body: string; from?: string; senderName?: string }) => {
+  const handleConfirmInProgressModal = async (emailData: { to: string; cc: string[]; subject: string; body: string; from?: string; senderName?: string; assigneeId?: string }) => {
     onUpdateField(brief.id, "status", "in_progress");
+    if (emailData.assigneeId && emailData.assigneeId !== brief.assignee_id) {
+      onUpdateField(brief.id, "assignee_id", emailData.assigneeId);
+    }
     if (!brief.in_progress_at) {
       onUpdateField(brief.id, "in_progress_at", new Date().toISOString());
     }
@@ -226,7 +229,8 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
       onUpdateField(brief.id, "requester_email", emailData.to);
     }
 
-    const assignee = assignees.find((a: any) => a.id === brief.assignee_id);
+    const targetAssigneeId = emailData.assigneeId || brief.assignee_id;
+    const assignee = assignees.find((a: any) => a.id === targetAssigneeId);
     try {
       await fetch('/api/notify', {
         method: 'POST',
@@ -687,13 +691,6 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                           }
 
                           if (val === "in_progress") {
-                            if (!brief.assignee_id) {
-                              alert(
-                                "⚠️ ไม่สามารถเริ่มงานได้: กรุณากำหนดผู้รับผิดชอบงาน (Assignee) ก่อนเปลี่ยนสถานะเป็น In Progress\n\n" +
-                                "📌 เพื่อให้ระบบดึงข้อมูลผู้รับผิดชอบ (ชื่อ, ตำแหน่ง, เบอร์ติดต่อ, อีเมล) ใส่ในร่างอีเมลแจ้งเริ่มงานได้อย่างถูกต้องครับ"
-                              );
-                              return;
-                            }
                             setShowInProgressEmailModal(true);
                             return;
                           }

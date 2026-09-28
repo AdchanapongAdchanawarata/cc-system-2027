@@ -91,6 +91,13 @@ const getAssigneeColorClass = (unitStr: string, hasAssignee: boolean) => {
 export default function AssignmentsView() {
   const [filter, setFilter] = useState<string>(() => {
     if (typeof window !== "undefined") {
+      const userName = (localStorage.getItem("cc_user_name") || "").toLowerCase();
+      const userEmail = (localStorage.getItem("cc_user_email") || "").toLowerCase();
+      // จ๊อบ AA (หัวหน้าทีม) เวลา login เข้ามาใน Tasks จะต้องอยู่หน้า All CC
+      if (userName.includes("จ๊อบ") || userEmail.includes("adchanapong")) {
+        return "All CC";
+      }
+
       const savedUnit = localStorage.getItem("cc_user_unit");
       const unitMap: Record<string, string> = {
         creative: "Creative",

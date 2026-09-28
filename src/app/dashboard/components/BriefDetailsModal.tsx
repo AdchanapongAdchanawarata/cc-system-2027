@@ -23,6 +23,7 @@ import { getTaskSurveyUrl } from "@/utils/surveyTokens";
 import InProgressEmailModal from "./InProgressEmailModal";
 import CompletedEmailModal from "./CompletedEmailModal";
 import { downloadFileWithSaveDialog } from "@/utils/fileDownloader";
+import { createClient } from "@/utils/supabase/client";
 
 const ALL_CATEGORIES_BY_UNIT: Record<string, { name: string; desc: string }[]> = {
   creative: [
@@ -104,7 +105,14 @@ type BriefDetailsModalProps = {
   brief: any;
   assignees: any[];
   taskCode: string;
-  onUpdateField: (id: string, field: string, value: any) => void;
+  onUpdateField: (
+    id: string,
+    field: string,
+    value: any,
+    recordHistory?: boolean,
+    bypassRevertCheck?: boolean,
+    reason?: string
+  ) => void | Promise<void>;
   onClose: () => void;
 };
 
@@ -220,18 +228,33 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
   const [showCompletedEmailModal, setShowCompletedEmailModal] = useState(false);
 
   const handleConfirmInProgressModal = async (emailData: { to: string; cc: string[]; subject: string; body: string; from?: string; senderName?: string; assigneeId?: string }) => {
-    onUpdateField(brief.id, "status", "in_progress");
-    if (emailData.assigneeId && emailData.assigneeId !== brief.assignee_id) {
-      onUpdateField(brief.id, "assignee_id", emailData.assigneeId);
-    }
-    if (!brief.in_progress_at) {
-      onUpdateField(brief.id, "in_progress_at", new Date().toISOString());
-    }
-    if (emailData.to && emailData.to !== brief.requester_email) {
-      onUpdateField(brief.id, "requester_email", emailData.to);
+    const targetAssigneeId = emailData.assigneeId || brief.assignee_id;
+    const now = new Date().toISOString();
+
+    // Directly persist to Supabase to guarantee instantaneous consistency
+    try {
+      const supabase = createClient();
+      await supabase.from("briefs").update({
+        status: "in_progress",
+        assignee_id: targetAssigneeId,
+        in_progress_at: brief.in_progress_at || now,
+        ...(emailData.to ? { requester_email: emailData.to } : {})
+      }).eq("id", brief.id);
+    } catch (dbErr) {
+      console.error("Direct Supabase update error:", dbErr);
     }
 
-    const targetAssigneeId = emailData.assigneeId || brief.assignee_id;
+    onUpdateField(brief.id, "status", "in_progress", true, true);
+    if (targetAssigneeId) {
+      onUpdateField(brief.id, "assignee_id", targetAssigneeId, true, true);
+    }
+    if (!brief.in_progress_at) {
+      onUpdateField(brief.id, "in_progress_at", now, false, true);
+    }
+    if (emailData.to && emailData.to !== brief.requester_email) {
+      onUpdateField(brief.id, "requester_email", emailData.to, false, true);
+    }
+
     const assignee = assignees.find((a: any) => a.id === targetAssigneeId);
     try {
       await fetch('/api/notify', {
@@ -264,21 +287,37 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
   };
 
   const handleConfirmCompletedModal = async (emailData: { to: string; cc: string[]; subject: string; body: string; from?: string; senderName?: string; assigneeId?: string }) => {
-    onUpdateField(brief.id, "status", "completed");
-    onUpdateField(brief.id, "completed_at", new Date().toISOString());
+    const targetAssigneeId = emailData.assigneeId || brief.assignee_id;
+    const now = new Date().toISOString();
     const existingDetails = brief.details || {};
     const updatedDetails = {
       ...existingDetails,
       survey_status: existingDetails.survey_status || 'sent',
       satisfaction_rate: existingDetails.satisfaction_rate ?? 85.0
     };
-    onUpdateField(brief.id, "details", updatedDetails);
 
-    if (emailData.to && emailData.to !== brief.requester_email) {
-      onUpdateField(brief.id, "requester_email", emailData.to);
+    // Directly persist to Supabase to guarantee instantaneous consistency
+    try {
+      const supabase = createClient();
+      await supabase.from("briefs").update({
+        status: "completed",
+        completed_at: now,
+        details: updatedDetails,
+        ...(targetAssigneeId ? { assignee_id: targetAssigneeId } : {}),
+        ...(emailData.to ? { requester_email: emailData.to } : {})
+      }).eq("id", brief.id);
+    } catch (dbErr) {
+      console.error("Direct Supabase completed update error:", dbErr);
     }
 
-    const targetAssigneeId = emailData.assigneeId || brief.assignee_id;
+    onUpdateField(brief.id, "status", "completed", true, true);
+    onUpdateField(brief.id, "completed_at", now, false, true);
+    onUpdateField(brief.id, "details", updatedDetails, true, true);
+
+    if (emailData.to && emailData.to !== brief.requester_email) {
+      onUpdateField(brief.id, "requester_email", emailData.to, false, true);
+    }
+
     const assignee = assignees.find((a: any) => a.id === targetAssigneeId);
     try {
       await fetch('/api/notify', {

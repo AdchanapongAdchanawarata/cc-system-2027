@@ -82,7 +82,13 @@ export default function LoginPage() {
       if (parsedProfile.fullName) {
         localStorage.setItem("cc_user_fullname", parsedProfile.fullName);
       }
-      if (parsedProfile.unit) {
+      const isJobAA = 
+        normalizedEmail.includes("adchanapong") || 
+        (matchedMember.name || "").includes("จ๊อบ");
+
+      if (isJobAA) {
+        localStorage.setItem("cc_user_unit", "all");
+      } else if (parsedProfile.unit) {
         localStorage.setItem("cc_user_unit", parsedProfile.unit);
       }
 

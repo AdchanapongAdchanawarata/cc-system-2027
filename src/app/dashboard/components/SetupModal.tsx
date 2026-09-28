@@ -655,7 +655,7 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
               activeTab === "team" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
-            <User size={16} /> Manage Team (Assignees & Admin)
+            <User size={16} /> Manage Team
           </button>
           
           <button 
@@ -664,7 +664,7 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
               activeTab === "okr" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
-            <Target size={16} /> Manage KR/R , KPI/TIP
+            <Target size={16} /> KR/R , TIP
           </button>
 
           <button 
@@ -673,7 +673,7 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
               activeTab === "pricing" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
-            <DollarSign size={16} /> Service Pricing (ราคางานหลังบ้าน)
+            <DollarSign size={16} /> Service Pricing
           </button>
 
           <button 
@@ -682,7 +682,7 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
               activeTab === "storage" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
-            <Database size={16} /> Storage &amp; Free Tier Health (พื้นที่จัดเก็บ &amp; โควตาฟรี)
+            <Database size={16} /> Storage
           </button>
 
           <button 
@@ -1000,7 +1000,7 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                   <div>
                     <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
                       <Target size={18} className="text-primary" />
-                      ระบบจัดการตัวชี้วัด Manage KR/R , KPI/TIP
+                      ระบบจัดการตัวชี้วัด KR/R , TIP
                     </h3>
                     <p className="text-xs text-slate-500 mt-0.5">
                       กำหนดค่าเป้าหมายทีม, ผลลัพธ์ Reach/Engagement สะสม และโควตาความรับผิดชอบรายบุคคล

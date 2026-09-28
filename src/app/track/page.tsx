@@ -93,11 +93,12 @@ function TrackContent() {
   const [matchedBriefs, setMatchedBriefs] = useState<BriefItem[]>([]);
   const [selectedBriefForModal, setSelectedBriefForModal] = useState<BriefItem | null>(null);
 
-  // Load all briefs & assignees on mount
+  // Load all briefs & assignees on mount with real-time subscription
   useEffect(() => {
+    const supabase = createClient();
+
     async function loadData() {
       try {
-        const supabase = createClient();
         const [{ data: bData }, { data: aData }] = await Promise.all([
           supabase
             .from("briefs")
@@ -118,11 +119,24 @@ function TrackContent() {
         console.error("Failed to fetch tracking data:", err);
       }
     }
+
     loadData();
+
+    // Real-time listener for instantaneous status/assignment updates
+    const channel = supabase
+      .channel("public:track:briefs")
+      .on("postgres_changes", { event: "*", schema: "public", table: "briefs" }, () => {
+        loadData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  // Perform filtering
-  const executeSearch = (term: string, briefsList: BriefItem[] = allBriefs) => {
+  // Perform search with fresh Supabase fetch to guarantee zero-lag data
+  const executeSearch = async (term: string, fallbackList: BriefItem[] = allBriefs) => {
     const clean = term.trim().toLowerCase();
     if (!clean) {
       setMatchedBriefs([]);
@@ -133,9 +147,23 @@ function TrackContent() {
     setHasSearched(true);
     setIsLoading(true);
 
-    setTimeout(() => {
-      const results = briefsList.filter((b) => {
-        const code = calculateTaskCode(b, briefsList).toLowerCase();
+    try {
+      const supabase = createClient();
+      const [{ data: bData }, { data: aData }] = await Promise.all([
+        supabase
+          .from("briefs")
+          .select("*")
+          .neq("status", "purged")
+          .order("created_at", { ascending: true }),
+        supabase.from("assignees").select("id, name, email, unit, full_name, position, phone"),
+      ]);
+
+      const freshBriefs = bData ? bData.filter((b) => !b.details?.is_permanently_deleted) : fallbackList;
+      if (freshBriefs.length > 0) setAllBriefs(freshBriefs);
+      if (aData && aData.length > 0) setAssignees(aData);
+
+      const results = freshBriefs.filter((b) => {
+        const code = calculateTaskCode(b, freshBriefs).toLowerCase();
         const bId = (b.id || "").toLowerCase();
         const email = (b.requester_email || "").toLowerCase();
         const pName = (b.project_name || "").toLowerCase();
@@ -166,8 +194,11 @@ function TrackContent() {
       );
 
       setMatchedBriefs(results);
+    } catch (err) {
+      console.error("Search error:", err);
+    } finally {
       setIsLoading(false);
-    }, 150);
+    }
   };
 
   // Run search when allBriefs loads if queryParam exists
@@ -176,7 +207,7 @@ function TrackContent() {
       setSearchInput(queryParam);
       executeSearch(queryParam, allBriefs);
     }
-  }, [allBriefs, queryParam]);
+  }, [allBriefs.length, queryParam]);
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -190,11 +221,50 @@ function TrackContent() {
     executeSearch(searchInput, allBriefs);
   };
 
-  const getAssigneeProfile = (assigneeId?: string | null) => {
-    if (!assigneeId) return null;
-    const found = assignees.find((a) => a.id === assigneeId);
-    if (!found) return null;
-    return parseMemberRecord(found);
+  const getAssigneeProfile = (brief: BriefItem) => {
+    // 1. Direct assignee_id or details.assignee_id
+    const targetId = brief.assignee_id || brief.details?.assignee_id;
+    let found = targetId ? assignees.find((a) => a.id === targetId) : null;
+
+    // 2. Name match in assignees table
+    if (!found) {
+      const nameCandidate = brief.details?.assignee_name || brief.details?.kickoff_email_sender;
+      if (nameCandidate) {
+        found = assignees.find((a) => 
+          a.name === nameCandidate || 
+          nameCandidate.includes(a.name) || 
+          (a.full_name && nameCandidate.includes(a.full_name))
+        );
+      }
+    }
+
+    if (found) {
+      return parseMemberRecord(found);
+    }
+
+    // 3. Fallback to DEFAULT_MEMBER_METADATA if name is known
+    const nameCandidate = brief.details?.assignee_name || brief.details?.kickoff_email_sender;
+    if (nameCandidate) {
+      const matchedKey = Object.keys(DEFAULT_MEMBER_METADATA).find((k) => 
+        k === nameCandidate || nameCandidate.includes(k) || DEFAULT_MEMBER_METADATA[k].fullName === nameCandidate
+      );
+      if (matchedKey) {
+        const meta = DEFAULT_MEMBER_METADATA[matchedKey];
+        return {
+          id: matchedKey,
+          name: matchedKey,
+          fullName: meta.fullName,
+          position: meta.position,
+          phone: meta.phone,
+          email: `${matchedKey.toLowerCase().replace(/\s+/g, '')}@step.cmu.ac.th`,
+          unit: brief.unit || 'creative',
+          role: 'assignee' as any,
+          isActive: true
+        };
+      }
+    }
+
+    return null;
   };
 
   const formatDate = (isoString?: string | null) => {
@@ -360,7 +430,7 @@ function TrackContent() {
               {matchedBriefs.map((brief) => {
                 const taskCode = calculateTaskCode(brief, allBriefs);
                 const badge = getUnitBadge(brief.unit);
-                const assignee = getAssigneeProfile(brief.assignee_id);
+                const assignee = getAssigneeProfile(brief);
                 const isCompleted = brief.status === "completed" || brief.status === "complete";
                 const isInProgress = brief.status === "in_progress";
                 const isCancelled = brief.status === "cancelled";

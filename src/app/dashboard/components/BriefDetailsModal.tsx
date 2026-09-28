@@ -477,7 +477,7 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
 
   return createPortal(
     <div 
-      className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[9999] flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 bg-[#181a1c]/90 backdrop-blur-md z-[9999] flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -1901,7 +1901,7 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
 
       {/* POPUP: Prompt Financials for "อื่นๆ" (Others) Category */}
       {isPromptPriceOpen && (
-        <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-150">
+        <div className="fixed inset-0 bg-[#181a1c]/90 z-[70] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-150">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-amber-200 animate-in zoom-in-95 duration-150">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-3 bg-amber-100 rounded-full text-amber-600 shrink-0">

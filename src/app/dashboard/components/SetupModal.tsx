@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { 
   X, Plus, Trash2, User, Target, DollarSign, Shield, 
   Edit2, Check, AlertCircle, Briefcase, Phone, Mail, Award, CheckCircle2,
   Sparkles, TrendingUp, Save, RotateCcw, HelpCircle, Star, Users, Info,
   Calculator, History, Calendar, BarChart3, PlusCircle, ArrowUpRight, ArrowDownRight, Minus,
   AlertTriangle, Link2, ExternalLink,
-  Database, HardDrive, ShieldAlert, Archive, RefreshCw, Download, FileSpreadsheet
+  Database, HardDrive, ShieldAlert, Archive, RefreshCw, Download, FileSpreadsheet,
+  Lock, Unlock, ShieldCheck
 } from "lucide-react";
 import GoogleSheetsSyncHub from "./GoogleSheetsSyncHub";
 import { 
@@ -20,6 +22,8 @@ import {
 import { 
   getStoredOKRSettings, 
   saveStoredOKRSettings, 
+  fetchOKRSettingsFromSupabase,
+  saveOKRSettingsToSupabase,
   OKRSettingsState, 
   DEFAULT_KRS, 
   DEFAULT_TIPS,
@@ -149,6 +153,10 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
   const [manualR6Input, setManualR6Input] = useState<string>(() => (getStoredOKRSettings().manualMetrics?.r6Engagement || 0).toString());
   const [pricingUnitFilter, setPricingUnitFilter] = useState<string>("all");
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+  const [isResponsibilityLocked, setIsResponsibilityLocked] = useState<boolean>(true);
+  const [isSavingOKR, setIsSavingOKR] = useState<boolean>(false);
+  const [cloudSyncTime, setCloudSyncTime] = useState<string | null>(null);
   const [editFormData, setEditFormData] = useState<{
     service_name: string;
     unit: string;
@@ -286,6 +294,7 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
   });
 
   useEffect(() => {
+    setIsMounted(true);
     fetchData();
   }, []);
 
@@ -297,7 +306,21 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
       setAssignees(parsed);
     }
     
-    // 2. Fetch OKRs
+    // 2. Fetch OKRs & Cloud Synchronized OKR State
+    try {
+      const cloudState = await fetchOKRSettingsFromSupabase();
+      if (cloudState) {
+        setOkrState(cloudState);
+        setManualR5Input((cloudState.manualMetrics?.r5Reach || 0).toString());
+        setManualR6Input((cloudState.manualMetrics?.r6Engagement || 0).toString());
+        if (cloudState.lastUpdated) {
+          setCloudSyncTime(cloudState.lastUpdated || null);
+        }
+      }
+    } catch (err) {
+      console.warn("fetchOKRSettingsFromSupabase notice:", err);
+    }
+
     const { data: oData } = await supabase.from('okr_settings').select('*').order('created_at', { ascending: true });
     if (oData) setOkrs(oData);
 
@@ -607,8 +630,10 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
     ? pricingList 
     : pricingList.filter(p => p.unit?.toLowerCase() === pricingUnitFilter.toLowerCase());
 
-  return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-2 sm:p-3 backdrop-blur-xs animate-in fade-in duration-200">
+  if (!isMounted) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 bg-[#181a1c]/90 backdrop-blur-md z-[9999] flex items-center justify-center p-2 sm:p-3 animate-in fade-in duration-200">
       <div className="bg-white w-full max-w-[99vw] 2xl:max-w-[1850px] h-[96vh] max-h-[96vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200">
         
         {/* Header */}
@@ -1008,7 +1033,9 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
 
                     <button
                       type="button"
+                      disabled={isSavingOKR}
                       onClick={async () => {
+                        setIsSavingOKR(true);
                         try {
                           const updatedState: OKRSettingsState = {
                             ...okrState,
@@ -1019,44 +1046,30 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                             lastUpdated: new Date().toISOString()
                           };
                           setOkrState(updatedState);
-                          saveStoredOKRSettings(updatedState);
-
-                          // Also sync to Supabase okr_settings
-                          try {
-                            // Upsert high-level KR and TIP rows
-                            for (const kr of updatedState.krs) {
-                              await supabase.from('okr_settings').upsert({
-                                type: 'KR',
-                                description: `${kr.code}: ${kr.name}`,
-                                target_value: `${kr.baseTarget.toLocaleString()} ${kr.unit}`,
-                                is_active: true
-                              });
-                            }
-                            for (const tip of updatedState.tips) {
-                              await supabase.from('okr_settings').upsert({
-                                type: 'TIP',
-                                description: `${tip.code}: ${tip.name} - ${tip.description}`,
-                                target_value: `${tip.baseTarget.toLocaleString()} ${tip.unit}`,
-                                is_active: true
-                              });
-                            }
-                          } catch (err) {
-                            console.warn("Supabase okr_settings sync notice:", err);
+                          const res = await saveOKRSettingsToSupabase(updatedState);
+                          if (res.success) {
+                            setIsResponsibilityLocked(true);
+                            setCloudSyncTime(updatedState.lastUpdated || null);
+                            setSaveOKRSuccess("☁️ บันทึกลงฐานข้อมูล Supabase และล็อกค่าเรียบร้อยแล้ว");
+                            setTimeout(() => setSaveOKRSuccess(null), 3500);
+                          } else {
+                            alert("เกิดข้อผิดพลาดในการบันทึก: " + res.error);
                           }
-
-                          setSaveOKRSuccess("บันทึกการตั้งค่าตัวชี้วัดและโควตาเรียบร้อยแล้ว");
-                          setTimeout(() => setSaveOKRSuccess(null), 3000);
-                        } catch (e) {
+                        } catch (e: any) {
                           console.error("Save error:", e);
-                          alert("เกิดข้อผิดพลาดในการบันทึก");
+                          alert("เกิดข้อผิดพลาดในการบันทึก: " + (e?.message || "ไม่สามารถเชื่อมต่อฐานข้อมูล"));
+                        } finally {
+                          setIsSavingOKR(false);
                         }
                       }}
-                      className="text-xs font-bold px-4 py-1.5 rounded-xl bg-primary hover:bg-primary/90 text-white flex items-center gap-1.5 shadow-xs transition-all"
+                      className="text-xs font-bold px-4 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-1.5 shadow-xs transition-all hover:scale-[1.02]"
                     >
-                      <Save size={14} /> บันทึกการตั้งค่าทั้งหมด
+                      {isSavingOKR ? <RefreshCw size={14} className="animate-spin text-amber-400" /> : <Save size={14} className="text-amber-400" />}
+                      <span>บันทึกการตั้งค่าทั้งหมด</span>
                     </button>
                   </div>
                 </div>
+
 
                 {saveOKRSuccess && (
                   <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs px-3.5 py-2 rounded-xl flex items-center gap-2 font-medium animate-in fade-in">
@@ -1740,54 +1753,150 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
 
                     return (
                       <>
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                          <div>
-                            <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                              <Users size={16} className="text-primary" />
-                              กำหนด % สัดส่วนความรับผิดชอบค่า R และ TIP ของสมาชิกแต่ละคน (ครบทุกตัวชี้วัด)
-                            </h4>
-                            <p className="text-xs text-slate-500 mt-0.5">
-                              แสดงครบทุก R ({allRMetrics.map(r => r.code).join(", ")}) และทุก TIP ({allTIPMetrics.map(t => t.code).join(", ")}) พร้อมโควตาเป้าหมายที่คำนวณตามสัดส่วน % (เกณฑ์ความพึงพอใจเป็นมาตรฐานทุกคน ≥ 85%)
-                            </p>
+                        <div className="space-y-3 border-b border-slate-100 pb-3">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div>
+                              <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                <Users size={16} className="text-primary" />
+                                กำหนด % สัดส่วนความรับผิดชอบค่า R และ TIP ของสมาชิกแต่ละคน (ครบทุกตัวชี้วัด)
+                              </h4>
+                              <p className="text-xs text-slate-500 mt-0.5">
+                                แสดงครบทุก R ({allRMetrics.map(r => r.code).join(", ")}) และทุก TIP ({allTIPMetrics.map(t => t.code).join(", ")}) พร้อมโควตาเป้าหมายที่คำนวณตามสัดส่วน % (เกณฑ์ความพึงพอใจเป็นมาตรฐานทุกคน ≥ 85%)
+                              </p>
+                            </div>
+
+                            <button
+                              type="button"
+                              disabled={isResponsibilityLocked}
+                              onClick={() => {
+                                if (ops.length === 0) return;
+                                if (!confirm(`คุณต้องการจัดสรรสัดส่วนให้ทุกคนเท่ากัน (100% ÷ ${ops.length}) ใช่หรือไม่?\n⚠️ การกระทำนี้จะเขียนทับค่าสัดส่วนที่บันทึกไว้เดิมทั้งหมด`)) {
+                                  return;
+                                }
+                                const equalPct = Math.round((100 / ops.length) * 10) / 10;
+                                
+                                const newResp = ops.map(a => {
+                                  const rResp: Record<string, number> = {};
+                                  allRMetrics.forEach(r => {
+                                    if (isSatMetric(r.code, r.unit, r.isPercentage)) {
+                                      rResp[r.code] = 100;
+                                    } else {
+                                      rResp[r.code] = equalPct;
+                                    }
+                                  });
+                                  const tipResp: Record<string, number> = {};
+                                  allTIPMetrics.forEach(t => {
+                                    if (isSatMetric(t.code, t.unit, t.isPercentage)) {
+                                      tipResp[t.code] = 100;
+                                    } else {
+                                      tipResp[t.code] = equalPct;
+                                    }
+                                  });
+                                  return {
+                                    memberId: a.id,
+                                    memberName: a.name,
+                                    rResponsibilities: rResp,
+                                    tipResponsibilities: tipResp
+                                  };
+                                });
+
+                                setOkrState({ ...okrState, memberResponsibilities: newResp });
+                              }}
+                              className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all self-start sm:self-auto shrink-0 shadow-2xs ${
+                                isResponsibilityLocked
+                                  ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
+                                  : "border-slate-300 hover:bg-slate-50 text-slate-700"
+                              }`}
+                            >
+                              <RotateCcw size={12} /> จัดสรรสัดส่วนเท่ากันทุกคน (100% ÷ {ops.length || 1})
+                            </button>
                           </div>
 
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (ops.length === 0) return;
-                              const equalPct = Math.round((100 / ops.length) * 10) / 10;
-                              
-                              const newResp = ops.map(a => {
-                                const rResp: Record<string, number> = {};
-                                allRMetrics.forEach(r => {
-                                  if (isSatMetric(r.code, r.unit, r.isPercentage)) {
-                                    rResp[r.code] = 100;
-                                  } else {
-                                    rResp[r.code] = equalPct;
-                                  }
-                                });
-                                const tipResp: Record<string, number> = {};
-                                allTIPMetrics.forEach(t => {
-                                  if (isSatMetric(t.code, t.unit, t.isPercentage)) {
-                                    tipResp[t.code] = 100;
-                                  } else {
-                                    tipResp[t.code] = equalPct;
-                                  }
-                                });
-                                return {
-                                  memberId: a.id,
-                                  memberName: a.name,
-                                  rResponsibilities: rResp,
-                                  tipResponsibilities: tipResp
-                                };
-                              });
+                          {/* Dieter Rams Protection & Stability Status Bar */}
+                          <div className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all ${
+                            isResponsibilityLocked
+                              ? "bg-slate-900 text-white border-slate-800 shadow-sm"
+                              : "bg-amber-500/10 text-amber-950 border-amber-300 shadow-sm"
+                          }`}>
+                            <div className="flex items-center gap-3">
+                              <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                                isResponsibilityLocked
+                                  ? "bg-slate-800 text-amber-400 border border-slate-700"
+                                  : "bg-amber-500 text-white"
+                              }`}>
+                                {isResponsibilityLocked ? <Lock size={18} /> : <Unlock size={18} />}
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h4 className="text-xs sm:text-sm font-bold tracking-tight">
+                                    {isResponsibilityLocked ? "โหมดปกป้องค่าตัวชี้วัด (Locked & Protected)" : "โหมดกำลังแก้ไขสัดส่วน (Editing Active)"}
+                                  </h4>
+                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full font-mono ${
+                                    isResponsibilityLocked
+                                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                                      : "bg-amber-500 text-white"
+                                  }`}>
+                                    {isResponsibilityLocked ? "ปลอดภัย • ล็อกค่าแล้ว" : "กำลังแก้ไข"}
+                                  </span>
+                                </div>
+                                <p className={`text-[11px] mt-0.5 ${isResponsibilityLocked ? "text-slate-400" : "text-amber-800"}`}>
+                                  {isResponsibilityLocked
+                                    ? `ป้องกันค่าสัดส่วนเปลี่ยนแปลงโดยไม่ได้ตั้งใจ ข้อมูลจัดเก็บบนฐานข้อมูลคลาวด์ ${cloudSyncTime ? `(ล่าสุด: ${new Date(cloudSyncTime).toLocaleDateString('th-TH')})` : ''}`
+                                    : "คุณสามารถแก้ไขตัวเลขในตารางด้านล่างได้ เมื่อเสร็จสิ้นกรุณากด 'บันทึกลงคลาวด์ & ล็อกค่า'"}
+                                </p>
+                              </div>
+                            </div>
 
-                              setOkrState({ ...okrState, memberResponsibilities: newResp });
-                            }}
-                            className="px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700 flex items-center gap-1.5 transition-all self-start sm:self-auto shrink-0 shadow-2xs"
-                          >
-                            <RotateCcw size={12} /> จัดสรรสัดส่วนเท่ากันทุกคน (100% ÷ {ops.length || 1})
-                          </button>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {isResponsibilityLocked ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setIsResponsibilityLocked(false)}
+                                  className="px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold border border-white/20 flex items-center gap-1.5 transition-all shadow-2xs hover:scale-[1.02]"
+                                >
+                                  <Unlock size={13} className="text-amber-400" /> ปลดล็อกเพื่อแก้ไข
+                                </button>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    disabled={isSavingOKR}
+                                    onClick={async () => {
+                                      setIsSavingOKR(true);
+                                      try {
+                                        const res = await saveOKRSettingsToSupabase(okrState);
+                                        if (res.success) {
+                                          setIsResponsibilityLocked(true);
+                                          setCloudSyncTime(okrState.lastUpdated || new Date().toISOString());
+                                          setSaveOKRSuccess("☁️ บันทึกลงฐานข้อมูล Supabase และล็อกค่าเรียบร้อยแล้ว");
+                                          setTimeout(() => setSaveOKRSuccess(null), 3500);
+                                        } else {
+                                          alert("บันทึกลงคลาวด์ไม่สำเร็จ: " + res.error);
+                                        }
+                                      } finally {
+                                        setIsSavingOKR(false);
+                                      }
+                                    }}
+                                    className="px-3.5 py-1.5 rounded-lg bg-[#ff4400] hover:bg-[#e03d00] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all hover:scale-[1.02]"
+                                  >
+                                    {isSavingOKR ? <RefreshCw size={13} className="animate-spin" /> : <Save size={13} />}
+                                    <span>บันทึกลงคลาวด์ &amp; ล็อกค่า</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={async () => {
+                                      const cloudState = await fetchOKRSettingsFromSupabase();
+                                      setOkrState(cloudState);
+                                      setIsResponsibilityLocked(true);
+                                    }}
+                                    className="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold transition-all"
+                                  >
+                                    ยกเลิก
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
                         </div>
 
                         {/* Responsive horizontal & vertical scrollable table */}
@@ -1802,12 +1911,12 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                                   สายงาน
                                 </th>
                                 
-                                {/* Dynamic R Columns */}
+                                 {/* Dynamic R Columns */}
                                 {allRMetrics.map(r => {
                                   const isSat = isSatMetric(r.code, r.unit, r.isPercentage);
                                   const colSum = ops.reduce((sum, m) => {
                                     const resp = okrState.memberResponsibilities?.find(res => res.memberId === m.id);
-                                    const val = resp?.rResponsibilities?.[r.code] ?? (Math.round((100 / (ops.length || 1)) * 10) / 10);
+                                    const val = (typeof resp?.rResponsibilities?.[r.code] === 'number') ? resp.rResponsibilities[r.code] : 0;
                                     return sum + (typeof val === 'number' ? val : 0);
                                   }, 0);
                                   const roundedColSum = Math.round(colSum * 10) / 10;
@@ -1857,9 +1966,10 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                                   const isSat = isSatMetric(t.code, t.unit, t.isPercentage);
                                   const colSum = ops.reduce((sum, m) => {
                                     const resp = okrState.memberResponsibilities?.find(res => res.memberId === m.id);
-                                    const val = resp?.tipResponsibilities?.[t.code] ?? (Math.round((100 / (ops.length || 1)) * 10) / 10);
+                                    const val = (typeof resp?.tipResponsibilities?.[t.code] === 'number') ? resp.tipResponsibilities[t.code] : 0;
                                     return sum + (typeof val === 'number' ? val : 0);
                                   }, 0);
+
                                   const roundedColSum = Math.round(colSum * 10) / 10;
                                   const diff = Math.round((100 - roundedColSum) * 10) / 10;
                                   const isFull = Math.abs(diff) < 0.05;
@@ -1977,7 +2087,7 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                                         );
                                       }
 
-                                      const pct = resp.rResponsibilities?.[r.code] ?? (Math.round((100 / (ops.length || 1)) * 10) / 10);
+                                      const pct = (typeof resp.rResponsibilities?.[r.code] === 'number') ? resp.rResponsibilities[r.code] : 0;
                                       const quota = Math.round((r.targetValue * pct) / 100);
 
                                       return (
@@ -1988,9 +2098,14 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                                               min="0"
                                               max="100"
                                               step="0.1"
+                                              disabled={isResponsibilityLocked}
                                               value={pct}
                                               onChange={(e) => updateRPct(r.code, parseFloat(e.target.value) || 0)}
-                                              className="w-14 px-1 py-0.5 text-xs font-mono font-bold text-center border border-slate-200 rounded-lg focus:border-blue-500 focus:outline-none bg-white"
+                                              className={`w-14 px-1 py-0.5 text-xs font-mono font-bold text-center border rounded-lg transition-colors ${
+                                                isResponsibilityLocked
+                                                  ? "bg-slate-100/80 text-slate-600 border-slate-200 cursor-not-allowed"
+                                                  : "border-blue-400 focus:border-blue-600 bg-white text-slate-900 shadow-2xs"
+                                              }`}
                                             />
                                             <span className="text-[10px] text-slate-400">%</span>
                                           </div>
@@ -2017,7 +2132,7 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                                         );
                                       }
 
-                                      const pct = resp.tipResponsibilities?.[t.code] ?? (Math.round((100 / (ops.length || 1)) * 10) / 10);
+                                      const pct = (typeof resp.tipResponsibilities?.[t.code] === 'number') ? resp.tipResponsibilities[t.code] : 0;
                                       const quota = Math.round((t.baseTarget * pct) / 100);
 
                                       return (
@@ -2028,9 +2143,14 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                                               min="0"
                                               max="100"
                                               step="0.1"
+                                              disabled={isResponsibilityLocked}
                                               value={pct}
                                               onChange={(e) => updateTIPPct(t.code, parseFloat(e.target.value) || 0)}
-                                              className="w-14 px-1 py-0.5 text-xs font-mono font-bold text-center border border-slate-200 rounded-lg focus:border-amber-500 focus:outline-none bg-white"
+                                              className={`w-14 px-1 py-0.5 text-xs font-mono font-bold text-center border rounded-lg transition-colors ${
+                                                isResponsibilityLocked
+                                                  ? "bg-slate-100/80 text-slate-600 border-slate-200 cursor-not-allowed"
+                                                  : "border-amber-400 focus:border-amber-600 bg-white text-slate-900 shadow-2xs"
+                                              }`}
                                             />
                                             <span className="text-[10px] text-slate-400">%</span>
                                           </div>
@@ -2066,14 +2186,14 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                                   }
                                   const colSum = ops.reduce((sum, m) => {
                                     const resp = okrState.memberResponsibilities?.find(res => res.memberId === m.id);
-                                    const val = resp?.rResponsibilities?.[r.code] ?? (Math.round((100 / (ops.length || 1)) * 10) / 10);
+                                    const val = (typeof resp?.rResponsibilities?.[r.code] === 'number') ? resp.rResponsibilities[r.code] : 0;
                                     return sum + (typeof val === 'number' ? val : 0);
                                   }, 0);
                                   const roundedColSum = Math.round(colSum * 10) / 10;
                                   const isFull = Math.abs(roundedColSum - 100) < 0.05;
                                   const quotaSum = Math.round(ops.reduce((sum, m) => {
                                     const resp = okrState.memberResponsibilities?.find(res => res.memberId === m.id);
-                                    const val = resp?.rResponsibilities?.[r.code] ?? (Math.round((100 / (ops.length || 1)) * 10) / 10);
+                                    const val = (typeof resp?.rResponsibilities?.[r.code] === 'number') ? resp.rResponsibilities[r.code] : 0;
                                     return sum + Math.round((r.targetValue * val) / 100);
                                   }, 0));
 
@@ -2101,14 +2221,14 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                                   }
                                   const colSum = ops.reduce((sum, m) => {
                                     const resp = okrState.memberResponsibilities?.find(res => res.memberId === m.id);
-                                    const val = resp?.tipResponsibilities?.[t.code] ?? (Math.round((100 / (ops.length || 1)) * 10) / 10);
+                                    const val = (typeof resp?.tipResponsibilities?.[t.code] === 'number') ? resp.tipResponsibilities[t.code] : 0;
                                     return sum + (typeof val === 'number' ? val : 0);
                                   }, 0);
                                   const roundedColSum = Math.round(colSum * 10) / 10;
                                   const isFull = Math.abs(roundedColSum - 100) < 0.05;
                                   const quotaSum = Math.round(ops.reduce((sum, m) => {
                                     const resp = okrState.memberResponsibilities?.find(res => res.memberId === m.id);
-                                    const val = resp?.tipResponsibilities?.[t.code] ?? (Math.round((100 / (ops.length || 1)) * 10) / 10);
+                                    const val = (typeof resp?.tipResponsibilities?.[t.code] === 'number') ? resp.tipResponsibilities[t.code] : 0;
                                     return sum + Math.round((t.baseTarget * val) / 100);
                                   }, 0));
 
@@ -2125,6 +2245,7 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                                 })}
                               </tr>
                             </tfoot>
+
                           </table>
                         </div>
                       </>
@@ -3170,6 +3291,8 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
           </div>
         </div>
       )}
-    </div>
+    </div>,
+    document.body
   );
 }
+

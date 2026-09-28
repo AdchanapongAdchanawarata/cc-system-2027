@@ -1,5 +1,6 @@
 // src/utils/okrSettings.ts
 // ระบบจัดการและคำนวณตัวชี้วัด KR/R และ KPI/TIP ทีม CC
+import { createClient } from "./supabase/client";
 
 export interface RMetric {
   code: string;           // R1, R2, ..., R9
@@ -546,6 +547,94 @@ export function saveStoredOKRSettings(settings: OKRSettingsState): void {
     console.error("Failed to save OKR settings to cache:", e);
   }
 }
+
+/**
+ * Fetch OKR Settings and Member Responsibilities directly from Supabase okr_settings (Cloud Sync)
+ * Ensures settings remain rock-solid across devices, browsers, and users.
+ */
+export async function fetchOKRSettingsFromSupabase(): Promise<OKRSettingsState> {
+  const local = getStoredOKRSettings();
+
+  try {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('okr_settings')
+      .select('id, description, target_value')
+      .eq('description', 'CONFIG_OKR_STATE_JSON')
+      .maybeSingle();
+
+    if (!error && data && data.target_value) {
+      try {
+        const parsed = JSON.parse(data.target_value);
+        if (parsed && Array.isArray(parsed.krs)) {
+          const merged: OKRSettingsState = {
+            krs: parsed.krs && parsed.krs.length > 0 ? parsed.krs : DEFAULT_KRS,
+            tips: parsed.tips && parsed.tips.length > 0 ? parsed.tips : DEFAULT_TIPS,
+            memberResponsibilities: Array.isArray(parsed.memberResponsibilities) ? parsed.memberResponsibilities : [],
+            manualMetrics: parsed.manualMetrics || { r5Reach: 0, r6Engagement: 0 },
+            quarterlyRecords: Array.isArray(parsed.quarterlyRecords) ? parsed.quarterlyRecords : [],
+            lastUpdated: parsed.lastUpdated || new Date().toISOString()
+          };
+          saveStoredOKRSettings(merged);
+          return merged;
+        }
+      } catch (pe) {
+        console.warn("Failed to parse CONFIG_OKR_STATE_JSON from Supabase:", pe);
+      }
+    }
+  } catch (e) {
+    console.warn("fetchOKRSettingsFromSupabase encountered error:", e);
+  }
+
+  return local;
+}
+
+/**
+ * Save OKR Settings and Member Responsibilities permanently to Supabase cloud database
+ */
+export async function saveOKRSettingsToSupabase(settings: OKRSettingsState): Promise<{ success: boolean; error?: string }> {
+  // Always update local cache first
+  saveStoredOKRSettings(settings);
+
+  try {
+    const supabase = createClient();
+    const payload = {
+      ...settings,
+      lastUpdated: new Date().toISOString()
+    };
+    const jsonStr = JSON.stringify(payload);
+
+    const { data: existing } = await supabase
+      .from('okr_settings')
+      .select('id')
+      .eq('description', 'CONFIG_OKR_STATE_JSON')
+      .maybeSingle();
+
+    if (existing && existing.id) {
+      const { error } = await supabase
+        .from('okr_settings')
+        .update({ target_value: jsonStr, is_active: true })
+        .eq('id', existing.id);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from('okr_settings')
+        .insert([{
+          type: 'KR',
+          description: 'CONFIG_OKR_STATE_JSON',
+          target_value: jsonStr,
+          is_active: true
+        }]);
+      if (error) throw error;
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("saveOKRSettingsToSupabase failed:", err);
+    return { success: false, error: err?.message || "Failed to persist to Supabase" };
+  }
+}
+
 
 // -------------------------------------------------------------
 // DYNAMIC SCALING FOR ACTIVE MEMBERS
@@ -1367,7 +1456,7 @@ export function computeMemberPacingAlerts(
         allocPct = 0;
       }
     } else {
-      allocPct = resp.rResponsibilities?.[r.code] ?? defaultEqualPct;
+      allocPct = (typeof resp.rResponsibilities?.[r.code] === 'number') ? resp.rResponsibilities[r.code] : 0;
     }
 
     // 1. เป้าหมายทั้งปีงบประมาณ
@@ -1608,7 +1697,7 @@ export function computeMemberPacingAlerts(
   // 2. Process TIP Metrics
   allTIPMetrics.forEach(t => {
     const isSat = t.isPercentage || t.unit === "%" || ["TIP10"].includes(t.code);
-    const allocPct = isSat ? 100 : (resp.tipResponsibilities?.[t.code] ?? defaultEqualPct);
+    const allocPct = isSat ? 100 : ((typeof resp.tipResponsibilities?.[t.code] === 'number') ? resp.tipResponsibilities[t.code] : 0);
 
     // 1. เป้าหมายทั้งปีงบประมาณ
     const annualTarget = isSat ? 85.0 : Math.round((t.baseTarget * allocPct) / 100);

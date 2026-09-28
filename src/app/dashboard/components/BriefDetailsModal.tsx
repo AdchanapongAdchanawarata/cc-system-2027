@@ -127,6 +127,21 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
     brief.category || 
     "";
 
+  // Effective deadline resolution: prioritize brief.deadline, fallback to usage_date, publish_date, delivery_date
+  const effectiveDeadline = 
+    brief.deadline || 
+    brief.details?.usage_date || 
+    brief.details?.publish_date || 
+    brief.details?.delivery_date || 
+    null;
+
+  // Auto-sync usage_date to brief.deadline if deadline is not yet saved in database
+  useEffect(() => {
+    if (!brief.deadline && effectiveDeadline) {
+      onUpdateField(brief.id, "deadline", effectiveDeadline);
+    }
+  }, [brief.id, brief.deadline, effectiveDeadline]);
+
   // Standard Price resolution from back-office pricing catalog
   const standardPrice = getStandardPriceForTask(unit, currentCategory, brief.project_name);
 
@@ -357,6 +372,10 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
       ...brief.details,
       [key]: val
     });
+    // If usage_date, publish_date, or delivery_date is updated, also sync to brief.deadline!
+    if (key === 'usage_date' || key === 'publish_date' || key === 'delivery_date') {
+      onUpdateField(brief.id, 'deadline', val || null);
+    }
   };
 
   const parseDateSafe = (dStr: any): Date | null => {
@@ -449,11 +468,19 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
   );
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-2 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-4xl max-h-[94vh] sm:max-h-[90vh] rounded-2xl shadow-xl flex flex-col overflow-hidden border border-slate-200">
+    <div 
+      className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[100] flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div 
+        className="bg-white w-full max-w-4xl max-h-[92vh] sm:max-h-[88vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 relative z-10"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 bg-slate-50/70">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-200 bg-white sticky top-0 z-20 shadow-xs">
           <div className="flex items-center justify-between w-full sm:w-auto">
             <div className="flex flex-wrap items-center gap-2">
               {/* Task Code */}
@@ -722,15 +749,26 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                     </div>
 
                     <div>
-                      <label className="block text-[11px] text-slate-500 mb-1.5 font-semibold">Deadline (กำหนดส่ง)</label>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-[11px] text-slate-500 font-semibold">Deadline (กำหนดส่ง)</label>
+                        {(brief.details?.usage_date || brief.details?.publish_date) && (
+                          <span className="text-[9.5px] text-orange-600 bg-orange-50 px-1.5 py-0.2 rounded-full font-medium border border-orange-200">
+                            จากวันใช้งานจริง
+                          </span>
+                        )}
+                      </div>
                       <DatePicker
                         className="w-full text-xs font-semibold bg-white border border-slate-200 rounded-full px-3 py-2 text-center shadow-2xs hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-800/10 transition-all h-[36px]"
-                        selected={brief.deadline ? new Date(brief.deadline) : null}
+                        selected={effectiveDeadline ? new Date(effectiveDeadline) : null}
                         onChange={(date: Date | null) => {
                           if (date) {
                             const tzOffset = date.getTimezoneOffset() * 60000;
                             const localISOTime = (new Date(date.getTime() - tzOffset)).toISOString().split("T")[0];
                             onUpdateField(brief.id, "deadline", localISOTime);
+                            onUpdateField(brief.id, "details", {
+                              ...brief.details,
+                              usage_date: localISOTime
+                            });
                           } else {
                             onUpdateField(brief.id, "deadline", null);
                           }
@@ -1592,24 +1630,45 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
             </div>
             
             {hasAttachments ? (
-              <div className="flex flex-wrap gap-3">
-                {brief.details.attachments.map((url: string, idx: number) => (
-                  <a 
-                    key={idx} 
-                    href={url} 
-                    target="_blank" 
-                    rel="noreferrer"
-                    className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 transition-all text-xs font-semibold text-slate-700 w-64 shadow-sm hover:shadow"
-                  >
-                    <div className="bg-blue-100 text-blue-600 p-2 rounded-lg">
-                      <FileText size={18} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {brief.details.attachments.map((url: string, idx: number) => {
+                  const urlWithoutQuery = url.split("?")[0];
+                  const ext = urlWithoutQuery.split(".").pop()?.toUpperCase() || "FILE";
+                  return (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-3 bg-slate-50/80 hover:bg-slate-100/80 rounded-xl border border-slate-200 transition-all text-xs font-semibold text-slate-700 shadow-2xs hover:shadow-xs group"
+                    >
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-2.5 truncate flex-1 min-w-0 mr-2"
+                        title="คลิกเพื่อเปิดดูไฟล์"
+                      >
+                        <div className="bg-blue-100 text-blue-600 p-2 rounded-lg shrink-0 group-hover:scale-105 transition-transform">
+                          <FileText size={18} />
+                        </div>
+                        <div className="truncate min-w-0">
+                          <span className="truncate block text-slate-800 font-bold">ไฟล์ข้อมูลประกอบ {idx + 1}</span>
+                          <span className="text-[10px] text-slate-400 font-normal block truncate">คลิกเพื่อดู ({ext})</span>
+                        </div>
+                      </a>
+
+                      {/* Small Download Button on the Right */}
+                      <a
+                        href={url}
+                        download={`attachment-${idx + 1}.${ext.toLowerCase()}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1.5 sm:p-2 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-white hover:bg-orange-500 hover:border-orange-500 shadow-2xs transition-all flex items-center justify-center shrink-0 cursor-pointer group/btn"
+                        title="ดาวน์โหลดไฟล์ลงเครื่อง"
+                      >
+                        <Download size={14} className="group-hover/btn:scale-110 transition-transform" />
+                      </a>
                     </div>
-                    <div className="truncate flex-1">
-                      <span className="truncate block">ไฟล์ข้อมูลประกอบ {idx + 1}</span>
-                      <span className="text-[10px] text-slate-400 font-normal">คลิกเพื่อดาวน์โหลด / ดู</span>
-                    </div>
-                  </a>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="text-xs text-slate-400 italic">ไม่มีไฟล์แนบในงานนี้</p>

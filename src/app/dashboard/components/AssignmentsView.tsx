@@ -481,7 +481,7 @@ export default function AssignmentsView() {
       console.error('Failed to notify kickoff email:', err);
     }
 
-    showToast(`⚡ เริ่มงาน "${b.project_name}" และส่งอีเมลแจ้ง PM เรียบร้อยแล้ว!`);
+    showToast(`⚡ เริ่มงาน "${b.project_name}" สำเร็จ! เปิดร่างอีเมลใน Gmail เรียบร้อยแล้ว (กรุณากด Send ในแท็บ Gmail เพื่อส่งจริง)`);
     setPendingInProgressBrief(null);
   };
 

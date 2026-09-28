@@ -254,7 +254,7 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
     }
 
     setShowInProgressEmailModal(false);
-    setSurveyNotifySuccess(`⚡ เริ่มงานและส่งอีเมลแจ้งเริ่มงาน (In Progress) ถึงผู้สั่งงานเรียบร้อยแล้ว`);
+    setSurveyNotifySuccess(`⚡ เริ่มงานสำเร็จ! เปิดร่างอีเมลใน Gmail เรียบร้อยแล้ว (กรุณากด Send ในแท็บ Gmail เพื่อส่งจริง)`);
   };
 
   const handleCancelInProgressModal = () => {

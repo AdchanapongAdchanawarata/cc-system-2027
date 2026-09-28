@@ -301,6 +301,13 @@ export default function InProgressEmailModal({
       return;
     }
 
+    // Copy to clipboard as safety backup
+    try {
+      navigator.clipboard.writeText(emailBody);
+    } catch {
+      // ignore
+    }
+
     // Open Gmail Compose window immediately (before async await) to avoid popup blocker
     const targetTo = encodeURIComponent(toEmail.trim());
     const targetCc = encodeURIComponent(defaultCcEmails.join(','));
@@ -386,41 +393,23 @@ export default function InProgressEmailModal({
           </button>
         </div>
 
-        {/* Notice Info Card (Dieter Rams Warm Accent: Black & Orange) */}
+        {/* Notice Info Card: Option 1 (Gmail @step.cmu.ac.th) */}
         <div className="px-6 pt-4 pb-1 shrink-0">
-          <div className="bg-orange-50/50 border border-orange-200/70 rounded-2xl p-3.5 flex items-start gap-3 text-xs shadow-2xs">
-            <div className="w-7 h-7 rounded-xl bg-zinc-900 text-orange-400 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-              <Mail size={14} />
+          <div className="bg-orange-50/60 border border-orange-200/80 rounded-2xl p-3.5 flex items-start gap-3 text-xs shadow-2xs">
+            <div className="w-8 h-8 rounded-xl bg-[#EA4335] text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+              <Mail size={16} />
             </div>
-            <div className="space-y-0.5 text-zinc-700">
-              <p className="font-bold text-zinc-900 text-xs flex items-center gap-2">
-                <span>ข้อตกลงการเริ่มต้นงาน</span>
-                <span className="text-[10.5px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-800 border border-orange-200">
-                  Email Thread กลาง
+            <div className="space-y-1 text-zinc-700 flex-1">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <p className="font-bold text-zinc-900 text-xs flex items-center gap-1.5">
+                  <span>ส่งอีเมลเริ่มงานผ่าน Gmail (@step.cmu.ac.th)</span>
+                </p>
+                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  ทางเลือกที่ 1 • ส่งจริง 100%
                 </span>
-              </p>
+              </div>
               <p className="text-[11.5px] leading-relaxed text-zinc-600">
-                สถานะงานจะเปลี่ยนเป็น <strong className="text-[#E03131] font-bold">In Progress</strong> ทันทีเมื่อกด <strong>&ldquo;ส่งอีเมลเริ่มงาน&rdquo;</strong> โดยจะส่งบรีฟงานนี้ไปยังผู้สั่งงาน (PM) เพื่อใช้เป็น Email Thread ในการ Reply ส่งตรวจงานแต่ละดราฟจนเสร็จสิ้น หากกดยกเลิก งานจะคงอยู่ที่ <span className="font-semibold text-zinc-800">Pending</span>
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Email Sending Recommendation Notice */}
-        <div className="px-6 pt-2 pb-0 shrink-0">
-          <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-3 flex items-start gap-2.5 text-xs shadow-2xs">
-            <div className="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5">
-              <Mail size={13} />
-            </div>
-            <div className="space-y-0.5 text-zinc-700 flex-1">
-              <p className="font-bold text-emerald-950 text-xs flex items-center gap-2">
-                <span>วิธีส่งอีเมลจริงถึงผู้สั่งงาน (PM)</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900">
-                  ส่งจริง 100%
-                </span>
-              </p>
-              <p className="text-[11.5px] leading-relaxed text-zinc-600">
-                เนื่องจากทีมงานทุกคนใช้ <strong>Google Workspace (@step.cmu.ac.th)</strong> แนะนำให้กดปุ่มสีแดง <strong className="text-[#EA4335]">&ldquo;เปิดส่งใน Gmail (@step.cmu.ac.th)&rdquo;</strong> ด้านล่าง ระบบจะบันทึกสถานะ In Progress พร้อมเปิดหน้าต่างเขียนจดหมายของ Gmail โดยกรอกผู้รับ, สำเนา CC, หัวข้อ, และบรีฟงานให้ครบถ้วน เพื่อให้ท่านกดส่งจากกล่องเมลจริงและมีประวัติใน Sent Items ทันที
+                เมื่อกดปุ่ม <strong className="text-[#EA4335] font-bold">&ldquo;🚀 เริ่มงาน &amp; เปิดส่งใน Gmail&rdquo;</strong> ระบบจะปรับสถานะเป็น <strong className="text-zinc-900 font-bold">In Progress</strong> พร้อมเปิดหน้าต่างเขียนจดหมาย Gmail ของท่าน โดยใส่ผู้รับ (PM), สำเนา (CC), หัวข้อ และสรุปบรีฟงานไว้ครบถ้วนทันที เพื่อให้ท่านตรวจสอบและกดปุ่ม Send ส่งออกจากกล่องจดหมายจริงของคุณ 100% (มีประวัติใน Sent Items)
               </p>
             </div>
           </div>
@@ -626,34 +615,45 @@ export default function InProgressEmailModal({
 
         {/* Footer actions with Dieter Rams Iconic Red & Matte Black Buttons */}
         <div className="px-6 py-4 border-t border-zinc-200 bg-zinc-50/90 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="w-full sm:w-auto px-5 py-2.5 text-xs font-bold text-zinc-700 hover:text-zinc-900 bg-white border border-zinc-300 hover:border-zinc-400 rounded-full hover:bg-zinc-50 transition-all cursor-pointer shadow-2xs text-center"
-          >
-            ยกเลิก (คงไว้ที่ Pending)
-          </button>
-
-          <div className="flex flex-wrap items-center justify-end gap-2 w-full sm:w-auto">
-            {/* Option A: Server automated background send */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="w-full sm:w-auto px-4 py-2.5 text-xs font-semibold text-zinc-600 hover:text-zinc-900 bg-white border border-zinc-300 hover:border-zinc-400 rounded-full hover:bg-zinc-50 transition-all cursor-pointer shadow-2xs text-center"
+            >
+              ยกเลิก (คงไว้ที่ Pending)
+            </button>
             <button
               type="button"
               onClick={handleSubmit}
               disabled={isSending}
-              className="px-4 py-2.5 text-xs font-semibold text-zinc-700 hover:text-zinc-900 bg-white border border-zinc-300 hover:border-zinc-400 rounded-full transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-2xs"
-              title="บันทึกเริ่มงานและส่งผ่านเซิร์ฟเวอร์ SMTP (หากมีการตั้งค่าไว้ในระบบ)"
+              className="hidden sm:inline-flex px-3 py-2 text-[11.5px] font-medium text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 rounded-full transition-all cursor-pointer disabled:opacity-50"
+              title="เริ่มงานโดยไม่เปิดหน้าต่างอีเมล (กรณีได้แจ้ง PM ผ่านช่องทางอื่นแล้ว)"
+            >
+              เริ่มงานโดยไม่เปิดอีเมล
+            </button>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-end gap-2 w-full sm:w-auto">
+            {/* Secondary Option: Mailto / Outlook app */}
+            <button
+              type="button"
+              onClick={handleSendAndOpenMailto}
+              disabled={isSending}
+              className="px-3.5 py-2.5 text-xs font-semibold text-zinc-700 hover:text-zinc-900 bg-white border border-zinc-300 hover:border-zinc-400 rounded-full transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-2xs"
+              title="เปิดในแอปเมลในเครื่อง เช่น Microsoft Outlook หรือ Apple Mail"
             >
               <Send size={12} className="text-zinc-500" />
-              <span>ส่งผ่านระบบ &amp; เริ่มงาน</span>
+              <span>เปิดใน Outlook / แอปเมล</span>
             </button>
 
-            {/* Option B: Open in Gmail (Guaranteed real email dispatch from user's account) */}
+            {/* Primary Option 1: Open and Send in Gmail (@step.cmu.ac.th) */}
             <button
               type="button"
               onClick={handleSendAndOpenGmail}
               disabled={isSending}
-              className="px-5 sm:px-6 py-2.5 text-xs font-bold text-white bg-[#EA4335] hover:bg-[#d93025] active:bg-[#c5221f] rounded-full shadow-sm hover:shadow transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
-              title="เปิด Gmail (@step.cmu.ac.th) พร้อมใส่เนื้อหาครบถ้วน เพื่อส่งจริงจากบัญชีของคุณ"
+              className="px-5 sm:px-6 py-2.5 text-xs font-bold text-white bg-[#EA4335] hover:bg-[#d93025] active:bg-[#c5221f] rounded-full shadow-sm hover:shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              title="ทางเลือกที่ 1: บันทึกเริ่มงานและเปิดร่างอีเมลใน Gmail (@step.cmu.ac.th) เพื่อกด Send ส่งจริง"
             >
               {isSending ? (
                 <>
@@ -663,7 +663,7 @@ export default function InProgressEmailModal({
               ) : (
                 <>
                   <Mail size={14} className="text-white" />
-                  <span>เปิดส่งใน Gmail (@step.cmu.ac.th)</span>
+                  <span>🚀 เริ่มงาน &amp; เปิดส่งใน Gmail</span>
                   <ExternalLink size={12} className="opacity-90" />
                 </>
               )}

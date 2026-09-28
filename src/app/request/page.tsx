@@ -303,6 +303,7 @@ function FormContent() {
   const [prEventStart, setPrEventStart] = useState("");
   const [prEventEnd, setPrEventEnd] = useState("");
   const [prPublishDate, setPrPublishDate] = useState("");
+  const [isApproved, setIsApproved] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -537,6 +538,7 @@ function FormContent() {
                 setPrEventStart("");
                 setPrEventEnd("");
                 setPrPublishDate(""); 
+                setIsApproved(false);
               }}
               className="w-full sm:w-auto px-6 py-2.5 bg-primary text-white rounded-full hover:bg-primary/90 transition-all font-medium text-sm shadow-md cursor-pointer"
             >
@@ -939,19 +941,30 @@ function FormContent() {
               <textarea id="notes" name="notes" rows={2} className="w-full px-4 py-3 text-sm border border-zinc-200 bg-[#f9f9fb] rounded-[24px] focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] resize-y" placeholder="ข้อมูลเพิ่มเติมอื่นๆ..."></textarea>
             </div>
             
-            {/* Dieter Rams Signature Orange Confirmation Checkbox */}
-            <label className="flex items-center gap-3.5 p-3.5 sm:p-4 rounded-2xl bg-orange-500/5 hover:bg-orange-500/10 border-2 border-orange-500/30 hover:border-orange-500 transition-all cursor-pointer group mt-3 select-none">
-              <div className="relative flex items-center justify-center w-6 h-6 shrink-0">
-                <input 
-                  required 
-                  type="checkbox" 
-                  className="peer appearance-none w-6 h-6 rounded-full border-2 border-orange-500 bg-white checked:bg-orange-500 checked:border-orange-500 focus:ring-4 focus:ring-orange-500/20 focus:outline-none cursor-pointer transition-all shadow-xs" 
-                />
-                <svg className="absolute w-3.5 h-3.5 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
+            {/* Approval Confirmation - No outer box frame, solid red full circle when checked */}
+            <label className="flex items-center gap-3.5 py-2.5 cursor-pointer group mt-3 select-none">
+              <input 
+                required 
+                type="checkbox" 
+                name="is_approved"
+                checked={isApproved}
+                onChange={(e) => setIsApproved(e.target.checked)}
+                className="sr-only" 
+              />
+              <div 
+                className={`w-6 h-6 rounded-full flex items-center justify-center transition-all shrink-0 ${
+                  isApproved 
+                    ? "bg-[#E03131] border-2 border-[#E03131] shadow-xs scale-105" 
+                    : "bg-white border-2 border-zinc-400 group-hover:border-[#E03131]"
+                }`}
+              >
+                {isApproved && (
+                  <Check size={14} className="text-white stroke-[3.5]" />
+                )}
               </div>
-              <span className="text-sm font-bold text-orange-600 group-hover:text-orange-700 tracking-tight transition-colors">
+              <span className={`text-sm font-semibold tracking-tight transition-colors ${
+                isApproved ? "text-zinc-900 font-bold" : "text-zinc-700 group-hover:text-zinc-900"
+              }`}>
                 ยืนยันว่าบรีฟนี้ได้รับการอนุมัติจากหัวหน้าทีมแล้ว
               </span>
             </label>

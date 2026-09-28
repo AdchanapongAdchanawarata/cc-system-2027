@@ -762,13 +762,8 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                     </div>
 
                     <div>
-                      <div className="flex items-center justify-between mb-1.5">
+                      <div className="mb-1.5">
                         <label className="text-[11px] text-slate-500 font-semibold">Deadline (กำหนดส่ง)</label>
-                        {(brief.details?.usage_date || brief.details?.publish_date || brief.details?.event_datetime) && (
-                          <span className="text-[9.5px] text-orange-600 bg-orange-50 px-1.5 py-0.2 rounded-full font-medium border border-orange-200">
-                            {brief.unit === 'pr' ? 'จากวันจัดกิจกรรม' : 'จากวันใช้งานจริง'}
-                          </span>
-                        )}
                       </div>
                       <DatePicker
                         className="w-full text-xs font-semibold bg-white border border-slate-200 rounded-full px-3 py-2 text-center shadow-2xs hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-800/10 transition-all h-[36px]"

@@ -62,9 +62,15 @@ const ALL_CATEGORIES_BY_UNIT: Record<string, { name: string; desc: string }[]> =
     { name: "อื่นๆ (Others)", desc: "งานบริการคอนเทนต์อื่นๆ นอกเหนือจากที่ระบุไว้" }
   ],
   pr: [
+    { name: "เขียนข่าว ( นอกเหนือจาก Task งาน )", desc: "งานเขียนข่าวประชาสัมพันธ์นอกเหนือจาก Task ปกติ (RSP)" },
+    { name: "ข่าวการจัดกิจกรรม/โครงการ", desc: "ข่าวรายงานผลการจัดกิจกรรมหรือโครงการที่ได้รับงบประมาณจาก RSP North และ กปว." },
+    { name: "ข่าวผู้บริหารเข้าร่วมกิจกรรมของกระทรวง อว.", desc: "ข่าวกิจกรรม/โครงการที่มีผู้บริหารของกระทรวง อว., สป.อว. และ กปว. เข้าร่วม" },
+    { name: "ข่าวผู้บริหารกระทรวง อว. ลงพื้นที่ติดตามงาน หรือประชุม ที่เกี่ยวข้องกับเครือข่ายมหาวิทยาลัยฯ", desc: "ข่าวการลงพื้นที่ตรวจเยี่ยม ติดตามงาน หรือการประชุมร่วมกับเครือข่ายมหาวิทยาลัย" },
+    { name: "ข่าวประชาสัมพันธ์ (โครงการที่รับสมัครจะต้องไม่เป็นโครงการที่ทำเหมือนกันทุกมหาวิทยาลัย)", desc: "ประชาสัมพันธ์การจัดกิจกรรม/โครงการที่ไม่ซ้ำซ้อนกับโครงการหลักของเครือข่าย" },
+    { name: "ข่าวประชาสัมพันธ์บริการ", desc: "ประชาสัมพันธ์บริการห้องปฏิบัติการ โครงสร้างพื้นฐาน หรือบริการอุทยานวิทยาศาสตร์" },
+    { name: "ข่าว Success case", desc: "กรณีศึกษาความสำเร็จ ผู้ประกอบการ ผลงานวิจัย หรือนวัตกรรมที่เกิดผลสัมฤทธิ์เด่นชัด" },
     { name: "ข่าวประชาสัมพันธ์บริการ (RSP)", desc: "ข่าวเครือข่าย RSP ภาคเหนือ" },
     { name: "ข่าวการประชาสัมพันธ์กิจกรรม/โครงการ (Pre PR)", desc: "การโปรโมทก่อนเริ่มงานหรือโครงการ" },
-    { name: "ข่าวการจัดกิจกรรม/โครงการ", desc: "ข่าวรายงานผลการจัดกิจกรรมหรือโครงการ" },
     { name: "ข่าวการจัดประชุม/อบรม/สัมมนา", desc: "ข่าวงานประชุม การอบรม หรือสัมมนา" },
     { name: "ข่าวเกี่ยวกับผู้บริหาร", desc: "ข่าวภารกิจหรือการแถลงของผู้บริหาร" },
     { name: "ข่าวการรับรางวัล", desc: "ข่าวความสำเร็จหรือการรับรางวัลต่างๆ" },
@@ -1789,33 +1795,58 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                             </div>
                           </td>
                           <td className="px-3 sm:px-4 py-2 sm:py-2.5 w-full sm:w-2/3">
-                            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
-                              {(['creative', 'content', 'pr'] as const).map(wType => {
-                                const active = (brief.details?.pm_work_type || 'creative') === wType;
-                                const label = wType === 'creative' ? 'DESIGN' : wType === 'content' ? 'CONTENT' : 'PR';
-                                return (
-                                  <button
-                                    key={wType}
-                                    type="button"
-                                    onClick={() => onUpdateField(brief.id, 'details', {
-                                      ...brief.details,
-                                      pm_work_type: wType,
-                                      pm_work_category: ''
-                                    })}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-1.5 ${
-                                      active 
-                                        ? 'bg-[#18181B] text-[#FAFAFA] shadow-xs' 
-                                        : 'bg-white text-[#52525B] border border-[#D4D4D0] hover:bg-[#EAEAE7]'
-                                    }`}
-                                  >
-                                    {active && (
-                                      <span className="w-1.5 h-1.5 rounded-full bg-[#EA580C] shrink-0" />
-                                    )}
-                                    <span>{label}</span>
-                                  </button>
-                                );
-                              })}
-                            </div>
+                            {(() => {
+                              const textToCheck = `${brief.details?.category || ''} ${brief.category || ''} ${brief.project_name || ''} ${brief.unit || ''} ${brief.details?.service || ''} ${brief.details?.service_category || ''}`.toLowerCase();
+                              let defaultWorkType: 'creative' | 'content' | 'pr' = 'creative';
+                              if (
+                                brief.unit === 'pr' || 
+                                textToCheck.includes('pr') || 
+                                textToCheck.includes('ข่าว') || 
+                                textToCheck.includes('ประชาสัมพันธ์') || 
+                                textToCheck.includes('press')
+                              ) {
+                                defaultWorkType = 'pr';
+                              } else if (
+                                brief.unit === 'content' || 
+                                textToCheck.includes('content') || 
+                                textToCheck.includes('คอนเทนต์') || 
+                                textToCheck.includes('วิดีโอ') || 
+                                textToCheck.includes('บทความ')
+                              ) {
+                                defaultWorkType = 'content';
+                              }
+                              const effectiveWorkType = brief.details?.pm_work_type || defaultWorkType;
+
+                              return (
+                                <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
+                                  {(['creative', 'content', 'pr'] as const).map(wType => {
+                                    const active = effectiveWorkType === wType;
+                                    const label = wType === 'creative' ? 'DESIGN' : wType === 'content' ? 'CONTENT' : 'PR';
+                                    return (
+                                      <button
+                                        key={wType}
+                                        type="button"
+                                        onClick={() => onUpdateField(brief.id, 'details', {
+                                          ...brief.details,
+                                          pm_work_type: wType,
+                                          pm_work_category: ''
+                                        })}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                                          active 
+                                            ? 'bg-[#18181B] text-[#FAFAFA] shadow-xs' 
+                                            : 'bg-white text-[#52525B] border border-[#D4D4D0] hover:bg-[#EAEAE7]'
+                                        }`}
+                                      >
+                                        {active && (
+                                          <span className="w-1.5 h-1.5 rounded-full bg-[#EA580C] shrink-0" />
+                                        )}
+                                        <span>{label}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              );
+                            })()}
                           </td>
                         </tr>
 
@@ -1829,8 +1860,37 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                           </td>
                           <td className="px-3 sm:px-4 py-2 sm:py-2.5 w-full sm:w-2/3">
                             {(() => {
-                              const currentVal = brief.details?.pm_work_category || brief.details?.service_label || brief.details?.service_main || brief.details?.service_category || '';
-                              const availableCats = ALL_CATEGORIES_BY_UNIT[brief.details?.pm_work_type || 'creative'] || [];
+                              const textToCheck = `${brief.details?.category || ''} ${brief.category || ''} ${brief.project_name || ''} ${brief.unit || ''} ${brief.details?.service || ''} ${brief.details?.service_category || ''}`.toLowerCase();
+                              let defaultWorkType: 'creative' | 'content' | 'pr' = 'creative';
+                              if (
+                                brief.unit === 'pr' || 
+                                textToCheck.includes('pr') || 
+                                textToCheck.includes('ข่าว') || 
+                                textToCheck.includes('ประชาสัมพันธ์') || 
+                                textToCheck.includes('press')
+                              ) {
+                                defaultWorkType = 'pr';
+                              } else if (
+                                brief.unit === 'content' || 
+                                textToCheck.includes('content') || 
+                                textToCheck.includes('คอนเทนต์') || 
+                                textToCheck.includes('วิดีโอ') || 
+                                textToCheck.includes('บทความ')
+                              ) {
+                                defaultWorkType = 'content';
+                              }
+                              const effectiveWorkType = brief.details?.pm_work_type || defaultWorkType;
+
+                              const currentVal = 
+                                brief.details?.pm_work_category || 
+                                brief.details?.service_label || 
+                                brief.details?.service_main || 
+                                brief.details?.target_audience || 
+                                brief.details?.service_category || 
+                                (effectiveWorkType === 'pr' ? (brief.details?.category || '') : '') || 
+                                '';
+
+                              const availableCats = ALL_CATEGORIES_BY_UNIT[effectiveWorkType] || [];
                               const hasOption = availableCats.some(c => c.name === currentVal);
                               return (
                                 <select
@@ -1839,8 +1899,10 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                                     const newCat = e.target.value;
                                     onUpdateField(brief.id, 'details', {
                                       ...brief.details,
+                                      pm_work_type: effectiveWorkType,
                                       pm_work_category: newCat,
                                       service_category: newCat,
+                                      target_audience: newCat,
                                       service_label: newCat,
                                       service_main: newCat
                                     });

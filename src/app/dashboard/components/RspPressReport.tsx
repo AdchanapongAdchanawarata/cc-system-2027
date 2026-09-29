@@ -651,6 +651,12 @@ export default function RspPressReport() {
           service: "เขียนข่าว ( นอกเหนือจาก Task งาน )",
           work_organization: "RSP",
           internal_organization: "RSP",
+          organization: "RSP",
+          organization_type: "government",
+          client_sector: "government",
+          pm_work_type: "pr",
+          pm_work_category: formData.targetAudience || "ข่าวการจัดกิจกรรม/โครงการ",
+          service_category: formData.targetAudience || "ข่าวการจัดกิจกรรม/โครงการ",
           save_cost: 1500,
           project_value: "1500",
           revenue: 1500,
@@ -673,8 +679,6 @@ export default function RspPressReport() {
     } catch (supabaseErr) {
       console.error("Error syncing brief to Supabase:", supabaseErr);
     }
-
-    alert(`บันทึกข่าวประชาสัมพันธ์รหัส ${newCode} เรียบร้อยแล้ว!\n\nข้อมูลได้รับการซิงค์ 2 ทาง:\n1. รายการข่าวประชาสัมพันธ์ (Press Log)\n2. หน้าบอร์ดรวม Tasks (มอบหมายงานให้ 'โอ๊ต CNB' หน่วย Internal เรียบร้อย)`);
 
     // Reset Form
     setFormData({

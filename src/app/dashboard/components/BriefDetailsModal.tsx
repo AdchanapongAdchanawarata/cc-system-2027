@@ -27,6 +27,11 @@ import { createClient } from "@/utils/supabase/client";
 
 const ALL_CATEGORIES_BY_UNIT: Record<string, { name: string; desc: string }[]> = {
   creative: [
+    { name: "ออกแบบผลิตภัณฑ์", desc: "บริการออกแบบผลิตภัณฑ์เชิงสร้างสรรค์ (IDC)" },
+    { name: "ออกแบบบรรจุภัณฑ์", desc: "บริการออกแบบบรรจุภัณฑ์เชิงพาณิชย์ (IDC)" },
+    { name: "ออกแบบสื่อสิ่งพิมพ์", desc: "บริการออกแบบสื่อสิ่งพิมพ์ โปสเตอร์ แผ่นพับ (IDC)" },
+    { name: "ออกแบบตราสัญลักษณ์", desc: "บริการออกแบบตราสัญลักษณ์ โลโก้แบรนด์ (IDC)" },
+    { name: "ออกแบบอัตลักษณ์ ( CI )", desc: "บริการออกแบบอัตลักษณ์องค์กร Corporate Identity (IDC)" },
     { name: "Logo Design", desc: "ออกแบบตราสัญลักษณ์แบรนด์ พร้อมกำหนดสีและฟอนต์หลัก" },
     { name: "Key Visual (KV)", desc: "ออกแบบภาพสื่อสารหลัก (Mood & Tone) เพื่อใช้เป็นต้นแบบในการทำสื่ออื่นๆ ในแคมเปญ" },
     { name: "Print Poster / Flyer", desc: "ออกแบบใบปลิวหรือโปสเตอร์ 1 หน้า" },
@@ -143,16 +148,19 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
     brief.category || 
     "";
 
-  // Effective deadline resolution: prioritize brief.deadline, fallback to usage_date, event_datetime, publish_date, delivery_date
+  // Effective deadline resolution: prioritize brief.deadline, fallback to usage_date, event_datetime, publish_date, delivery_date, submission date, or created_at (วันที่กรอกข้อมูลเข้ามา)
   const effectiveDeadline = 
     brief.deadline || 
     brief.details?.usage_date || 
     (brief.details?.event_datetime ? brief.details.event_datetime.split(" ")[0] : null) ||
     brief.details?.publish_date || 
     brief.details?.delivery_date || 
-    null;
+    brief.details?.deadline ||
+    (brief.created_at ? brief.created_at.slice(0, 10) : null) ||
+    (brief.details?.submission_date || brief.details?.date || null) ||
+    new Date().toISOString().slice(0, 10);
 
-  // Auto-sync usage_date to brief.deadline if deadline is not yet saved in database
+  // Auto-sync submission date to brief.deadline if deadline is not yet saved in database
   useEffect(() => {
     if (!brief.deadline && effectiveDeadline) {
       onUpdateField(brief.id, "deadline", effectiveDeadline);
@@ -708,7 +716,7 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                 </div>
                 <div className="bg-white/80 p-2.5 rounded-xl border border-orange-100">
                   <span className="text-[10px] text-slate-500 block font-semibold">ประเภทงานที่รับคำปรึกษา</span>
-                  <span className="font-bold text-orange-700">{brief.details.service_label || brief.details.service_main || "-"}</span>
+                  <span className="font-bold text-orange-700">{brief.details?.pm_work_category || brief.details?.service_label || brief.details?.service_main || brief.details?.service_category || "-"}</span>
                 </div>
                 <div className="bg-white/80 p-2.5 rounded-xl border border-orange-100">
                   <span className="text-[10px] text-slate-500 block font-semibold">จำนวนครั้ง / ชิ้นงาน</span>
@@ -1325,7 +1333,25 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                       const isMain3Brief = ['creative', 'content', 'pr'].includes((unit || '').toLowerCase());
                       const defaultOrg = isMain3Brief ? (rawTeam === 'NMCO' ? 'RSP' : 'STeP') : (unit === 'internal' ? 'STeP' : 'Other');
                       const currentOrg = (brief.details?.organization || defaultOrg).toString().trim();
-                      const isOtherSelected = !['STEP', 'CMU', 'RSP'].includes(currentOrg.toUpperCase()) || currentOrg === 'Other' || currentOrg === 'อื่นๆ';
+                      const currentSector = (brief.details?.client_sector || brief.details?.organization_type || '').toLowerCase();
+
+                      // Resolve active organization key
+                      let activeOrgKey = '';
+                      if (currentOrg.toUpperCase() === 'STEP' || rawTeam === 'STEP') {
+                        activeOrgKey = 'STeP';
+                      } else if (currentOrg.toUpperCase() === 'CMU' || rawTeam === 'CMU') {
+                        activeOrgKey = 'CMU';
+                      } else if (currentOrg.toUpperCase() === 'RSP' || rawTeam === 'RSP' || rawTeam === 'NMCO') {
+                        activeOrgKey = 'RSP';
+                      } else if (currentOrg === 'ภาคเอกชน' || currentSector === 'private' || currentOrg.toLowerCase() === 'private') {
+                        activeOrgKey = 'private';
+                      } else if (currentOrg === 'ภาครัฐ' || currentSector === 'government' || currentOrg.toLowerCase() === 'government') {
+                        activeOrgKey = 'government';
+                      } else {
+                        activeOrgKey = 'Other';
+                      }
+
+                      const isOtherSelected = activeOrgKey === 'Other';
                       const orgOptions = [
                         { 
                           key: "STeP", 
@@ -1355,6 +1381,24 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                           inactiveColor: "text-orange-600"
                         },
                         { 
+                          key: "private", 
+                          label: "🏢 ภาคเอกชน", 
+                          tooltip: "ภาคเอกชน / ผู้ประกอบการ / บริษัท",
+                          icon: Building2,
+                          activeClass: "bg-blue-600 text-white border-blue-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_2px_4px_rgba(37,99,235,0.25)] font-bold",
+                          inactiveClass: "bg-zinc-100/90 text-zinc-700 border-zinc-300/80 hover:bg-zinc-200/80 hover:border-zinc-400 hover:text-zinc-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(0,0,0,0.04)]",
+                          inactiveColor: "text-blue-600"
+                        },
+                        { 
+                          key: "government", 
+                          label: "🏛️ ภาครัฐ", 
+                          tooltip: "ภาครัฐ / สถาบันการศึกษา / หน่วยงานรัฐ",
+                          icon: Landmark,
+                          activeClass: "bg-emerald-600 text-white border-emerald-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_2px_4px_rgba(16,185,129,0.25)] font-bold",
+                          inactiveClass: "bg-zinc-100/90 text-zinc-700 border-zinc-300/80 hover:bg-zinc-200/80 hover:border-zinc-400 hover:text-zinc-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(0,0,0,0.04)]",
+                          inactiveColor: "text-emerald-600"
+                        },
+                        { 
                           key: "Other", 
                           label: "อื่นๆ", 
                           tooltip: "องค์กรภายนอกอื่นๆ",
@@ -1368,9 +1412,7 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                         <div className="flex flex-col gap-2">
                           <div className="flex items-center gap-2 flex-wrap">
                             {orgOptions.map(item => {
-                              const isMatch = item.key === "Other" 
-                                ? isOtherSelected 
-                                : currentOrg.toUpperCase() === item.key.toUpperCase();
+                              const isMatch = item.key === activeOrgKey;
                               const Icon = item.icon;
                               return (
                                 <button
@@ -1378,11 +1420,41 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                                   type="button"
                                   title={item.tooltip}
                                   onClick={() => {
-                                    onUpdateField(brief.id, 'details', {
-                                      ...brief.details,
-                                      organization: item.key === 'Other' ? (brief.details?.organization_other || 'อื่นๆ') : item.key,
-                                      organization_other: item.key === 'Other' ? (brief.details?.organization_other || '') : undefined
-                                    });
+                                    if (item.key === 'private') {
+                                      onUpdateField(brief.id, 'details', {
+                                        ...brief.details,
+                                        organization: 'ภาคเอกชน',
+                                        organization_type: 'private',
+                                        client_sector: 'private',
+                                        decision_maker: 'ภาคเอกชน',
+                                        team: 'ภาคเอกชน'
+                                      });
+                                    } else if (item.key === 'government') {
+                                      onUpdateField(brief.id, 'details', {
+                                        ...brief.details,
+                                        organization: 'ภาครัฐ',
+                                        organization_type: 'government',
+                                        client_sector: 'government',
+                                        decision_maker: 'ภาครัฐ',
+                                        team: 'ภาครัฐ'
+                                      });
+                                    } else if (item.key === 'Other') {
+                                      onUpdateField(brief.id, 'details', {
+                                        ...brief.details,
+                                        organization: brief.details?.organization_other || 'อื่นๆ',
+                                        organization_other: brief.details?.organization_other || ''
+                                      });
+                                    } else {
+                                      // STeP, CMU, RSP
+                                      onUpdateField(brief.id, 'details', {
+                                        ...brief.details,
+                                        organization: item.key,
+                                        organization_type: 'government',
+                                        client_sector: 'government',
+                                        decision_maker: item.key,
+                                        team: item.key
+                                      });
+                                    }
                                   }}
                                   className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs transition-all cursor-pointer border select-none active:scale-[0.97] ${
                                     isMatch
@@ -1631,36 +1703,60 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                             </div>
                           </td>
                           <td className="px-3 sm:px-4 py-2 sm:py-2.5 w-full sm:w-2/3">
-                            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={() => onUpdateField(brief.id, 'details', { ...brief.details, client_sector: 'government' })}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                                  (brief.details?.client_sector || 'government') === 'government'
-                                    ? 'bg-[#18181B] text-white shadow-xs'
-                                    : 'bg-white text-[#52525B] border border-[#D4D4D0] hover:bg-[#EAEAE7]'
-                                }`}
-                              >
-                                {(brief.details?.client_sector || 'government') === 'government' && (
-                                  <span className="w-1.5 h-1.5 rounded-full bg-[#EA580C] shrink-0" />
-                                )}
-                                <span>🏛️ ให้บริการภาครัฐ</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => onUpdateField(brief.id, 'details', { ...brief.details, client_sector: 'private' })}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                                  brief.details?.client_sector === 'private'
-                                    ? 'bg-[#18181B] text-white shadow-xs'
-                                    : 'bg-white text-[#52525B] border border-[#D4D4D0] hover:bg-[#EAEAE7]'
-                                }`}
-                              >
-                                {brief.details?.client_sector === 'private' && (
-                                  <span className="w-1.5 h-1.5 rounded-full bg-[#EA580C] shrink-0" />
-                                )}
-                                <span>🏢 ให้บริการภาคเอกชน</span>
-                              </button>
-                            </div>
+                            {(() => {
+                              const isPriv = (brief.details?.client_sector || brief.details?.organization_type || '').toLowerCase() === 'private' || brief.details?.organization === 'ภาคเอกชน';
+                              return (
+                                <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const prevOrg = brief.details?.organization || '';
+                                      const nextOrg = (prevOrg === 'ภาคเอกชน' || !prevOrg) ? 'ภาครัฐ' : prevOrg;
+                                      onUpdateField(brief.id, 'details', {
+                                        ...brief.details,
+                                        client_sector: 'government',
+                                        organization_type: 'government',
+                                        organization: nextOrg,
+                                        decision_maker: nextOrg
+                                      });
+                                    }}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                      !isPriv
+                                        ? 'bg-[#18181B] text-white shadow-xs'
+                                        : 'bg-white text-[#52525B] border border-[#D4D4D0] hover:bg-[#EAEAE7]'
+                                    }`}
+                                  >
+                                    {!isPriv && (
+                                      <span className="w-1.5 h-1.5 rounded-full bg-[#EA580C] shrink-0" />
+                                    )}
+                                    <span>🏛️ ให้บริการภาครัฐ</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      onUpdateField(brief.id, 'details', {
+                                        ...brief.details,
+                                        client_sector: 'private',
+                                        organization_type: 'private',
+                                        organization: 'ภาคเอกชน',
+                                        decision_maker: 'ภาคเอกชน',
+                                        team: 'ภาคเอกชน'
+                                      });
+                                    }}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                      isPriv
+                                        ? 'bg-[#18181B] text-white shadow-xs'
+                                        : 'bg-white text-[#52525B] border border-[#D4D4D0] hover:bg-[#EAEAE7]'
+                                    }`}
+                                  >
+                                    {isPriv && (
+                                      <span className="w-1.5 h-1.5 rounded-full bg-[#EA580C] shrink-0" />
+                                    )}
+                                    <span>🏢 ให้บริการภาคเอกชน</span>
+                                  </button>
+                                </div>
+                              );
+                            })()}
                           </td>
                         </tr>
                         <DetailRow 
@@ -1732,25 +1828,37 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                             </div>
                           </td>
                           <td className="px-3 sm:px-4 py-2 sm:py-2.5 w-full sm:w-2/3">
-                            <select
-                              value={brief.details?.pm_work_category || brief.details?.service_category || ''}
-                              onChange={(e) => {
-                                const newCat = e.target.value;
-                                onUpdateField(brief.id, 'details', {
-                                  ...brief.details,
-                                  pm_work_category: newCat,
-                                  service_category: newCat
-                                });
-                              }}
-                              className="w-full text-xs font-semibold px-3 py-2 bg-white border border-[#D4D4D0] rounded-lg focus:outline-none focus:border-[#18181B] focus:ring-1 focus:ring-[#18181B]"
-                            >
-                              <option value="">-- เลือกประเภทงานย่อย --</option>
-                              {(ALL_CATEGORIES_BY_UNIT[brief.details?.pm_work_type || 'creative'] || []).map((cat) => (
-                                <option key={cat.name} value={cat.name}>
-                                  {cat.name} - {cat.desc}
-                                </option>
-                              ))}
-                            </select>
+                            {(() => {
+                              const currentVal = brief.details?.pm_work_category || brief.details?.service_label || brief.details?.service_main || brief.details?.service_category || '';
+                              const availableCats = ALL_CATEGORIES_BY_UNIT[brief.details?.pm_work_type || 'creative'] || [];
+                              const hasOption = availableCats.some(c => c.name === currentVal);
+                              return (
+                                <select
+                                  value={currentVal}
+                                  onChange={(e) => {
+                                    const newCat = e.target.value;
+                                    onUpdateField(brief.id, 'details', {
+                                      ...brief.details,
+                                      pm_work_category: newCat,
+                                      service_category: newCat,
+                                      service_label: newCat,
+                                      service_main: newCat
+                                    });
+                                  }}
+                                  className="w-full text-xs font-semibold px-3 py-2 bg-white border border-[#D4D4D0] rounded-lg focus:outline-none focus:border-[#18181B] focus:ring-1 focus:ring-[#18181B]"
+                                >
+                                  <option value="">-- เลือกประเภทงานย่อย --</option>
+                                  {currentVal && !hasOption && (
+                                    <option value={currentVal}>{currentVal}</option>
+                                  )}
+                                  {availableCats.map((cat) => (
+                                    <option key={cat.name} value={cat.name}>
+                                      {cat.name} - {cat.desc}
+                                    </option>
+                                  ))}
+                                </select>
+                              );
+                            })()}
                           </td>
                         </tr>
                       </>

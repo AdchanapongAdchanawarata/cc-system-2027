@@ -171,6 +171,10 @@ export default function IDCFormPage() {
       });
       const serviceLabel = selectedLabels.join(", ") || "งานให้คำปรึกษา";
 
+      const isGov = formData.organizationType === 'government';
+      const orgText = isGov ? 'ภาครัฐ' : 'ภาคเอกชน';
+      const sectorKey = isGov ? 'government' : 'private';
+
       // 1. Insert into Supabase 'briefs' table (Task รวม - Unit Internal, Assignee: พิม)
       const taskTitle = `[ศูนย์ออกแบบนวัตกรรม] ให้คำปรึกษา: ${serviceLabel} - ${formData.companyName.trim()}`;
 
@@ -179,18 +183,28 @@ export default function IDCFormPage() {
         unit: 'internal',
         status: 'pending',
         priority: 'Medium',
+        deadline: today, // Requirement: Deadline (กำหนดส่ง) คือวันที่กรอกข้อมูลเข้ามา
         assignee_id: PIM_ASSIGNEE_ID,
         coordinator_nickname: formData.clientName.trim(),
         requester_email: formData.email.trim() || 'idc@step.cmu.ac.th',
-        decision_maker: formData.organizationType === 'government' ? 'ภาครัฐ' : 'ภาคเอกชน',
+        decision_maker: orgText,
         details: {
           category: 'Design',
-          service_category: 'Innovation Design Center',
+          pm_work_type: 'creative',
+          pm_work_category: serviceLabel, // ข้อมูลตามเลข 1 ต้องเป็นข้อมูลแบบเดียวกัน
+          service_category: serviceLabel,
+          service_label: serviceLabel,
+          service_main: serviceLabel,
           idc_code: generatedCode,
           client_name: formData.clientName.trim(),
           company_name: formData.companyName.trim(),
-          organization: formData.organizationType === 'government' ? 'ภาครัฐ' : 'ภาคเอกชน',
-          organization_type: formData.organizationType,
+          organization: orgText, // ข้อมูลตามเลข 2 ต้องเป็นข้อมูลแบบเดียวกัน
+          organization_type: sectorKey,
+          client_sector: sectorKey, // ข้อมูลตามเลข 2 ต้องเป็นข้อมูลแบบเดียวกัน
+          team: orgText,
+          deadline: today,
+          submission_date: today,
+          date: today,
           phone: formData.phone.trim(),
           email: formData.email.trim(),
           tax_id: formData.taxId.trim(),
@@ -200,8 +214,6 @@ export default function IDCFormPage() {
           services: formData.services,
           service_labels: selectedLabels,
           service_quantities: serviceQuantities,
-          service_main: formData.services[0] || 'other',
-          service_label: serviceLabel,
           service_other_detail: formData.serviceOtherDetail.trim(),
           piece_count: totalPieces,
           revenue: 0,
@@ -211,7 +223,6 @@ export default function IDCFormPage() {
           survey_token: token,
           survey_sent: false,
           assignee_name: PIM_NAME,
-          team: 'CC'
         }
       }]);
 

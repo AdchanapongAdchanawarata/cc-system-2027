@@ -46,6 +46,7 @@ import { format, parseISO, isValid } from "date-fns";
 import ModernSelect, { ModernSelectOption } from "@/components/ModernSelect";
 import ModernDatePicker from "@/components/ModernDatePicker";
 import { createClient } from "@/utils/supabase/client";
+import { getCloudJson, setCloudJson, CLOUD_KEYS } from "@/utils/cloudSyncService";
 
 export type StockTimeframe = "1D" | "1W" | "1M" | "3M" | "6M" | "1Y" | "YTD" | "ALL" | "CUSTOM";
 
@@ -472,25 +473,24 @@ export default function RspPressReport() {
 
   const supabase = createClient();
 
-  // Load persisted records from LocalStorage on mount
+  // Load persisted records from Supabase cloud with fallback to LocalStorage
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    async function loadCloudRsp() {
       try {
-        const saved = localStorage.getItem("cc_rsp_press_records_v1");
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setRecords(parsed);
-          } else {
-            localStorage.setItem("cc_rsp_press_records_v1", JSON.stringify(INITIAL_PRESS_RELEASES));
-          }
+        const cloudData = await getCloudJson<PressReleaseItem[]>(
+          CLOUD_KEYS.RSP_PRESS_RECORDS,
+          "cc_rsp_press_records_v1"
+        );
+        if (cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
+          setRecords(cloudData);
         } else {
-          localStorage.setItem("cc_rsp_press_records_v1", JSON.stringify(INITIAL_PRESS_RELEASES));
+          setRecords(INITIAL_PRESS_RELEASES);
         }
       } catch (e) {
-        console.error("Failed to load RSP records from storage", e);
+        console.warn("Failed to load RSP records from cloud:", e);
       }
     }
+    loadCloudRsp();
   }, []);
 
   // Copy share form URL handler
@@ -623,14 +623,8 @@ export default function RspPressReport() {
     const updatedRecords = [newItem, ...records];
     setRecords(updatedRecords);
 
-    // 1. Sync ทางแรก: บันทึกข้อมูลหน้าเดิมใน LocalStorage
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem("cc_rsp_press_records_v1", JSON.stringify(updatedRecords));
-      } catch (err) {
-        console.error("Error updating local storage records:", err);
-      }
-    }
+    // 1. Sync ทางแรก: บันทึกข้อมูลขึ้น Supabase Cloud + LocalStorage
+    setCloudJson(CLOUD_KEYS.RSP_PRESS_RECORDS, updatedRecords, "cc_rsp_press_records_v1");
 
     // 2. Sync ทางที่สอง: ซิงค์ไปหน้าบอร์ดรวม (Task Board / AssignmentsView)
     // งาน internal โอ๊ตเป็นคนทำ (โอ๊ต CNB) ประเภทงาน: เขียนข่าว ( นอกเหนือจาก Task งาน ) ภาระงานของ RSP มูลค่าประหยัด 1,500 บาท

@@ -27,6 +27,7 @@ import { createClient } from "@/utils/supabase/client";
 import ModernDatePicker from "@/components/ModernDatePicker";
 import ExportDataDropdown from "./ExportDataDropdown";
 import { exportTeamActionPlanReport } from "@/utils/universalExport";
+import { getCloudJson, setCloudJson, CLOUD_KEYS } from "@/utils/cloudSyncService";
 
 export interface ActionPlanItem {
   id: string;
@@ -358,9 +359,10 @@ export default function TeamActionPlanReportDetail() {
     return DEFAULT_ACTION_PLANS;
   });
 
+  // Save plans to Supabase Cloud + LocalStorage
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("cc_team_action_plan_v1", JSON.stringify(plans));
+    if (plans && plans.length > 0) {
+      setCloudJson(CLOUD_KEYS.TEAM_ACTION_PLAN, plans, "cc_team_action_plan_v1");
     }
   }, [plans]);
 
@@ -395,23 +397,24 @@ export default function TeamActionPlanReportDetail() {
   const [newStatus, setNewStatus] = useState<any>("in_progress");
   const [newProgress, setNewProgress] = useState(0);
 
-  // Load from LocalStorage
+  // Load from Supabase Cloud with fallback to LocalStorage
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("cc_team_action_plan_v1");
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const migrated = migratePlansToFY2570(parsed);
-            setPlans(migrated);
-            localStorage.setItem("cc_team_action_plan_v1", JSON.stringify(migrated));
-          }
-        } catch (e) {
-          console.error(e);
+    async function loadCloudPlans() {
+      try {
+        const cloudData = await getCloudJson<ActionPlanItem[]>(
+          CLOUD_KEYS.TEAM_ACTION_PLAN,
+          "cc_team_action_plan_v1",
+          DEFAULT_ACTION_PLANS
+        );
+        if (cloudData && cloudData.length > 0) {
+          const migrated = migratePlansToFY2570(cloudData);
+          setPlans(migrated);
         }
+      } catch (e) {
+        console.error("Error loading action plans from cloud:", e);
       }
     }
+    loadCloudPlans();
   }, []);
 
   // Fetch Internal PM Projects from Supabase (where CC is PM)

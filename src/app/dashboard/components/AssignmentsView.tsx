@@ -152,8 +152,20 @@ export default function AssignmentsView() {
   // Auto-detect logged in employee's unit to preselect tab (Creative / Content / PR / Internal)
   useEffect(() => {
     try {
+      const savedEmail = (localStorage.getItem("cc_user_email") || "").toLowerCase();
+      const savedName = (localStorage.getItem("cc_user_name") || "").toLowerCase();
+      const savedRole = localStorage.getItem("cc_user_role");
+
+      // จ๊อบ AA (หัวหน้าทีม) หรือ Admin จะต้องอยู่หน้า All CC เสมอ ห้ามเปลี่ยนไป Internal
+      if (savedName.includes("จ๊อบ") || savedEmail.includes("adchanapong") || savedRole === "admin") {
+        localStorage.setItem("cc_user_unit", "all");
+        setFilter("All CC");
+        return;
+      }
+
       const savedUnit = localStorage.getItem("cc_user_unit");
       const unitMap: Record<string, string> = {
+        all: "All CC",
         creative: "Creative",
         content: "Content",
         pr: "PR",
@@ -165,24 +177,29 @@ export default function AssignmentsView() {
       }
 
       // Fallback: match by email or name from assignees
-      const savedEmail = localStorage.getItem("cc_user_email");
-      const savedName = localStorage.getItem("cc_user_name");
       if (savedEmail || savedName) {
         supabase
           .from("assignees")
-          .select("unit, email, name")
+          .select("unit, email, name, role")
           .then(({ data }) => {
             if (data && data.length > 0) {
               const matched = data.find(
                 (a) =>
-                  (savedEmail && a.email && a.email.toLowerCase() === savedEmail.toLowerCase()) ||
-                  (savedName && a.name && a.name.includes(savedName))
+                  (savedEmail && a.email && a.email.toLowerCase() === savedEmail) ||
+                  (savedName && a.name && a.name.toLowerCase().includes(savedName))
               );
-              if (matched && matched.unit) {
-                const u = matched.unit.split("|")[0].toLowerCase();
-                if (unitMap[u]) {
-                  localStorage.setItem("cc_user_unit", u);
-                  setFilter(unitMap[u]);
+              if (matched) {
+                if (matched.name?.includes("จ๊อบ") || matched.email?.includes("adchanapong") || matched.role === "admin") {
+                  localStorage.setItem("cc_user_unit", "all");
+                  setFilter("All CC");
+                  return;
+                }
+                if (matched.unit) {
+                  const u = matched.unit.split("|")[0].toLowerCase();
+                  if (unitMap[u]) {
+                    localStorage.setItem("cc_user_unit", u);
+                    setFilter(unitMap[u]);
+                  }
                 }
               }
             }

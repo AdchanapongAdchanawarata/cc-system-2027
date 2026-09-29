@@ -82,6 +82,8 @@ export const DEFAULT_STEP_PRICING: ServicePriceItem[] = [
   { unit: 'internal', service_name: 'PM โครงการของ CC', standard_price: 50000, description: 'PM โครงการของ CC (รายรับ ต้นทุน กำไร พร้อมระบุ DESIGN / CONTENT / PR)' }
 ];
 
+import { getCloudJson, setCloudJson, CLOUD_KEYS } from "./cloudSyncService";
+
 export function getActivePricingList(): ServicePriceItem[] {
   if (typeof window !== 'undefined') {
     try {
@@ -95,6 +97,24 @@ export function getActivePricingList(): ServicePriceItem[] {
     } catch {}
   }
   return DEFAULT_STEP_PRICING;
+}
+
+export async function fetchPricingFromCloud(): Promise<ServicePriceItem[]> {
+  const cloudData = await getCloudJson<ServicePriceItem[]>(
+    CLOUD_KEYS.SERVICE_PRICING,
+    'cc_service_pricing',
+    DEFAULT_STEP_PRICING
+  );
+  return cloudData || DEFAULT_STEP_PRICING;
+}
+
+export async function savePricingToCloud(list: ServicePriceItem[]): Promise<boolean> {
+  const res = await setCloudJson(
+    CLOUD_KEYS.SERVICE_PRICING,
+    list,
+    'cc_service_pricing'
+  );
+  return res.success;
 }
 
 export function getStandardPriceForTask(unit: string | undefined, category: string | undefined, projectName?: string): number | null {

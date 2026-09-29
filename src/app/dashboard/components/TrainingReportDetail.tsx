@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import ModernDatePicker from "@/components/ModernDatePicker";
 import ExportDataDropdown from "./ExportDataDropdown";
+import { getCloudJson, setCloudJson, CLOUD_KEYS } from "@/utils/cloudSyncService";
 
 export interface IndividualTrainingRecord {
   id: string;
@@ -209,33 +210,27 @@ export default function TrainingReportDetail() {
   const [newDate, setNewDate] = useState(new Date().toISOString().slice(0, 10));
   const [newHours, setNewHours] = useState(8);
 
-  // Load from LocalStorage
+  // Load from Supabase Cloud with fallback to LocalStorage
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedRecs = localStorage.getItem("cc_training_records_v1");
-      if (savedRecs) {
-        try {
-          setRecords(JSON.parse(savedRecs));
-        } catch (e) {
-          console.error(e);
+    async function loadCloudTraining() {
+      try {
+        const cloudData = await getCloudJson<IndividualTrainingRecord[]>(
+          CLOUD_KEYS.TRAINING_RECORDS,
+          "cc_training_records_v1"
+        );
+        if (cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
+          setRecords(cloudData);
         }
-      }
-      const savedPlans = localStorage.getItem("cc_training_plans_v1");
-      if (savedPlans) {
-        try {
-          setPlans(JSON.parse(savedPlans));
-        } catch (e) {
-          console.error(e);
-        }
+      } catch (e) {
+        console.warn("Failed to load training records from cloud:", e);
       }
     }
+    loadCloudTraining();
   }, []);
 
   const saveRecords = (items: IndividualTrainingRecord[]) => {
     setRecords(items);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("cc_training_records_v1", JSON.stringify(items));
-    }
+    setCloudJson(CLOUD_KEYS.TRAINING_RECORDS, items, "cc_training_records_v1");
   };
 
   const filteredRecords = useMemo(() => {

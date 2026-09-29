@@ -37,6 +37,7 @@ import {
   calculateQuarterGrowth
 } from "@/utils/okrSettings";
 import { createClient } from "@/utils/supabase/client";
+import { fetchPricingFromCloud, savePricingToCloud } from "@/utils/pricing";
 import { 
   MemberProfile, 
   AssigneeRole, 
@@ -324,59 +325,12 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
     const { data: oData } = await supabase.from('okr_settings').select('*').order('created_at', { ascending: true });
     if (oData) setOkrs(oData);
 
-    // 3. Fetch Service Pricing
+    // 3. Fetch Service Pricing (Cloud Sync with Supabase okr_settings)
     try {
-      const { data: pData } = await supabase.from('service_pricing').select('*').order('created_at', { ascending: true });
-      let currentList: ServicePricing[] = [];
-      if (pData && pData.length > 0) {
-        currentList = pData;
-      } else {
-        const cached = localStorage.getItem('cc_service_pricing');
-        if (cached) {
-          try {
-            const parsed = JSON.parse(cached);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              currentList = parsed;
-            }
-          } catch {}
-        }
-      }
-
-      // Merge with latest DEFAULT_PRICING to ensure all new work types appear in back-office
-      const merged: ServicePricing[] = [...currentList];
-      const newlyAddedToDb: Omit<ServicePricing, 'id'>[] = [];
-
-      DEFAULT_PRICING.forEach((def, idx) => {
-        const exists = merged.some(p => 
-          (p.unit || '').toLowerCase() === (def.unit || '').toLowerCase() &&
-          (p.service_name || '').trim().toLowerCase() === (def.service_name || '').trim().toLowerCase()
-        );
-        if (!exists) {
-          merged.push({
-            ...def,
-            id: 'init-' + def.unit + '-' + idx + '-' + Date.now()
-          });
-          newlyAddedToDb.push(def);
-        }
-      });
-
-      setPricingList(merged);
-      localStorage.setItem('cc_service_pricing', JSON.stringify(merged));
-
-      // If Supabase table exists and has missing items, silently insert them
-      if (pData && newlyAddedToDb.length > 0) {
-        try {
-          await supabase.from('service_pricing').insert(newlyAddedToDb);
-        } catch {}
-      }
+      const cloudPricing = await fetchPricingFromCloud();
+      setPricingList(cloudPricing as any);
     } catch (err) {
-      console.warn('Using local pricing fallback:', err);
-      const initList: ServicePricing[] = DEFAULT_PRICING.map((item, idx) => ({
-        ...item,
-        id: 'init-' + idx
-      }));
-      setPricingList(initList);
-      localStorage.setItem('cc_service_pricing', JSON.stringify(initList));
+      console.warn('Error fetching pricing from cloud:', err);
     }
 
     // 4. Fetch Brief Satisfaction Stats
@@ -537,29 +491,13 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
       is_active: true
     };
 
-    try {
-      const { data, error } = await supabase.from('service_pricing').insert([newEntry]).select();
-      if (!error && data && data.length > 0) {
-        fetchData();
-      } else {
-        // Local fallback
-        const localItem: ServicePricing = {
-          ...newEntry,
-          id: 'local-' + Date.now()
-        };
-        const updated = [...pricingList, localItem];
-        setPricingList(updated);
-        localStorage.setItem('cc_service_pricing', JSON.stringify(updated));
-      }
-    } catch {
-      const localItem: ServicePricing = {
-        ...newEntry,
-        id: 'local-' + Date.now()
-      };
-      const updated = [...pricingList, localItem];
-      setPricingList(updated);
-      localStorage.setItem('cc_service_pricing', JSON.stringify(updated));
-    }
+    const localItem: ServicePricing = {
+      ...newEntry,
+      id: 'price-' + Date.now()
+    };
+    const updated = [...pricingList, localItem];
+    setPricingList(updated);
+    await savePricingToCloud(updated as any);
 
     setNewPricing({ unit: "creative", service_name: "", standard_price: "", description: "" });
   };
@@ -590,28 +528,17 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
       standard_price: Number(editFormData.standard_price) || 0
     };
 
-    try {
-      if (!id.startsWith('local-') && !id.startsWith('init-')) {
-        await supabase.from('service_pricing').update(updatePayload).eq('id', id);
-      }
-    } catch (err) {
-      console.error("Failed to update service pricing on supabase:", err);
-    }
-
     const updated = pricingList.map(p => p.id === id ? { ...p, ...updatePayload } : p);
     setPricingList(updated);
-    localStorage.setItem('cc_service_pricing', JSON.stringify(updated));
+    await savePricingToCloud(updated as any);
     setEditingRowId(null);
   };
 
   const handleDeletePricing = async (id: string, name: string) => {
     if (confirm(`คุณต้องการลบราคางาน "${name}" ใช่หรือไม่?`)) {
-      try {
-        await supabase.from('service_pricing').delete().eq('id', id);
-      } catch {}
       const updated = pricingList.filter(p => p.id !== id);
       setPricingList(updated);
-      localStorage.setItem('cc_service_pricing', JSON.stringify(updated));
+      await savePricingToCloud(updated as any);
     }
   };
 

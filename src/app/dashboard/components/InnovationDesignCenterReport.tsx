@@ -55,6 +55,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { format, parseISO, isValid } from "date-fns";
 import ModernSelect, { ModernSelectOption } from "@/components/ModernSelect";
+import { getCloudJson, setCloudJson, CLOUD_KEYS } from "@/utils/cloudSyncService";
 
 export type StockTimeframe = "1D" | "1W" | "1M" | "3M" | "6M" | "1Y" | "YTD" | "ALL" | "CUSTOM";
 
@@ -455,9 +456,28 @@ export default function InnovationDesignCenterReport({
     return INITIAL_RECORDS;
   });
 
+  // Load IDC records from Supabase cloud database
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("cc_idc_records_v3", JSON.stringify(records));
+    async function loadCloudIdc() {
+      try {
+        const cloudData = await getCloudJson<IDCRecord[]>(
+          CLOUD_KEYS.IDC_RECORDS,
+          "cc_idc_records_v3"
+        );
+        if (cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
+          setRecords(cloudData);
+        }
+      } catch (err) {
+        console.warn("Failed to load IDC records from cloud:", err);
+      }
+    }
+    loadCloudIdc();
+  }, []);
+
+  // Save IDC records to Supabase cloud + localStorage cache
+  useEffect(() => {
+    if (records && records.length > 0) {
+      setCloudJson(CLOUD_KEYS.IDC_RECORDS, records, "cc_idc_records_v3");
     }
   }, [records]);
 

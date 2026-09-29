@@ -13,6 +13,7 @@ import { DEFAULT_MEMBER_METADATA, parseMemberRecord } from "@/utils/memberProfil
 import ModernSelect, { ModernSelectOption } from "@/components/ModernSelect";
 import ModernDatePicker from "@/components/ModernDatePicker";
 import ExportDataDropdown from "./ExportDataDropdown";
+import { getCloudJson, setCloudJson, CLOUD_KEYS } from "@/utils/cloudSyncService";
 
 // Interface definitions
 export interface MeetingAgendaItem {
@@ -238,10 +239,28 @@ export default function MeetingReportDetail() {
     ];
   });
 
-  // Save meetings whenever changed
+  // Load meetings from Supabase cloud database
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("cc_meeting_tasks_v2", JSON.stringify(meetings));
+    async function loadCloudMeetings() {
+      try {
+        const cloudData = await getCloudJson<MeetingTask[]>(
+          CLOUD_KEYS.MEETING_TASKS,
+          "cc_meeting_tasks_v2"
+        );
+        if (cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
+          setMeetings(cloudData);
+        }
+      } catch (err) {
+        console.warn("Failed to load meetings from cloud:", err);
+      }
+    }
+    loadCloudMeetings();
+  }, []);
+
+  // Save meetings to Supabase cloud + localStorage cache
+  useEffect(() => {
+    if (meetings && meetings.length > 0) {
+      setCloudJson(CLOUD_KEYS.MEETING_TASKS, meetings, "cc_meeting_tasks_v2");
     }
   }, [meetings]);
 

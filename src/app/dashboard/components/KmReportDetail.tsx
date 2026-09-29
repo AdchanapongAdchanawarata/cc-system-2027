@@ -36,6 +36,7 @@ import {
   Check
 } from "lucide-react";
 import ExportDataDropdown from "./ExportDataDropdown";
+import { getCloudJson, setCloudJson, CLOUD_KEYS } from "@/utils/cloudSyncService";
 
 interface AiNewsItem {
   id: string;
@@ -771,24 +772,32 @@ export default function KmReportDetail() {
         setActiveKmUser(savedRole === "admin" ? "Admin" : "จอย RL");
       }
 
-      const savedArticles = localStorage.getItem("cc_km_staff_articles_v2");
-      if (savedArticles) {
-        try {
-          setArticles(JSON.parse(savedArticles));
-        } catch (e) {
-          console.error(e);
+      // Load articles & files from Supabase cloud database
+      getCloudJson<StaffArticle[]>(CLOUD_KEYS.KM_DATA, "cc_km_staff_articles_v2").then(data => {
+        if (data && Array.isArray(data) && data.length > 0) {
+          setArticles(data);
         }
-      }
-      const savedFiles = localStorage.getItem("cc_km_files_v1");
-      if (savedFiles) {
-        try {
-          setFiles(JSON.parse(savedFiles));
-        } catch (e) {
-          console.error(e);
+      });
+      getCloudJson<KmFileItem[]>(CLOUD_KEYS.KM_FILES, "cc_km_files_v1").then(data => {
+        if (data && Array.isArray(data) && data.length > 0) {
+          setFiles(data);
         }
-      }
+      });
     }
   }, []);
+
+  // Save articles and files to Supabase cloud database + localStorage
+  useEffect(() => {
+    if (articles && articles.length > 0) {
+      setCloudJson(CLOUD_KEYS.KM_DATA, articles, "cc_km_staff_articles_v2");
+    }
+  }, [articles]);
+
+  useEffect(() => {
+    if (files && files.length > 0) {
+      setCloudJson(CLOUD_KEYS.KM_FILES, files, "cc_km_files_v1");
+    }
+  }, [files]);
 
   // Close custom dropdowns when clicking outside
   useEffect(() => {

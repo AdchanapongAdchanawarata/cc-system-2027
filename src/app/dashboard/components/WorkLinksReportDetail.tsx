@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Link2,
   ExternalLink,
@@ -23,131 +23,30 @@ import {
   Building2,
   HardDrive,
   Tag,
-  FolderPlus
+  FolderPlus,
+  Cloud,
+  CheckCircle2,
+  FileSpreadsheet,
+  Upload,
+  RefreshCw,
+  AlertCircle
 } from "lucide-react";
 import CustomSelect, { Option } from "./CustomSelect";
 import ExportDataDropdown from "./ExportDataDropdown";
+import { createClient } from "@/utils/supabase/client";
+import {
+  WorkLinkItem,
+  WORK_LINK_CATEGORIES,
+  DEFAULT_SUBCATEGORIES_BY_CAT,
+  DEFAULT_WORK_LINKS,
+  fetchWorkLinksFromSupabase,
+  saveWorkLinksToSupabase,
+  parsePastedSheetRows,
+  getLocalCachedWorkLinks
+} from "@/utils/workLinksService";
 
-export interface WorkLinkItem {
-  id: string;
-  title: string;
-  category: "ระบบภายใน STeP" | "Google Drive ส่วนกลาง" | "เครื่องมือออกแบบ & AI" | "แพลตฟอร์ม Social Media" | "สื่อมวลชน & PR" | "เอกสาร & แบบฟอร์มทางการ" | string;
-  subCategory?: string;
-  description: string;
-  url: string;
-  targetUnits: string;
-  isPinned: boolean;
-  updatedAt: string;
-}
-
-export const WORK_LINK_CATEGORIES = [
-  "ระบบภายใน STeP",
-  "Google Drive ส่วนกลาง",
-  "เครื่องมือออกแบบ & AI",
-  "แพลตฟอร์ม Social Media",
-  "สื่อมวลชน & PR",
-  "เอกสาร & แบบฟอร์มทางการ"
-] as const;
-
-export const DEFAULT_SUBCATEGORIES_BY_CAT: Record<string, string[]> = {
-  "ระบบภายใน STeP": ["CC Tracking & ISO", "E-Office จองรถ/แจ้งซ่อม", "ระบบสารสนเทศกลาง STeP", "ระบบการเงิน/จัดซื้อ"],
-  "Google Drive ส่วนกลาง": ["Asset Library & ไฟล์กราฟิก", "รูปภาพกิจกรรม & Footage", "เทมเพลตและเอกสารแชร์", "Brand Guideline"],
-  "เครื่องมือออกแบบ & AI": ["Graphic Design Suite", "Generative AI Suite", "Typography & Color", "Motion & Video Suite"],
-  "แพลตฟอร์ม Social Media": ["Official Web & News", "Facebook & Fanpage", "YouTube & Shorts", "TikTok & Reels"],
-  "สื่อมวลชน & PR": ["Media Directory", "Press Release Hub", "สำนักข่าวและนักข่าวท้องถิ่น", "สื่อโทรทัศน์/วิทยุ"],
-  "เอกสาร & แบบฟอร์มทางการ": ["สเปรดชีตแผนงาน", "ISO 9001 & WI", "แบบฟอร์มเบิกจ่าย/งบประมาณ", "ใบเสนอราคา & สัญญา"]
-};
-
-const DEFAULT_WORK_LINKS: WorkLinkItem[] = [
-  {
-    id: "wl-01",
-    title: "Google Drive กลาง: คลังงาน CC & Asset Library 2026",
-    category: "Google Drive ส่วนกลาง",
-    subCategory: "Asset Library & ไฟล์กราฟิก",
-    description: "โฟลเดอร์เก็บไฟล์งานกราฟิก วิดีโอ ภาพถ่ายกิจกรรม และ Brand Assets ทั้งหมดของอุทยานฯ",
-    url: "https://drive.google.com",
-    targetUnits: "ทุกยูนิตในทีม CC",
-    isPinned: true,
-    updatedAt: "2026-09-18"
-  },
-  {
-    id: "wl-02",
-    title: "ระบบ CC System 2027 Control Center & Tracking",
-    category: "ระบบภายใน STeP",
-    subCategory: "CC Tracking & ISO",
-    description: "ระบบบริหารจัดการคำขอรับบริการ ติดตามสถานะบรีฟ รายงาน ISO 9001 และ Meeting Report",
-    url: "https://cc-system-2027.step.cmu.ac.th",
-    targetUnits: "ทุกยูนิตในทีม CC",
-    isPinned: true,
-    updatedAt: "2026-09-20"
-  },
-  {
-    id: "wl-03",
-    title: "Google Sheet: แผนดำเนินงานและลิงก์งานที่เกี่ยวข้อง CC",
-    category: "เอกสาร & แบบฟอร์มทางการ",
-    subCategory: "สเปรดชีตแผนงาน",
-    description: "สเปรดชีตต้นฉบับสำหรับแผนดำเนินงานรายปี ทะเบียนลิงก์งาน และข้อสั่งการ",
-    url: "https://docs.google.com/spreadsheets/d/1IOaPxt095bc7M_xsdUmspY_WHkpOncx3/edit?gid=1479523574#gid=1479523574",
-    targetUnits: "หัวหน้าทีม / ผู้ช่วย",
-    isPinned: true,
-    updatedAt: "2026-09-15"
-  },
-  {
-    id: "wl-04",
-    title: "STeP Official Website & News Room",
-    category: "แพลตฟอร์ม Social Media",
-    subCategory: "Official Web & News",
-    description: "เว็บไซต์หลักอุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ และห้องข่าวประชาสัมพันธ์",
-    url: "https://step.cmu.ac.th",
-    targetUnits: "สื่อสารองค์กร / PR",
-    isPinned: false,
-    updatedAt: "2026-09-10"
-  },
-  {
-    id: "wl-05",
-    title: "Canva Pro & Adobe Creative Cloud STeP Team Account",
-    category: "เครื่องมือออกแบบ & AI",
-    subCategory: "Graphic Design Suite",
-    description: "บัญชีทีมกลางสำหรับสร้างสไลด์ เทมเพลต Social และการเข้าถึงคลังฟอนต์ลิขสิทธิ์",
-    url: "https://www.canva.com",
-    targetUnits: "งานออกแบบ / ผลิตสื่อ",
-    isPinned: false,
-    updatedAt: "2026-09-05"
-  },
-  {
-    id: "wl-06",
-    title: "ฐานข้อมูลเครือข่ายสื่อมวลชนและสำนักข่าวภาคเหนือ (Media Directory)",
-    category: "สื่อมวลชน & PR",
-    subCategory: "Media Directory",
-    description: "รายชื่อผู้สื่อข่าว บรรณาธิการ โทรทัศน์ วิทยุ และเพจข่าวท้องถิ่นพร้อมเบอร์ประสานงาน",
-    url: "https://drive.google.com",
-    targetUnits: "ยูนิตสื่อสารองค์กร",
-    isPinned: false,
-    updatedAt: "2026-09-12"
-  },
-  {
-    id: "wl-07",
-    title: "Midjourney & Runway Gen-3 Production Suite",
-    category: "เครื่องมือออกแบบ & AI",
-    subCategory: "Generative AI Suite",
-    description: "เครื่องมือสร้างภาพ AI และวิดีโอโมชันสำหรับจำลองบรรจุภัณฑ์และคอนเซ็ปต์งานสร้างสรรค์",
-    url: "https://runwayml.com",
-    targetUnits: "งานออกแบบ / ผลิตสื่อ",
-    isPinned: false,
-    updatedAt: "2026-09-08"
-  },
-  {
-    id: "wl-08",
-    title: "ระบบแจ้งซ่อมและจองยานพาหนะ STeP E-Office",
-    category: "ระบบภายใน STeP",
-    subCategory: "E-Office จองรถ/แจ้งซ่อม",
-    description: "ระบบบริการภายในอุทยานฯ สำหรับจองรถตู้ไปถ่ายทำภายนอก และขอรับบริการอาคาร",
-    url: "https://eoffice.step.cmu.ac.th",
-    targetUnits: "ทุกยูนิต",
-    isPinned: false,
-    updatedAt: "2026-08-30"
-  }
-];
+export type { WorkLinkItem };
+export { WORK_LINK_CATEGORIES, DEFAULT_SUBCATEGORIES_BY_CAT };
 
 export default function WorkLinksReportDetail() {
   const [links, setLinks] = useState<WorkLinkItem[]>(DEFAULT_WORK_LINKS);
@@ -160,7 +59,10 @@ export default function WorkLinksReportDetail() {
   const [editCustomSubCategoryInput, setEditCustomSubCategoryInput] = useState("");
 
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [copySuccessId, setCopySuccessId] = useState<string | null>(null);
+  const [cloudSyncStatus, setCloudSyncStatus] = useState<"synced" | "saving" | "loading" | "error">("loading");
+  const [syncToast, setSyncToast] = useState<string | null>(null);
 
   // New Link State
   const [newTitle, setNewTitle] = useState("");
@@ -173,24 +75,83 @@ export default function WorkLinksReportDetail() {
   const [newUnits, setNewUnits] = useState("ทุกยูนิตในทีม CC");
   const [newPinned, setNewPinned] = useState(false);
 
-  // Load from LocalStorage
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("cc_work_links_v2");
-      if (saved) {
-        try {
-          setLinks(JSON.parse(saved));
-        } catch (e) {
-          console.error(e);
-        }
+  // Import State
+  const [importText, setImportText] = useState("");
+  const [importMode, setImportMode] = useState<"append" | "replace">("append");
+  const [parsedImportItems, setParsedImportItems] = useState<WorkLinkItem[]>([]);
+
+  const triggerToast = (msg: string) => {
+    setSyncToast(msg);
+    setTimeout(() => setSyncToast(null), 3500);
+  };
+
+  // 1. Initial Load: Fetch from Supabase Cloud
+  const loadLinksFromCloud = useCallback(async () => {
+    setCloudSyncStatus("loading");
+    try {
+      const { links: cloudLinks, source } = await fetchWorkLinksFromSupabase();
+      if (cloudLinks && cloudLinks.length > 0) {
+        setLinks(cloudLinks);
       }
+      setCloudSyncStatus("synced");
+      if (source === "cloud") {
+        console.log(`[WorkLinks] Loaded ${cloudLinks.length} links from Supabase cloud`);
+      }
+    } catch (e) {
+      console.error("Error loading links:", e);
+      setCloudSyncStatus("error");
     }
   }, []);
 
-  const saveLinks = (items: WorkLinkItem[]) => {
+  useEffect(() => {
+    loadLinksFromCloud();
+
+    // 2. Real-time Subscription to Supabase okr_settings changes
+    const supabase = createClient();
+    const channel = supabase
+      .channel("work_links_realtime_sync")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "okr_settings",
+          filter: "description=eq.CONFIG_WORK_LINKS_JSON"
+        },
+        (payload: any) => {
+          if (payload.new && payload.new.target_value) {
+            try {
+              const freshLinks = JSON.parse(payload.new.target_value);
+              if (Array.isArray(freshLinks)) {
+                setLinks(freshLinks);
+                setCloudSyncStatus("synced");
+                triggerToast("⚡ ข้อมูลลิงก์อัปเดตแบบเรียลไทม์จากระบบคลาวด์แล้ว");
+              }
+            } catch (err) {
+              console.warn("Failed to parse realtime links update:", err);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadLinksFromCloud]);
+
+  // Save links permanently to Cloud + LocalCache
+  const saveLinks = async (items: WorkLinkItem[], customSuccessMsg?: string) => {
     setLinks(items);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("cc_work_links_v2", JSON.stringify(items));
+    setCloudSyncStatus("saving");
+
+    const res = await saveWorkLinksToSupabase(items);
+    if (res.success) {
+      setCloudSyncStatus("synced");
+      triggerToast(customSuccessMsg || "✅ บันทึกขึ้นระบบคลาวด์ Supabase สำเร็จ");
+    } else {
+      setCloudSyncStatus("error");
+      triggerToast(`⚠️ บันทึกลงแคชในเครื่องแล้ว (คลาวด์แจ้งเตือน: ${res.error || "ขัดข้อง"})`);
     }
   };
 
@@ -261,15 +222,15 @@ export default function WorkLinksReportDetail() {
     };
 
     const updated = links.map(l => (l.id === editForm.id ? updatedItem : l));
-    saveLinks(updated);
+    saveLinks(updated, "✅ แก้ไขและบันทึกลิงก์ขึ้นระบบคลาวด์แล้ว");
     setEditingId(null);
     setEditForm(null);
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("ต้องการลบลิงก์การทำงานนี้ใช่หรือไม่?")) {
+    if (confirm("ต้องการลบลิงก์การทำงานนี้ออกจากระบบคลาวด์ใช่หรือไม่?")) {
       const updated = links.filter(l => l.id !== id);
-      saveLinks(updated);
+      saveLinks(updated, "🗑️ ลบลิงก์ออกจากระบบคลาวด์เรียบร้อยแล้ว");
     }
   };
 
@@ -280,8 +241,8 @@ export default function WorkLinksReportDetail() {
   };
 
   const handleResetToDefault = () => {
-    if (confirm("ต้องการรีเซ็ตคลังลิงก์เป็นค่าเริ่มต้นใช่หรือไม่?")) {
-      saveLinks(DEFAULT_WORK_LINKS);
+    if (confirm("ต้องการรีเซ็ตคลังลิงก์เป็นค่าเริ่มต้นระบบใช่หรือไม่?")) {
+      saveLinks(DEFAULT_WORK_LINKS, "🔄 รีเซ็ตคลังลิงก์เป็นค่าเริ่มต้นสำเร็จ");
     }
   };
 
@@ -309,13 +270,39 @@ export default function WorkLinksReportDetail() {
     };
 
     const updated = [newItem, ...links];
-    saveLinks(updated);
+    saveLinks(updated, `✅ เพิ่มลิงก์ "${newItem.title}" เข้าสู่ระบบคลาวด์สำเร็จ`);
     setShowAddModal(false);
     setNewTitle("");
     setNewDescription("");
     setNewUrl("https://");
     setIsCustomSubCategory(false);
     setCustomSubCategoryInput("");
+  };
+
+  // Handle Google Sheet / CSV Paste & Import
+  const handleImportTextChange = (text: string) => {
+    setImportText(text);
+    const parsed = parsePastedSheetRows(text);
+    setParsedImportItems(parsed);
+  };
+
+  const handleExecuteImport = () => {
+    if (parsedImportItems.length === 0) {
+      alert("ไม่พบรายการลิงก์ที่สามารถนำเข้าได้ กรุณาตรวจสอบข้อมูลที่คัดลอกมา");
+      return;
+    }
+
+    let finalLinks: WorkLinkItem[] = [];
+    if (importMode === "append") {
+      finalLinks = [...parsedImportItems, ...links];
+    } else {
+      finalLinks = [...parsedImportItems];
+    }
+
+    saveLinks(finalLinks, `🎉 นำเข้าข้อมูลสำเร็จ ${parsedImportItems.length} รายการ สู่ระบบคลาวด์`);
+    setShowImportModal(false);
+    setImportText("");
+    setParsedImportItems([]);
   };
 
   // Helper to build Subcategory Options for Dropdowns
@@ -357,64 +344,94 @@ export default function WorkLinksReportDetail() {
     )
   }));
 
-  // Export to CSV
-  const handleExportCsv = () => {
-    const lines: string[] = [];
-    lines.push(`\uFEFF"ทะเบียนลิ้งค์อื่นๆ ที่เกี่ยวข้อง ทีม CC (Related Quick Links 2026)"`);
-    lines.push(`"อ้างอิงเอกสาร","Google Sheet ทะเบียนลิงก์การทำงาน CC (https://docs.google.com/spreadsheets/d/1IOaPxt095bc7M_xsdUmspY_WHkpOncx3/edit?gid=1479523574#gid=1479523574)"`);
-    lines.push(`"วันที่ส่งออกข้อมูล",${new Date().toLocaleDateString("th-TH", { day: "numeric", month: "long", year: "numeric" })}`);
-    lines.push("");
-    lines.push('"ลำดับ","ชื่อระบบ / ทรัพยากร","หมวดหมู่หลัก","หมวดย่อย","คำอธิบายการใช้งาน","URL ลิงก์","ยูนิตผู้ใช้งาน","ปักหมุด","วันที่อัปเดต"');
-
-    links.forEach((l, idx) => {
-      lines.push(`${idx + 1},"${l.title.replace(/"/g, '""')}","${l.category}","${(l.subCategory || "").replace(/"/g, '""')}","${l.description.replace(/"/g, '""')}","${l.url}","${l.targetUnits}","${l.isPinned ? "ปักหมุด" : "-"}","${l.updatedAt}"`);
-    });
-
-    const blob = new Blob([lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `CC_Related_Quick_Links_${new Date().toISOString().split("T")[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
   return (
     <div className="space-y-6 animate-premium-fade">
+      {/* Toast Notification */}
+      {syncToast && (
+        <div className="fixed top-4 right-4 z-[99999] bg-zinc-900 text-white text-xs font-semibold px-4 py-2.5 rounded-full shadow-lg border border-zinc-700 flex items-center gap-2 animate-bounce">
+          <span>{syncToast}</span>
+        </div>
+      )}
+
       {/* Top Banner */}
       <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200 shadow-2xs space-y-5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-50 text-cyan-800 text-xs font-bold border border-cyan-200">
-              <Link2 size={14} className="text-cyan-600" />
-              <span>CC Work Resource &amp; External Portal Directory</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-50 text-cyan-800 text-xs font-bold border border-cyan-200">
+                <Link2 size={14} className="text-cyan-600" />
+                <span>CC Work Resource &amp; External Portal Directory</span>
+              </div>
+
+              {/* Cloud Sync Status Badge */}
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-200">
+                {cloudSyncStatus === "saving" ? (
+                  <>
+                    <RefreshCw size={12} className="animate-spin text-emerald-600" />
+                    <span>กำลังบันทึกสู่ Supabase...</span>
+                  </>
+                ) : cloudSyncStatus === "loading" ? (
+                  <>
+                    <RefreshCw size={12} className="animate-spin text-emerald-600" />
+                    <span>กำลังดึงข้อมูลคลาวด์...</span>
+                  </>
+                ) : cloudSyncStatus === "error" ? (
+                  <>
+                    <AlertCircle size={12} className="text-amber-600" />
+                    <span>ทำงานในโหมดออฟไลน์</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={12} className="text-emerald-600" />
+                    <span>ซิงค์คลาวด์ Supabase แล้ว ({links.length} รายการ)</span>
+                  </>
+                )}
+              </div>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight pt-1">
               ลิ้งค์อื่นๆ ที่เกี่ยวข้อง (Related Quick Links &amp; Resources)
             </h1>
             <p className="text-xs sm:text-sm text-slate-500">
-              ศูนย์รวมลิ้งค์เครื่องมือทำงาน คลาวด์ไดรฟ์ส่วนกลาง แพลตฟอร์มโซเชียล และแบบฟอร์มทางการ พร้อมระบบจัดหมวดหมู่และหมวดย่อย ให้อ่านง่ายและเข้าถึงรวดเร็ว
+              ศูนย์รวมลิ้งค์เครื่องมือทำงาน คลาวด์ไดรฟ์ส่วนกลาง แพลตฟอร์มโซเชียล และแบบฟอร์มทางการ บันทึกและซิงค์ผ่านคลาวด์อัตโนมัติ เข้าถึงได้จากทุกอุปกรณ์
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+          <div className="flex items-center gap-2 flex-wrap shrink-0">
+            {/* Direct Google Sheet Link */}
             <a
               href="https://docs.google.com/spreadsheets/d/1IOaPxt095bc7M_xsdUmspY_WHkpOncx3/edit?gid=1479523574#gid=1479523574"
               target="_blank"
               rel="noopener noreferrer"
               className="px-3.5 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-full inline-flex items-center gap-1.5 transition-all shadow-2xs"
-              title="เปิด Google Sheet ต้นทาง"
+              title="เปิด Google Sheet ต้นทางสำหรับจัดการลิงก์"
             >
               <span>เปิด Google Sheet</span>
               <ExternalLink size={12} />
             </a>
 
+            {/* Smart Import Button */}
+            <button
+              onClick={() => {
+                setImportText("");
+                setParsedImportItems([]);
+                setShowImportModal(true);
+              }}
+              className="px-3.5 py-2 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-full inline-flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer active:scale-95"
+              title="คัดลอกจาก Google Sheet มาวางเพื่อเพิ่มหลายรายการพร้อมกัน"
+            >
+              <FileSpreadsheet size={13} className="text-emerald-600" />
+              <span>นำเข้าจาก Sheet / CSV</span>
+            </button>
+
+            {/* Export Dropdown */}
             <ExportDataDropdown
               reportId="work-links"
               reportTitle="ทำเนียบลิงก์งาน (Work Links)"
               buttonText="Export Data"
             />
 
+            {/* Manual Add Button */}
             <button
               onClick={() => {
                 setShowAddModal(true);
@@ -450,60 +467,79 @@ export default function WorkLinksReportDetail() {
                 {cat === "ALL" ? "ทั้งหมดทุกหมวด" : cat}
               </button>
             ))}
+          </div>
 
-            {/* SubCategory Filter Dropdown */}
-            {availableSubCategories.length > 0 && (
-              <div className="flex items-center gap-1.5 ml-0 sm:ml-2">
-                <span className="text-[11px] font-bold text-slate-500 whitespace-nowrap flex items-center gap-1">
-                  <Tag size={11} className="text-amber-600" />
-                  <span>หมวดย่อย:</span>
-                </span>
-                <CustomSelect
-                  value={selectedSubCategory}
-                  onChange={(val) => setSelectedSubCategory(val)}
-                  options={[
-                    { value: "ALL", label: "ทุกหมวดย่อย" },
-                    ...availableSubCategories.map(sub => ({
-                      value: sub,
-                      label: `# ${sub}`
-                    }))
-                  ]}
-                  triggerClassName="h-8 px-3 bg-amber-50 hover:bg-amber-100/80 border border-amber-200 rounded-full font-bold text-amber-900 text-xs shadow-2xs transition-all flex items-center gap-1.5 text-left"
-                  dropdownClassName="w-60"
-                />
-              </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 text-xs text-slate-600 font-bold">
+              <Tag size={13} className="text-slate-500" />
+              <span>หมวดย่อย:</span>
+            </div>
+            <CustomSelect
+              value={selectedSubCategory}
+              onChange={val => setSelectedSubCategory(val)}
+              options={[
+                { value: "ALL", label: "ทุกหมวดย่อย" },
+                ...availableSubCategories.map(s => ({ value: s, label: s }))
+              ]}
+              triggerClassName="h-[34px] px-3 bg-slate-50 border border-slate-200 rounded-full font-bold text-xs text-slate-800 shadow-2xs"
+              dropdownClassName="w-56"
+            />
+          </div>
+        </div>
+
+        {/* Search Bar & Reset Default Button */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+          <div className="relative w-full sm:w-80">
+            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="ค้นหาชื่อระบบ, URL, หมวดย่อย..."
+              className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-full text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-orange-500 focus:bg-white shadow-2xs transition-all"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X size={12} />
+              </button>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="ค้นหาชื่อระบบ, URL, หมวดย่อย..."
-                className="pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-full focus:outline-none focus:border-orange-500 w-60 sm:w-64"
-              />
-            </div>
-
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            <button
+              onClick={loadLinksFromCloud}
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-full transition-all cursor-pointer"
+              title="ดึงข้อมูลล่าสุดจาก Supabase Cloud"
+            >
+              <RefreshCw size={11} className={cloudSyncStatus === "loading" ? "animate-spin" : ""} />
+              <span>รีเฟรชคลาวด์</span>
+            </button>
             <button
               onClick={handleResetToDefault}
-              title="รีเซ็ตคลังลิงก์เป็นค่าเริ่มต้น"
-              className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-all cursor-pointer"
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-bold text-slate-500 hover:text-red-700 bg-slate-50 hover:bg-red-50 rounded-full transition-all cursor-pointer"
+              title="รีเซ็ตกลับเป็น 8 รายการตั้งต้นของระบบ"
             >
-              <RotateCcw size={14} />
+              <RotateCcw size={11} />
+              <span>รีเซ็ตค่าเริ่มต้น</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Links List View */}
-      <div className="space-y-3">
+      {/* Main Links List Cards */}
+      <div className="space-y-3.5">
         {filteredLinks.length === 0 ? (
-          <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 text-slate-400">
-            <Link2 size={36} className="mx-auto mb-2 text-slate-300" />
-            <p className="text-sm font-medium">ไม่พบลิ้งค์ที่ตรงกับเงื่อนไขการค้นหา</p>
+          <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 space-y-3">
+            <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto">
+              <Search size={22} />
+            </div>
+            <h3 className="text-base font-bold text-slate-800">ไม่พบลิงก์การทำงานตามเงื่อนไขที่เลือก</h3>
+            <p className="text-xs text-slate-500">
+              ลองเปลี่ยนหมวดหมู่ หรือเคลียร์คำค้นหา เพื่อดูรายการลิงก์ทั้งหมด
+            </p>
           </div>
         ) : (
           filteredLinks.map((item, index) => {
@@ -511,32 +547,36 @@ export default function WorkLinksReportDetail() {
 
             if (isEditing && editForm) {
               return (
-                <div key={item.id} className="p-5 rounded-2xl bg-amber-50/80 border border-amber-300 shadow-sm space-y-4 animate-premium-fade">
-                  <div className="flex items-center justify-between border-b border-amber-200 pb-2">
-                    <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
-                      <Edit2 size={13} />
-                      แก้ไขข้อมูลลิ้งค์: {item.title}
-                    </span>
-                    <span className="text-[11px] font-mono text-amber-700">ID: {item.id}</span>
+                <div
+                  key={item.id}
+                  className="bg-white p-5 rounded-3xl border-2 border-orange-400 shadow-md space-y-4 animate-premium-fade"
+                >
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <span className="text-xs font-bold text-orange-600">แก้ไขข้อมูลลิงก์การทำงาน</span>
+                    <button
+                      onClick={() => setEditingId(null)}
+                      className="text-slate-400 hover:text-slate-600 text-xs font-bold cursor-pointer"
+                    >
+                      ยกเลิก
+                    </button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                     <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-slate-700">ชื่อระบบ / หัวข้อ:</label>
+                      <label className="font-bold text-slate-700">ชื่อระบบ / โฟลเดอร์:</label>
                       <input
                         type="text"
                         value={editForm.title}
                         onChange={e => setEditForm({ ...editForm, title: e.target.value })}
-                        placeholder="ชื่อระบบ"
-                        className="w-full p-2.5 border border-amber-300 rounded-xl text-xs font-bold bg-white focus:outline-none focus:border-amber-500 shadow-2xs"
+                        className="w-full p-2.5 rounded-xl border border-slate-200 font-medium text-slate-900 focus:outline-none focus:border-orange-500 shadow-2xs"
                       />
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-slate-700">หมวดหมู่หลัก:</label>
+                      <label className="font-bold text-slate-700">หมวดหมู่หลัก:</label>
                       <CustomSelect
                         value={editForm.category}
-                        onChange={(val) => {
+                        onChange={val => {
                           const presets = DEFAULT_SUBCATEGORIES_BY_CAT[val] || [];
                           setEditForm({
                             ...editForm,
@@ -546,98 +586,79 @@ export default function WorkLinksReportDetail() {
                           setEditIsCustomSubCategory(false);
                         }}
                         options={categoryDropdownOptions}
-                        triggerClassName="w-full h-10 px-3 bg-white border border-amber-300 rounded-xl font-bold text-slate-900 text-xs shadow-2xs text-left"
+                        triggerClassName="w-full h-[40px] px-3.5 bg-white border border-slate-200 rounded-xl font-semibold text-slate-900 text-xs shadow-2xs text-left"
                         dropdownClassName="w-full"
                       />
                     </div>
-                  </div>
 
-                  {/* Subcategory Selector & Write-in */}
-                  <div className="p-3 bg-white/90 rounded-xl border border-amber-200/80 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
-                        <Tag size={12} className="text-amber-600" />
-                        <span>หมวดย่อย (Subcategory):</span>
-                      </label>
-                      <span className="text-[10px] text-slate-500">เลือกจากรายการ หรือ เพิ่มหมวดย่อยใหม่</span>
-                    </div>
-
-                    <CustomSelect
-                      value={editIsCustomSubCategory ? "__custom__" : (editForm.subCategory || "")}
-                      onChange={(val) => {
-                        if (val === "__custom__") {
-                          setEditIsCustomSubCategory(true);
-                        } else {
-                          setEditIsCustomSubCategory(false);
-                          setEditForm({ ...editForm, subCategory: val });
-                        }
-                      }}
-                      options={getSubCategoryOptions(editForm.category)}
-                      triggerClassName="w-full h-10 px-3 bg-slate-50 hover:bg-white border border-slate-300 rounded-xl font-medium text-slate-900 text-xs shadow-2xs text-left"
-                      dropdownClassName="w-full"
-                    />
-
-                    {editIsCustomSubCategory && (
-                      <div className="pt-1 animate-premium-fade space-y-1">
-                        <label className="text-[10.5px] font-bold text-amber-800 flex items-center gap-1">
-                          <Plus size={11} className="text-amber-600" />
-                          พิมพ์ชื่อหมวดย่อยใหม่ที่ต้องการ:
-                        </label>
+                    <div className="space-y-1">
+                      <label className="font-bold text-slate-700">หมวดย่อย:</label>
+                      <CustomSelect
+                        value={editIsCustomSubCategory ? "__custom__" : (editForm.subCategory || "ทั่วไป")}
+                        onChange={val => {
+                          if (val === "__custom__") {
+                            setEditIsCustomSubCategory(true);
+                          } else {
+                            setEditIsCustomSubCategory(false);
+                            setEditForm({ ...editForm, subCategory: val });
+                          }
+                        }}
+                        options={getSubCategoryOptions(editForm.category)}
+                        triggerClassName="w-full h-[40px] px-3.5 bg-white border border-slate-200 rounded-xl font-semibold text-slate-900 text-xs shadow-2xs text-left"
+                        dropdownClassName="w-full"
+                      />
+                      {editIsCustomSubCategory && (
                         <input
                           type="text"
                           value={editCustomSubCategoryInput}
                           onChange={e => setEditCustomSubCategoryInput(e.target.value)}
-                          placeholder="เช่น แคมเปญพิเศษ, โมบายแอป, ภาพถ่ายสต็อก..."
-                          className="w-full p-2 border border-amber-400 rounded-xl text-xs font-semibold bg-amber-50/50 focus:bg-white focus:outline-none focus:border-[#E03131]"
+                          placeholder="พิมพ์หมวดย่อยใหม่..."
+                          className="w-full mt-1.5 p-2 rounded-xl border border-amber-300 font-semibold text-xs text-slate-900 focus:outline-none focus:border-[#E03131] shadow-2xs"
                         />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-slate-700">URL ลิ้งค์:</label>
-                      <input
-                        type="text"
-                        value={editForm.url}
-                        onChange={e => setEditForm({ ...editForm, url: e.target.value })}
-                        placeholder="https://..."
-                        className="w-full p-2 border border-amber-300 rounded-xl text-xs font-mono bg-white focus:outline-none focus:border-amber-500"
-                      />
+                      )}
                     </div>
+
                     <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-slate-700">ยูนิตผู้ใช้งาน:</label>
+                      <label className="font-bold text-slate-700">ยูนิตผู้ใช้งาน:</label>
                       <input
                         type="text"
                         value={editForm.targetUnits}
                         onChange={e => setEditForm({ ...editForm, targetUnits: e.target.value })}
-                        placeholder="เช่น ทุกยูนิตในทีม CC"
-                        className="w-full p-2 border border-amber-300 rounded-xl text-xs bg-white focus:outline-none focus:border-amber-500"
+                        className="w-full p-2.5 rounded-xl border border-slate-200 font-medium text-slate-900 focus:outline-none focus:border-orange-500 shadow-2xs"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2 space-y-1">
+                      <label className="font-bold text-slate-700">URL ลิ้งก์ปลายทาง:</label>
+                      <input
+                        type="url"
+                        value={editForm.url}
+                        onChange={e => setEditForm({ ...editForm, url: e.target.value })}
+                        className="w-full p-2.5 rounded-xl border border-slate-200 font-mono text-slate-900 focus:outline-none focus:border-orange-500 shadow-2xs"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2 space-y-1">
+                      <label className="font-bold text-slate-700">คำอธิบายการใช้งาน:</label>
+                      <textarea
+                        rows={2}
+                        value={editForm.description}
+                        onChange={e => setEditForm({ ...editForm, description: e.target.value })}
+                        className="w-full p-2.5 rounded-xl border border-slate-200 font-medium text-slate-900 focus:outline-none focus:border-orange-500 shadow-2xs"
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-700">คำอธิบายรายละเอียด:</label>
-                    <textarea
-                      rows={2}
-                      value={editForm.description}
-                      onChange={e => setEditForm({ ...editForm, description: e.target.value })}
-                      placeholder="คำอธิบายการใช้งาน..."
-                      className="w-full p-2 border border-amber-300 rounded-xl text-xs bg-white focus:outline-none focus:border-amber-500"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-amber-200/60">
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
                     <button
-                      onClick={() => { setEditingId(null); setEditForm(null); }}
-                      className="px-4 py-2 text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 rounded-full cursor-pointer transition-all"
+                      onClick={() => setEditingId(null)}
+                      className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-full transition-all cursor-pointer"
                     >
                       ยกเลิก
                     </button>
                     <button
                       onClick={handleSaveEdit}
-                      className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-full cursor-pointer transition-all shadow-xs"
+                      className="px-5 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-full transition-all shadow-xs cursor-pointer active:scale-95"
                     >
                       บันทึกการแก้ไข
                     </button>
@@ -649,128 +670,126 @@ export default function WorkLinksReportDetail() {
             return (
               <div
                 key={item.id}
-                className={`p-4 sm:p-5 rounded-2xl bg-white border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xs hover:shadow-md hover:border-slate-300 ${
+                className={`bg-white p-5 sm:p-6 rounded-3xl border transition-all duration-200 hover:shadow-md ${
                   item.isPinned
-                    ? "ring-2 ring-orange-400/50 border-orange-300 bg-gradient-to-r from-orange-50/20 via-white to-white"
-                    : "border-slate-200/90"
+                    ? "border-orange-200 bg-gradient-to-r from-orange-50/20 via-white to-white"
+                    : "border-slate-200/90 shadow-2xs"
                 }`}
               >
-                {/* Left Info Section */}
-                <div className="flex items-start gap-3.5 flex-1 min-w-0">
-                  {/* Category Pill / Pin Indicator */}
-                  <div className="shrink-0 flex flex-col items-center gap-1 mt-0.5">
-                    <button
-                      onClick={() => handleTogglePin(item.id)}
-                      title={item.isPinned ? "ถอดหมุด" : "ปักหมุดรายการนี้"}
-                      className={`p-2 rounded-xl transition-all cursor-pointer ${
-                        item.isPinned
-                          ? "text-orange-600 bg-orange-100/90 hover:bg-orange-200"
-                          : "text-slate-300 hover:text-slate-600 hover:bg-slate-100"
-                      }`}
-                    >
-                      <Pin size={15} className={item.isPinned ? "fill-current" : ""} />
-                    </button>
-                    <span className="text-[10px] font-mono text-slate-400">#{index + 1}</span>
-                  </div>
-
-                  <div className="space-y-1.5 min-w-0 flex-1">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                  <div className="space-y-2 flex-1 min-w-0">
+                    {/* Header Badges */}
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                      {item.isPinned && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-800 text-[10.5px] font-black border border-orange-200">
+                          <Pin size={11} className="fill-orange-600 text-orange-600" />
+                          <span>ปักหมุด</span>
+                        </span>
+                      )}
+
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 text-[11px] font-bold border border-slate-200">
                         {item.category}
                       </span>
+
                       {item.subCategory && (
-                        <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-50 text-amber-800 border border-amber-200/80 inline-flex items-center gap-1">
-                          <Tag size={10} className="text-amber-600" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 text-[11px] font-bold border border-amber-200">
+                          <Tag size={10} className="text-amber-700" />
                           <span>{item.subCategory}</span>
                         </span>
                       )}
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200/60">
+
+                      <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
                         ยูนิต: {item.targetUnits}
                       </span>
-                      {item.isPinned && (
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-orange-100 text-orange-800">
-                          ปักหมุด
-                        </span>
-                      )}
-                      <span className="text-[11px] text-slate-400 font-mono hidden sm:inline">
+
+                      <span className="text-[10px] text-slate-400 font-medium ml-auto sm:ml-0">
                         อัปเดต: {item.updatedAt}
                       </span>
                     </div>
 
-                    <h3 className="text-sm sm:text-base font-bold text-slate-900 leading-snug">
-                      <a
-                        href={item.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="hover:text-[#E03131] hover:underline transition-colors inline-flex items-center gap-1.5"
-                      >
-                        <span>{item.title}</span>
-                        <ExternalLink size={13} className="text-slate-400 inline shrink-0" />
-                      </a>
-                    </h3>
+                    {/* Title */}
+                    <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                      <span className="text-slate-400 font-mono text-xs font-semibold">#{index + 1}</span>
+                      <span>{item.title}</span>
+                    </h2>
 
-                    <p className="text-xs text-slate-600 leading-relaxed">
-                      {item.description}
-                    </p>
+                    {/* Description */}
+                    {item.description && (
+                      <p className="text-xs text-slate-600 leading-relaxed font-normal">
+                        {item.description}
+                      </p>
+                    )}
 
-                    <div className="pt-0.5">
-                      <a
-                        href={item.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[11px] font-mono text-cyan-700 hover:text-cyan-900 hover:underline truncate max-w-xl block"
-                      >
+                    {/* Link Display URL */}
+                    <div className="pt-1">
+                      <span className="text-[11px] font-mono text-cyan-700 hover:text-cyan-900 break-all select-all">
                         {item.url}
-                      </a>
+                      </span>
                     </div>
                   </div>
-                </div>
 
-                {/* Right Actions Toolbar */}
-                <div className="flex items-center gap-2 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100 justify-end shrink-0">
-                  <button
-                    onClick={() => handleCopy(item.url, item.id)}
-                    title="คัดลอก URL"
-                    className="px-3 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl inline-flex items-center gap-1.5 transition-all cursor-pointer"
-                  >
-                    {copySuccessId === item.id ? (
-                      <>
-                        <Check size={13} className="text-emerald-600" />
-                        <span className="text-emerald-700 font-semibold">คัดลอกแล้ว</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy size={13} />
-                        <span>คัดลอกลิ้งค์</span>
-                      </>
-                    )}
-                  </button>
+                  {/* Right Actions */}
+                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                    <button
+                      onClick={() => handleCopy(item.url, item.id)}
+                      className={`px-3 py-2 rounded-full text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs ${
+                        copySuccessId === item.id
+                          ? "bg-emerald-600 text-white"
+                          : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                      }`}
+                      title="คัดลอก URL ลิงก์"
+                    >
+                      {copySuccessId === item.id ? (
+                        <>
+                          <Check size={13} />
+                          <span>คัดลอกแล้ว</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={13} />
+                          <span>คัดลอกลิ้งค์</span>
+                        </>
+                      )}
+                    </button>
 
-                  <button
-                    onClick={() => handleStartEdit(item)}
-                    title="แก้ไขข้อมูล"
-                    className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
-                  >
-                    <Edit2 size={14} />
-                  </button>
+                    <button
+                      onClick={() => handleTogglePin(item.id)}
+                      className={`p-2 rounded-full transition-all cursor-pointer ${
+                        item.isPinned
+                          ? "bg-orange-100 text-orange-700 hover:bg-orange-200"
+                          : "bg-slate-100 text-slate-400 hover:text-slate-700 hover:bg-slate-200"
+                      }`}
+                      title={item.isPinned ? "ถอนหมุด" : "ปักหมุดให้อยู่ด้านบน"}
+                    >
+                      <Pin size={14} className={item.isPinned ? "fill-orange-600" : ""} />
+                    </button>
 
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    title="ลบลิ้งค์"
-                    className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                    <button
+                      onClick={() => handleStartEdit(item)}
+                      className="p-2 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-all cursor-pointer"
+                      title="แก้ไขข้อมูล"
+                    >
+                      <Edit2 size={14} />
+                    </button>
 
-                  <a
-                    href={item.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="py-2 px-4 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-2xs group active:scale-98"
-                  >
-                    <span>เปิดลิ้งค์</span>
-                    <ExternalLink size={12} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                  </a>
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      className="p-2 rounded-full bg-slate-100 text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all cursor-pointer"
+                      title="ลบรายการนี้"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 rounded-full text-xs font-bold text-white bg-slate-900 hover:bg-black inline-flex items-center gap-1.5 shadow-2xs transition-all active:scale-95"
+                    >
+                      <span>เปิดลิ้งค์</span>
+                      <ExternalLink size={12} />
+                    </a>
+                  </div>
                 </div>
               </div>
             );
@@ -778,22 +797,138 @@ export default function WorkLinksReportDetail() {
         )}
       </div>
 
-      {/* Add New Link Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-premium-fade">
-          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-lg w-full shadow-2xl space-y-5 border border-slate-100">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-red-100 text-[#E03131] flex items-center justify-center">
-                  <Link2 size={16} />
+      {/* Modal: Smart Import from Google Sheet / CSV */}
+      {showImportModal && (
+        <div className="fixed inset-0 z-[10000] bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-premium-fade">
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-200 p-6 sm:p-7 space-y-5 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+                  <FileSpreadsheet size={18} />
                 </div>
-                <h3 className="text-base font-black text-slate-900">
-                  เพิ่มลิ้งค์อื่นๆ ที่เกี่ยวข้อง / ทรัพยากรใหม่
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-slate-900">
+                    นำเข้าลิงก์จาก Google Sheet / CSV
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    วางข้อมูลที่คัดลอกมาจาก Google Sheet เพื่อบันทึกขึ้น Supabase Cloud พร้อมกัน
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="text-slate-400 hover:text-slate-700 text-lg font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div className="p-3.5 bg-amber-50 rounded-2xl border border-amber-200/80 text-amber-900 space-y-1">
+                <span className="font-bold flex items-center gap-1">
+                  <Sparkles size={13} className="text-amber-600" />
+                  วิธีใช้งานง่ายๆ ใน 2 ขั้นตอน:
+                </span>
+                <p className="text-[11.5px] leading-relaxed text-amber-800">
+                  1. เปิด Google Sheet แล้วลากคลุมแถวที่ต้องการ (Column: ชื่อลิงก์, URL, หมวดหมู่ ฯลฯ) แล้วกด <strong>Ctrl+C</strong><br />
+                  2. วางลงในช่องด้านล่าง (<strong>Ctrl+V</strong>) ระบบจะแยกแยะชื่อและ URL ให้โดยอัตโนมัติ
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700">วางแถวข้อมูลจาก Google Sheet ที่นี่:</label>
+                <textarea
+                  rows={6}
+                  value={importText}
+                  onChange={e => handleImportTextChange(e.target.value)}
+                  placeholder={`ตัวอย่างแถวข้อมูลที่ Copy มา:\nGoogle Drive กลาง\thttps://drive.google.com\tGoogle Drive ส่วนกลาง\nCanva Team Account\thttps://canva.com\tเครื่องมือออกแบบ & AI`}
+                  className="w-full p-3 font-mono text-xs rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white shadow-2xs"
+                />
+              </div>
+
+              {/* Mode Selection */}
+              <div className="flex items-center gap-4 pt-1">
+                <span className="font-bold text-slate-700">รูปแบบการนำเข้า:</span>
+                <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="importMode"
+                    value="append"
+                    checked={importMode === "append"}
+                    onChange={() => setImportMode("append")}
+                    className="text-emerald-600"
+                  />
+                  <span>เพิ่มต่อท้ายรายการเดิม (แนะนำ)</span>
+                </label>
+                <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="importMode"
+                    value="replace"
+                    checked={importMode === "replace"}
+                    onChange={() => setImportMode("replace")}
+                    className="text-emerald-600"
+                  />
+                  <span>แทนที่รายการเดิมทั้งหมด</span>
+                </label>
+              </div>
+
+              {/* Parsed Preview */}
+              {parsedImportItems.length > 0 && (
+                <div className="space-y-2 pt-2 border-t border-slate-100">
+                  <span className="font-bold text-emerald-800 flex items-center gap-1">
+                    <CheckCircle2 size={13} className="text-emerald-600" />
+                    ตรวจพบข้อมูลที่พร้อมนำเข้า {parsedImportItems.length} รายการ:
+                  </span>
+                  <div className="max-h-40 overflow-y-auto space-y-1.5 p-2 bg-slate-50 rounded-2xl border border-slate-200">
+                    {parsedImportItems.map((p, i) => (
+                      <div key={i} className="flex items-center justify-between text-[11px] p-1.5 bg-white rounded-xl border border-slate-100">
+                        <span className="font-bold text-slate-800 truncate max-w-xs">{i + 1}. {p.title}</span>
+                        <span className="font-mono text-slate-400 text-[10px] truncate max-w-xs">{p.url}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowImportModal(false)}
+                  className="px-4 py-2 font-bold text-slate-600 hover:bg-slate-100 rounded-full transition-all cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="button"
+                  disabled={parsedImportItems.length === 0}
+                  onClick={handleExecuteImport}
+                  className="px-5 py-2 font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 rounded-full transition-all shadow-xs cursor-pointer active:scale-95"
+                >
+                  นำเข้า {parsedImportItems.length > 0 ? `(${parsedImportItems.length} รายการ)` : ""} ขึ้นคลาวด์
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Add New Work Link */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-[10000] bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-premium-fade">
+          <div className="bg-white w-full max-w-xl rounded-3xl shadow-2xl border border-slate-200 p-6 sm:p-7 space-y-5 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-2xl bg-red-50 text-[#E03131] flex items-center justify-center font-bold">
+                  <Plus size={16} />
+                </div>
+                <h3 className="text-base sm:text-lg font-black text-slate-900">
+                  เพิ่มลิ้งค์ทรัพยากร / ระบบงานใหม่
                 </h3>
               </div>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="text-slate-400 hover:text-slate-700 text-lg font-bold"
+                className="text-slate-400 hover:text-slate-700 text-lg font-bold cursor-pointer"
               >
                 ✕
               </button>
@@ -915,7 +1050,7 @@ export default function WorkLinksReportDetail() {
                   id="pinCheck"
                   checked={newPinned}
                   onChange={e => setNewPinned(e.target.checked)}
-                  className="rounded border-slate-300 text-orange-600 focus:ring-orange-500"
+                  className="rounded border-slate-300 text-orange-600 focus:ring-orange-500 cursor-pointer"
                 />
                 <label htmlFor="pinCheck" className="text-xs text-slate-700 font-bold cursor-pointer">
                   ปักหมุดรายการนี้ (แสดงด้านบนสุด)
@@ -934,7 +1069,7 @@ export default function WorkLinksReportDetail() {
                   type="submit"
                   className="px-5 py-2 text-xs font-bold text-white bg-[#E03131] hover:bg-[#c92a2a] rounded-full transition-all shadow-xs cursor-pointer active:scale-95"
                 >
-                  บันทึกเข้าสู่คลัง
+                  บันทึกเข้าสู่ระบบคลาวด์
                 </button>
               </div>
             </form>

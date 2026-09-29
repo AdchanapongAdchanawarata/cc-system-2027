@@ -117,9 +117,41 @@ a, button, input, select, textarea {
 /* GLOBAL FORM CONTROLS & CONTRAST SAFEGUARDS                                */
 /* ========================================================================= */
 
-/* Ensure form controls always have high contrast */
-input, textarea, select {
+/* Ensure form controls default to crisp dark text in light mode */
+@layer base {
+  input, textarea, select {
+    color: #0f172a;
+  }
+}
+
+/* Fallback base color for inputs when not explicitly styled */
+input:not([class*="text-"]):not([style*="color"]),
+textarea:not([class*="text-"]):not([style*="color"]),
+select:not([class*="text-"]):not([style*="color"]) {
   color: #0f172a;
+}
+
+/* Explicit high-contrast rules for dark inputs / modals (Fixes media_1790659359723) */
+input[class*="text-white"], textarea[class*="text-white"],
+input[class*="text-zinc-100"], textarea[class*="text-zinc-100"],
+input[class*="text-zinc-200"], textarea[class*="text-zinc-200"],
+input[class*="text-slate-100"], textarea[class*="text-slate-100"],
+input[class*="text-slate-200"], textarea[class*="text-slate-200"],
+.bg-zinc-900 input, .bg-zinc-900 textarea,
+.bg-zinc-950 input, .bg-zinc-950 textarea,
+.bg-slate-900 input, .bg-slate-900 textarea,
+.bg-zinc-800 input, .bg-zinc-800 textarea,
+.bg-black input, .bg-black textarea,
+[class*="bg-zinc-900"] input, [class*="bg-zinc-900"] textarea,
+[class*="bg-zinc-950"] input, [class*="bg-zinc-950"] textarea {
+  color: #f8fafc !important;
+}
+
+input[class*="bg-zinc-950"], textarea[class*="bg-zinc-950"],
+input[class*="bg-zinc-900"], textarea[class*="bg-zinc-900"],
+input[class*="bg-zinc-800"], textarea[class*="bg-zinc-800"] {
+  color: #f8fafc !important;
+  caret-color: #f97316 !important;
 }
 
 /* In Dark Mode: dark background with crisp white text for standard inputs */

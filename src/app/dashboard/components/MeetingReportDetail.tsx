@@ -1367,7 +1367,8 @@ function MeetingEmailModal({
                       handleAddExtraRecipient();
                     }
                   }}
-                  className="w-full bg-transparent px-2 py-0.5 text-xs text-white placeholder:text-zinc-600 focus:outline-none"
+                  style={{ color: '#ffffff' }}
+                  className="w-full bg-transparent px-2 py-0.5 text-xs !text-white placeholder:text-zinc-500 focus:outline-none"
                 />
                 <button
                   type="button"
@@ -1419,7 +1420,8 @@ function MeetingEmailModal({
                       handleAddExtraCC();
                     }
                   }}
-                  className="w-full bg-transparent px-2 py-0.5 text-xs text-white placeholder:text-zinc-600 focus:outline-none"
+                  style={{ color: '#ffffff' }}
+                  className="w-full bg-transparent px-2 py-0.5 text-xs !text-white placeholder:text-zinc-500 focus:outline-none"
                 />
                 <button
                   type="button"
@@ -1434,27 +1436,31 @@ function MeetingEmailModal({
 
           {/* Subject */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
+            <label className="text-[11px] font-bold text-zinc-300 uppercase tracking-wider">
               หัวข้ออีเมล (Subject)
             </label>
             <input
               type="text"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="w-full p-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-white font-medium focus:outline-none focus:border-[#f97316]"
+              placeholder="ระบุหัวข้ออีเมล..."
+              style={{ color: '#ffffff', backgroundColor: '#09090b' }}
+              className="w-full p-2.5 bg-zinc-950 border border-zinc-700 rounded-xl !text-white font-medium text-xs sm:text-sm focus:outline-none focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316]"
             />
           </div>
 
           {/* Email Body Content */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
+            <label className="text-[11px] font-bold text-zinc-300 uppercase tracking-wider">
               เนื้อหารายงานการประชุม (สามารถแก้ไขเพิ่มเติมได้)
             </label>
             <textarea
-              rows={10}
+              rows={12}
               value={emailBody}
               onChange={(e) => setEmailBody(e.target.value)}
-              className="w-full p-3 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-200 font-mono text-xs leading-relaxed focus:outline-none focus:border-[#f97316] resize-y"
+              placeholder="พิมพ์หรือแก้ไขเนื้อหารายงานการประชุมที่นี่..."
+              style={{ color: '#f8fafc', backgroundColor: '#09090b', lineHeight: '1.7' }}
+              className="w-full p-3.5 bg-zinc-950 border border-zinc-700 rounded-xl !text-zinc-100 font-mono text-xs sm:text-[13px] leading-relaxed focus:outline-none focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316] resize-y selection:bg-orange-500/40"
             />
           </div>
 

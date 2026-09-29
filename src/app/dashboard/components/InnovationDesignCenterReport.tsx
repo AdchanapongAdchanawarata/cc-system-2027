@@ -1918,16 +1918,25 @@ export default function InnovationDesignCenterReport({
     });
   };
 
-  // Send Email Helper (Opens Mail Client with Prefilled Content)
+  // Send Email Helper (Opens Gmail with Prefilled Content)
   const handleSendEmailSurvey = (record: IDCRecord) => {
     const link = getSurveyLink(record);
     const serviceTitle = record.serviceMain === "consultation" ? "การให้คำปรึกษาด้านนวัตกรรมและการออกแบบ" : "การออกแบบ";
-    const subject = encodeURIComponent(`[แบบประเมิน] ความพึงพอใจในการเข้ารับคำปรึกษา (${record.code}) - ${record.companyName}`);
-    const body = encodeURIComponent(
-      `เรียน คุณ${record.clientName} (${record.companyName})\n\nศูนย์ออกแบบและพัฒนานวัตกรรม (Innovation Design Center) อุทยานวิทยาศาสตร์และเทคโนโลยี ขอขอบพระคุณท่านที่ได้เข้ารับบริการ ${serviceTitle} รหัสงาน: ${record.code} จำนวน ${record.pieceCount} ${record.serviceMain === "consultation" ? "ครั้ง" : "ชิ้น"}\n\nเพื่อให้การให้คำปรึกษามีประโยชน์และตอบโจทย์ผู้ประกอบการสูงสุด ขอความอนุเคราะห์ท่านสละเวลาตอบแบบประเมินความพึงพอใจในการเข้ารับคำปรึกษาผ่านลิงก์ด้านล่างนี้:\n${link}\n\nขอแสดงความนับถือ,\nศูนย์ออกแบบและพัฒนานวัตกรรม (Innovation Design Center)\nอุทยานวิทยาศาสตร์และเทคโนโลยี`
-    );
+    const plainSubject = `[แบบประเมิน] ความพึงพอใจในการเข้ารับคำปรึกษา (${record.code}) - ${record.companyName}`;
+    const plainBody = `เรียน คุณ${record.clientName} (${record.companyName})\n\nศูนย์ออกแบบและพัฒนานวัตกรรม (Innovation Design Center) อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ ขอขอบพระคุณท่านที่ได้เข้ารับบริการ ${serviceTitle} รหัสงาน: ${record.code} จำนวน ${record.pieceCount} ${record.serviceMain === "consultation" ? "ครั้ง" : "ชิ้น"}\n\nเพื่อให้การให้คำปรึกษามีประโยชน์และตอบโจทย์ผู้ประกอบการสูงสุด ขอความอนุเคราะห์ท่านสละเวลาตอบแบบประเมินความพึงพอใจในการเข้ารับคำปรึกษาผ่านลิงก์ด้านล่างนี้:\n👉 ลิงก์แบบประเมิน: ${link}\n\nขอแสดงความนับถือ,\nศูนย์ออกแบบและพัฒนานวัตกรรม (Innovation Design Center)\nอุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่`;
 
-    window.open(`mailto:${record.email}?subject=${subject}&body=${body}`, "_blank");
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        navigator.clipboard.writeText(plainBody);
+      }
+    } catch {}
+
+    const targetTo = encodeURIComponent(record.email || "");
+    const targetSubject = encodeURIComponent(plainSubject);
+    const targetBody = encodeURIComponent(plainBody);
+
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&to=${targetTo}&su=${targetSubject}&body=${targetBody}`;
+    window.open(gmailUrl, "_blank");
 
     // Mark as sent
     setRecords(prev =>

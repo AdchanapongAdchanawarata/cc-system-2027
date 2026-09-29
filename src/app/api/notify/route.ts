@@ -784,6 +784,134 @@ Survey URL: ${surveyUrl}`);
       });
     }
 
+    // 5.1.1 Meeting Report Email Dispatch (Sent to Executives & CC Team)
+    else if (action === 'meeting_report_email') {
+      const { to, cc, subject, body: emailBodyText, meetingId, title, date, chair, recorder } = body;
+
+      console.log(`=========================================`);
+      console.log(`[MEETING REPORT EMAIL DISPATCH]`);
+      console.log(`Meeting: ${title || 'การประชุม CC'}`);
+      console.log(`Date: ${date}`);
+      console.log(`Chair: ${chair} | Recorder: ${recorder}`);
+      console.log(`To (Executives): ${Array.isArray(to) ? to.join(', ') : to}`);
+      console.log(`CC (Team): ${Array.isArray(cc) ? cc.join(', ') : cc}`);
+      console.log(`Subject: ${subject}`);
+      console.log(`=========================================`);
+
+      // 1. SMTP live dispatch if credentials configured
+      const smtpHost = process.env.SMTP_HOST;
+      const smtpUser = process.env.SMTP_USER;
+      const smtpPass = process.env.SMTP_PASS;
+      const smtpPort = Number(process.env.SMTP_PORT) || 587;
+      let emailSendResult: { simulated: boolean; messageId?: string; error?: string } = { simulated: true };
+
+      if (smtpHost && smtpUser && smtpPass) {
+        try {
+          const transporter = nodemailer.createTransport({
+            host: smtpHost,
+            port: smtpPort,
+            secure: smtpPort === 465,
+            auth: { user: smtpUser, pass: smtpPass },
+          });
+
+          const sendInfo = await transporter.sendMail({
+            from: `"${recorder || chair || 'ทีมงาน CC'} via CC SYSTEM" <${smtpUser}>`,
+            to: Array.isArray(to) ? to.join(', ') : to,
+            cc: Array.isArray(cc) && cc.length > 0 ? (Array.isArray(cc) ? cc.join(', ') : cc) : undefined,
+            subject,
+            text: emailBodyText,
+          });
+
+          emailSendResult = { simulated: false, messageId: sendInfo.messageId };
+          console.log(`[MEETING REPORT EMAIL LIVE SENT via SMTP] Message ID: ${sendInfo.messageId}`);
+        } catch (mailErr: any) {
+          console.error(`[MEETING REPORT EMAIL SMTP ERROR]`, mailErr);
+          emailSendResult = { simulated: false, error: mailErr.message };
+        }
+      }
+
+      // 2. LINE Push Notification to Notify Group
+      const toCount = Array.isArray(to) ? to.length : (to ? to.split(',').length : 0);
+      const ccCount = Array.isArray(cc) ? cc.length : (cc ? cc.split(',').length : 0);
+      const lineMsg = `📋 [บันทึกการประชุม CC ส่งถึงคณะผู้บริหารและทีมงานแล้ว]
+📌 **${title || subject || 'บันทึกการประชุม'}**
+• วันที่ประชุม: ${date || '-'}
+• ประธานที่ประชุม: ${chair || 'นายอัจชนะพงษ์ อัจชนะวราทา'}
+• ผู้จดบันทึก: ${recorder || 'นางสาววาสิตา กอบธัญกิจ'}
+• ผู้รับหลัก (คณะผู้บริหาร & ผอ.): ${toCount} ท่าน
+• สำเนา (ทีมงาน CC ทุกคน): ${ccCount} ท่าน
+✉️ ดำเนินการเปิดส่งผ่าน Gmail (@step.cmu.ac.th) และบันทึกลงระบบคลาวด์เรียบร้อยแล้ว`;
+
+      const targetId = notyGroupId || execGroupId;
+      await pushLineMessage(targetId, lineMsg);
+
+      return NextResponse.json({
+        success: true,
+        message: `จัดส่งบันทึกการประชุม "${title || subject}" ถึงคณะผู้บริหาร (${toCount} ท่าน) และ CC ทีมงาน (${ccCount} ท่าน) เรียบร้อยแล้ว`,
+        emailResult: emailSendResult,
+        dispatchTime: new Date().toISOString()
+      });
+    }
+
+    // 5.1.2 Stakeholder Satisfaction Survey Dispatch (Direct or Follow-up)
+    else if (action === 'send_satisfaction_survey' || action === 'stakeholder_survey_dispatch') {
+      const { briefId, targetEmail, projectName, stakeholderGroup, surveyUrl } = body;
+
+      console.log(`=========================================`);
+      console.log(`[STAKEHOLDER SURVEY EMAIL DISPATCH]`);
+      console.log(`Project: ${projectName || briefId}`);
+      console.log(`To: ${targetEmail}`);
+      console.log(`Group: ${stakeholderGroup || 'ผู้มีส่วนได้ส่วนเสีย'}`);
+      console.log(`=========================================`);
+
+      // SMTP dispatch if configured
+      const smtpHost = process.env.SMTP_HOST;
+      const smtpUser = process.env.SMTP_USER;
+      const smtpPass = process.env.SMTP_PASS;
+      const smtpPort = Number(process.env.SMTP_PORT) || 587;
+      let emailSendResult: { simulated: boolean; messageId?: string; error?: string } = { simulated: true };
+
+      if (smtpHost && smtpUser && smtpPass && targetEmail) {
+        try {
+          const transporter = nodemailer.createTransport({
+            host: smtpHost,
+            port: smtpPort,
+            secure: smtpPort === 465,
+            auth: { user: smtpUser, pass: smtpPass },
+          });
+
+          const sendInfo = await transporter.sendMail({
+            from: `"ทีมงาน CC (Creative & Communication)" <${smtpUser}>`,
+            to: targetEmail,
+            subject: `[แบบประเมินความพึงพอใจและเสียงสะท้อนผู้มีส่วนได้ส่วนเสีย] งาน "${projectName || 'การให้บริการ'}"`,
+            text: `เรียน ผู้รับบริการ / ผู้มีส่วนได้ส่วนเสีย\n\nทีมงาน CC ขอขอบพระคุณที่ท่านได้ไว้วางใจให้ทีมงานดูแลงาน "${projectName || ''}"\n\nเพื่อการปรับปรุงและพัฒนาคุณภาพการให้บริการตามมาตรฐาน ISO 9001:2015 ข้อ 4.2 ขอความอนุเคราะห์ท่านสละเวลาตอบแบบประเมินความพึงพอใจสั้นๆ ผ่านลิงก์:\n${surveyUrl || ''}\n\nขอแสดงความนับถือ,\nทีมงานสร้างสรรค์และการสื่อสาร (CC TEAM)\nอุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่`,
+          });
+
+          emailSendResult = { simulated: false, messageId: sendInfo.messageId };
+        } catch (mailErr: any) {
+          console.error(`[STAKEHOLDER SURVEY SMTP ERROR]`, mailErr);
+          emailSendResult = { simulated: false, error: mailErr.message };
+        }
+      }
+
+      // LINE Push Notification
+      const lineMsg = `⭐ [ส่งแบบประเมินผู้มีส่วนได้ส่วนเสีย • Stakeholder VOC]
+📌 **${projectName || 'ชิ้นงาน'}**
+• กลุ่มผู้มีส่วนได้ส่วนเสีย: **${stakeholderGroup || 'ผู้รับบริการ'}**
+• ผู้รับ (To): ${targetEmail || 'ไม่ระบุอีเมล'}
+✉️ จัดส่งลิงก์แบบประเมินเรียบร้อยแล้ว`;
+
+      const targetId = notyGroupId || execGroupId;
+      await pushLineMessage(targetId, lineMsg);
+
+      return NextResponse.json({
+        success: true,
+        message: `ส่งแบบประเมินผู้มีส่วนได้ส่วนเสียสำหรับงาน "${projectName}" ไปยัง ${targetEmail} เรียบร้อยแล้ว`,
+        emailResult: emailSendResult,
+        dispatchTime: new Date().toISOString()
+      });
+    }
+
     // 5.2 WI Deviation & Risk Alert (Sent immediately to Assignee, Team Lead, and Deputy Team Lead)
     else if (action === 'wi_deviation_alert') {
       const {

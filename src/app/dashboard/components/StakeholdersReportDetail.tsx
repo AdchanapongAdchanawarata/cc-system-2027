@@ -619,11 +619,14 @@ export default function StakeholdersReportDetail() {
     setShowDispatchModal(true);
   };
 
-  const handleConfirmDispatch = async (method: "email" | "link") => {
+  const handleConfirmDispatch = async (method: "email" | "link" | "mailto") => {
     if (!selectedBriefForDispatch) return;
 
     const taskCode = getTaskCode(selectedBriefForDispatch);
     const feedbackUrl = getFeedbackUrl(selectedBriefForDispatch, selectedGroup);
+
+    const emailSubject = `[แบบประเมินความพึงพอใจและเสียงสะท้อนผู้มีส่วนได้ส่วนเสีย] งาน "${selectedBriefForDispatch.project_name || 'ชิ้นงาน'}" (${taskCode})`;
+    const emailBody = `เรียน ผู้รับบริการ / ผู้มีส่วนได้ส่วนเสีย (${selectedGroup})\n\nทีมงานสร้างสรรค์และการสื่อสาร (CC TEAM) อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ ขอขอบพระคุณที่ท่านได้ร่วมงานและไว้วางใจให้ทีมงานดูแลผลงาน "${selectedBriefForDispatch.project_name || ''}" (${taskCode})\n\nเพื่อการรักษามาตรฐานและพัฒนาคุณภาพการให้บริการตามมาตรฐานสากล ISO 9001:2015 (ข้อ 4.2 ความต้องการและความคาดหวังของผู้มีส่วนได้ส่วนเสีย) ขอความอนุเคราะห์ท่านสละเวลาตอบแบบประเมินความพึงพอใจสั้นๆ ผ่านลิงก์ด้านล่างนี้:\n👉 ลิงก์แบบประเมิน: ${feedbackUrl}\n\nความคิดเห็นและข้อเสนอแนะของท่านมีคุณค่ายิ่งต่อการพัฒนาบริการของทีมงาน CC\n\nขอแสดงความนับถือ,\nทีมงานสร้างสรรค์และการสื่อสาร (CC TEAM)\nอุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (CMU STeP)`;
 
     const newRecord: DispatchRecord = {
       briefId: taskCode,
@@ -632,7 +635,7 @@ export default function StakeholdersReportDetail() {
       stakeholderGroup: selectedGroup,
       dispatchedAt: new Date().toLocaleString("th-TH", { dateStyle: "short", timeStyle: "short" }),
       dispatchedBy: selectedBriefForDispatch.coordinator_nickname ? `${selectedBriefForDispatch.coordinator_nickname}` : "ทีม CC",
-      method,
+      method: method === "link" ? "link" : "email",
       status: "dispatched"
     };
 
@@ -646,10 +649,30 @@ export default function StakeholdersReportDetail() {
       navigator.clipboard.writeText(feedbackUrl);
       setCopySuccess(selectedBriefForDispatch.id);
       setTimeout(() => setCopySuccess(null), 3000);
-    } else if (method === "email") {
+    } else if (method === "mailto") {
+      const targetTo = encodeURIComponent(selectedBriefForDispatch.requester_email || "");
+      const targetSubject = encodeURIComponent(emailSubject);
+      const targetBody = encodeURIComponent(emailBody);
+      window.open(`mailto:${targetTo}?subject=${targetSubject}&body=${targetBody}`, "_blank");
+    } else {
+      // Gmail Dispatch
+      try {
+        if (typeof navigator !== "undefined" && navigator.clipboard) {
+          navigator.clipboard.writeText(emailBody);
+        }
+      } catch {}
+
+      const targetTo = encodeURIComponent(selectedBriefForDispatch.requester_email || "");
+      const targetCc = encodeURIComponent("cc-team@step.cmu.ac.th");
+      const targetSubject = encodeURIComponent(emailSubject);
+      const targetBody = encodeURIComponent(emailBody);
+
+      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&to=${targetTo}&cc=${targetCc}&su=${targetSubject}&body=${targetBody}`;
+      window.open(gmailUrl, "_blank");
+
       // Trigger notification service
       try {
-        await fetch('/api/notify', {
+        fetch('/api/notify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -657,9 +680,10 @@ export default function StakeholdersReportDetail() {
             briefId: selectedBriefForDispatch.id,
             targetEmail: selectedBriefForDispatch.requester_email,
             projectName: selectedBriefForDispatch.project_name,
-            stakeholderGroup: selectedGroup
+            stakeholderGroup: selectedGroup,
+            surveyUrl: feedbackUrl
           })
-        });
+        }).catch(console.warn);
       } catch (e) {
         console.warn("Could not dispatch email notify:", e);
       }
@@ -1490,7 +1514,7 @@ export default function StakeholdersReportDetail() {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+            <div className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setShowDispatchModal(false)}
@@ -1502,7 +1526,7 @@ export default function StakeholdersReportDetail() {
               <button
                 type="button"
                 onClick={() => handleConfirmDispatch("link")}
-                className="px-4 py-2 text-xs font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-full transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                className="px-3.5 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-full transition-all inline-flex items-center gap-1.5 cursor-pointer"
               >
                 <Copy size={13} />
                 <span>คัดลอกลิงก์</span>
@@ -1510,11 +1534,21 @@ export default function StakeholdersReportDetail() {
 
               <button
                 type="button"
+                onClick={() => handleConfirmDispatch("mailto")}
+                className="px-3.5 py-2 text-xs font-bold text-slate-700 hover:text-slate-900 border border-slate-200 hover:bg-slate-50 rounded-full transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                title="เปิดด้วย Outlook หรือโปรแกรมอีเมลในเครื่อง"
+              >
+                <Mail size={13} />
+                <span>เปิด Mail Client</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => handleConfirmDispatch("email")}
-                className="px-5 py-2 text-xs font-bold text-white bg-[#E03131] hover:bg-[#c92a2a] rounded-full transition-all inline-flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
+                className="px-4 py-2 text-xs font-bold text-white bg-[#EA4335] hover:bg-[#d93025] rounded-full transition-all inline-flex items-center gap-1.5 shadow-sm cursor-pointer active:scale-95"
               >
                 <Send size={13} />
-                <span>ส่งอีเมลทันที ✉️</span>
+                <span>🚀 ส่งและเปิดใน Gmail (@step.cmu.ac.th)</span>
               </button>
             </div>
           </div>

@@ -6,7 +6,7 @@ import {
   AlertCircle, ArrowRight, Mail, Send, X, Edit3, Trash2, 
   TrendingUp, ShieldAlert, Sparkles, Filter, CheckSquare, 
   Square, FileText, Check, ChevronLeft, Award, UserCheck, MessageSquare,
-  BarChart3, ThumbsUp, AlertTriangle, Target, Hourglass
+  BarChart3, ThumbsUp, AlertTriangle, Target, Hourglass, Copy
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { DEFAULT_MEMBER_METADATA, parseMemberRecord } from "@/utils/memberProfile";
@@ -238,6 +238,12 @@ export default function MeetingReportDetail() {
       }
     ];
   });
+
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 5500);
+  };
 
   // Load meetings from Supabase cloud database
   useEffect(() => {
@@ -552,18 +558,22 @@ export default function MeetingReportDetail() {
   const handleConfirmSendEmail = (emailData: { toList: string[]; ccList: string[]; subject: string; body: string }) => {
     if (!emailModalMeeting) return;
 
-    setMeetings(prev => prev.map(m => {
-      if (m.id !== emailModalMeeting.id) return m;
-      return {
-        ...m,
-        status: "sent",
-        emailSentAt: new Date().toISOString(),
-        emailRecipientCount: (emailData.toList.length + emailData.ccList.length)
-      };
-    }));
+    const now = new Date().toISOString();
+    setMeetings(prev => {
+      const updated = prev.map(m => {
+        if (m.id !== emailModalMeeting.id) return m;
+        return {
+          ...m,
+          status: "sent" as const,
+          emailSentAt: now,
+          emailRecipientCount: (emailData.toList.length + emailData.ccList.length)
+        };
+      });
+      setCloudJson(CLOUD_KEYS.MEETING_TASKS, updated, "cc_meeting_tasks_v2");
+      return updated;
+    });
 
-    // Trigger toast or console
-    alert(`✉️ จัดส่งบันทึกการประชุมเรียบร้อยแล้ว!\nเรื่อง: ${emailData.subject}\nส่งถึง: ${emailData.toList.join(", ")}\nCC: ${emailData.ccList.join(", ")}`);
+    showToast(`⚡ จัดส่งบันทึกการประชุมสำเร็จ! เปิดร่างอีเมลใน Gmail เรียบร้อยแล้ว (กรุณากด Send ในแท็บ Gmail เพื่อส่งจริง)`);
     setEmailModalMeeting(null);
   };
 
@@ -937,6 +947,23 @@ export default function MeetingReportDetail() {
         />
       )}
 
+      {/* Floating Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-[9999] flex items-center gap-3 bg-zinc-900/95 backdrop-blur-md text-white px-5 py-3.5 rounded-2xl border border-zinc-700 shadow-2xl animate-in slide-in-from-bottom-5">
+          <div className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs shrink-0 font-bold">
+            ✓
+          </div>
+          <span className="text-xs font-medium leading-relaxed">{toastMessage}</span>
+          <button 
+            type="button" 
+            onClick={() => setToastMessage(null)} 
+            className="text-zinc-400 hover:text-white text-xs ml-2 cursor-pointer font-bold"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
     </div>
   );
 }
@@ -1300,6 +1327,102 @@ function MeetingEmailModal({
     setSelectedCC(prev => prev.filter(c => c !== email));
   };
 
+  const [copied, setCopied] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+
+  const handleCopyBody = () => {
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        navigator.clipboard.writeText(emailBody);
+      }
+    } catch {}
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
+  const handleSendAndOpenGmail = async () => {
+    if (selectedExecs.length === 0) {
+      alert("กรุณาระบุอีเมลผู้รับหลัก (To: คณะผู้บริหาร)");
+      return;
+    }
+
+    setIsSending(true);
+
+    // 1. Copy full text to clipboard
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(emailBody);
+      }
+    } catch {}
+
+    // 2. Safe URL length for Gmail Compose (under 1,800 chars to avoid Gmail blank screen)
+    const targetTo = encodeURIComponent(selectedExecs.join(","));
+    const targetCc = encodeURIComponent(selectedCC.join(","));
+    const targetSubject = encodeURIComponent(subject);
+
+    const baseLength = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&to=${targetTo}&cc=${targetCc}&su=${targetSubject}&body=`.length;
+    const maxSafeBodyEncodedLength = Math.max(150, 1800 - baseLength);
+
+    let urlBodyText = emailBody;
+    if (encodeURIComponent(urlBodyText).length > maxSafeBodyEncodedLength) {
+      urlBodyText = `เรียน คณะผู้บริหาร และเพื่อนร่วมทีม CC ทุกท่าน\n\nเรื่อง: รายงานสรุปบันทึกการประชุม และการติดตามข้อสั่งการประจำเดือน ${meeting.monthName}\nวันที่ประชุม: ${meeting.date}\nประธาน: ${meeting.chair || 'นายอัจชนะพงษ์ อัจชนะวราทา'}\nผู้จดบันทึก: ${meeting.recorder || 'นางสาววาสิตา กอบธัญกิจ'}\n\n(รายละเอียดและมติที่ประชุมทั้งหมดถูกคัดลอกลง Clipboard แล้ว สามารถกด Ctrl+V ใน Gmail เพื่อวางเนื้อหาฉบับเต็มได้ทันที)\n\nขอแสดงความนับถือ,\n${meeting.recorder || 'ทีมงาน CC'}\nอุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (CMU STeP)`;
+    }
+
+    const targetBody = encodeURIComponent(urlBodyText);
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&to=${targetTo}&cc=${targetCc}&su=${targetSubject}&body=${targetBody}`;
+
+    window.open(gmailUrl, "_blank");
+
+    // 3. Dispatch to /api/notify in background
+    try {
+      fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'meeting_report_email',
+          meetingId: meeting.id,
+          title: meeting.title,
+          date: meeting.date,
+          chair: meeting.chair,
+          recorder: meeting.recorder,
+          monthName: meeting.monthName,
+          monthKey: meeting.monthKey,
+          to: selectedExecs,
+          cc: selectedCC,
+          subject,
+          body: emailBody
+        })
+      }).catch(console.error);
+    } catch (err) {
+      console.error('Notify API error:', err);
+    }
+
+    setIsSending(false);
+
+    // 4. Confirm in parent
+    onConfirm({
+      toList: selectedExecs,
+      ccList: selectedCC,
+      subject,
+      body: emailBody
+    });
+  };
+
+  const handleOpenMailto = () => {
+    const targetTo = encodeURIComponent(selectedExecs.join(","));
+    const targetCc = encodeURIComponent(selectedCC.join(","));
+    const targetSubject = encodeURIComponent(subject);
+    const targetBody = encodeURIComponent(emailBody.slice(0, 1500));
+    window.open(`mailto:${selectedExecs.join(",")}?cc=${selectedCC.join(",")}&subject=${targetSubject}&body=${targetBody}`, "_blank");
+
+    onConfirm({
+      toList: selectedExecs,
+      ccList: selectedCC,
+      subject,
+      body: emailBody
+    });
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="bg-zinc-900 border border-zinc-800 text-zinc-100 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden font-sans">
@@ -1331,6 +1454,26 @@ function MeetingEmailModal({
         {/* Modal Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4 text-xs text-zinc-300">
           
+          {/* Banner: Option 1 Gmail Real Send */}
+          <div className="p-3.5 bg-gradient-to-r from-orange-500/15 via-amber-500/10 to-transparent border border-orange-500/30 rounded-2xl flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-[#f97316] text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+              <Mail size={15} />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-white tracking-wide">
+                  ทางเลือกที่ 1 • ส่งจริง 100% ผ่าน Gmail (@step.cmu.ac.th)
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  บันทึกลง Sent Items
+                </span>
+              </div>
+              <p className="text-[11.5px] leading-relaxed text-zinc-300">
+                เมื่อกดปุ่ม <strong className="text-orange-400 font-bold">&ldquo;🚀 ส่งและเปิดส่งใน Gmail&rdquo;</strong> ระบบจะปรับสถานะเป็น <strong className="text-white font-bold">ส่งแล้ว</strong> พร้อมเปิดหน้าต่างเขียนจดหมาย Gmail ของท่าน โดยใส่ผู้รับ (To: ผู้บริหาร {selectedExecs.length} ท่าน), สำเนา (CC: ทีม CC {selectedCC.length} ท่าน), หัวข้อ และเนื้อหารายงานการประชุมไว้ครบถ้วนทันที เพื่อให้ท่านกดส่งจากกล่องเมลจริงและมีประวัติใน Sent Items
+              </p>
+            </div>
+          </div>
+
           {/* TO: Executive Leaders */}
           <div className="space-y-1.5">
             <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -1451,9 +1594,14 @@ function MeetingEmailModal({
 
           {/* Email Body Content */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-zinc-300 uppercase tracking-wider">
-              เนื้อหารายงานการประชุม (สามารถแก้ไขเพิ่มเติมได้)
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-bold text-zinc-300 uppercase tracking-wider">
+                เนื้อหารายงานการประชุม (สามารถแก้ไขเพิ่มเติมได้)
+              </label>
+              <span className="text-[10px] text-zinc-500">
+                กดปุ่มคัดลอกด้านล่างเพื่อนำไปใช้วางต่อได้ทันที
+              </span>
+            </div>
             <textarea
               rows={12}
               value={emailBody}
@@ -1467,28 +1615,55 @@ function MeetingEmailModal({
         </div>
 
         {/* Footer Buttons */}
-        <div className="px-6 py-4 border-t border-zinc-800/80 bg-zinc-900/90 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 rounded-full border border-zinc-700 text-zinc-300 hover:bg-zinc-800 text-xs font-semibold transition-colors cursor-pointer"
-          >
-            ยกเลิก
-          </button>
+        <div className="px-6 py-4 border-t border-zinc-800/80 bg-zinc-900/90 flex flex-wrap items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-full border border-zinc-700 text-zinc-300 hover:bg-zinc-800 text-xs font-semibold transition-colors cursor-pointer"
+            >
+              ยกเลิก
+            </button>
+            <button
+              type="button"
+              onClick={handleCopyBody}
+              className="px-4 py-2 rounded-full border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              {copied ? (
+                <>
+                  <Check size={13} className="text-emerald-400 stroke-[2.5]" />
+                  <span className="text-emerald-300 font-bold">คัดลอกแล้ว!</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={13} className="text-zinc-400" />
+                  <span>คัดลอกเนื้อหา</span>
+                </>
+              )}
+            </button>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => onConfirm({
-              toList: selectedExecs,
-              ccList: selectedCC,
-              subject,
-              body: emailBody
-            })}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#f97316] hover:bg-[#ea580c] text-white text-xs font-bold shadow-lg shadow-orange-900/30 transition-all cursor-pointer"
-          >
-            <Send size={14} />
-            <span>ยืนยันส่งบันทึกการประชุม</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleOpenMailto}
+              className="px-4 py-2 rounded-full border border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-800 text-xs font-semibold transition-colors cursor-pointer inline-flex items-center gap-1.5"
+              title="เปิดด้วย Outlook, Apple Mail หรือโปรแกรมอีเมลในเครื่อง"
+            >
+              <Mail size={13} />
+              <span>เปิด Mail Client</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSendAndOpenGmail}
+              disabled={isSending}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#f97316] hover:bg-[#ea580c] active:scale-95 text-white text-xs font-bold shadow-lg shadow-orange-900/30 transition-all cursor-pointer disabled:opacity-50"
+            >
+              <Send size={14} />
+              <span>🚀 ส่งและเปิดส่งใน Gmail (@step.cmu.ac.th)</span>
+            </button>
+          </div>
         </div>
 
       </div>

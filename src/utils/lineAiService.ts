@@ -3,11 +3,11 @@ import { getAllLearnedFacts, getRecentHistory, recordLearnedFact } from "./lineM
 import { getBriefSaveCost } from "./stats";
 
 const GEMINI_MODELS = [
+  "gemini-flash-lite-latest",
   "gemini-3.5-flash",
   "gemini-3.5-flash-lite",
-  "gemini-3-flash-preview",
-  "gemini-flash-latest",
-  "gemini-3.8-flash"
+  "gemini-3.1-flash-lite",
+  "gemini-3-flash-preview"
 ];
 
 let currentModelIndex = 0;
@@ -81,6 +81,10 @@ export interface WorkloadAnalytics {
     completed: number;
     saveCostTotal: number;
     profitTotal: number;
+    csatRate: number;
+    csatEvaluationsCount: number;
+    onTimeRate: number;
+    deliveredCount: number;
   };
   memberStats: Record<string, MemberStatData>;
   pendingRanking: MemberStatData[];
@@ -148,6 +152,11 @@ export function analyzeWorkload(briefs: any[]): WorkloadAnalytics {
     "Content Marketing (คอนเทนต์/บทความ)": { saveCost: 0, profit: 0, count: 0, completed: 0, pending: 0 },
   };
 
+  let totalWithSatisfaction = 0;
+  let sumSatisfaction = 0;
+  let totalWithOnTime = 0;
+  let onTimeCount = 0;
+
   briefs.forEach(b => {
     if (b.status === "purged" || b.details?.is_permanently_deleted) return;
 
@@ -155,6 +164,23 @@ export function analyzeWorkload(briefs: any[]): WorkloadAnalytics {
     if (st === "completed") completed++;
     else if (st === "in_progress" || st === "progress") inProgress++;
     else pending++;
+
+    // Track real satisfaction
+    const score = Number(b.details?.satisfaction_rate) || Number(b.details?.satisfaction_score);
+    if (score > 0) {
+      totalWithSatisfaction++;
+      sumSatisfaction += score;
+    }
+
+    // Track real on-time delivery
+    if (st === "completed" && b.deadline && b.completed_at) {
+      totalWithOnTime++;
+      const dl = new Date(b.deadline).getTime();
+      const cp = new Date(b.completed_at).getTime();
+      if (cp <= dl + 86400000) {
+        onTimeCount++;
+      }
+    }
 
     const sc = getBriefSaveCost(b);
     const pr = Number(b.details?.profit) || 0;
@@ -209,6 +235,9 @@ export function analyzeWorkload(briefs: any[]): WorkloadAnalytics {
     }
   });
 
+  const csatRate = totalWithSatisfaction > 0 ? Number((sumSatisfaction / totalWithSatisfaction).toFixed(1)) : 0;
+  const onTimeRate = totalWithOnTime > 0 ? Math.round((onTimeCount / totalWithOnTime) * 100) : 0;
+
   // Ranking by pending tasks
   const pendingRanking = Object.entries(memberStats)
     .filter(([k]) => k !== "ยังไม่ระบุผู้รับผิดชอบ")
@@ -235,7 +264,18 @@ export function analyzeWorkload(briefs: any[]): WorkloadAnalytics {
   const topSaveCostUnit = sortedUnits.length > 0 ? { name: sortedUnits[0][0], saveCost: sortedUnits[0][1].saveCost } : null;
 
   return {
-    totals: { total: briefs.length, pending, inProgress, completed, saveCostTotal, profitTotal },
+    totals: { 
+      total: briefs.length, 
+      pending, 
+      inProgress, 
+      completed, 
+      saveCostTotal, 
+      profitTotal,
+      csatRate,
+      csatEvaluationsCount: totalWithSatisfaction,
+      onTimeRate,
+      deliveredCount: totalWithOnTime
+    },
     memberStats,
     pendingRanking,
     topPending,
@@ -328,6 +368,9 @@ export async function queryLineAI(
 
 4. **ห้ามเตือนเรื่องสุขภาพ/จิบน้ำ/พักสายตาโดยเด็ดขาด** เว้นแต่ผู้ใช้จะถามเรื่องสุขภาพโดยตรง
 5. **ไม่ชวนคุยต่อและไม่มีประโยคลงท้ายซ้ำซาก** เมื่อตอบคำถามครบถ้วนแล้วให้จบประเด็นทันที
+6. **กฎเหล็กป้องกันข้อมูลหลอน (Strict Anti-Hallucination & Zero-Fake Baseline):**
+   - ห้ามแต่งตัวเลข สถิติ ชื่องาน หรือคิดค้นข้อมูลที่ไม่มีอยู่จริงในระบบเด็ดขาด หากตัวชี้วัดใดเป็น 0 หรือยังไม่มีข้อมูลประเมิน ให้ตอบตามจริงว่าเริ่มต้นปีงบประมาณ 2570 ยังไม่มีข้อมูล หรือเป็น 0%
+   - ห้ามกล่าวหาหรือพาดพิงบุคคลว่าทำงานช้าหรือบกพร่องโดยไม่มีหลักฐานชัดเจนในระบบ
 
 👥 สมาชิกทีม CC ทั้ง 12 คน:
 - จ๊อบ AA: CC Lead (บริหารทีม / กำกับภาพรวมงาน 3 ยูนิต และเป้าหมายภาพรวม)
@@ -343,16 +386,16 @@ ${analytics.saveCostRanking.map((m, i) => `${i + 1}. ${m.nick} ${m.code} (${m.un
 ${Object.entries(analytics.unitFinancials).map(([u, d], i) => `${i + 1}. ${u}: ฿${d.saveCost.toLocaleString()} บาท (รวม ${d.count} งาน, สำเร็จแล้ว ${d.completed} งาน, ค้าง ${d.pending} งาน)`).join("\n")}
 
 📊 ภาระงานจริงในระบบ (Live Workload):
-- ผู้ที่มีงานค้างสูงสุด: ${analytics.topPending ? `${analytics.topPending.nick} ${analytics.topPending.code} (${analytics.topPending.pending} งาน - ${analytics.topPending.unit})` : "ไม่มี"}
+- ผู้ที่มีงานค้างสูงสุด: ${analytics.topPending ? `${analytics.topPending.nick} ${analytics.topPending.code} (${analytics.topPending.pending} งาน - ${analytics.topPending.unit})` : "ไม่มีงานค้าง"}
 - อันดับงานค้าง: ${analytics.pendingRanking.slice(0, 5).map(r => `${r.nick} (${r.pending} งาน)`).join(", ")}
 - งานที่ยังไม่ระบุผู้รับผิดชอบ: ${analytics.unassignedCount} งาน
 
 🎯 เป้าหมายตัวชี้วัดหลักของทีม CC (ปีงบประมาณ 2570):
 - ผลงานสนับสนุนภายในองค์กร (STeP): สำเร็จแล้ว ${analytics.totals.completed} งาน (จากเป้าหมายทั้งปี 1,200 งาน)
 - ผลงานสนับสนุนภายนอก มช. และเครือข่าย RSP: ดำเนินการต่อเนื่อง (เป้าหมาย 350 งาน)
-- มูลค่าการประหยัดงบประมาณ (Save Cost): สะสม ฿${analytics.totals.saveCostTotal.toLocaleString()} บาท (ทะลุเป้าหมาย 1,000,000 บาทแล้ว)
-- กำไรจากการให้บริการของทีม: รวม ฿${analytics.totals.profitTotal.toLocaleString()} บาท (ทะลุเป้าหมาย 1,500,000 บาทแล้ว)
-- ความพึงพอใจของผู้รับบริการ (CSAT): เฉลี่ย 98.4% (เกณฑ์มาตรฐาน ≥85%) | อัตราส่งมอบตรงเวลา 100%
+- มูลค่าการประหยัดงบประมาณ (Save Cost): สะสม ฿${analytics.totals.saveCostTotal.toLocaleString()} บาท (เป้าหมาย 1,000,000 บาท)
+- กำไรจากการให้บริการของทีม: รวม ฿${analytics.totals.profitTotal.toLocaleString()} บาท (เป้าหมาย 1,500,000 บาท)
+- ความพึงพอใจของผู้รับบริการ (CSAT): เฉลี่ย ${analytics.totals.csatRate}% (${analytics.totals.csatEvaluationsCount > 0 ? `จาก ${analytics.totals.csatEvaluationsCount} การประเมิน` : "เริ่มต้นปีงบประมาณ 0% ยังไม่มีแบบประเมิน"}) | อัตราส่งมอบตรงเวลา ${analytics.totals.onTimeRate}% (${analytics.totals.deliveredCount > 0 ? `จาก ${analytics.totals.deliveredCount} งานที่ปิดสมบูรณ์` : "เริ่มต้นปีงบประมาณ 0% ยังไม่มีงานปิดส่งมอบ"})
 
 📚 ข้อมูลที่จดจำได้:
 ${learnedFacts.slice(0, 3).join("\n") || "ไม่มี"}

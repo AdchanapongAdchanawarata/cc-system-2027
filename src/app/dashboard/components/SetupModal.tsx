@@ -12,6 +12,8 @@ import {
   Lock, Unlock, ShieldCheck
 } from "lucide-react";
 import GoogleSheetsSyncHub from "./GoogleSheetsSyncHub";
+import AuditLogsAndBackupHub from "./AuditLogsAndBackupHub";
+import AiControlHub from "./AiControlHub";
 import { 
   getStorageQuotaStats, 
   purgeCompletedTaskAttachments, 
@@ -143,7 +145,7 @@ const DEFAULT_PRICING: Omit<ServicePricing, 'id'>[] = [
 ];
 
 export default function SetupModal({ onClose }: { onClose: () => void }) {
-  const [activeTab, setActiveTab] = useState<"team" | "okr" | "pricing" | "storage" | "sheets-sync">("team");
+  const [activeTab, setActiveTab] = useState<"team" | "okr" | "pricing" | "storage" | "sheets-sync" | "ai-control">("team");
   const [assignees, setAssignees] = useState<Assignee[]>([]);
   const [okrs, setOkrs] = useState<OKR[]>([]);
   const [pricingList, setPricingList] = useState<ServicePricing[]>([]);
@@ -619,6 +621,15 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
             }`}
           >
             <FileSpreadsheet size={16} /> Google Sheet Sync
+          </button>
+
+          <button 
+            onClick={() => setActiveTab("ai-control")}
+            className={`pb-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all ${
+              activeTab === "ai-control" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            <Sparkles size={16} /> AI Control & Guardrails
           </button>
         </div>
 
@@ -2656,6 +2667,9 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                   <li><strong>แนะนำสำรองข้อมูลเป็นประจำ:</strong> แนะนำให้กดปุ่ม "สำรองข้อมูล (JSON)" เพื่อดาวน์โหลดชุดข้อมูลเก็บสำรองไว้ก่อนดำเนินการล้างข้อมูล</li>
                 </ul>
               </div>
+
+              {/* AUTOMATED MONTHLY BACKUP & AUDIT TRAIL HUB (FY70) */}
+              <AuditLogsAndBackupHub />
             </div>
           )}
 
@@ -2663,6 +2677,13 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
           {activeTab === "sheets-sync" && (
             <div className="space-y-6 animate-in fade-in duration-200">
               <GoogleSheetsSyncHub assignees={assignees} />
+            </div>
+          )}
+
+          {/* TAB 6: AI CONTROL & ANTI-HALLUCINATION GUARDRAILS */}
+          {activeTab === "ai-control" && (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              <AiControlHub />
             </div>
           )}
         </div>

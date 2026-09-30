@@ -4,6 +4,8 @@
  * for all 10 system reports and the global system view.
  */
 
+import { getAuditLogs } from "./auditLogger";
+
 // Escape HTML for safe template injection
 function escapeHtml(str: any): string {
   if (str === null || str === undefined) return "";
@@ -1027,47 +1029,64 @@ export function exportWorkLinksReport(format: "pdf" | "csv") {
 /**
  * 6. Activity Log Report
  */
-export function exportActivityLogReport(format: "pdf" | "csv") {
-  const dummyLogs = [
-    { time: "2026-09-20 14:30", user: "จ๊อบ AA", action: "อัปเดตสถานะโครงการ", target: "CC-ACT-01 (Completed 100%)", unit: "บริหารทีม" },
-    { time: "2026-09-20 11:15", user: "พิม AC", action: "ส่งมอบงานออกแบบ", target: "KV STeP Expo 2027 Final", unit: "งานออกแบบ" },
-    { time: "2026-09-19 16:45", user: "วา WK", action: "บันทึกรายงานการประชุม", target: "การประชุมประจำเดือน ครั้งที่ 9/2569", unit: "บริหารทีม" },
-    { time: "2026-09-19 09:20", user: "ลูกอิน STK", action: "เผยแพร่ข่าว PR", target: "ข่าวเปิดตัวแล็บนวัตกรรมอาหาร", unit: "สื่อสารองค์กร" }
-  ];
+export async function exportActivityLogReport(format: "pdf" | "csv") {
+  let auditLogs: any[] = [];
+  try {
+    auditLogs = await getAuditLogs(200);
+  } catch (e) {
+    console.warn("Could not fetch audit logs:", e);
+  }
+
+  const logRows = auditLogs.length > 0 
+    ? auditLogs.map((l, i) => {
+        const dateObj = new Date(l.timestamp);
+        const timeStr = isNaN(dateObj.getTime())
+          ? l.timestamp
+          : dateObj.toLocaleDateString("th-TH", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit"
+            });
+        const targetStr = [
+          l.task_code ? `[${l.task_code}]` : "",
+          l.project_name || "",
+          l.details?.updates?.status ? `(สถานะ: ${l.details.updates.status})` : ""
+        ].filter(Boolean).join(" ");
+
+        return [
+          i + 1,
+          timeStr,
+          l.actor_name || "-",
+          l.actor_role || "-",
+          l.action || "-",
+          targetStr || "-"
+        ];
+      })
+    : [
+        [1, "-", "-", "-", "ยังไม่มีประวัติกิจกรรมสะสมในปีงบประมาณ 2570", "ระบบพร้อมบันทึกประวัติการดำเนินงานจริง"]
+      ];
 
   if (format === "csv") {
     exportToCsv({
       filename: `CC_Activity_Logs_${new Date().toISOString().slice(0, 10)}.csv`,
       title: "บันทึกประวัติการดำเนินงานและตรวจสอบย้อนกลับ (Activity & Audit Log)",
-      headers: ["ลำดับ", "วัน-เวลา", "ผู้ดำเนินการ", "ยูนิต", "การกระทำ (Action)", "เป้าหมาย / รายละเอียด"],
-      rows: dummyLogs.map((l, i) => [
-        i + 1,
-        l.time,
-        l.user,
-        l.unit,
-        l.action,
-        l.target
-      ])
+      headers: ["ลำดับ", "วัน-เวลา", "ผู้ดำเนินการ", "ยูนิต/บทบาท", "การกระทำ (Action)", "เป้าหมาย / รายละเอียด"],
+      rows: logRows
     });
   } else {
     const html = generateDieterRamsPdfHtml({
-      docCode: "CC-AUDIT-LOG-2026",
+      docCode: "CC-AUDIT-LOG-FY70",
       reportTitle: "รายงานประวัติการดำเนินงาน (Activity & Audit Log)",
       reportSubtitle: "ISO 9001:2015 Clause 8.5.2 Traceability & System Audit Trail",
       sections: [
         {
-          title: "บันทึกประวัติการกระทำในระบบล่าสุด (System Audit Trail)",
-          headers: ["#", "วัน-เวลา", "ผู้ดำเนินการ", "ยูนิต", "การกระทำ", "รายละเอียดเป้าหมาย"],
+          title: "บันทึกประวัติการกระทำในระบบจริง (System Audit Trail)",
+          headers: ["#", "วัน-เวลา", "ผู้ดำเนินการ", "ยูนิต/บทบาท", "การกระทำ", "รายละเอียดเป้าหมาย"],
           columnAligns: ["center", "center", "left", "center", "left", "left"],
           columnWidths: ["5%", "18%", "15%", "12%", "20%", "30%"],
-          rows: dummyLogs.map((l, i) => [
-            i + 1,
-            l.time,
-            l.user,
-            l.unit,
-            l.action,
-            l.target
-          ])
+          rows: logRows
         }
       ]
     });

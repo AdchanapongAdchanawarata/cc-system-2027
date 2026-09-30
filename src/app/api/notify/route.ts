@@ -7,6 +7,7 @@ import { createClient } from '@supabase/supabase-js';
 import { initBackgroundScheduler } from '@/utils/cronRunner';
 import { getFreshCreativeTrend, getFreshEveningHealthMind } from '@/utils/dailyArticleService';
 import { getTaskSurveyUrl } from '@/utils/surveyTokens';
+import { shouldInternalTaskSkipEmail } from '@/utils/pricing';
 
 // Ensure in-process cron timer is active
 initBackgroundScheduler();
@@ -115,18 +116,20 @@ export async function POST(request: Request) {
 - กำหนดส่ง: ${usageDate || 'ไม่ระบุ'} (${isTightTimeline ? 'กระชั้นชิด' : 'ตามแผน'})
 - ความเร่งด่วน: ${isUrgent ? 'งานด่วนพิเศษ' : 'งานปกติ'}
 
+กฎเหล็ก (Anti-Hallucination): วิเคราะห์เฉพาะจากข้อมูลบรีฟที่มีอยู่จริงเท่านั้น ห้ามแต่งเติมหรือสร้างข้อมูลเท็จเด็ดขาด
+
 ให้เขียนการประเมินงานและข้อควรระวัง สั้นๆ ไม่เกิน 2 บรรทัด เช่น:
 - ดูจากรายละเอียดงานแล้วระดับความยากเป็นอย่างไร (ค่อนข้างยาก/ซับซ้อน หรือมาตรฐาน)
 - ระยะเวลาส่งกระชั้นชิดหรือไม่
 - ข้อควรระวังและการจัดคน เช่น "อาจจะต้องมีผู้ช่วยคอยซัพพอร์ต/ช่วยประกบ"
 ตอบเฉพาะข้อความวิเคราะห์ 1-2 บรรทัด (ขึ้นต้นด้วย ⚠️ ข้อควรระวัง: หรือ 💡 คำแนะนำ:):`;
 
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${geminiApiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { maxOutputTokens: 250, temperature: 0.4 }
+              generationConfig: { maxOutputTokens: 250, temperature: 0.3 }
             }),
             signal: controller.signal
           });
@@ -609,8 +612,18 @@ ${targetUrl}`;
       const supabase = getSupabase();
       if (supabase && briefId) {
         try {
-          const { data: b } = await supabase.from('briefs').select('project_name, decision_maker, coordinator_nickname, details, status').eq('id', briefId).single();
+          const { data: b } = await supabase.from('briefs').select('project_name, decision_maker, coordinator_nickname, details, status, unit').eq('id', briefId).single();
           if (b) {
+            // Internal tasks (except PM โครงการ, ให้คำปรึกษาเชิงสร้างสรรค์, ให้คำปรึกษา/รับโจทย์ ผู้ประกอบการ) do not require email dispatch
+            if (shouldInternalTaskSkipEmail(b)) {
+              console.log(`[SURVEY EMAIL SKIPPED] Task ${briefId} (${b.project_name}) is an internal task without email requirement. Skipping.`);
+              return NextResponse.json({
+                success: true,
+                skipped: true,
+                message: 'งานภายในถูกบันทึกเชิงข้อมูลในระบบเรียบร้อยแล้ว โดยไม่ต้องจัดส่งอีเมล',
+              });
+            }
+
             // Strict check: อีเมลแบบประเมินจะส่งอัตโนมัติเมื่องานอยู่ในสถานะ 'completed' เท่านั้น
             if (b.status && b.status !== 'completed') {
               console.warn(`[SURVEY EMAIL REJECTED] Task ${briefId} is currently '${b.status}', not 'completed'. Aborting survey dispatch.`);
@@ -696,6 +709,24 @@ Survey URL: ${surveyUrl}`);
     // 5.1 Kickoff & In Progress Email Dispatch (Sent to PM, Assignee, Team Lead, and Assistant Lead)
     else if (action === 'kickoff_in_progress_email') {
       const { to, cc, subject, body: emailBodyText, briefId, taskCode, assigneeName, from, senderName } = body;
+
+      // Check if internal task that skips email
+      if (briefId) {
+        const supabase = getSupabase();
+        if (supabase) {
+          try {
+            const { data: b } = await supabase.from('briefs').select('unit, project_name, details').eq('id', briefId).single();
+            if (b && shouldInternalTaskSkipEmail(b)) {
+              console.log(`[KICKOFF EMAIL SKIPPED] Task ${briefId} (${b.project_name}) is an internal task without email requirement. Skipping.`);
+              return NextResponse.json({
+                success: true,
+                skipped: true,
+                message: 'งานภายในถูกบันทึกเชิงข้อมูลในระบบเรียบร้อยแล้ว โดยไม่ต้องจัดส่งอีเมลแจ้งเริ่มงาน',
+              });
+            }
+          } catch (e) {}
+        }
+      }
 
       console.log(`=========================================`);
       console.log(`[KICKOFF IN-PROGRESS EMAIL DISPATCH]`);

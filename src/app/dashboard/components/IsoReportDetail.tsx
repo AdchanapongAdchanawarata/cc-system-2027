@@ -1188,7 +1188,7 @@ export default function IsoReportDetail() {
   const [filterEndDate, setFilterEndDate] = useState<string>("");
   const [filterType, setFilterType] = useState<"ALL" | "O" | "R" | "SWOT" | "STAKEHOLDER">("ALL");
   const [searchTerm, setSearchTerm] = useState("");
-  const [evidenceFilter, setEvidenceFilter] = useState<"ALL" | "100" | "high" | "not_in_field">("ALL");
+  const [evidenceFilter, setEvidenceFilter] = useState<"ALL" | "applicable" | "not_in_field">("ALL");
   const [evidenceChapterFilter, setEvidenceChapterFilter] = useState<string>("ALL");
   const [evidenceSearch, setEvidenceSearch] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -1486,11 +1486,11 @@ export default function IsoReportDetail() {
       try {
         setLoading(true);
         const { data: briefs, error } = await supabase
-          .from("briefs")
-          .select("id, status, unit, deadline, completed_at, details, created_at, in_progress_at, coordinator_nickname, requester_email, decision_maker, priority, project_name, assignee_id");
+          .from("briefs").select("id, status, unit, deadline, completed_at, details, created_at, in_progress_at, coordinator_nickname, requester_email, decision_maker, priority, project_name, assignee_id").neq("status", "purged");
 
         if (!error && briefs) {
-          setRawBriefs(briefs);
+          const activeBriefs = briefs.filter((b: any) => b && b.status !== "purged" && !b.details?.is_permanently_deleted);
+          setRawBriefs(activeBriefs);
         }
 
         const { data: assigneesData } = await supabase
@@ -1540,8 +1540,8 @@ export default function IsoReportDetail() {
       }
     });
 
-    const onTimeRate = completed.length > 0 ? Math.round((onTimeCount / completed.length) * 1000) / 10 : 100;
-    const completionRate = total > 0 ? Math.round((completed.length / total) * 1000) / 10 : 100;
+    const onTimeRate = completed.length > 0 ? Math.round((onTimeCount / completed.length) * 1000) / 10 : 0;
+    const completionRate = total > 0 ? Math.round((completed.length / total) * 1000) / 10 : 0;
 
     const sat = computeSatisfactionAnalytics(filteredBriefs);
 
@@ -1552,30 +1552,50 @@ export default function IsoReportDetail() {
       internal: filteredBriefs.filter(b => b.unit === "internal").length,
     };
 
-    const satScore = sat.overallAverage || (completed.length > 0 ? 94.6 : 95.0);
+    const satScore = sat.evaluatedCount > 0 ? sat.overallAverage : 0;
+    const hasEvaluations = sat.evaluatedCount > 0;
     const satOk = satScore >= 85;
     const onTimeOk = onTimeRate >= 80;
 
-    let riskLevel = "ความเสี่ยงระดับต่ำ (Low Risk - ควบคุมได้ดี)";
-    let riskColor = "emerald";
-    let matrixL = 1;
-    let matrixI = 2;
+    let riskLevel = "รอผลการประเมิน (ยังไม่มีงานส่งมอบในรอบ)";
+    let riskColor = "slate";
+    let matrixL = 0;
+    let matrixI = 0;
 
-    if (satOk && onTimeOk) {
-      riskLevel = "ความเสี่ยงระดับต่ำ (Low Risk - ควบคุมได้ดี)";
-      riskColor = "emerald";
-      matrixL = 1;
-      matrixI = 2;
-    } else if (satOk || onTimeOk) {
-      riskLevel = "ความเสี่ยงระดับปานกลาง (Medium Risk - เฝ้าระวัง)";
-      riskColor = "amber";
-      matrixL = 2;
-      matrixI = 3;
+    if (total === 0 || completed.length === 0) {
+      riskLevel = "รอผลการประเมิน (ยังไม่มีงานส่งมอบในรอบ)";
+      riskColor = "slate";
+      matrixL = 0;
+      matrixI = 0;
+    } else if (hasEvaluations) {
+      if (satOk && onTimeOk) {
+        riskLevel = "ความเสี่ยงระดับต่ำ (Low Risk - ควบคุมได้ดี)";
+        riskColor = "emerald";
+        matrixL = 1;
+        matrixI = 2;
+      } else if (satOk || onTimeOk) {
+        riskLevel = "ความเสี่ยงระดับปานกลาง (Medium Risk - เฝ้าระวัง)";
+        riskColor = "amber";
+        matrixL = 2;
+        matrixI = 3;
+      } else {
+        riskLevel = "ความเสี่ยงระดับสูง (High Risk - เร่งแก้ไข)";
+        riskColor = "rose";
+        matrixL = 3;
+        matrixI = 4;
+      }
     } else {
-      riskLevel = "ความเสี่ยงระดับสูง (High Risk - เร่งแก้ไข)";
-      riskColor = "rose";
-      matrixL = 3;
-      matrixI = 4;
+      if (onTimeOk) {
+        riskLevel = "ส่งมอบตรงเวลา (รอแบบประเมินความพึงพอใจ)";
+        riskColor = "blue";
+        matrixL = 1;
+        matrixI = 2;
+      } else {
+        riskLevel = "ส่งมอบล่าช้า (รอแบบประเมินความพึงพอใจ)";
+        riskColor = "amber";
+        matrixL = 2;
+        matrixI = 3;
+      }
     }
 
     return {
@@ -1598,14 +1618,14 @@ export default function IsoReportDetail() {
     };
   }, [filteredBriefs]);
 
-  // Quarterly comparison for Section 9
+  // Quarterly comparison for Section 9 (FY70: Oct 2026 - Sep 2027)
   const quarterlyComparison = useMemo(() => {
     if (!rawBriefs || rawBriefs.length === 0) return [];
     const qList = [
-      { key: "Q1", label: "ไตรมาส 1 (ต.ค.-ธ.ค. 2025)", months: ["2025-10", "2025-11", "2025-12"] },
-      { key: "Q2", label: "ไตรมาส 2 (ม.ค.-มี.ค. 2026)", months: ["2026-01", "2026-02", "2026-03"] },
-      { key: "Q3", label: "ไตรมาส 3 (เม.ย.-มิ.ย. 2026)", months: ["2026-04", "2026-05", "2026-06"] },
-      { key: "Q4", label: "ไตรมาส 4 (ก.ค.-ก.ย. 2026)", months: ["2026-07", "2026-08", "2026-09"] },
+      { key: "Q1", label: "ไตรมาส 1 (ต.ค.-ธ.ค. 2026)", months: ["2026-10", "2026-11", "2026-12"] },
+      { key: "Q2", label: "ไตรมาส 2 (ม.ค.-มี.ค. 2027)", months: ["2027-01", "2027-02", "2027-03"] },
+      { key: "Q3", label: "ไตรมาส 3 (เม.ย.-มิ.ย. 2027)", months: ["2027-04", "2027-05", "2027-06"] },
+      { key: "Q4", label: "ไตรมาส 4 (ก.ค.-ก.ย. 2027)", months: ["2027-07", "2027-08", "2027-09"] },
     ];
 
     return qList.map(q => {
@@ -1623,17 +1643,75 @@ export default function IsoReportDetail() {
       const onTimeRate = completed.length > 0 ? Math.round((onTimeCount / completed.length) * 1000) / 10 : 0;
       const sat = computeSatisfactionAnalytics(qBriefs);
 
+      let status = "ยังไม่มีข้อมูล";
+      if (qBriefs.length === 0) {
+        status = "ยังไม่มีข้อมูล";
+      } else if (completed.length === 0) {
+        status = "รองานเสร็จสิ้น";
+      } else if (sat.evaluatedCount === 0) {
+        status = onTimeRate >= 80 ? "ตรงเวลา (รอแบบประเมิน)" : "ส่งมอบล่าช้า";
+      } else if (onTimeRate >= 80 && sat.overallAverage >= 85) {
+        status = "ผ่านเกณฑ์ KRI";
+      } else {
+        status = "เฝ้าระวัง";
+      }
+
       return {
         quarter: q.key,
         label: q.label,
         totalBriefs: qBriefs.length,
         completedCount: completed.length,
         onTimeRate: completed.length > 0 ? `${onTimeRate}%` : "-",
-        satisfactionRate: sat.evaluatedCount > 0 ? `${sat.overallAverage}%` : completed.length > 0 ? "94.6%" : "-",
+        satisfactionRate: sat.evaluatedCount > 0 ? `${sat.overallAverage}%` : "-",
         evaluatedCount: sat.evaluatedCount,
-        status: qBriefs.length === 0 ? "ยังไม่มีข้อมูล" : onTimeRate >= 80 && (sat.overallAverage || 95) >= 85 ? "ผ่านเกณฑ์ KRI" : "เฝ้าระวัง"
+        status
       };
     });
+  }, [rawBriefs]);
+
+  // Full Year Summary Analytics (FY70)
+  const fullYearAnalytics = useMemo(() => {
+    const total = rawBriefs.length;
+    const completed = rawBriefs.filter(b => b.status === "completed");
+    let onTimeCount = 0;
+    completed.forEach(b => {
+      if (b.deadline && b.completed_at) {
+        if (new Date(b.completed_at).getTime() <= new Date(b.deadline).getTime() + 86400000) onTimeCount++;
+      } else onTimeCount++;
+    });
+    const onTimeRate = completed.length > 0 ? Math.round((onTimeCount / completed.length) * 1000) / 10 : 0;
+    const sat = computeSatisfactionAnalytics(rawBriefs);
+
+    let status = "ยังไม่มีข้อมูล";
+    let statusClass = "bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400";
+
+    if (total === 0) {
+      status = "ยังไม่มีข้อมูล";
+      statusClass = "bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400";
+    } else if (completed.length === 0) {
+      status = "รองานเสร็จสิ้น";
+      statusClass = "bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400";
+    } else if (sat.evaluatedCount === 0) {
+      status = onTimeRate >= 80 ? "ตรงเวลา (รอแบบประเมิน)" : "ส่งมอบล่าช้า";
+      statusClass = onTimeRate >= 80 
+        ? "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700/60"
+        : "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/60";
+    } else if (onTimeRate >= 80 && sat.overallAverage >= 85) {
+      status = "ผ่านเกณฑ์ KRI";
+      statusClass = "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60";
+    } else {
+      status = "เฝ้าระวัง";
+      statusClass = "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/60";
+    }
+
+    return {
+      total,
+      completed: completed.length,
+      onTimeRate: completed.length > 0 ? `${onTimeRate}%` : "-",
+      satisfactionRate: sat.evaluatedCount > 0 ? `${sat.overallAverage}%` : "-",
+      status,
+      statusClass
+    };
   }, [rawBriefs]);
 
   // Filtered Risk & Opportunities
@@ -1664,18 +1742,12 @@ export default function IsoReportDetail() {
     const total = ISO_CLAUSES_MAPPING_DATA.length;
     const inFieldItems = ISO_CLAUSES_MAPPING_DATA.filter(i => i.inField);
     const notInFieldCount = total - inFieldItems.length;
-    const full100 = inFieldItems.filter(i => i.compliancePercent === 100).length;
-    const high95 = inFieldItems.filter(i => i.compliancePercent >= 90 && i.compliancePercent < 100).length;
-    const totalScore = inFieldItems.reduce((acc, curr) => acc + curr.compliancePercent, 0);
-    const avgCompliance = inFieldItems.length > 0 ? (totalScore / inFieldItems.length).toFixed(1) : "100";
 
     return {
       total,
       applicable: inFieldItems.length,
       notInFieldCount,
-      full100,
-      high95,
-      avgCompliance
+      coveragePercent: "100"
     };
   }, []);
 
@@ -1683,8 +1755,7 @@ export default function IsoReportDetail() {
   const filteredIsoClauses = useMemo(() => {
     return ISO_CLAUSES_MAPPING_DATA.filter(item => {
       // Status filter
-      if (evidenceFilter === "100" && (item.compliancePercent !== 100 || !item.inField)) return false;
-      if (evidenceFilter === "high" && (item.compliancePercent !== 95 || !item.inField)) return false;
+      if (evidenceFilter === "applicable" && !item.inField) return false;
       if (evidenceFilter === "not_in_field" && item.inField) return false;
 
       // Chapter filter
@@ -1723,14 +1794,16 @@ export default function IsoReportDetail() {
 
     lines.push("=== ส่วนที่ 1: สรุปตัวชี้วัดความเสี่ยง KRI จากระบบจริง (Live System KRI Metrics) ===");
     lines.push('"ตัวชี้วัด KRI","เป้าหมาย","ผลการดำเนินงานจริง","สถานะการบรรลุเป้าหมาย"');
-    lines.push(`"KRI 1: อัตราความพึงพอใจการให้บริการ (CSAT)","≥ 85.0%","${periodAnalytics.satisfactionRate}%","${periodAnalytics.satisfactionRate >= 85 ? "ผ่านเกณฑ์มาตรฐาน" : "ต้องปรับปรุง"}"`);
-    lines.push(`"KRI 1.1: คุณภาพชิ้นงาน (Quality)","≥ 4.0 / 5.0","${periodAnalytics.dimensions?.quality ? periodAnalytics.dimensions.quality.toFixed(2) : "4.80"} / 5.00","ผ่านเกณฑ์"`);
-    lines.push(`"KRI 1.2: ความรวดเร็วและตรงต่อเวลา (Timeliness)","≥ 4.0 / 5.0","${periodAnalytics.dimensions?.timeliness ? periodAnalytics.dimensions.timeliness.toFixed(2) : "4.80"} / 5.00","ผ่านเกณฑ์"`);
-    lines.push(`"KRI 1.3: ความถูกต้องตรงตามบรีฟ (Accuracy)","≥ 4.0 / 5.0","${periodAnalytics.dimensions?.accuracy ? periodAnalytics.dimensions.accuracy.toFixed(2) : "4.90"} / 5.00","ผ่านเกณฑ์"`);
-    lines.push(`"KRI 1.4: ความใส่ใจและความรับผิดชอบ (Attentiveness & Ownership)","≥ 4.0 / 5.0","${periodAnalytics.dimensions?.attentiveness ? periodAnalytics.dimensions.attentiveness.toFixed(2) : "4.90"} / 5.00","ผ่านเกณฑ์"`);
-    lines.push(`"KRI 2: อัตราการส่งมอบงานตรงเวลา (On-Time Delivery)","≥ 80.0%","${periodAnalytics.onTimeRate}%","${periodAnalytics.onTimeRate >= 80 ? "ผ่านเกณฑ์มาตรฐาน" : "ต้องปรับปรุง"}"`);
+    const csatStatus = periodAnalytics.evaluatedCount === 0 ? "รอการประเมิน" : periodAnalytics.satisfactionRate >= 85 ? "ผ่านเกณฑ์มาตรฐาน" : "ต้องปรับปรุง";
+    const onTimeStatus = periodAnalytics.completed === 0 ? "ยังไม่มีงานส่งมอบ" : periodAnalytics.onTimeRate >= 80 ? "ผ่านเกณฑ์มาตรฐาน" : "ต้องปรับปรุง";
+    lines.push(`"KRI 1: อัตราความพึงพอใจการให้บริการ (CSAT)","≥ 85.0%","${periodAnalytics.evaluatedCount > 0 ? periodAnalytics.satisfactionRate + "%" : "ยังไม่มีข้อมูลประเมิน"}","${csatStatus}"`);
+    lines.push(`"KRI 1.1: คุณภาพชิ้นงาน (Quality)","≥ 4.0 / 5.0","${periodAnalytics.dimensions?.quality ? periodAnalytics.dimensions.quality.toFixed(2) + " / 5.00" : "-"}","${periodAnalytics.dimensions?.quality ? (periodAnalytics.dimensions.quality >= 4.0 ? "ผ่านเกณฑ์" : "ต้องปรับปรุง") : "รอผล"}"`);
+    lines.push(`"KRI 1.2: ความรวดเร็วและตรงต่อเวลา (Timeliness)","≥ 4.0 / 5.0","${periodAnalytics.dimensions?.timeliness ? periodAnalytics.dimensions.timeliness.toFixed(2) + " / 5.00" : "-"}","${periodAnalytics.dimensions?.timeliness ? (periodAnalytics.dimensions.timeliness >= 4.0 ? "ผ่านเกณฑ์" : "ต้องปรับปรุง") : "รอผล"}"`);
+    lines.push(`"KRI 1.3: ความถูกต้องตรงตามบรีฟ (Accuracy)","≥ 4.0 / 5.0","${periodAnalytics.dimensions?.accuracy ? periodAnalytics.dimensions.accuracy.toFixed(2) + " / 5.00" : "-"}","${periodAnalytics.dimensions?.accuracy ? (periodAnalytics.dimensions.accuracy >= 4.0 ? "ผ่านเกณฑ์" : "ต้องปรับปรุง") : "รอผล"}"`);
+    lines.push(`"KRI 1.4: ความใส่ใจและความรับผิดชอบ (Attentiveness & Ownership)","≥ 4.0 / 5.0","${periodAnalytics.dimensions?.attentiveness ? periodAnalytics.dimensions.attentiveness.toFixed(2) + " / 5.00" : "-"}","${periodAnalytics.dimensions?.attentiveness ? (periodAnalytics.dimensions.attentiveness >= 4.0 ? "ผ่านเกณฑ์" : "ต้องปรับปรุง") : "รอผล"}"`);
+    lines.push(`"KRI 2: อัตราการส่งมอบงานตรงเวลา (On-Time Delivery)","≥ 80.0%","${periodAnalytics.completed > 0 ? periodAnalytics.onTimeRate + "%" : "ยังไม่มีงานส่งมอบ"}","${onTimeStatus}"`);
     lines.push(`"ภาระงานทั้งหมดในรอบเวลา","-","${periodAnalytics.total} งาน (สำเร็จ ${periodAnalytics.completed} งาน, กำลังทำ ${periodAnalytics.inProgress} งาน)","กำลังผลิตต่อเนื่อง"`);
-    lines.push(`"ระดับความเสี่ยงรวม (Risk Level)","ยอมรับได้ (LxI ≤ 6)","${periodAnalytics.riskLevel} (คะแนน L: ${periodAnalytics.matrixL} x I: ${periodAnalytics.matrixI} = ${periodAnalytics.riskScore})","อยู่ในเกณฑ์ควบคุมได้"`);
+    lines.push(`"ระดับความเสี่ยงรวม (Risk Level)","ยอมรับได้ (LxI ≤ 6)","${periodAnalytics.riskLevel} (คะแนน L: ${periodAnalytics.matrixL} x I: ${periodAnalytics.matrixI} = ${periodAnalytics.riskScore})","${periodAnalytics.matrixL > 0 ? "อยู่ในเกณฑ์ควบคุมได้" : "รอผลประเมินจริง"}"`);
     lines.push("");
 
     lines.push("=== ส่วนที่ 2: ตารางวิเคราะห์ความเสี่ยงและแผนการจัดการความเสี่ยง (2 ด้านหลัก) ===");
@@ -1746,11 +1819,10 @@ export default function IsoReportDetail() {
     lines.push("");
 
     lines.push("=== ส่วนที่ 4: การประเมินผลการตรวจสอบติดตามรายไตรมาส (Section 9.1 Monitoring & Evaluation) ===");
-    lines.push('"ไตรมาส","จำนวนงานที่รับ","ส่งมอบตรงเวลา (%)","ความพึงพอใจ CSAT (%)","ข้อผิดพลาดรุนแรง (NC)","ข้อบกพร่องที่พบ","การปรับปรุงกระบวนการ"');
-    lines.push(`"ไตรมาส 1","48 ชิ้นงาน","91.7%","96.5%","0","มีงานด่วนแทรกส่งผลต่อคิวงาน","จัดทำคลังเทมเพลตสำหรับงานด่วน"`);
-    lines.push(`"ไตรมาส 2","54 ชิ้นงาน","92.6%","97.2%","0","บรีฟงานไม่ชัดเจนใน 2 รายการ","ปรับปรุงระบบคัดกรองบรีฟผ่าน FM-CC"`);
-    lines.push(`"ไตรมาส 3","62 ชิ้นงาน","93.5%","97.8%","0","ทักษะด้าน AI ยังไม่ทั่วถึงทุกคน","จัด Internal Workshop อบรม GenAI"`);
-    lines.push(`"ไตรมาส 4 (ปัจจุบัน)","${periodAnalytics.total} ชิ้นงาน","${periodAnalytics.onTimeRate}%","${periodAnalytics.satisfactionRate}%","0","อยู่ระหว่างติดตามประเมินผลต่อเนื่อง","ใช้ระบบแจ้งเตือนกึ่งอัตโนมัติป้องกันหลุด WI"`);
+    lines.push('"ไตรมาส","จำนวนงานที่รับ","ส่งมอบตรงเวลา (%)","ความพึงพอใจ CSAT (%)","จำนวนงานที่ได้รับการประเมิน","สถานะ KRI"');
+    quarterlyComparison.forEach(q => {
+      lines.push(`"${q.label}","${q.totalBriefs} ชิ้นงาน","${q.onTimeRate}","${q.satisfactionRate}","${q.evaluatedCount} งาน","${q.status}"`);
+    });
 
     const csvContent = lines.join("\r\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -1864,11 +1936,10 @@ export default function IsoReportDetail() {
     lines.push(`"วันที่ส่งออกข้อมูล",${new Date().toLocaleDateString("th-TH", { day: "numeric", month: "long", year: "numeric" })}`);
     lines.push(`"ข้อกำหนดทั้งหมด",${isoStats.total},"ข้อ"`);
     lines.push(`"อยู่ในขอบเขตบริการ",${isoStats.applicable},"ข้อ"`);
-    lines.push(`"ขอยกเว้นตามบริบท",${isoStats.notInFieldCount},"ข้อ"`);
-    lines.push(`"ความสอดคล้องเฉลี่ยรวม",${isoStats.avgCompliance},"%"`);
+    lines.push(`"ความครอบคลุมระบบงาน",${isoStats.coveragePercent},"%"`);
     lines.push("");
 
-    lines.push('"ลำดับ","ข้อกำหนด (Clause)","ชื่อข้อกำหนด (ภาษาไทย)","ชื่อข้อกำหนด (ภาษาอังกฤษ)","หมวดหมู่ (Chapter)","สาระสำคัญของข้อกำหนด","การนำไปปฏิบัติในระบบ CC","ร้อยละความสอดคล้อง (%)","สถานะการปฏิบัติตาม","หลักฐานเชิงประจักษ์และเอกสารอ้างอิง","หมายเหตุ / ข้อยกเว้น"');
+    lines.push('"ลำดับ","ข้อกำหนด (Clause)","ชื่อข้อกำหนด (ภาษาไทย)","ชื่อข้อกำหนด (ภาษาอังกฤษ)","หมวดหมู่ (Chapter)","สาระสำคัญของข้อกำหนด","การนำไปปฏิบัติในระบบ CC","สถานะการดำเนินงาน","หลักฐานเชิงประจักษ์และเอกสารอ้างอิง","หมายเหตุ / ข้อยกเว้น"');
 
     ISO_CLAUSES_MAPPING_DATA.forEach((clause, idx) => {
       const evidencesStr = clause.evidences
@@ -1877,12 +1948,10 @@ export default function IsoReportDetail() {
         .replace(/"/g, '""');
 
       const statusStr = !clause.inField 
-        ? "ไม่อยู่ในฟิลด์การทำงาน" 
-        : clause.compliancePercent === 100 
-        ? "สอดคล้องสมบูรณ์ 100%" 
-        : `สอดคล้องระดับสูง ${clause.compliancePercent}%`;
+        ? "ขอยกเว้นตามบริบท (ส่วนกลางกำกับดูแล)" 
+        : "มีเอกสาร/ระบบรองรับ";
 
-      lines.push(`${idx + 1},"${clause.clauseNumber}","${clause.titleTh.replace(/"/g, '""')}","${clause.titleEn.replace(/"/g, '""')}","${clause.chapter.replace(/"/g, '""')}","${clause.requirementSummary.replace(/"/g, '""')}","${clause.description.replace(/"/g, '""')}",${clause.compliancePercent},"${statusStr}","${evidencesStr}","${(clause.notes || "-").replace(/"/g, '""')}"`);
+      lines.push(`${idx + 1},"${clause.clauseNumber}","${clause.titleTh.replace(/"/g, '""')}","${clause.titleEn.replace(/"/g, '""')}","${clause.chapter.replace(/"/g, '""')}","${clause.requirementSummary.replace(/"/g, '""')}","${clause.description.replace(/"/g, '""')}","${statusStr}","${evidencesStr}","${(clause.notes || "-").replace(/"/g, '""')}"`);
     });
 
     const csvContent = lines.join("\r\n");
@@ -2031,20 +2100,26 @@ export default function IsoReportDetail() {
               </span>
               <div className="my-2 flex items-baseline gap-2">
                 <h4 className="text-2xl font-black text-slate-900 tracking-tight">
-                  {periodAnalytics.satisfactionRate}%
+                  {periodAnalytics.evaluatedCount > 0 ? `${periodAnalytics.satisfactionRate}%` : "0%"}
                 </h4>
                 <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded border ${
-                  periodAnalytics.satisfactionRate >= 85
+                  periodAnalytics.evaluatedCount === 0
+                    ? "text-slate-500 bg-slate-100 border-slate-200"
+                    : periodAnalytics.satisfactionRate >= 85
                     ? "text-emerald-600 bg-emerald-50 border-emerald-200"
                     : "text-amber-600 bg-amber-50 border-amber-200"
                 }`}>
-                  Appetite &gt;85%
+                  {periodAnalytics.evaluatedCount === 0 ? "รอการประเมิน" : "Appetite >85%"}
                 </span>
               </div>
             </div>
             <p className="text-[10.5px] text-slate-600 font-medium flex items-center gap-1">
-              <CheckCircle2 size={12} className="text-emerald-600 shrink-0" />
-              <span>ประเมินแล้ว {periodAnalytics.evaluatedCount} งาน (คุณภาพ {periodAnalytics.dimensions?.quality?.toFixed(1) || "4.8"}/5)</span>
+              <CheckCircle2 size={12} className={periodAnalytics.evaluatedCount > 0 ? "text-emerald-600 shrink-0" : "text-slate-400 shrink-0"} />
+              <span>
+                {periodAnalytics.evaluatedCount > 0
+                  ? `ประเมินแล้ว ${periodAnalytics.evaluatedCount} งาน (คุณภาพ ${periodAnalytics.dimensions?.quality ? periodAnalytics.dimensions.quality.toFixed(1) : "0.0"}/5)`
+                  : "ยังไม่มีงานที่ได้รับการประเมินความพึงพอใจ"}
+              </span>
             </p>
           </div>
 
@@ -2057,19 +2132,23 @@ export default function IsoReportDetail() {
               </span>
               <div className="my-2 flex items-baseline gap-2">
                 <h4 className="text-2xl font-black text-slate-900 tracking-tight">
-                  {periodAnalytics.onTimeRate}%
+                  {periodAnalytics.completed > 0 ? `${periodAnalytics.onTimeRate}%` : "0%"}
                 </h4>
                 <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded border ${
-                  periodAnalytics.onTimeRate >= 80
+                  periodAnalytics.completed === 0
+                    ? "text-slate-500 bg-slate-100 border-slate-200"
+                    : periodAnalytics.onTimeRate >= 80
                     ? "text-blue-600 bg-blue-50 border-blue-200"
                     : "text-rose-600 bg-rose-50 border-rose-200"
                 }`}>
-                  Appetite &gt;80%
+                  {periodAnalytics.completed === 0 ? "รอส่งมอบ" : "Appetite >80%"}
                 </span>
               </div>
             </div>
             <p className="text-[10.5px] text-blue-700 font-medium">
-              ส่งมอบตรงเวลา {periodAnalytics.onTimeCount} จาก {periodAnalytics.completed} งาน (สำเร็จ {periodAnalytics.completionRate}%)
+              {periodAnalytics.completed > 0
+                ? `ส่งมอบตรงเวลา ${periodAnalytics.onTimeCount} จาก ${periodAnalytics.completed} งาน (สำเร็จ ${periodAnalytics.completionRate}%)`
+                : "ยังไม่มีงานที่เสร็จสิ้นส่งมอบในรอบนี้"}
             </p>
           </div>
 
@@ -2098,17 +2177,29 @@ export default function IsoReportDetail() {
           <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80 flex flex-col justify-between">
             <div>
               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                <ShieldCheck size={13} className="text-emerald-500" />
+                <ShieldCheck size={13} className={periodAnalytics.matrixL > 0 ? "text-emerald-500" : "text-slate-400"} />
                 <span>สถานะความเสี่ยง ISO ในรอบ</span>
               </span>
               <div className="my-2 flex items-baseline gap-2">
-                <h4 className="text-lg sm:text-xl font-black text-emerald-600 tracking-tight truncate">
+                <h4 className={`text-base sm:text-lg font-black tracking-tight truncate ${
+                  periodAnalytics.riskColor === "emerald"
+                    ? "text-emerald-600"
+                    : periodAnalytics.riskColor === "amber"
+                    ? "text-amber-600"
+                    : periodAnalytics.riskColor === "rose"
+                    ? "text-rose-600"
+                    : periodAnalytics.riskColor === "blue"
+                    ? "text-blue-600"
+                    : "text-slate-600"
+                }`}>
                   {periodAnalytics.riskLevel}
                 </h4>
               </div>
             </div>
             <p className="text-[10.5px] text-slate-500 font-medium">
-              คะแนน L x I : {periodAnalytics.matrixL} x {periodAnalytics.matrixI} = {periodAnalytics.riskScore} (ควบคุมได้ตามเกณฑ์)
+              {periodAnalytics.matrixL > 0
+                ? `คะแนน L x I : ${periodAnalytics.matrixL} x ${periodAnalytics.matrixI} = ${periodAnalytics.riskScore} (ควบคุมได้ตามเกณฑ์)`
+                : "รอข้อมูลผลงานและการประเมินจริงในรอบ"}
             </p>
           </div>
         </div>
@@ -2321,7 +2412,7 @@ export default function IsoReportDetail() {
                     <div className="p-3 bg-slate-100 font-bold text-slate-800 flex justify-between items-center">
                       <span>KRI 1: ร้อยละของการประเมินความพึงพอใจ (Satisfaction)</span>
                       <span className="text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-bold">
-                        ผลจริงในรอบ {periodAnalytics.satisfactionRate}%
+                        {periodAnalytics.evaluatedCount > 0 ? `ผลจริงในรอบ ${periodAnalytics.satisfactionRate}%` : "ยังไม่มีข้อมูลประเมิน"}
                       </span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
@@ -2342,7 +2433,13 @@ export default function IsoReportDetail() {
                       <span>ผลประเมินจริงในระบบ ({periodAnalytics.evaluatedCount} งาน):</span>
                     </span>
                     <span className="text-emerald-800 font-black">
-                      ความถูกต้อง {periodAnalytics.dimensions?.accuracy?.toFixed(1) || "4.8"}/5 • ตรงเวลา {periodAnalytics.dimensions?.timeliness?.toFixed(1) || "4.9"}/5 • คุณภาพ {periodAnalytics.dimensions?.quality?.toFixed(1) || "4.8"}/5
+                      {periodAnalytics.evaluatedCount > 0 ? (
+                        <>
+                          ความถูกต้อง {periodAnalytics.dimensions?.accuracy ? periodAnalytics.dimensions.accuracy.toFixed(1) : "0.0"}/5 • ตรงเวลา {periodAnalytics.dimensions?.timeliness ? periodAnalytics.dimensions.timeliness.toFixed(1) : "0.0"}/5 • คุณภาพ {periodAnalytics.dimensions?.quality ? periodAnalytics.dimensions.quality.toFixed(1) : "0.0"}/5
+                        </>
+                      ) : (
+                        <span className="text-slate-600 font-normal">ยังไม่มีงานที่ได้รับการประเมินความพึงพอใจในรอบนี้ (รอผลประเมินจริง)</span>
+                      )}
                     </span>
                   </div>
                 </div>
@@ -2407,7 +2504,13 @@ export default function IsoReportDetail() {
                     <div className="p-3.5 bg-emerald-50 rounded-xl border border-emerald-200">
                       <span className="font-bold text-emerald-900 block mb-1">ผลกระทบ (I) = ระดับ 2</span>
                       <p className="text-emerald-800 font-medium">
-                        ร้อยละของการประเมินความพึงพอใจ <strong>ร้อยละ 94.6% - 97%</strong> (ผ่านเกณฑ์ Appetite &gt;85%)
+                        ร้อยละของการประเมินความพึงพอใจ:{" "}
+                        <strong>
+                          {periodAnalytics.evaluatedCount > 0
+                            ? `ผลจริงในรอบ ${periodAnalytics.satisfactionRate}%`
+                            : "รอข้อมูลประเมินจริงในรอบ"}
+                        </strong>{" "}
+                        (เกณฑ์ Appetite &gt;85%)
                       </p>
                     </div>
                   </div>
@@ -2543,7 +2646,7 @@ export default function IsoReportDetail() {
                     <div className="p-3 bg-slate-100 font-bold text-slate-800 flex justify-between items-center">
                       <span>KRI 1: ร้อยละความสำเร็จของการบรรลุเป้าหมายและตรงต่อเวลา</span>
                       <span className="text-[11px] text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 font-bold">
-                        ผลจริงในรอบ {periodAnalytics.onTimeRate}%
+                        {periodAnalytics.completed > 0 ? `ผลจริงในรอบ ${periodAnalytics.onTimeRate}%` : "ยังไม่มีงานส่งมอบ"}
                       </span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
@@ -2564,7 +2667,13 @@ export default function IsoReportDetail() {
                       <span>สถานะการส่งมอบจริงในระบบ:</span>
                     </span>
                     <span className="text-blue-800 font-black">
-                      ส่งมอบตรงเวลา {periodAnalytics.onTimeCount} จาก {periodAnalytics.completed} งาน (อัตราสำเร็จ {periodAnalytics.completionRate}%)
+                      {periodAnalytics.completed > 0 ? (
+                        <>
+                          ส่งมอบตรงเวลา {periodAnalytics.onTimeCount} จาก {periodAnalytics.completed} งาน (อัตราสำเร็จ {periodAnalytics.completionRate}%)
+                        </>
+                      ) : (
+                        <span className="text-slate-600 font-normal">ยังไม่มีงานที่เสร็จสิ้นส่งมอบในรอบนี้</span>
+                      )}
                     </span>
                   </div>
                 </div>
@@ -2629,7 +2738,13 @@ export default function IsoReportDetail() {
                     <div className="p-3.5 bg-emerald-50 rounded-xl border border-emerald-200">
                       <span className="font-bold text-emerald-900 block mb-1">ผลกระทบ (I) = ระดับ 2</span>
                       <p className="text-emerald-800 font-medium">
-                        ร้อยละความสำเร็จของการบรรลุเป้าหมายขององค์กร <strong>อยู่ที่ 100%</strong> (ระบบจริง: {periodAnalytics.onTimeRate}%)
+                        ร้อยละความสำเร็จของการบรรลุเป้าหมายขององค์กร:{" "}
+                        <strong>
+                          {periodAnalytics.completed > 0
+                            ? `ส่งมอบตรงเวลาจริง ${periodAnalytics.onTimeRate}% (${periodAnalytics.completed} งาน)`
+                            : "รอข้อมูลส่งมอบจริงในรอบ"}
+                        </strong>{" "}
+                        (เกณฑ์ Appetite &gt;80%)
                       </p>
                     </div>
                   </div>
@@ -2765,20 +2880,20 @@ export default function IsoReportDetail() {
                         รวมทั้งปีงบประมาณ 2026-2027 (ข้อมูลสะสม)
                       </td>
                       <td className="p-3 border-r border-slate-200 dark:border-zinc-700 text-center font-mono text-slate-900 dark:text-zinc-100">
-                        {rawBriefs.length} งาน
+                        {fullYearAnalytics.total} งาน
                       </td>
                       <td className="p-3 border-r border-slate-200 dark:border-zinc-700 text-center font-mono text-slate-900 dark:text-zinc-100">
-                        {rawBriefs.filter(b => b.status === "completed").length} งาน
+                        {fullYearAnalytics.completed} งาน
                       </td>
                       <td className="p-3 border-r border-slate-200 dark:border-zinc-700 text-center font-mono text-emerald-700 dark:text-emerald-400">
-                        94.6%
+                        {fullYearAnalytics.satisfactionRate}
                       </td>
                       <td className="p-3 border-r border-slate-200 dark:border-zinc-700 text-center font-mono text-blue-700 dark:text-blue-400">
-                        98.4%
+                        {fullYearAnalytics.onTimeRate}
                       </td>
                       <td className="p-3 text-center">
-                        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 whitespace-nowrap inline-flex items-center justify-center">
-                          ผ่านเกณฑ์ KRI ระดับต่ำ
+                        <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap inline-flex items-center justify-center ${fullYearAnalytics.statusClass}`}>
+                          {fullYearAnalytics.status}
                         </span>
                       </td>
                     </tr>
@@ -3041,88 +3156,8 @@ export default function IsoReportDetail() {
                 <p className="text-[10.5px] text-blue-700">คะแนน L x I อยู่ในเกณฑ์ที่ยอมรับได้ 100%</p>
               </div>
             </div>
-
             {/* ========================================================================= */}
-            {/* 1. บทวิเคราะห์สรุปเชิงกลยุทธ์ (EXECUTIVE STRATEGIC SUMMARY)                */}
-            {/* ========================================================================= */}
-            <div id="sec-tab3-summary" className="space-y-3 pt-2 scroll-mt-24">
-              <div className="flex items-center justify-between">
-                <h4 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
-                  <Sparkles size={18} className="text-[#E03131]" />
-                  <span>บทวิเคราะห์สรุปเชิงกลยุทธ์ (Executive Strategic Summary &amp; Key Takeaways)</span>
-                </h4>
-                <span className="text-xs font-mono text-slate-400">บทวิเคราะห์ผู้บริหาร</span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                {/* Takeaway 1: Strategic Posture */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-50/80 to-teal-50/40 border border-emerald-200/90 space-y-2">
-                  <div className="flex items-center gap-2 text-emerald-900 font-extrabold text-sm">
-                    <Target size={16} className="text-emerald-600 shrink-0" />
-                    <span>1. ทิศทางเชิงกลยุทธ์ (Strategic Posture)</span>
-                  </div>
-                  <p className="text-xs text-slate-700 leading-relaxed font-medium">
-                    ทีม CC อยู่ในสถานะ <strong>&quot;เชิงรุก (Proactive Growth)&quot;</strong> โดยมีโอกาสสูงถึง <strong>72.7%</strong> ด้วยจุดแข็งของทีมงานที่มีความสามารถด้านงานสร้างสรรค์หลากหลายประเภทสื่อ และได้รับการสนับสนุนนโยบายจากผู้บริหารระดับสูงอย่างต่อเนื่อง พร้อมขับเคลื่อนเป็นศูนย์กลางการสื่อสารนวัตกรรม (Creative Media Hub) ของอุทยานฯ
-                  </p>
-                  <div className="text-[11px] text-emerald-800 font-bold bg-white/80 px-2.5 py-1.5 rounded-xl border border-emerald-100">
-                    🎯 เป้าหมาย: ขยายการบริการสู่ Flagship Projects ระดับสากล
-                  </div>
-                </div>
-
-                {/* Takeaway 2: Managed Risks */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-amber-50/80 to-orange-50/40 border border-amber-200/90 space-y-2">
-                  <div className="flex items-center gap-2 text-amber-900 font-extrabold text-sm">
-                    <ShieldAlert size={16} className="text-amber-600 shrink-0" />
-                    <span>2. การควบคุม 3 ความเสี่ยงหลัก (Risk Safeguards)</span>
-                  </div>
-                  <ul className="text-xs text-slate-700 space-y-1.5 font-medium leading-relaxed">
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-rose-600 font-bold">•</span>
-                      <span><strong>งานด่วนเร่งด่วน:</strong> คัดกรองด้วย SLA ตามระเบียบ WI และเตรียม Asset Bank สำเร็จรูป</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-rose-600 font-bold">•</span>
-                      <span><strong>ทักษะเฉพาะทาง:</strong> จัดอบรม Up-skill ด้าน Generative AI และ Advanced Motion</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-rose-600 font-bold">•</span>
-                      <span><strong>ภาพลักษณ์โซเชียล:</strong> ตรวจทานคอนเทนต์คู่ขนาน AD และเฝ้าระวังแบบ Real-time</span>
-                    </li>
-                  </ul>
-                  <div className="text-[11px] text-amber-800 font-bold bg-white/80 px-2.5 py-1.5 rounded-xl border border-amber-100">
-                    🛡️ ผลลัพธ์: ควบคุมความเสี่ยงให้อยู่ในระดับยอมรับได้ (L x I ≤ 6)
-                  </div>
-                </div>
-
-                {/* Takeaway 3: Actionable Metrics */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-blue-50/80 to-indigo-50/40 border border-blue-200/90 space-y-2">
-                  <div className="flex items-center gap-2 text-blue-900 font-extrabold text-sm">
-                    <CheckCircle2 size={16} className="text-blue-600 shrink-0" />
-                    <span>3. ตัวชี้วัดความสำเร็จ (Actionable KPIs)</span>
-                  </div>
-                  <p className="text-xs text-slate-700 leading-relaxed font-medium">
-                    การบริหารจัดการความเสี่ยงและโอกาสเชื่อมโยงตรงสู่ระบบปฏิบัติการรายวัน ผ่าน 3 ตัวชี้วัดหลักตามมาตรฐาน ISO 9001:2015:
-                  </p>
-                  <div className="space-y-1 text-xs">
-                    <div className="flex items-center justify-between bg-white/80 px-2.5 py-1 rounded-lg border border-blue-100">
-                      <span className="text-slate-600">ความพึงพอใจ 5 มิติ (KRI 1):</span>
-                      <strong className="text-emerald-600 font-mono font-bold">≥ 90.0%</strong>
-                    </div>
-                    <div className="flex items-center justify-between bg-white/80 px-2.5 py-1 rounded-lg border border-blue-100">
-                      <span className="text-slate-600">ส่งมอบตรงเวลา (KRI 2):</span>
-                      <strong className="text-blue-600 font-mono font-bold">≥ 90.0%</strong>
-                    </div>
-                    <div className="flex items-center justify-between bg-white/80 px-2.5 py-1 rounded-lg border border-blue-100">
-                      <span className="text-slate-600">ข้อบกพร่องระบบ (CAR/NC):</span>
-                      <strong className="text-slate-800 font-mono font-bold">0 รายการ</strong>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* ========================================================================= */}
-            {/* 2. การวิเคราะห์กลยุทธ์ TOWS MATRIX (STRATEGIC TOWS MATRIX ANALYSIS)         */}
+            {/* 1. การวิเคราะห์กลยุทธ์ TOWS MATRIX (STRATEGIC TOWS MATRIX ANALYSIS)         */}
             {/* ========================================================================= */}
             <div id="sec-tab3-tows" className="space-y-3 pt-2 scroll-mt-24">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
@@ -3256,7 +3291,7 @@ export default function IsoReportDetail() {
             </div>
 
             {/* ========================================================================= */}
-            {/* 3. ตารางทะเบียนประเมินความเสี่ยงและโอกาส (RISK & OPPORTUNITY REGISTER TABLE)*/}
+            {/* 2. ตารางทะเบียนประเมินความเสี่ยงและโอกาส (RISK & OPPORTUNITY REGISTER TABLE)*/}
             {/* ========================================================================= */}
             <div id="sec-tab3-register" className="space-y-3 pt-2 scroll-mt-24">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
@@ -3537,33 +3572,32 @@ export default function IsoReportDetail() {
                 </p>
               </div>
 
-              {/* Card 2: Average Compliance */}
+              {/* Card 2: Process Coverage */}
               <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200 space-y-1">
                 <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
                   <TrendingUp size={13} className="text-emerald-600" />
-                  <span>ความสอดคล้องเฉลี่ยรวม</span>
+                  <span>ความครอบคลุมระบบงาน</span>
                 </span>
                 <div className="flex items-baseline gap-2 pt-1">
-                  <span className="text-2xl sm:text-3xl font-black text-emerald-700">{isoStats.avgCompliance}%</span>
+                  <span className="text-2xl sm:text-3xl font-black text-emerald-700">{isoStats.coveragePercent}%</span>
                   <span className="text-xs font-bold text-emerald-700 px-2 py-0.5 rounded-full bg-emerald-100 border border-emerald-300">
-                    สอดคล้องระดับดีเยี่ยม
+                    มีระบบรองรับครบถ้วน
                   </span>
                 </div>
                 <p className="text-[11px] text-emerald-700">
-                  คำนวณจากข้อกำหนดที่อยู่ในขอบเขตการทำงานของทีม CC
+                  ครอบคลุมทุกข้อกำหนดที่อยู่ในขอบเขตการทำงานของทีม CC
                 </p>
               </div>
 
-              {/* Card 3: 100% & High Compliance */}
+              {/* Card 3: Ready & Documented */}
               <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-200 space-y-1">
                 <span className="text-[11px] font-bold text-blue-800 uppercase tracking-wider flex items-center gap-1.5">
                   <CheckCircle2 size={13} className="text-blue-600" />
-                  <span>สอดคล้องสมบูรณ์ / สอดคล้องสูง</span>
+                  <span>มีเอกสาร/ระบบรองรับ</span>
                 </span>
                 <div className="flex items-baseline gap-2 pt-1">
-                  <span className="text-2xl sm:text-3xl font-black text-blue-900">{isoStats.full100}</span>
-                  <span className="text-xs font-bold text-blue-700">ข้อ (100%)</span>
-                  <span className="text-xs text-blue-500 font-medium">+ {isoStats.high95} ข้อ (95%)</span>
+                  <span className="text-2xl sm:text-3xl font-black text-blue-900">{isoStats.applicable}</span>
+                  <span className="text-xs font-bold text-blue-700">ข้อกำหนด</span>
                 </div>
                 <p className="text-[11px] text-blue-700">
                   ครอบคลุมทั้งระบบกระบวนการ WI, KRI และทะเบียนความเสี่ยง
@@ -3574,16 +3608,16 @@ export default function IsoReportDetail() {
               <div className="p-4 rounded-2xl bg-slate-100/80 border border-slate-300/80 space-y-1">
                 <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
                   <Ban size={13} className="text-slate-500" />
-                  <span>ไม่อยู่ในฟิลด์การทำงาน</span>
+                  <span>ขอยกเว้นตามบริบทงาน</span>
                 </span>
                 <div className="flex items-baseline gap-2 pt-1">
                   <span className="text-2xl sm:text-3xl font-black text-slate-800">{isoStats.notInFieldCount}</span>
                   <span className="text-xs font-bold text-slate-600 px-2 py-0.5 rounded-full bg-slate-200 border border-slate-300">
-                    ขอยกเว้นตามบริบท
+                    ข้อ 8.4
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500">
-                  ข้อ 8.4 การจัดซื้อพัสดุภายนอก (ดำเนินการผ่านฝ่ายพัสดุกลาง)
+                  การจัดซื้อพัสดุภายนอก ดำเนินการผ่านฝ่ายพัสดุกลางของอุทยานฯ
                 </p>
               </div>
             </div>
@@ -3605,24 +3639,14 @@ export default function IsoReportDetail() {
                   ทั้งหมด ({isoStats.total})
                 </button>
                 <button
-                  onClick={() => setEvidenceFilter("100")}
+                  onClick={() => setEvidenceFilter("applicable")}
                   className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                    evidenceFilter === "100"
+                    evidenceFilter === "applicable"
                       ? "bg-emerald-600 text-white shadow-xs"
                       : "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
                   }`}
                 >
-                  สอดคล้อง 100% ({isoStats.full100})
-                </button>
-                <button
-                  onClick={() => setEvidenceFilter("high")}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                    evidenceFilter === "high"
-                      ? "bg-blue-600 text-white shadow-xs"
-                      : "bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100"
-                  }`}
-                >
-                  สอดคล้องระดับสูง 95% ({isoStats.high95})
+                  มีเอกสาร/ระบบรองรับ ({isoStats.applicable})
                 </button>
                 <button
                   onClick={() => setEvidenceFilter("not_in_field")}
@@ -3632,7 +3656,7 @@ export default function IsoReportDetail() {
                       : "bg-slate-100 text-slate-700 border border-slate-300 hover:bg-slate-200"
                   }`}
                 >
-                  ไม่อยู่ในฟิลด์การทำงาน ({isoStats.notInFieldCount})
+                  ขอยกเว้นตามบริบท ({isoStats.notInFieldCount})
                 </button>
               </div>
 
@@ -3695,7 +3719,7 @@ export default function IsoReportDetail() {
                 <tr className="bg-slate-50/90 border-b border-slate-200 text-slate-700 text-[11px] font-bold uppercase tracking-wider">
                   <th className="w-[15%] px-3 py-3 text-left">ข้อกำหนด ISO 9001</th>
                   <th className="w-[23%] px-3 py-3 text-left">สาระสำคัญข้อกำหนด</th>
-                  <th className="w-[13%] px-3 py-3 text-left">ความสอดคล้อง</th>
+                  <th className="w-[13%] px-3 py-3 text-left">สถานะการดำเนินงาน</th>
                   <th className="w-[25%] px-3 py-3 text-left">คำอธิบายการนำไปปฏิบัติในระบบ</th>
                   <th className="w-[24%] px-3 py-3 text-left">หลักฐานเชิงประจักษ์ &amp; ลิงก์เชื่อมโยง</th>
                 </tr>
@@ -3762,44 +3786,27 @@ export default function IsoReportDetail() {
                           </p>
                         </td>
 
-                        {/* Col 3: ความสอดคล้อง (13%) */}
-                        <td className="px-3 py-3.5 align-top space-y-2">
+                        {/* Col 3: สถานะการดำเนินงาน (13%) */}
+                        <td className="px-3 py-3.5 align-top space-y-1.5">
                           {isNotInField ? (
                             <div className="space-y-1">
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-200 text-slate-700 border border-slate-300">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-300">
                                 <Ban size={11} className="shrink-0 text-slate-500" />
-                                <span>ไม่เข้าข่าย</span>
+                                <span>ขอยกเว้นตามบริบท</span>
                               </span>
-                              <div className="text-[10.5px] text-slate-500 font-medium">
-                                ไม่อยู่ในฟิลด์งาน
+                              <div className="text-[10px] text-slate-500 font-medium">
+                                ส่วนกลางกำกับดูแล
                               </div>
                             </div>
                           ) : (
-                            <div className="space-y-1.5">
-                              <div className="flex items-center justify-between">
-                                <span
-                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-bold border ${
-                                    item.compliancePercent === 100
-                                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                      : "bg-blue-50 text-blue-700 border-blue-200"
-                                  }`}
-                                >
-                                  <CheckCircle2 size={11} className="shrink-0" />
-                                  <span>{item.statusLabel}</span>
-                                </span>
-                              </div>
-                              {/* Progress bar */}
-                              <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full transition-all duration-500 ${
-                                    item.compliancePercent === 100 ? "bg-emerald-500" : "bg-blue-500"
-                                  }`}
-                                  style={{ width: `${item.compliancePercent}%` }}
-                                />
-                              </div>
-                              <span className="text-[10.5px] font-mono font-bold text-slate-600 block">
-                                {item.compliancePercent}% สอดคล้อง
+                            <div className="space-y-1">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <CheckCircle2 size={11} className="shrink-0 text-emerald-600" />
+                                <span>มีเอกสาร/ระบบรองรับ</span>
                               </span>
+                              <div className="text-[10px] text-emerald-700 font-medium">
+                                พร้อมรับการตรวจประเมิน
+                              </div>
                             </div>
                           )}
                         </td>

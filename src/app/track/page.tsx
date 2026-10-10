@@ -11,6 +11,9 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import { parseMemberRecord, DEFAULT_MEMBER_METADATA } from "@/utils/memberProfile";
 import { getTaskSurveyUrl } from "@/utils/surveyTokens";
+import { resolveTaskCode } from "@/utils/taskCodeService";
+import { syncCustomQuotesFromAssignees, getMemberCustomQuote } from "@/utils/memberQuote";
+import { Assignee3DAvatarBadge, CHEEKY_QUOTES } from "@/components/Assignee3DAvatarBadge";
 
 interface BriefItem {
   id: string;
@@ -32,15 +35,10 @@ interface BriefItem {
 }
 
 function calculateTaskCode(b: BriefItem, allBriefs: BriefItem[]): string {
-  if (b.details?.idc_code) return b.details.idc_code;
-  if (b.details?.rsp_code) return b.details.rsp_code;
-  const unit = (b.unit || "creative").toLowerCase();
-  const prefix = unit === "creative" ? "DS" : unit === "content" ? "CT" : unit === "pr" ? "PR" : "IT";
-  const activeUnitBriefs = allBriefs.filter(
-    (item) => (item.unit || "").toLowerCase() === unit && !item.details?.is_deleted
-  );
-  const index = activeUnitBriefs.findIndex((item) => item.id === b.id) + 1;
-  return `${prefix}70-${index || 1}`;
+  if (b.details?.task_code) return b.details.task_code;
+  if (b.details?.idc_code && b.details.idc_code.includes("70-")) return b.details.idc_code;
+  if (b.details?.rsp_code && b.details.rsp_code.includes("70-")) return b.details.rsp_code;
+  return resolveTaskCode(b, allBriefs);
 }
 
 function getUnitBadge(unit: string) {
@@ -92,6 +90,14 @@ function TrackContent() {
   const [assignees, setAssignees] = useState<any[]>([]);
   const [matchedBriefs, setMatchedBriefs] = useState<BriefItem[]>([]);
   const [selectedBriefForModal, setSelectedBriefForModal] = useState<BriefItem | null>(null);
+  const [quoteVersion, setQuoteVersion] = useState(0);
+
+  // Re-render when custom quote changes
+  useEffect(() => {
+    const handleQuoteUpdated = () => setQuoteVersion((v) => v + 1);
+    window.addEventListener("cc_quote_updated", handleQuoteUpdated);
+    return () => window.removeEventListener("cc_quote_updated", handleQuoteUpdated);
+  }, []);
 
   // Load all briefs & assignees on mount with real-time subscription
   useEffect(() => {
@@ -114,6 +120,7 @@ function TrackContent() {
         }
         if (aData) {
           setAssignees(aData);
+          syncCustomQuotesFromAssignees(aData);
         }
       } catch (err) {
         console.error("Failed to fetch tracking data:", err);
@@ -160,7 +167,10 @@ function TrackContent() {
 
       const freshBriefs = bData ? bData.filter((b) => !b.details?.is_permanently_deleted) : fallbackList;
       if (freshBriefs.length > 0) setAllBriefs(freshBriefs);
-      if (aData && aData.length > 0) setAssignees(aData);
+      if (aData && aData.length > 0) {
+        setAssignees(aData);
+        syncCustomQuotesFromAssignees(aData);
+      }
 
       const results = freshBriefs.filter((b) => {
         const code = calculateTaskCode(b, freshBriefs).toLowerCase();
@@ -485,7 +495,7 @@ function TrackContent() {
                       {isPending && (
                         <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
                           <Clock size={13} className="text-amber-600" />
-                          <span>รอดำเนินการ / จัดสรรทีม</span>
+                          <span>{!brief.assignee_id ? "รอมอบหมายผู้รับผิดชอบ" : "รอทำ (Pending)"}</span>
                         </span>
                       )}
                       {isCancelled && (
@@ -583,28 +593,47 @@ function TrackContent() {
                     {/* Assignee Contact & Deadlines Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                       {/* Assignee Box */}
-                      <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-100 flex items-start gap-3">
-                        <div className="w-9 h-9 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
-                          {assignee ? assignee.name.slice(0, 2) : <User size={16} />}
+                      <div className="p-3.5 bg-zinc-50 rounded-2xl border border-zinc-100 flex items-start gap-3.5">
+                        <div className="shrink-0 mt-0.5">
+                          {assignee ? (
+                            <Assignee3DAvatarBadge name={assignee.name} size={64} showBorder />
+                          ) : (
+                            <div className="w-16 h-16 rounded-full bg-zinc-200 text-zinc-500 flex items-center justify-center font-bold text-xs">
+                              <User size={24} />
+                            </div>
+                          )}
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="text-[11px] text-zinc-400 font-medium">ผู้รับผิดชอบงานจากทีม CC</div>
-                          <div className="text-xs font-bold text-zinc-800 truncate">
+                          <div className="text-sm font-bold text-zinc-900 truncate">
                             {assignee ? `${assignee.fullName} (${assignee.name})` : "อยู่ระหว่างการจัดสรร"}
                           </div>
                           {assignee && (
-                            <div className="text-[11px] text-zinc-500 truncate mt-0.5">
+                            <div className="text-xs text-zinc-500 truncate mt-0.5">
                               {assignee.position}
                             </div>
                           )}
                           {assignee?.phone && assignee.phone !== "-" && (
-                            <div className="mt-1 flex items-center gap-1.5 text-[11px] text-zinc-600">
+                            <div className="mt-1 flex items-center gap-1.5 text-xs text-zinc-600">
                               <Phone size={11} className="text-zinc-400 shrink-0" />
-                              <a href={`tel:${assignee.phone}`} className="hover:text-orange-600 transition-colors font-mono">
+                              <a href={`tel:${assignee.phone}`} className="hover:text-orange-600 transition-colors font-mono font-medium">
                                 {assignee.phone}
                               </a>
                             </div>
                           )}
+                          {assignee && (() => {
+                            const quote = getMemberCustomQuote(assignee.name) || CHEEKY_QUOTES[assignee.name]?.[0];
+                            if (!quote) return null;
+                            return (
+                              <div className="mt-2.5 pt-2 border-t border-zinc-200/70">
+                                <p className="text-xs font-bold text-amber-950 leading-snug tracking-tight bg-amber-50/70 border border-amber-200/60 rounded-xl px-2.5 py-1.5 shadow-2xs">
+                                  <span className="text-amber-500 font-serif mr-1 text-sm font-black select-none">“</span>
+                                  {quote}
+                                  <span className="text-amber-500 font-serif ml-1 text-sm font-black select-none">”</span>
+                                </p>
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
 

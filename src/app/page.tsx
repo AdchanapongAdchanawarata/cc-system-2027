@@ -29,11 +29,11 @@ export default function Home() {
       {/* Top Navigation Bar */}
       <div className="w-full flex flex-row justify-between items-center mb-0 animate-premium-fade relative z-30">
         <div className="text-left inline-flex flex-col w-fit select-none">
-          <h1 className="text-2xl sm:text-3xl md:text-[38px] font-black tracking-[0.055em] text-foreground leading-none">
+          <h1 className="text-2xl sm:text-3xl md:text-[38px] font-black tracking-[0.055em] text-foreground leading-none whitespace-nowrap">
             CC TEAM
           </h1>
-          <p className="text-muted-foreground text-[8.5px] sm:text-[10.5px] md:text-[13px] font-medium tracking-[0.005em] mt-1 leading-none whitespace-nowrap">
-            Briefing & Management System
+          <p className="w-full text-foreground text-[9.5px] sm:text-[11.85px] md:text-[15px] font-medium leading-none whitespace-nowrap text-justify [text-align-last:justify] select-none box-border mt-0.5 sm:mt-0.5 md:mt-1">
+            Creative and Comunication
           </p>
         </div>
         
@@ -148,8 +148,15 @@ export default function Home() {
         showTrigger={false} 
       />
 
-      {/* Bottom spacer for balanced vertical alignment */}
-      <div className="w-full pb-2 sm:pb-4 mt-auto" />
+      {/* Document Control Footer - Subtle & Minimal (Dieter Rams style) */}
+      <footer className="w-full mt-auto pt-4 pb-3 sm:pb-4 text-center select-none animate-premium-fade" style={{ animationDelay: '200ms' }}>
+        <p className="text-[10px] sm:text-[11px] text-slate-400/60 font-light tracking-wide leading-relaxed">
+          <span>แบบฟอร์มเข้ารับบริการงานสร้างสรรค์ (FM-CC-010 V.01)</span>
+          <span className="hidden sm:inline mx-1.5 opacity-40">•</span>
+          <br className="sm:hidden" />
+          <span>วันที่บังคับใช้เอกสาร 1 ต.ค. 69 (อายุการจัดเก็บเอกสาร 2 ปี)</span>
+        </p>
+      </footer>
     </main>
   );
 }

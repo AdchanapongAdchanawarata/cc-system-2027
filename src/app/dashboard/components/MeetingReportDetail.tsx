@@ -1,15 +1,18 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { 
   Users, Calendar, Clock, Plus, ChevronRight, CheckCircle2, 
   AlertCircle, ArrowRight, Mail, Send, X, Edit3, Trash2, 
   TrendingUp, ShieldAlert, Sparkles, Filter, CheckSquare, 
   Square, FileText, Check, ChevronLeft, Award, UserCheck, MessageSquare,
-  BarChart3, ThumbsUp, AlertTriangle, Target, Hourglass, Copy
+  BarChart3, ThumbsUp, AlertTriangle, Target, Hourglass, Copy,
+  Camera, Download, Loader2, UserPlus, User
 } from "lucide-react";
+import html2canvas from "html2canvas-pro";
 import { createClient } from "@/utils/supabase/client";
-import { DEFAULT_MEMBER_METADATA, parseMemberRecord } from "@/utils/memberProfile";
+import { DEFAULT_MEMBER_METADATA, parseMemberRecord, isExecutive, isOperationalAssignee } from "@/utils/memberProfile";
 import ModernSelect, { ModernSelectOption } from "@/components/ModernSelect";
 import ModernDatePicker from "@/components/ModernDatePicker";
 import ExportDataDropdown from "./ExportDataDropdown";
@@ -108,138 +111,21 @@ export default function MeetingReportDetail() {
   // Meetings store in LocalStorage for high responsiveness and persistence
   const [meetings, setMeetings] = useState<MeetingTask[]>(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("cc_meeting_tasks_v2");
+      const saved = localStorage.getItem("cc_meeting_tasks_v3_fy70");
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            // If executive meeting is missing from legacy localStorage, merge it
-            const hasExec = parsed.some((m: MeetingTask) => m.meetingType === "executive" || m.id === "mtg-2026-10-exec");
-            if (!hasExec) {
-              return [
-                ...parsed,
-                {
-                  id: "mtg-2026-10-exec",
-                  meetingType: "executive",
-                  monthKey: "2026-10",
-                  monthName: "ตุลาคม 2026",
-                  date: "2026-10-14",
-                  title: "การประชุมร่วมกับผู้บริหารและทบทวนระบบงาน ครั้งที่ 1/ตุลาคม 2569",
-                  recorder: "วา WK",
-                  chair: "ผศ.ดร.สุริยะ ทองมุณี (รองผู้อำนวยการ)",
-                  status: "sent",
-                  agendas: [
-                    {
-                      id: "ag-exec-1",
-                      title: "รายงานผลสัมฤทธิ์ตัวชี้วัด KRI และเป้าหมายคุณภาพประจำเดือน (CSAT 92.4%, On-time 93.8%)",
-                      category: "info",
-                      completed: true,
-                      notes: "ผู้บริหารรับทราบผลการดำเนินงานและมีมติให้รักษามาตรฐานความรวดเร็วและถูกต้อง",
-                      assignees: ["จ๊อบ AA", "วา WK"]
-                    },
-                    {
-                      id: "ag-exec-2",
-                      title: "มอบนโยบายและทิศทางการสื่อสารแคมเปญใหญ่ STeP Expo 2027",
-                      category: "continuous",
-                      completed: false,
-                      notes: "ผศ.ดร.สุริยะ กำชับให้เน้นอัตลักษณ์ CI และจัดทำสื่อประชาสัมพันธ์เชิงรุก",
-                      assignees: ["ลูกอิน STK", "เอ็นจอย SLR"]
-                    }
-                  ],
-                  observations: "การประสานงานกับผู้บริหารมีความคล่องตัวสูง ข้อสั่งการชัดเจน",
-                  risks: "ภาระงานช่วงจัดอีเวนต์ใหญ่ อาจกระทบเวลาการตรวจทานงานประจำ",
-                  solutions: "กระจายงานข้ามยูนิต และใช้ระบบ Ticket ดิจิทัลในการติดตามสถานะ",
-                  isoLinked: true
-                }
-              ];
-            }
-            return parsed;
-          }
+          if (Array.isArray(parsed)) return parsed;
         } catch (e) {
-          console.error("Error parsing meetings:", e);
+          console.error(e);
         }
       }
     }
-    // Default initial seed data for October 2026
-    return [
-      {
-        id: "mtg-2026-10-1",
-        meetingType: "internal",
-        monthKey: "2026-10",
-        monthName: "ตุลาคม 2026",
-        date: "2026-10-06",
-        title: "การประชุม CC ประจำสัปดาห์ ครั้งที่ 1/ตุลาคม 2569",
-        recorder: "วา WK",
-        chair: "นายอัจชนะพงษ์ อัจชนะวราทา (จ๊อบ AA)",
-        status: "draft",
-        agendas: [
-          {
-            id: "ag-1",
-            title: "สรุปเป้าหมาย KR ไตรมาส 1 ประจำปีงบประมาณ 2027",
-            category: "info",
-            completed: true,
-            notes: "รับทราบเป้าหมาย Save Cost และปริมาณงานของแต่ละยูนิต",
-            assignees: ["จ๊อบ AA", "วา WK"]
-          },
-          {
-            id: "ag-2",
-            title: "เตรียมความพร้อมผลิตสื่อและ Key Visual งาน RSP Innovation Day 2027",
-            category: "continuous",
-            completed: false,
-            notes: "มอบหมายทีม Creative ร่างแบบ Mockup 3 สไตล์ภายในศุกร์นี้",
-            assignees: ["เยียร์ LLP", "พิม AC"]
-          },
-          {
-            id: "ag-3",
-            title: "ปรับปรุงกระบวนการ Kickoff Email และแบบประเมินความพึงพอใจ 5 มิติ",
-            category: "continuous",
-            completed: false,
-            notes: "รอผลการทดสอบ API กับผู้บริหาร",
-            assignees: ["จอย RL", "จ๊อบ AA"]
-          }
-        ],
-        observations: "ทีมเริ่มมีภาระงานล้นช่วงต้นไตรมาสเนื่องจากงานอีเวนต์ใหญ่ของอุทยานฯ ชนกัน 3 งาน",
-        risks: "งานผลิต Key Visual อาจเกิดความล่าช้าหากส่งมอบ Storyboard ไม่ทันวันที่ 15 ต.ค.",
-        solutions: "ให้ผู้ช่วย Creative (เยียร์/พิม) เข้ามาประกบเป็นคู่หูร่วมกับ Lead Designer ทันที",
-        isoLinked: false
-      },
-      {
-        id: "mtg-2026-10-exec",
-        meetingType: "executive",
-        monthKey: "2026-10",
-        monthName: "ตุลาคม 2026",
-        date: "2026-10-14",
-        title: "การประชุมร่วมกับผู้บริหารและทบทวนระบบงาน ครั้งที่ 1/ตุลาคม 2569",
-        recorder: "วา WK",
-        chair: "ผศ.ดร.สุริยะ ทองมุณี (รองผู้อำนวยการ)",
-        status: "sent",
-        agendas: [
-          {
-            id: "ag-exec-1",
-            title: "รายงานผลสัมฤทธิ์ตัวชี้วัด KRI และเป้าหมายคุณภาพประจำเดือน (CSAT 92.4%, On-time 93.8%)",
-            category: "info",
-            completed: true,
-            notes: "ผู้บริหารรับทราบผลการดำเนินงานและมีมติให้รักษามาตรฐานความรวดเร็วและถูกต้อง",
-            assignees: ["จ๊อบ AA", "วา WK"]
-          },
-          {
-            id: "ag-exec-2",
-            title: "มอบนโยบายและทิศทางการสื่อสารแคมเปญใหญ่ STeP Expo 2027",
-            category: "continuous",
-            completed: false,
-            notes: "ผศ.ดร.สุริยะ กำชับให้เน้นอัตลักษณ์ CI และจัดทำสื่อประชาสัมพันธ์เชิงรุก",
-            assignees: ["ลูกอิน STK", "เอ็นจอย SLR"]
-          }
-        ],
-        observations: "การประสานงานกับผู้บริหารมีความคล่องตัวสูง ข้อสั่งการชัดเจน",
-        risks: "ภาระงานช่วงจัดอีเวนต์ใหญ่ อาจกระทบเวลาการตรวจทานงานประจำ",
-        solutions: "กระจายงานข้ามยูนิต และใช้ระบบ Ticket ดิจิทัลในการติดตามสถานะ",
-        isoLinked: true
-      }
-    ];
+    return [];
   });
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [capturingMeeting, setCapturingMeeting] = useState<MeetingTask | null>(null);
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 5500);
@@ -251,9 +137,9 @@ export default function MeetingReportDetail() {
       try {
         const cloudData = await getCloudJson<MeetingTask[]>(
           CLOUD_KEYS.MEETING_TASKS,
-          "cc_meeting_tasks_v2"
+          "cc_meeting_tasks_v3_fy70"
         );
-        if (cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
+        if (cloudData && Array.isArray(cloudData)) {
           setMeetings(cloudData);
         }
       } catch (err) {
@@ -266,7 +152,7 @@ export default function MeetingReportDetail() {
   // Save meetings to Supabase cloud + localStorage cache
   useEffect(() => {
     if (meetings && meetings.length > 0) {
-      setCloudJson(CLOUD_KEYS.MEETING_TASKS, meetings, "cc_meeting_tasks_v2");
+      setCloudJson(CLOUD_KEYS.MEETING_TASKS, meetings, "cc_meeting_tasks_v3_fy70");
     }
   }, [meetings]);
 
@@ -277,13 +163,13 @@ export default function MeetingReportDetail() {
         const supabase = createClient();
         const { data } = await supabase.from("assignees").select("*").eq("is_active", true);
         if (data && data.length > 0) {
-          const ops = data.filter(a => !(a.unit || "").includes("|executive"));
-          const execs = data.filter(a => (a.unit || "").includes("|executive")).map(parseMemberRecord);
+          const ops = data.filter(a => isOperationalAssignee(a));
+          const execs = data.filter(a => isExecutive(a)).map(parseMemberRecord);
           setAssignees(ops);
           setExecutives(execs);
         } else {
           // Fallback to local member profile
-          const memberNames = Object.keys(DEFAULT_MEMBER_METADATA);
+          const memberNames = Object.keys(DEFAULT_MEMBER_METADATA).filter(k => !DEFAULT_MEMBER_METADATA[k].isExecutive);
           setAssignees(memberNames.map(name => ({
             id: name,
             name,
@@ -569,7 +455,7 @@ export default function MeetingReportDetail() {
           emailRecipientCount: (emailData.toList.length + emailData.ccList.length)
         };
       });
-      setCloudJson(CLOUD_KEYS.MEETING_TASKS, updated, "cc_meeting_tasks_v2");
+      setCloudJson(CLOUD_KEYS.MEETING_TASKS, updated, "cc_meeting_tasks_v3_fy70");
       return updated;
     });
 
@@ -837,6 +723,7 @@ export default function MeetingReportDetail() {
                         setIsNewMeetingModalOpen(true);
                       }}
                       onDelete={() => handleDeleteMeeting(meeting.id)}
+                      onCapture={() => setCapturingMeeting(meeting)}
                     />
                   ))}
                 </div>
@@ -881,6 +768,7 @@ export default function MeetingReportDetail() {
                         setIsNewMeetingModalOpen(true);
                       }}
                       onDelete={() => handleDeleteMeeting(meeting.id)}
+                      onCapture={() => setCapturingMeeting(meeting)}
                     />
                   ))}
                 </div>
@@ -947,6 +835,16 @@ export default function MeetingReportDetail() {
         />
       )}
 
+      {/* ========================================================================= */}
+      {/* MODAL 3: Capture / Export Meeting Agenda Card Modal                       */}
+      {/* ========================================================================= */}
+      {capturingMeeting && (
+        <MeetingCaptureModal
+          meeting={capturingMeeting}
+          onClose={() => setCapturingMeeting(null)}
+        />
+      )}
+
       {/* Floating Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-[9999] flex items-center gap-3 bg-zinc-900/95 backdrop-blur-md text-white px-5 py-3.5 rounded-2xl border border-zinc-700 shadow-2xl animate-in slide-in-from-bottom-5">
@@ -971,37 +869,413 @@ export default function MeetingReportDetail() {
 // =============================================================================
 // SUB-COMPONENT: Meeting Card (Renders inside the 2 columns)
 // =============================================================================
+// SUB-COMPONENT: Meeting Capture Modal (Publication-Grade Agenda Card)
+// =============================================================================
+const formatThaiMeetingDate = (dateStr?: string) => {
+  if (!dateStr) return "-";
+  try {
+    const parts = dateStr.split("-");
+    if (parts.length === 3) {
+      const year = parseInt(parts[0]);
+      const monthIdx = parseInt(parts[1]) - 1;
+      const day = parseInt(parts[2]);
+      const thaiMonths = [
+        "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+        "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+      ];
+      if (monthIdx >= 0 && monthIdx < 12) {
+        return `${day} ${thaiMonths[monthIdx]} ${year}`;
+      }
+    }
+  } catch {}
+  return dateStr;
+};
+
+function MeetingCaptureModal({
+  meeting,
+  onClose
+}: {
+  meeting: MeetingTask;
+  onClose: () => void;
+}) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleDownloadPng = async () => {
+    if (!cardRef.current) return;
+    setIsExporting(true);
+    try {
+      await new Promise(r => setTimeout(r, 150));
+      const canvas = await html2canvas(cardRef.current, {
+        scale: 2.5,
+        useCORS: true,
+        backgroundColor: "#FFFFFF",
+        logging: false
+      });
+      const dataUrl = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      const cleanTitle = (meeting.title || "Agenda").replace(/[^a-zA-Z0-9ก-๙]/g, "_");
+      link.download = `Agenda_${cleanTitle}_${meeting.date}.png`;
+      link.href = dataUrl;
+      link.click();
+      showToast("✓ บันทึกภาพ PNG สำเร็จเรียบร้อย");
+    } catch (err) {
+      console.error("Export PNG error:", err);
+      showToast("เกิดข้อผิดพลาดในการบันทึกภาพ");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleCopyImage = async () => {
+    if (!cardRef.current) return;
+    setIsExporting(true);
+    try {
+      await new Promise(r => setTimeout(r, 150));
+      const canvas = await html2canvas(cardRef.current, {
+        scale: 2.5,
+        useCORS: true,
+        backgroundColor: "#FFFFFF",
+        logging: false
+      });
+      canvas.toBlob(async (blob) => {
+        if (blob && navigator.clipboard && (window as any).ClipboardItem) {
+          try {
+            await navigator.clipboard.write([
+              new (window as any).ClipboardItem({ "image/png": blob })
+            ]);
+            showToast("✓ คัดลอกรูปภาพแล้ว! กด Ctrl+V วางใน LINE หรือแชตได้ทันที");
+          } catch (writeErr) {
+            console.error("ClipboardItem write error:", writeErr);
+            showToast("เบราว์เซอร์ไม่อนุญาตคัดลอกรูปภาพโดยตรง กรุณากดปุ่มดาวน์โหลดภาพ PNG แทน");
+          }
+        } else {
+          showToast("เบราว์เซอร์ไม่รองรับคัดลอกรูปภาพ กรุณากดปุ่มดาวน์โหลดภาพ PNG แทน");
+        }
+      });
+    } catch (err) {
+      console.error("Copy Image error:", err);
+      showToast("เกิดข้อผิดพลาดในการสร้างภาพ");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleCopyText = async () => {
+    let text = `📋 ${meeting.title}\n`;
+    text += `📅 วันที่: ${meeting.date}\n`;
+    if (meeting.chair) text += `👤 ประธาน: ${meeting.chair}\n`;
+    if (meeting.recorder) text += `📝 ผู้จดบันทึก: ${meeting.recorder}\n`;
+    text += `\n📌 วาระการประชุม & ข้อสั่งการ:\n`;
+    meeting.agendas.forEach((ag, idx) => {
+      const cat = ag.category === "continuous" ? "วาระต่อเนื่อง" : "แจ้งเพื่อทราบ";
+      text += `${idx + 1}. [${cat}] ${ag.title}\n`;
+      if (ag.assignees && ag.assignees.length > 0) {
+        text += `   • ผู้รับผิดชอบ: ${ag.assignees.join(", ")}\n`;
+      }
+      if (ag.notes) {
+        text += `   • รายละเอียด/มติ: ${ag.notes}\n`;
+      }
+    });
+
+    if (meeting.observations) {
+      text += `\n💡 ข้อสังเกต:\n${meeting.observations}\n`;
+    }
+    if (meeting.risks) {
+      text += `\n⚠️ ความเสี่ยง:\n${meeting.risks}\n`;
+    }
+    if (meeting.solutions) {
+      text += `\n🎯 แนวทางแก้ไข:\n${meeting.solutions}\n`;
+    }
+
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast("✓ คัดลอกข้อความสรุปวาระสำเร็จ (พร้อมวางใน LINE)");
+    } catch {
+      showToast("ไม่สามารถคัดลอกข้อความได้");
+    }
+  };
+
+  if (!mounted) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[92vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden font-sans">
+        {/* Modal Toolbar */}
+        <div className="px-5 py-3.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Camera size={16} className="text-slate-700" />
+            <span className="text-sm font-bold text-slate-900">แคปหรือบันทึกภาพวาระการประชุม</span>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-slate-800 rounded-full hover:bg-slate-200 transition-colors cursor-pointer"
+          >
+            <X size={15} />
+          </button>
+        </div>
+
+        {/* Preview Card Body (Capturable target) */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-100 flex justify-center">
+          <div
+            ref={cardRef}
+            id="meeting-agenda-capture-card"
+            className="w-full max-w-[530px] bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/90 shadow-md text-slate-800 space-y-4"
+          >
+            {/* Minimal Letterhead / Header */}
+            <div className="border-b border-slate-200 pb-3.5 space-y-2">
+              {/* Top Row: System Tag on Left, Meeting Type Badge on Right */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#f97316]" />
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400">
+                    CMU STeP • CC SYSTEM
+                  </span>
+                </div>
+                <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-slate-100 text-slate-700 border border-slate-200/90 shrink-0 shadow-2xs whitespace-nowrap">
+                  {meeting.meetingType === "executive" ? "👔 ประชุมผู้บริหาร STeP" : "👥 ประชุมภายในทีม CC"}
+                </span>
+              </div>
+
+              {/* Title: Spans full width across the card grid */}
+              <h3 className="text-base sm:text-lg font-black text-slate-900 leading-snug tracking-tight w-full">
+                {meeting.title}
+              </h3>
+            </div>
+
+            {/* Meta details - จัดระเบียบชุดข้อมูลให้เป็นระเบียบ สวยงาม ชัดเจน ไม่ตัดคำ ขยับชิดขอบขวา */}
+            <div className="bg-[#f8f9fa] p-4 rounded-2xl border border-slate-200/80 space-y-3">
+              {/* Row 1: วันที่ประชุม & รอบประจำเดือน (รอบประจำเดือนขยับชิดขอบขวา) */}
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200/70">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    <Calendar size={13} className="text-[#f97316] shrink-0" />
+                    <span>วันที่ประชุม</span>
+                  </div>
+                  <div className="font-extrabold text-slate-900 text-xs sm:text-[13px]">
+                    {formatThaiMeetingDate(meeting.date)}
+                  </div>
+                </div>
+                <div className="space-y-0.5 text-right flex flex-col items-end">
+                  <div className="flex items-center justify-end gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    <Clock size={13} className="text-[#f97316] shrink-0" />
+                    <span>รอบประจำเดือน</span>
+                  </div>
+                  <div className="font-extrabold text-slate-900 text-xs sm:text-[13px]">
+                    {meeting.monthName || "-"}
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 2: ประธาน & ผู้จดบันทึก (จัดสัดส่วนชัดเจน ไม่ตัดคำ ผู้จดบันทึกขยับชิดขอบขวา) */}
+              <div className="flex items-start justify-between gap-3 pt-0.5">
+                {meeting.chair && (
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      <Award size={13} className="text-slate-500 shrink-0" />
+                      <span>ประธานการประชุม</span>
+                    </div>
+                    <div className="font-bold text-slate-900 text-xs sm:text-[13px] leading-snug">
+                      {meeting.chair}
+                    </div>
+                  </div>
+                )}
+                {meeting.recorder && (
+                  <div className="space-y-0.5 text-right flex flex-col items-end ml-auto">
+                    <div className="flex items-center justify-end gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      <UserCheck size={13} className="text-slate-500 shrink-0" />
+                      <span>ผู้จดบันทึก</span>
+                    </div>
+                    <div className="font-bold text-slate-900 text-xs sm:text-[13px] leading-snug">
+                      {meeting.recorder}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Agendas list */}
+            <div className="space-y-2.5 pt-1">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <FileText size={13} className="text-[#f97316]" />
+                <span>วาระการประชุม &amp; ข้อสั่งการ ({meeting.agendas.length} วาระ):</span>
+              </span>
+              <div className="space-y-2.5">
+                {meeting.agendas.map((ag, i) => (
+                  <div 
+                    key={ag.id} 
+                    className="p-4 rounded-2xl border border-slate-200/90 bg-white space-y-2.5 text-xs shadow-2xs hover:border-slate-300 transition-all"
+                  >
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2 py-0.5 rounded-md bg-slate-900 text-white font-mono text-[10px] font-bold tracking-wider">
+                        0{i + 1}
+                      </span>
+                      <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold border ${
+                        ag.category === "continuous" 
+                          ? "bg-amber-50 text-amber-800 border-amber-200" 
+                          : "bg-blue-50 text-blue-800 border-blue-200"
+                      }`}>
+                        {ag.category === "continuous" ? "วาระต่อเนื่อง" : "แจ้งเพื่อทราบ"}
+                      </span>
+                      {ag.completed && (
+                        <span className="inline-flex items-center gap-1 text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <CheckCircle2 size={10} /> ดำเนินการแล้ว
+                        </span>
+                      )}
+                    </div>
+                    <div className="font-bold text-slate-900 leading-relaxed text-xs sm:text-[13px]">
+                      {ag.title}
+                    </div>
+                    {ag.notes && (
+                      <p className="text-[11px] text-slate-600 font-normal leading-relaxed border-l-2 border-[#f97316]/60 pl-2.5 py-0.5 bg-slate-50/60 rounded-r-lg">
+                        {ag.notes}
+                      </p>
+                    )}
+                    {ag.assignees && ag.assignees.length > 0 && (
+                      <div className="pt-2.5 border-t border-slate-100 flex items-center gap-2 flex-wrap">
+                        <span className="text-[11px] font-bold text-slate-500 shrink-0 flex items-center gap-1">
+                          <UserCheck size={12} className="text-[#f97316]" />
+                          ผู้รับผิดชอบ:
+                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {ag.assignees.map((name) => (
+                            <span 
+                              key={name}
+                              className="px-3 py-1 rounded-full bg-[#f8f9fa] border border-slate-200 text-slate-800 text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs"
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#f97316] shrink-0" />
+                              {name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Observations / Risks if present */}
+            {(meeting.observations || meeting.risks || meeting.solutions) && (
+              <div className="space-y-1.5 pt-2 border-t border-slate-100 text-xs">
+                {meeting.observations && (
+                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-[11px]">
+                    <span className="font-bold text-slate-800">ข้อสังเกต: </span>
+                    <span className="text-slate-600">{meeting.observations}</span>
+                  </div>
+                )}
+                {meeting.risks && (
+                  <div className="p-2.5 rounded-xl bg-rose-50/60 border border-rose-100 text-[11px]">
+                    <span className="font-bold text-rose-800">ความเสี่ยง: </span>
+                    <span className="text-rose-700">{meeting.risks}</span>
+                  </div>
+                )}
+                {meeting.solutions && (
+                  <div className="p-2.5 rounded-xl bg-emerald-50/60 border border-emerald-100 text-[11px]">
+                    <span className="font-bold text-emerald-800">แนวทางแก้ไข: </span>
+                    <span className="text-emerald-700">{meeting.solutions}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Official document footer in capture image */}
+            <div className="pt-3 border-t border-slate-200/70 flex items-center justify-between text-[10px] text-slate-400 font-medium">
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#f97316]" />
+                Creative &amp; Communication Team • CMU STeP
+              </span>
+              <span className="font-mono text-slate-400 font-semibold tracking-wider">CC AGENDA</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Modal Actions Footer */}
+        <div className="p-4 border-t border-slate-200 bg-white flex flex-col sm:flex-row items-center justify-between gap-2.5">
+          <div className="text-xs text-slate-500 font-medium">
+            {toastMessage ? (
+              <span className="text-emerald-600 font-bold">{toastMessage}</span>
+            ) : (
+              <span>สามารถบันทึกภาพ PNG หรือกดคัดลอกรูปภาพไปวางใน LINE ได้ทันที</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={handleCopyText}
+              className="flex-1 sm:flex-initial px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+            >
+              <Copy size={13} />
+              <span>คัดลอกข้อความ</span>
+            </button>
+            <button
+              onClick={handleCopyImage}
+              disabled={isExporting}
+              className="flex-1 sm:flex-initial px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-800 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+            >
+              <Camera size={13} />
+              <span>คัดลอกรูปภาพ</span>
+            </button>
+            <button
+              onClick={handleDownloadPng}
+              disabled={isExporting}
+              className="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-xs"
+            >
+              <Download size={13} />
+              <span>{isExporting ? "กำลังสร้าง..." : "บันทึกภาพ PNG"}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+// =============================================================================
+// SUB-COMPONENT: Meeting Card (Renders inside the 2 columns)
+// =============================================================================
 function MeetingCard({
   meeting,
   onToggleAgenda,
   onMoveStatus,
   onEdit,
-  onDelete
+  onDelete,
+  onCapture
 }: {
   meeting: MeetingTask;
   onToggleAgenda: (meetingId: string, agendaId: string) => void;
   onMoveStatus: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onCapture: () => void;
 }) {
   const isSent = meeting.status === "sent";
 
   return (
-    <div className={`p-4 rounded-2xl bg-white border transition-all duration-200 shadow-2xs hover:shadow-md ${
-      isSent ? "border-emerald-200 hover:border-emerald-300" : "border-slate-200 hover:border-amber-300"
-    }`}>
+    <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 transition-all duration-200 shadow-2xs hover:border-slate-300 dark:hover:border-zinc-700 space-y-4">
       {/* Top Header */}
-      <div className="flex items-start justify-between gap-3 mb-2.5">
-        <div className="space-y-1">
-          <div className="flex flex-wrap items-center gap-1.5 mb-1">
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             {meeting.meetingType === "executive" ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 text-[10.5px] font-bold border border-indigo-200">
-                <Award size={11} className="text-indigo-600" />
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-[11px] font-semibold shadow-2xs">
+                <Award size={12} />
                 ประชุมร่วมกับผู้บริหาร
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10.5px] font-bold border border-slate-200">
-                <Users size={11} className="text-slate-500" />
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 text-[11px] font-semibold border border-slate-200 dark:border-zinc-700">
+                <Users size={12} className="text-slate-500" />
                 ประชุมภายในทีม CC
               </span>
             )}
@@ -1009,139 +1283,157 @@ function MeetingCard({
             {(meeting.isoLinked || meeting.meetingType === "executive") && (
               <a
                 href="/dashboard?view=data-reports&report=iso&tab=requirements-evidence"
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 hover:bg-purple-100 text-purple-700 text-[10.5px] font-bold border border-purple-200 transition-colors"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-50 hover:bg-slate-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300 text-[11px] font-medium border border-slate-200 dark:border-zinc-700 transition-colors"
                 title="คลิกเพื่อเปิดรายงานข้อกำหนด ISO 9001 Tab 6"
               >
-                <Sparkles size={10} className="text-purple-600" />
+                <Sparkles size={11} className="text-slate-400" />
                 <span>ISO 9001 Linked ➔</span>
               </a>
             )}
 
-            <span className="text-[11px] font-semibold text-slate-500 flex items-center gap-1 ml-1">
-              <Calendar size={12} className="text-slate-400" />
-              {meeting.date}
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-50 dark:bg-zinc-800/60 text-slate-600 dark:text-zinc-300 text-[11px] font-medium border border-slate-200/80 dark:border-zinc-700/80">
+              <Calendar size={11} className="text-[#f97316]" />
+              {formatThaiMeetingDate(meeting.date)}
             </span>
-            <span className="text-[11px] text-slate-400">•</span>
-            <span className="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
-              <UserCheck size={12} className="text-orange-600" />
-              ผู้จด: <span className="text-slate-900 font-bold">{meeting.recorder || "ไม่ระบุ"}</span>
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-50 dark:bg-zinc-800/60 text-slate-600 dark:text-zinc-300 text-[11px] font-medium border border-slate-200/80 dark:border-zinc-700/80">
+              <UserCheck size={11} className="text-slate-400" />
+              ผู้จด: <span className="text-slate-900 dark:text-zinc-100 font-semibold">{meeting.recorder || "ไม่ระบุ"}</span>
             </span>
           </div>
 
-          <h4 className="text-sm font-bold text-slate-900 leading-snug">
+          <h4 className="text-base font-extrabold text-slate-900 dark:text-zinc-100 leading-snug pt-0.5">
             {meeting.title}
           </h4>
           {meeting.chair && (
-            <p className="text-[11px] text-slate-500">
-              ประธาน: <span className="font-semibold text-slate-700">{meeting.chair}</span>
+            <p className="text-xs text-slate-500 dark:text-zinc-400 font-medium">
+              ประธาน: <span className="font-semibold text-slate-800 dark:text-zinc-200">{meeting.chair}</span>
             </p>
           )}
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
           <button
+            onClick={onCapture}
+            className="px-2.5 py-1 text-slate-600 hover:text-slate-900 dark:text-zinc-300 dark:hover:text-zinc-100 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-medium border border-slate-200/90 dark:border-zinc-700 shadow-2xs"
+            title="แคปหรือบันทึกภาพวาระการประชุม (สำหรับแจ้งทีมและผู้บริหาร)"
+          >
+            <Camera size={13} className="text-slate-500" />
+            <span className="hidden sm:inline">แคปภาพวาระ</span>
+          </button>
+          <button
             onClick={onEdit}
-            className="p-1 text-slate-400 hover:text-slate-700 rounded-md hover:bg-slate-100 transition-colors cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
             title="แก้ไขข้อมูล"
           >
-            <Edit3 size={13} />
+            <Edit3 size={14} />
           </button>
           <button
             onClick={onDelete}
-            className="p-1 text-slate-400 hover:text-rose-600 rounded-md hover:bg-rose-50 transition-colors cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
             title="ลบรายการ"
           >
-            <Trash2 size={13} />
+            <Trash2 size={14} />
           </button>
         </div>
       </div>
 
       {/* Agendas list */}
-      <div className="space-y-2 mt-3 pt-2.5 border-t border-slate-100">
-        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-          วาระการประชุม &amp; ข้อสั่งการ ({meeting.agendas.length} วาระ):
-        </p>
+      <div className="space-y-3 pt-3 border-t border-slate-100 dark:border-zinc-800">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+            <FileText size={13} className="text-slate-400" />
+            วาระการประชุม &amp; ข้อสั่งการ ({meeting.agendas.length} วาระ):
+          </span>
+        </div>
 
-        <div className="space-y-1.5">
-          {meeting.agendas.map((ag) => (
+        <div className="space-y-2.5">
+          {meeting.agendas.map((ag, idx) => (
             <div 
               key={ag.id}
-              className={`p-2 rounded-xl text-xs transition-all border ${
+              className={`p-3.5 sm:p-4 rounded-xl text-xs transition-all border ${
                 ag.completed 
-                  ? "bg-slate-50/80 border-slate-200 text-slate-400 line-through" 
-                  : ag.category === "continuous"
-                    ? "bg-orange-50/50 border-orange-200 text-slate-800 font-medium"
-                    : "bg-slate-50 border-slate-200 text-slate-800"
+                  ? "bg-slate-50/50 dark:bg-zinc-900/40 border-slate-200/70 dark:border-zinc-800/70 text-slate-400" 
+                  : "bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-slate-800 dark:text-zinc-200 shadow-2xs hover:border-slate-300 dark:hover:border-zinc-700"
               }`}
             >
-              <div className="flex items-start gap-2">
+              <div className="flex items-start gap-3">
                 <button
                   type="button"
                   onClick={() => onToggleAgenda(meeting.id, ag.id)}
-                  className="mt-0.5 text-slate-400 hover:text-orange-600 cursor-pointer shrink-0 transition-colors"
+                  className="mt-0.5 text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 cursor-pointer shrink-0 transition-colors"
+                  title={ag.completed ? "คลิกเพื่อยกเลิกสถานะเสร็จสิ้น" : "คลิกเพื่อทำเครื่องหมายว่าเสร็จสิ้น"}
                 >
                   {ag.completed ? (
-                    <CheckSquare size={14} className="text-emerald-600" />
+                    <CheckSquare size={16} className="text-emerald-600 dark:text-emerald-400" />
                   ) : (
-                    <Square size={14} className="text-slate-400" />
+                    <Square size={16} className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-300" />
                   )}
                 </button>
 
-                <div className="flex-1">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className={`text-[9.5px] px-1.5 py-0.2 rounded-full font-bold uppercase ${
+                <div className="flex-1 min-w-0 space-y-2">
+                  {/* Topic Category Tag & Index */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 font-mono">
+                      วาระที่ {idx + 1}
+                    </span>
+                    <span className={`text-[10.5px] px-2.5 py-0.5 rounded-full font-semibold border ${
                       ag.category === "continuous" 
-                        ? "bg-orange-100 text-orange-800 border border-orange-300/60" 
-                        : "bg-blue-100 text-blue-800 border border-blue-200"
+                        ? "bg-slate-200/80 text-slate-800 border-slate-300 dark:bg-zinc-700 dark:text-zinc-200 dark:border-zinc-600" 
+                        : "bg-slate-100 text-slate-700 border-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700"
                     }`}>
                       {ag.category === "continuous" ? "วาระต่อเนื่อง" : "แจ้งเพื่อทราบ"}
                     </span>
-                    <span className={ag.completed ? "line-through text-slate-400" : "text-slate-900"}>
-                      {ag.title}
-                    </span>
+                    {ag.completed && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800">
+                        ✓ ดำเนินการแล้ว
+                      </span>
+                    )}
                   </div>
+
+                  {/* Agenda Title / Main Description */}
+                  <h5 className={`text-xs sm:text-[13px] leading-relaxed font-semibold ${
+                    ag.completed ? "line-through text-slate-400 dark:text-zinc-500" : "text-slate-900 dark:text-zinc-100"
+                  }`}>
+                    {ag.title}
+                  </h5>
+
+                  {/* Notes / Details */}
                   {ag.notes && (
-                    <p className={`text-[11px] mt-0.5 font-light ${ag.completed ? "text-slate-400" : "text-slate-500"}`}>
+                    <p className={`text-xs font-normal leading-relaxed ${
+                      ag.completed ? "text-slate-400" : "text-slate-600 dark:text-zinc-400"
+                    }`}>
                       • {ag.notes}
                     </p>
                   )}
+
+                  {/* Assignees Pill Badges: กรอบชื่อผู้รับผิดชอบโค้งมน มีหัวข้อชัดเจน */}
                   {ag.assignees && ag.assignees.length > 0 && (
-                    <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                      <span className="text-[10.5px] font-bold text-slate-500 flex items-center gap-1">
-                        <Users size={11} className="text-[#f97316]" /> ผู้รับผิดชอบ:
+                    <div className="pt-2 border-t border-slate-100 dark:border-zinc-800/80 flex items-center gap-2 flex-wrap">
+                      <span className="text-[11px] font-semibold text-slate-500 dark:text-zinc-400 flex items-center gap-1 shrink-0">
+                        <UserCheck size={12} className="text-slate-400" />
+                        ผู้รับผิดชอบ:
                       </span>
-                      {ag.assignees.map((name) => (
-                        <span 
-                          key={name}
-                          className="px-2 py-0.2 rounded-md bg-slate-100 border border-slate-200 text-slate-700 font-bold text-[10.5px]"
-                        >
-                          {name}
-                        </span>
-                      ))}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {ag.assignees.map((name) => (
+                          <span 
+                            key={name}
+                            className="px-2.5 py-0.5 rounded-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-800 dark:text-zinc-200 text-xs font-semibold shadow-2xs inline-flex items-center gap-1.5 hover:border-slate-300 dark:hover:border-zinc-600 transition-colors"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-zinc-500 shrink-0" />
+                            {name}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   )}
+
+                  {/* Carried over reference */}
                   {ag.carriedFromMonth && (
-                    <div className="mt-1.5 p-2 bg-amber-50 rounded-lg border border-amber-200/90 text-[11px] text-amber-950 space-y-0.5">
-                      <div className="flex items-center gap-1.5 font-bold text-amber-900 flex-wrap">
-                        <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-                        <span>📌 ข้อสั่งการค้างจาก:</span>
-                        <span className="underline decoration-amber-400">
-                          {ag.originMeetingTitle || `การประชุมประจำเดือน ${ag.carriedFromMonthName || ag.carriedFromMonth}`}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-[10.5px] text-amber-800 font-medium">
-                        <span>สั่งการเมื่อวันที่: <strong className="text-slate-900">{ag.originMeetingDate || ag.carriedFromMonth}</strong></span>
-                        {ag.originMeetingDate && (() => {
-                          const originT = new Date(ag.originMeetingDate).getTime();
-                          const nowT = Date.now();
-                          const diffDays = Math.max(0, Math.floor((nowT - originT) / (1000 * 60 * 60 * 24)));
-                          return diffDays > 0 ? (
-                            <span className="px-1.5 py-0.2 rounded-full bg-rose-100 text-rose-800 text-[10px] font-black border border-rose-300">
-                              ⚠️ ค้างมาแล้ว {diffDays} วัน
-                            </span>
-                          ) : null;
-                        })()}
-                      </div>
+                    <div className="p-2 bg-slate-100/90 dark:bg-zinc-800/80 rounded-xl border border-slate-200/80 dark:border-zinc-700 text-[11px] text-slate-700 dark:text-zinc-300 flex items-center justify-between">
+                      <span>📌 ยกยอดมาจาก: {ag.originMeetingTitle || ag.carriedFromMonthName || ag.carriedFromMonth}</span>
+                      {ag.originMeetingDate && (
+                        <span className="text-slate-400 font-mono text-[10px]">({ag.originMeetingDate})</span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1152,22 +1444,25 @@ function MeetingCard({
       </div>
 
       {/* Observations & Risks Snippet if present */}
-      {(meeting.observations || meeting.risks) && (
-        <div className="mt-2.5 p-2 bg-slate-50 rounded-xl border border-slate-100 text-[11px] text-slate-600 space-y-1">
+      {(meeting.observations || meeting.risks || meeting.solutions) && (
+        <div className="p-3 bg-slate-50 dark:bg-zinc-800/40 rounded-xl border border-slate-100 dark:border-zinc-800 text-[11px] text-slate-600 dark:text-zinc-400 space-y-1.5">
           {meeting.observations && (
-            <p><span className="font-bold text-slate-700">ข้อสังเกต:</span> {meeting.observations}</p>
+            <p><span className="font-semibold text-slate-700 dark:text-zinc-300">ข้อสังเกต:</span> {meeting.observations}</p>
           )}
           {meeting.risks && (
-            <p><span className="font-bold text-rose-600">ความเสี่ยง:</span> {meeting.risks}</p>
+            <p><span className="font-semibold text-slate-700 dark:text-zinc-300">ความเสี่ยง:</span> {meeting.risks}</p>
+          )}
+          {meeting.solutions && (
+            <p><span className="font-semibold text-slate-700 dark:text-zinc-300">แนวทางแก้ไข:</span> {meeting.solutions}</p>
           )}
         </div>
       )}
 
       {/* Card Action Button: Move between Draft and Sent */}
-      <div className="mt-4 pt-2.5 border-t border-slate-100 flex items-center justify-between">
+      <div className="mt-4 pt-2.5 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between">
         {isSent ? (
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-emerald-700 font-bold flex items-center gap-1">
+            <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
               <Check size={13} /> ส่งอีเมลแล้ว ({meeting.emailRecipientCount || 0} ท่าน)
             </span>
           </div>
@@ -1177,10 +1472,10 @@ function MeetingCard({
 
         <button
           onClick={onMoveStatus}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer ${
+          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer ${
             isSent
-              ? "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
-              : "bg-slate-900 hover:bg-orange-600 text-white"
+              ? "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700"
+              : "bg-slate-900 hover:bg-slate-800 text-white dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900"
           }`}
         >
           {isSent ? (
@@ -1216,30 +1511,30 @@ function MeetingEmailModal({
   onConfirm: (emailData: { toList: string[]; ccList: string[]; subject: string; body: string }) => void;
   onClose: () => void;
 }) {
-  // Pre-fill Executive recipients
-  const [selectedExecs, setSelectedExecs] = useState<string[]>(() => {
-    if (executives.length > 0) {
-      return executives.map(e => e.email || "executives@step.cmu.ac.th");
-    }
-    return ["kasemsak@step.cmu.ac.th", "thanyanupap@step.cmu.ac.th", "executives@step.cmu.ac.th"];
-  });
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  // Pre-fill CC Team members (ทุกคนในทีม CC ครบ 12 คน + ทีมกลาง)
+  // Pre-fill Executive recipients (To: คณะผู้บริหาร & ผู้อำนวยการ)
+  // เริ่มต้นใส่ adchanapong@step.cmu.ac.th ไว้ก่อนตามที่ผู้ใช้กำหนด (คนอื่นค่อยใส่ทีหลัง)
+  const [selectedExecs, setSelectedExecs] = useState<string[]>(["adchanapong@step.cmu.ac.th"]);
+
+  // Pre-fill CC Team members (ลบเมล cc-team@step.cmu.ac.th ออก)
   const [selectedCC, setSelectedCC] = useState<string[]>(() => {
-    // 1. If assignees passed from props, map all active operational members
+    // 1. If assignees passed from props, map all active operational members (excluding cc-team)
     if (assignees && assignees.length > 0) {
       const emailList: string[] = [];
       assignees.forEach(a => {
         const mail = a.email || `${(a.name || '').toLowerCase().replace(/\s+/g, '')}@step.cmu.ac.th`;
-        if (mail && !emailList.includes(mail)) emailList.push(mail);
+        if (mail && mail.toLowerCase() !== "cc-team@step.cmu.ac.th" && !emailList.includes(mail)) {
+          emailList.push(mail);
+        }
       });
-      if (!emailList.includes("cc-team@step.cmu.ac.th")) {
-        emailList.push("cc-team@step.cmu.ac.th");
-      }
       return emailList;
     }
 
-    // 2. Default fallback: all 12 official CC Team members + cc-team alias
+    // 2. Default fallback: all 12 official CC Team members (ลบ cc-team@step.cmu.ac.th ออก)
     return [
       "adchanapong@step.cmu.ac.th", // จ๊อบ AA
       "wasita@step.cmu.ac.th",      // วา WK
@@ -1252,8 +1547,7 @@ function MeetingEmailModal({
       "siriluk@step.cmu.ac.th",     // เอ็นจอย SLR
       "kanyakorn@step.cmu.ac.th",   // แก้ว KYK
       "thitiya@step.cmu.ac.th",     // ต้า TTY
-      "itsara@step.cmu.ac.th",      // ก้อง IK
-      "cc-team@step.cmu.ac.th"      // ทีมกลาง CC
+      "itsara@step.cmu.ac.th"       // ก้อง IK
     ];
   });
 
@@ -1423,234 +1717,218 @@ function MeetingEmailModal({
     });
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-zinc-900 border border-zinc-800 text-zinc-100 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden font-sans">
+  if (!mounted) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 bg-[#181a1c]/90 backdrop-blur-md z-[100000] flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-3xl h-[92vh] max-h-[92vh] rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-zinc-200 font-sans">
         
-        {/* Dieter Rams Header */}
-        <div className="px-6 py-4 border-b border-zinc-800/80 flex items-center justify-between bg-zinc-900/90">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-[#f97316]/20 border border-[#f97316]/40 flex items-center justify-center text-[#f97316]">
-              <Mail size={18} />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-white tracking-wide">
-                ร่างอีเมลส่งบันทึกการประชุม (Meeting Report Dispatch)
-              </h3>
-              <p className="text-xs text-zinc-400">
-                ส่งตรงถึงคณะผู้บริหาร และ CC สมาชิกทีมงานทุกคน ({selectedCC.length} ท่าน)
-              </p>
-            </div>
+        {/* Sleek Gmail-style Title Bar */}
+        <div className="px-4 py-2.5 border-b border-zinc-800 bg-zinc-900 text-white flex items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-orange-950 text-orange-300 border border-orange-800 flex items-center gap-1 shrink-0">
+              <Mail size={12} className="text-[#f97316]" />
+              <span>Meeting Report Dispatch</span>
+            </span>
+            <span className="text-xs font-semibold text-zinc-200 truncate">
+              {meeting.title} ({meeting.monthName})
+            </span>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-1.5 text-zinc-400 hover:text-white rounded-full hover:bg-zinc-800 transition-colors cursor-pointer"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Modal Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 text-xs text-zinc-300">
-          
-          {/* Banner: Option 1 Gmail Real Send */}
-          <div className="p-3.5 bg-gradient-to-r from-orange-500/15 via-amber-500/10 to-transparent border border-orange-500/30 rounded-2xl flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#f97316] text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
-              <Mail size={15} />
-            </div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-white tracking-wide">
-                  ทางเลือกที่ 1 • ส่งจริง 100% ผ่าน Gmail (@step.cmu.ac.th)
-                </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                  บันทึกลง Sent Items
-                </span>
-              </div>
-              <p className="text-[11.5px] leading-relaxed text-zinc-300">
-                เมื่อกดปุ่ม <strong className="text-orange-400 font-bold">&ldquo;🚀 ส่งและเปิดส่งใน Gmail&rdquo;</strong> ระบบจะปรับสถานะเป็น <strong className="text-white font-bold">ส่งแล้ว</strong> พร้อมเปิดหน้าต่างเขียนจดหมาย Gmail ของท่าน โดยใส่ผู้รับ (To: ผู้บริหาร {selectedExecs.length} ท่าน), สำเนา (CC: ทีม CC {selectedCC.length} ท่าน), หัวข้อ และเนื้อหารายงานการประชุมไว้ครบถ้วนทันที เพื่อให้ท่านกดส่งจากกล่องเมลจริงและมีประวัติใน Sent Items
-              </p>
-            </div>
-          </div>
-
-          {/* TO: Executive Leaders */}
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#f97316]" />
-              ผู้รับหลัก (To: คณะผู้บริหาร &amp; ผู้อำนวยการ)
-            </label>
-            
-            <div className="flex flex-wrap gap-1.5 p-2 bg-zinc-950/80 rounded-xl border border-zinc-800 min-h-[38px] items-center">
-              {selectedExecs.map((email) => (
-                <span 
-                  key={email}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-zinc-800 text-zinc-200 text-xs border border-zinc-700"
-                >
-                  <span>{email}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveExec(email)}
-                    className="text-zinc-400 hover:text-rose-400 ml-0.5 cursor-pointer"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-
-              <div className="flex items-center gap-1 flex-1 min-w-[200px]">
-                <input
-                  type="email"
-                  placeholder="พิมพ์อีเมลเพิ่มผู้บริหาร..."
-                  value={extraTo}
-                  onChange={(e) => setExtraTo(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleAddExtraRecipient();
-                    }
-                  }}
-                  style={{ color: '#ffffff' }}
-                  className="w-full bg-transparent px-2 py-0.5 text-xs !text-white placeholder:text-zinc-500 focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddExtraRecipient}
-                  className="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-[11px] cursor-pointer"
-                >
-                  + เพิ่ม
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* CC: Team Members (Everyone in CC Team) */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-slate-500" />
-                สำเนาถึง (CC: ทุกคนในทีม CC ครบทุกคน • {selectedCC.length} ท่าน)
-              </label>
-            </div>
-            
-            <div className="flex flex-wrap gap-1.5 p-2.5 bg-zinc-950/80 rounded-xl border border-zinc-800 min-h-[44px] items-center max-h-[160px] overflow-y-auto scrollbar-thin">
-              {selectedCC.map((email) => (
-                <span 
-                  key={email}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-zinc-800/90 text-zinc-200 text-[11px] border border-zinc-700 hover:border-orange-500/50 transition-colors"
-                >
-                  <span>{email}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveCC(email)}
-                    className="text-zinc-400 hover:text-rose-400 ml-0.5 cursor-pointer font-bold"
-                    title="ลบอีเมลนี้"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-
-              <div className="flex items-center gap-1 min-w-[200px] flex-1">
-                <input
-                  type="email"
-                  placeholder="พิมพ์อีเมลเพิ่มสำเนา..."
-                  value={extraCC}
-                  onChange={(e) => setExtraCC(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleAddExtraCC();
-                    }
-                  }}
-                  style={{ color: '#ffffff' }}
-                  className="w-full bg-transparent px-2 py-0.5 text-xs !text-white placeholder:text-zinc-500 focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddExtraCC}
-                  className="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-[11px] cursor-pointer"
-                >
-                  + เพิ่ม
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Subject */}
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-zinc-300 uppercase tracking-wider">
-              หัวข้ออีเมล (Subject)
-            </label>
-            <input
-              type="text"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              placeholder="ระบุหัวข้ออีเมล..."
-              style={{ color: '#ffffff', backgroundColor: '#09090b' }}
-              className="w-full p-2.5 bg-zinc-950 border border-zinc-700 rounded-xl !text-white font-medium text-xs sm:text-sm focus:outline-none focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316]"
-            />
-          </div>
-
-          {/* Email Body Content */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-[11px] font-bold text-zinc-300 uppercase tracking-wider">
-                เนื้อหารายงานการประชุม (สามารถแก้ไขเพิ่มเติมได้)
-              </label>
-              <span className="text-[10px] text-zinc-500">
-                กดปุ่มคัดลอกด้านล่างเพื่อนำไปใช้วางต่อได้ทันที
-              </span>
-            </div>
-            <textarea
-              rows={12}
-              value={emailBody}
-              onChange={(e) => setEmailBody(e.target.value)}
-              placeholder="พิมพ์หรือแก้ไขเนื้อหารายงานการประชุมที่นี่..."
-              style={{ color: '#f8fafc', backgroundColor: '#09090b', lineHeight: '1.7' }}
-              className="w-full p-3.5 bg-zinc-950 border border-zinc-700 rounded-xl !text-zinc-100 font-mono text-xs sm:text-[13px] leading-relaxed focus:outline-none focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316] resize-y selection:bg-orange-500/40"
-            />
-          </div>
-
-        </div>
-
-        {/* Footer Buttons */}
-        <div className="px-6 py-4 border-t border-zinc-800/80 bg-zinc-900/90 flex flex-wrap items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-full border border-zinc-700 text-zinc-300 hover:bg-zinc-800 text-xs font-semibold transition-colors cursor-pointer"
-            >
-              ยกเลิก
-            </button>
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
               onClick={handleCopyBody}
-              className="px-4 py-2 rounded-full border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 transition-colors cursor-pointer"
+              title="คัดลอกเนื้อหาทั้งหมด"
             >
               {copied ? (
                 <>
-                  <Check size={13} className="text-emerald-400 stroke-[2.5]" />
-                  <span className="text-emerald-300 font-bold">คัดลอกแล้ว!</span>
+                  <Check size={11} className="text-emerald-400 stroke-[2.5]" />
+                  <span className="text-emerald-400 font-bold">คัดลอกแล้ว</span>
                 </>
               ) : (
                 <>
-                  <Copy size={13} className="text-zinc-400" />
-                  <span>คัดลอกเนื้อหา</span>
+                  <Copy size={11} className="text-zinc-400" />
+                  <span>คัดลอก</span>
                 </>
               )}
             </button>
+            <button
+              onClick={onClose}
+              className="p-1 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors cursor-pointer"
+              title="ปิดหน้าต่าง"
+            >
+              <X size={16} />
+            </button>
           </div>
+        </div>
+
+        {/* Modal Form Body - Clean Gmail Compose Window Style */}
+        <div className="flex-1 flex flex-col overflow-hidden text-xs bg-white">
+          
+          {/* Gmail Metadata Section (Ultra-Minimal, Clean Gmail Compose Headers) */}
+          <div className="px-4 py-1 border-b border-zinc-200 bg-white shrink-0 divide-y divide-zinc-100 text-[11px]">
+            
+            {/* Row 1: จาก (From) */}
+            <div className="flex items-center gap-2 py-1.5">
+              <span className="w-16 shrink-0 text-zinc-400 font-medium text-[11px] flex items-center gap-1">
+                <User size={11} className="text-emerald-600" />
+                <span>จาก:</span>
+              </span>
+              <div className="flex-1 min-w-0 flex items-center gap-2 truncate">
+                <span className="font-bold text-zinc-900">{meeting.recorder || "ทีมงาน CC"}</span>
+                <span className="text-[11px] text-zinc-400 font-mono">
+                  &lt;cc@step.cmu.ac.th&gt;
+                </span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0 ml-auto">
+                  ผู้จดบันทึกการประชุม
+                </span>
+              </div>
+            </div>
+
+            {/* Row 2: ถึง (To: ผู้รับหลัก) */}
+            <div className="flex items-center gap-2 py-1.5 flex-wrap min-h-[36px]">
+              <span className="w-16 shrink-0 text-zinc-400 font-medium text-[11px] flex items-center gap-1">
+                <Mail size={11} className="text-[#f97316]" />
+                <span>ถึง (To):</span>
+              </span>
+              <div className="flex-1 min-w-0 flex items-center gap-1.5 flex-wrap">
+                {selectedExecs.map((email) => (
+                  <span
+                    key={email}
+                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-50 text-orange-900 text-[11px] font-semibold border border-orange-200/80"
+                  >
+                    <span>{email}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveExec(email)}
+                      className="text-orange-400 hover:text-rose-600 ml-0.5 cursor-pointer font-bold"
+                      title="ลบอีเมลนี้"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+                <div className="flex items-center gap-1 min-w-[200px] flex-1">
+                  <input
+                    type="email"
+                    placeholder="พิมพ์อีเมลเพิ่มผู้บริหาร แล้วกด Enter..."
+                    value={extraTo}
+                    onChange={(e) => setExtraTo(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddExtraRecipient();
+                      }
+                    }}
+                    className="w-full bg-transparent border-0 px-1 py-0.5 text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddExtraRecipient}
+                    className="px-2 py-0.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-md text-[10px] font-semibold border border-zinc-200 cursor-pointer shrink-0"
+                  >
+                    + เพิ่ม
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Row 3: สำเนา (Cc: สมาชิกทีม CC) */}
+            <div className="flex items-start gap-2 py-1.5 flex-wrap min-h-[36px] max-h-[96px] overflow-y-auto">
+              <span className="w-16 shrink-0 text-zinc-400 font-medium text-[11px] flex items-center gap-1 pt-0.5">
+                <Users size={11} className="text-zinc-400" />
+                <span>สำเนา (Cc):</span>
+              </span>
+              <div className="flex-1 min-w-0 flex items-center gap-1.5 flex-wrap">
+                {selectedCC.map((email) => (
+                  <span
+                    key={email}
+                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-zinc-100 text-zinc-800 text-[11px] font-medium border border-zinc-200"
+                  >
+                    <span>{email}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveCC(email)}
+                      className="text-zinc-400 hover:text-rose-600 ml-0.5 cursor-pointer font-bold"
+                      title="ลบอีเมลนี้"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+                <div className="flex items-center gap-1 min-w-[200px] flex-1">
+                  <input
+                    type="email"
+                    placeholder="พิมพ์อีเมลเพิ่มสำเนา แล้วกด Enter..."
+                    value={extraCC}
+                    onChange={(e) => setExtraCC(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddExtraCC();
+                      }
+                    }}
+                    className="w-full bg-transparent border-0 px-1 py-0.5 text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddExtraCC}
+                    className="px-2 py-0.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-md text-[10px] font-semibold border border-zinc-200 cursor-pointer shrink-0"
+                  >
+                    + เพิ่ม
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Row 4: หัวข้อ (Subject) */}
+            <div className="flex items-center gap-2 py-1.5">
+              <span className="w-16 shrink-0 text-zinc-400 font-medium text-[11px] flex items-center gap-1">
+                <FileText size={11} className="text-zinc-400" />
+                <span>หัวข้อ:</span>
+              </span>
+              <input
+                type="text"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                className="flex-1 bg-transparent border-0 px-1 py-0.5 text-xs font-bold text-zinc-900 focus:outline-none truncate"
+              />
+            </div>
+          </div>
+
+          {/* Email Body Textarea */}
+          <div className="flex-1 flex flex-col p-3 overflow-hidden bg-white">
+            <textarea
+              value={emailBody}
+              onChange={(e) => setEmailBody(e.target.value)}
+              className="w-full flex-1 p-3 text-xs font-mono sm:font-sans leading-relaxed text-zinc-800 focus:outline-none resize-none bg-white rounded-xl border border-transparent focus:border-zinc-200 hover:border-zinc-100 custom-scrollbar select-text"
+              placeholder="พิมพ์หรือแก้ไขเนื้อหารายงานการประชุม..."
+              spellCheck={false}
+            />
+          </div>
+
+        </div>
+
+        {/* Footer actions */}
+        <div className="px-4 py-2.5 border-t border-zinc-200 bg-zinc-50 flex items-center justify-between gap-3 shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-900 bg-white border border-zinc-200 hover:border-zinc-300 rounded-lg hover:bg-zinc-50 transition-colors cursor-pointer"
+          >
+            ยกเลิก
+          </button>
 
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={handleOpenMailto}
-              className="px-4 py-2 rounded-full border border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-800 text-xs font-semibold transition-colors cursor-pointer inline-flex items-center gap-1.5"
+              className="px-3.5 py-1.5 rounded-lg border border-zinc-300 hover:bg-zinc-100 text-zinc-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer bg-white"
               title="เปิดด้วย Outlook, Apple Mail หรือโปรแกรมอีเมลในเครื่อง"
             >
-              <Mail size={13} />
+              <Mail size={13} className="text-zinc-500" />
               <span>เปิด Mail Client</span>
             </button>
 
@@ -1658,7 +1936,7 @@ function MeetingEmailModal({
               type="button"
               onClick={handleSendAndOpenGmail}
               disabled={isSending}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#f97316] hover:bg-[#ea580c] active:scale-95 text-white text-xs font-bold shadow-lg shadow-orange-900/30 transition-all cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#f97316] hover:bg-[#ea580c] active:scale-95 text-white text-xs font-bold shadow-sm transition-all cursor-pointer disabled:opacity-50"
             >
               <Send size={14} />
               <span>🚀 ส่งและเปิดส่งใน Gmail (@step.cmu.ac.th)</span>
@@ -1667,6 +1945,116 @@ function MeetingEmailModal({
         </div>
 
       </div>
+    </div>,
+    document.body
+  );
+}
+
+// =============================================================================
+// SUB-COMPONENT: Minimalist Collapsible Agenda Assignee Selector
+// =============================================================================
+function AgendaAssigneeSelector({
+  assignees,
+  selectedAssignees = [],
+  onToggle,
+}: {
+  assignees: any[];
+  selectedAssignees: string[];
+  onToggle: (name: string) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="space-y-1.5 pt-0.5">
+      <div className="flex items-center justify-between text-[11px]">
+        <span className="font-bold text-slate-700 dark:text-zinc-300 flex items-center gap-1.5">
+          <Users size={12} className="text-slate-400" />
+          <span>ผู้รับผิดชอบหลัก:</span>
+        </span>
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className="text-[11px] font-semibold text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 flex items-center gap-1 cursor-pointer transition-colors"
+        >
+          <UserPlus size={11} className="text-slate-400" />
+          <span>{isOpen ? "ซ่อนตัวเลือก" : "+ กำหนดผู้รับผิดชอบ"}</span>
+          {selectedAssignees.length > 0 && (
+            <span className="text-slate-400 font-normal">({selectedAssignees.length} คน)</span>
+          )}
+        </button>
+      </div>
+
+      {/* Selected Members Mini Chips */}
+      <div className="flex items-center gap-1.5 flex-wrap min-h-[26px]">
+        {selectedAssignees.length === 0 ? (
+          <button
+            type="button"
+            onClick={() => setIsOpen(true)}
+            className="text-[10.5px] text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-300 italic cursor-pointer flex items-center gap-1 py-0.5"
+          >
+            + ยังไม่ได้เลือกผู้รับผิดชอบ (คลิกเพื่อเลือก)
+          </button>
+        ) : (
+          selectedAssignees.map((name) => (
+            <span
+              key={name}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 text-[10.5px] font-medium border border-slate-200 dark:border-zinc-700 shadow-2xs"
+            >
+              <span>{name}</span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggle(name);
+                }}
+                className="text-slate-400 hover:text-rose-600 rounded-sm p-0.2 cursor-pointer transition-colors ml-0.5"
+                title="ลบออก"
+              >
+                <X size={10} />
+              </button>
+            </span>
+          ))
+        )}
+      </div>
+
+      {/* Collapsible Picker Grid */}
+      {isOpen && (
+        <div className="p-2.5 bg-slate-50 dark:bg-zinc-900/90 rounded-xl border border-slate-200 dark:border-zinc-700 space-y-2 animate-in fade-in duration-150">
+          <div className="flex items-center justify-between text-[10.5px] text-slate-500 dark:text-zinc-400 pb-1 border-b border-slate-200/60 dark:border-zinc-800">
+            <span>คลิกเพื่อเลือกหรือยกเลิกผู้รับผิดชอบ:</span>
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              className="text-slate-900 dark:text-zinc-100 font-bold hover:underline cursor-pointer"
+            >
+              เสร็จสิ้น
+            </button>
+          </div>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-1">
+            {assignees.map((mem) => {
+              const isSelected = selectedAssignees.includes(mem.name);
+              return (
+                <button
+                  key={mem.id || mem.name}
+                  type="button"
+                  onClick={() => onToggle(mem.name)}
+                  className={`py-1 px-1.5 rounded-lg text-[10.5px] font-medium transition-all cursor-pointer flex items-center justify-center gap-1 text-center truncate border ${
+                    isSelected
+                      ? "bg-slate-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-slate-900 dark:border-zinc-100 shadow-2xs font-bold"
+                      : "bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-700"
+                  }`}
+                  title={mem.name}
+                >
+                  <span className={`text-[10px] shrink-0 ${isSelected ? "text-emerald-400 dark:text-emerald-600 font-bold" : "text-slate-400"}`}>
+                    {isSelected ? "✓" : "+"}
+                  </span>
+                  <span className="truncate">{mem.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1689,6 +2077,11 @@ function CreateEditMeetingModal({
   onSave: (meeting: MeetingTask) => void;
   onClose: () => void;
 }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const [title, setTitle] = useState(initialMeeting?.title || `การประชุม CC ประจำสัปดาห์ (${monthName})`);
   const [date, setDate] = useState(initialMeeting?.date || `${monthKey}-07`);
   const [recorder, setRecorder] = useState(initialMeeting?.recorder || "วา WK");
@@ -1738,6 +2131,39 @@ function CreateEditMeetingModal({
   const [observations, setObservations] = useState(initialMeeting?.observations || "");
   const [risks, setRisks] = useState(initialMeeting?.risks || "");
   const [solutions, setSolutions] = useState(initialMeeting?.solutions || "");
+  const [isAiAnalyzing, setIsAiAnalyzing] = useState(false);
+  const [aiSuccessMessage, setAiSuccessMessage] = useState<string | null>(null);
+
+  const handleAiAnalyze = async () => {
+    setIsAiAnalyzing(true);
+    setAiSuccessMessage(null);
+    try {
+      const res = await fetch("/api/ai-meeting-analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          date,
+          meetingType,
+          chair,
+          recorder,
+          agendas
+        })
+      });
+      if (!res.ok) throw new Error("Failed to analyze");
+      const data = await res.json();
+      if (data.observations) setObservations(data.observations);
+      if (data.risks) setRisks(data.risks);
+      if (data.solutions) setSolutions(data.solutions);
+      setAiSuccessMessage("วิเคราะห์เบื้องต้นด้วย AI เรียบร้อยแล้ว (ท่านสามารถปรับแก้ข้อความทั้ง 3 ส่วนได้ตามต้องการ)");
+      setTimeout(() => setAiSuccessMessage(null), 6000);
+    } catch (err) {
+      console.error("AI Analysis error:", err);
+      alert("เกิดข้อผิดพลาดในการวิเคราะห์ด้วย AI กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsAiAnalyzing(false);
+    }
+  };
 
   const handleAddAgenda = (cat: "info" | "continuous") => {
     setAgendas(prev => [
@@ -1804,24 +2230,25 @@ function CreateEditMeetingModal({
     onSave(meetingToSave);
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+  if (!mounted) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100000] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="bg-[#fcfcfd] rounded-3xl w-full max-w-2xl max-h-[92vh] flex flex-col shadow-2xl border border-slate-200/90 overflow-hidden font-sans">
         
-        {/* Dieter Rams Skeuomorphic Header */}
-        <div className="px-6 py-4 border-b border-slate-200 bg-white/95 shrink-0 flex items-center justify-between">
+        {/* Minimalist Modal Header */}
+        <div className="px-6 py-4 border-b border-slate-200 bg-white shrink-0 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-orange-50 border border-orange-200/80 flex items-center justify-center text-[#f97316] shadow-xs">
-              <Calendar size={18} strokeWidth={2} />
+            <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shadow-2xs">
+              <Calendar size={16} strokeWidth={2} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#f97316] animate-pulse" />
-                <h3 className="text-base font-black text-slate-900 tracking-tight">
+                <h3 className="text-base font-bold text-slate-900 tracking-tight">
                   {initialMeeting ? "แก้ไขบันทึกการประชุม" : "สร้างวาระการประชุมประจำเดือน"}
                 </h3>
               </div>
-              <p className="text-[11.5px] text-slate-500 font-light mt-0.5">
+              <p className="text-[11.5px] text-slate-500 font-normal mt-0.5">
                 รอบประจำเดือน: <span className="font-semibold text-slate-800">{monthName}</span> • ระบบจัดการวาระและมติ CC
               </p>
             </div>
@@ -1835,21 +2262,21 @@ function CreateEditMeetingModal({
           </button>
         </div>
 
-        {/* Form Body with Rams Segmented Layout */}
+        {/* Form Body with Minimal Clean Layout */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5 text-xs text-slate-700">
           
           {/* Section 1: ข้อมูลพื้นฐานการประชุม (General Meeting Info) */}
           <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2.5">
-                <span className="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-black">
+                <span className="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-bold">
                   1
                 </span>
-                <h4 className="text-sm sm:text-base font-black text-slate-900 tracking-tight">
+                <h4 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
                   ข้อมูลการประชุม
                 </h4>
               </div>
-              <span className="text-[11px] font-semibold text-slate-400">General Information</span>
+              <span className="text-[11px] font-medium text-slate-400">General Information</span>
             </div>
 
             {/* Meeting Type Toggle */}
@@ -1857,8 +2284,8 @@ function CreateEditMeetingModal({
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-slate-700">ประเภทการประชุม (Meeting Type) *</label>
                 {meetingType === "executive" && (
-                  <span className="text-[10.5px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200 flex items-center gap-1">
-                    <Sparkles size={11} />
+                  <span className="text-[10.5px] font-medium text-slate-700 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200 flex items-center gap-1">
+                    <Sparkles size={11} className="text-slate-500" />
                     เชื่อมโยงกับข้อกำหนด ISO 9001 (ข้อ 9.3) อัตโนมัติ
                   </span>
                 )}
@@ -1873,7 +2300,7 @@ function CreateEditMeetingModal({
                       : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
                   }`}
                 >
-                  <Users size={14} />
+                  <Users size={14} className={meetingType === "internal" ? "text-white" : "text-slate-500"} />
                   <span>1. ประชุมภายในทีม CC</span>
                 </button>
                 <button
@@ -1881,11 +2308,11 @@ function CreateEditMeetingModal({
                   onClick={() => handleSelectMeetingType("executive")}
                   className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
                     meetingType === "executive"
-                      ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                      ? "bg-slate-900 text-white border-slate-900 shadow-xs"
                       : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
                   }`}
                 >
-                  <Award size={14} />
+                  <Award size={14} className={meetingType === "executive" ? "text-white" : "text-slate-500"} />
                   <span>2. ประชุมร่วมกับผู้บริหาร STeP</span>
                 </button>
               </div>
@@ -1899,7 +2326,7 @@ function CreateEditMeetingModal({
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="เช่น การประชุม CC ประจำสัปดาห์ ครั้งที่ 1"
-                  className="w-full px-3.5 py-2.5 bg-slate-50/70 border border-slate-200 rounded-xl font-bold text-slate-900 text-xs focus:bg-white focus:outline-none focus:border-[#f97316] focus:ring-2 focus:ring-[#f97316]/20 transition-all"
+                  className="w-full px-3.5 py-2.5 bg-slate-50/70 border border-slate-200 rounded-xl font-bold text-slate-900 text-xs focus:bg-white focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800/10 transition-all"
                 />
               </div>
               <div className="space-y-1.5">
@@ -1909,7 +2336,7 @@ function CreateEditMeetingModal({
                   onChange={(val) => setDate(val)}
                   placeholder="เลือกวันที่ประชุม..."
                   required={true}
-                  className="w-full h-[42px] px-3.5 bg-slate-50/70 hover:bg-white border border-slate-200 rounded-full font-semibold text-slate-900 text-xs shadow-2xs focus:border-[#f97316] transition-all"
+                  className="w-full h-[42px] px-3.5 bg-slate-50/70 hover:bg-white border border-slate-200 rounded-full font-semibold text-slate-900 text-xs shadow-2xs focus:border-slate-800 transition-all"
                 />
               </div>
             </div>
@@ -1917,7 +2344,7 @@ function CreateEditMeetingModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1 items-start">
               <div className="space-y-1.5 flex flex-col justify-between">
                 <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5 h-5">
-                  <UserCheck size={14} className="text-[#f97316] shrink-0" />
+                  <UserCheck size={13} className="text-slate-400 shrink-0" />
                   <span>ผู้จดบันทึกการประชุม (Recorder) *</span>
                 </label>
                 <ModernSelect
@@ -1937,7 +2364,7 @@ function CreateEditMeetingModal({
 
               <div className="space-y-1.5 flex flex-col justify-between">
                 <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5 h-5">
-                  <Users size={14} className="text-slate-400 shrink-0" />
+                  <Users size={13} className="text-slate-400 shrink-0" />
                   <span>ประธานที่ประชุม (Chair)</span>
                 </label>
                 <input
@@ -1945,7 +2372,7 @@ function CreateEditMeetingModal({
                   value={chair}
                   onChange={(e) => setChair(e.target.value)}
                   placeholder="ระบุประธานที่ประชุม..."
-                  className="w-full h-[42px] px-3.5 bg-slate-50/70 border border-slate-200 rounded-xl font-semibold text-slate-900 text-xs focus:bg-white focus:outline-none focus:border-[#f97316] focus:ring-2 focus:ring-[#f97316]/20 transition-all"
+                  className="w-full h-[42px] px-3.5 bg-slate-50/70 border border-slate-200 rounded-xl font-semibold text-slate-900 text-xs focus:bg-white focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800/10 transition-all"
                 />
               </div>
             </div>
@@ -1953,15 +2380,14 @@ function CreateEditMeetingModal({
 
           {/* Section 2: วาระการประชุม & มติ (Agendas) */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-6">
-            {/* Header: Large, bold, orderly in Dieter Rams style */}
             <div className="border-b border-slate-200 pb-4">
               <div className="flex items-center gap-3">
-                <span className="w-8 h-8 rounded-full bg-[#f97316] text-white flex items-center justify-center text-sm font-black shrink-0 shadow-xs">
+                <span className="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-bold shrink-0">
                   2
                 </span>
                 <div className="flex-1">
                   <div className="flex items-center gap-3 flex-wrap">
-                    <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
                       วาระการประชุม &amp; มติ (Agendas)
                     </h3>
                     <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200/80">
@@ -1969,7 +2395,7 @@ function CreateEditMeetingModal({
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 font-normal mt-1">
-                    แยกสัดส่วนชัดเจนระหว่าง <strong className="text-slate-800">วาระแจ้งเพื่อทราบ</strong> และ <strong className="text-orange-600">วาระต่อเนื่อง</strong> (ยกยอดอัตโนมัติหากยังไม่สำเร็จ)
+                    แยกสัดส่วนระหว่าง <strong className="text-slate-800">วาระแจ้งเพื่อทราบ</strong> และ <strong className="text-slate-800">วาระต่อเนื่อง</strong> (ยกยอดอัตโนมัติหากยังไม่สำเร็จ)
                   </p>
                 </div>
               </div>
@@ -1979,28 +2405,27 @@ function CreateEditMeetingModal({
             <div className="space-y-3">
               <div className="flex items-center justify-between px-1 pb-1">
                 <div className="flex items-center gap-2.5">
-                  <span className="w-3 h-3 rounded-full bg-slate-500" />
-                  <h4 className="text-sm sm:text-base font-black text-slate-900 tracking-tight">
+                  <span className="w-2.5 h-2.5 rounded-full bg-slate-500" />
+                  <h4 className="text-sm font-bold text-slate-900 tracking-tight">
                     กลุ่มวาระแจ้งเพื่อทราบ
                   </h4>
-                  <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200">
+                  <span className="px-2 py-0.2 rounded-full bg-slate-100 text-slate-700 text-[11px] font-medium border border-slate-200">
                     {agendas.filter(a => a.category === "info").length} ข้อ
                   </span>
                 </div>
-                {/* Red Plus Button */}
                 <button
                   type="button"
                   onClick={() => handleAddAgenda("info")}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-xs hover:shadow-md cursor-pointer"
+                  className="flex items-center gap-1 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
                 >
-                  <Plus size={15} strokeWidth={3} className="text-white" />
+                  <Plus size={14} strokeWidth={2.5} />
                   <span>เพิ่มวาระ</span>
                 </button>
               </div>
 
               {agendas.filter(a => a.category === "info").length === 0 ? (
                 <div className="p-4 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 text-center text-slate-400 text-xs">
-                  ยังไม่มีวาระแจ้งเพื่อทราบ — คลิกปุ่ม <strong>+ เพิ่มวาระ</strong> สีแดงด้านบน
+                  ยังไม่มีวาระแจ้งเพื่อทราบ — คลิกปุ่ม <strong>+ เพิ่มวาระ</strong> ด้านบน
                 </div>
               ) : (
                 <div className="space-y-2.5">
@@ -2021,13 +2446,13 @@ function CreateEditMeetingModal({
                           <button
                             type="button"
                             onClick={() => handleRemoveAgenda(ag.id)}
-                            className="text-slate-400 hover:text-rose-600 text-[11px] font-semibold px-2 py-0.5 rounded-md hover:bg-rose-50 transition-colors cursor-pointer"
+                            className="text-slate-400 hover:text-rose-600 text-[11px] font-medium px-2 py-0.5 rounded-md hover:bg-rose-50 transition-colors cursor-pointer"
                           >
                             ลบข้อนี้
                           </button>
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="space-y-2.5">
                           <div>
                             <label className="text-[10.5px] font-bold text-slate-600 block mb-1">
                               เรื่อง / หัวข้อวาระ
@@ -2037,56 +2462,27 @@ function CreateEditMeetingModal({
                               value={ag.title}
                               onChange={(e) => handleUpdateAgendaTitle(ag.id, e.target.value)}
                               placeholder="หัวข้อวาระแจ้งเพื่อทราบ..."
-                              className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-slate-900 text-xs focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300"
+                              className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-slate-900 text-xs focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800/10"
                             />
                           </div>
 
-                          {/* Multi-select Assignees in Uniform Grid */}
-                          <div>
-                            <label className="text-[10.5px] font-bold text-slate-600 block mb-1.5 flex items-center justify-between">
-                              <span className="flex items-center gap-1.5">
-                                <Users size={12} className="text-slate-500" />
-                                <span>ผู้รับผิดชอบ / ผู้ชี้แจง (เลือกได้หลายคน):</span>
-                              </span>
-                              <span className="text-[10px] text-slate-400 font-normal">
-                                เลือกแล้ว {(ag.assignees || []).length} คน
-                              </span>
-                            </label>
-                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-1.5 p-2 bg-slate-50/70 rounded-xl border border-slate-200">
-                              {assignees.map((mem) => {
-                                const isSelected = (ag.assignees || []).includes(mem.name);
-                                return (
-                                  <button
-                                    key={mem.id || mem.name}
-                                    type="button"
-                                    onClick={() => handleToggleAgendaAssignee(ag.id, mem.name)}
-                                    className={`w-full py-1.5 px-1.5 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 text-center truncate ${
-                                      isSelected
-                                        ? "bg-slate-900 text-white shadow-2xs"
-                                        : "bg-white hover:bg-slate-100 text-slate-600 border border-slate-200/90 shadow-2xs hover:text-slate-900"
-                                    }`}
-                                    title={mem.name}
-                                  >
-                                    <span className={`text-[11px] shrink-0 ${isSelected ? "text-emerald-400 font-black" : "text-slate-400 font-bold"}`}>
-                                      {isSelected ? "✓" : "+"}
-                                    </span>
-                                    <span className="truncate">{mem.name}</span>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
+                          {/* Minimal Collapsible Agenda Assignee Selector */}
+                          <AgendaAssigneeSelector
+                            assignees={assignees}
+                            selectedAssignees={ag.assignees || []}
+                            onToggle={(name) => handleToggleAgendaAssignee(ag.id, name)}
+                          />
 
                           <div>
                             <label className="text-[10.5px] font-bold text-slate-600 block mb-1">
                               สรุปเนื้อหา / ข้อชี้แจง (ถ้ามี)
                             </label>
                             <textarea
-                              rows={3}
+                              rows={2}
                               value={ag.notes || ""}
                               onChange={(e) => handleUpdateAgendaNotes(ag.id, e.target.value)}
                               placeholder="รายละเอียดสรุปเพื่อทราบ ข้อชี้แจง และข้อมูลประกอบการประชุม..."
-                              className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-700 text-xs focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 resize-y leading-relaxed font-light"
+                              className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-700 text-xs focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800/10 resize-y leading-relaxed font-normal"
                             />
                           </div>
                         </div>
@@ -2097,25 +2493,24 @@ function CreateEditMeetingModal({
               )}
             </div>
 
-            {/* Sub-section B: วาระต่อเนื่อง (Continuous Agendas with Modern Minimalist Slate/Zinc Theme) */}
+            {/* Sub-section B: วาระต่อเนื่อง (Continuous Agendas) */}
             <div className="space-y-3 pt-4 border-t border-slate-200">
               <div className="flex items-center justify-between px-1 pb-1">
                 <div className="flex items-center gap-2.5">
-                  <span className="w-3 h-3 rounded-full bg-indigo-600" />
-                  <h4 className="text-sm sm:text-base font-black text-slate-900 tracking-tight">
+                  <span className="w-2.5 h-2.5 rounded-full bg-slate-900" />
+                  <h4 className="text-sm font-bold text-slate-900 tracking-tight">
                     กลุ่มวาระต่อเนื่อง &amp; ข้อสั่งการ (ยกยอดอัตโนมัติ)
                   </h4>
-                  <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-200/80">
+                  <span className="px-2 py-0.2 rounded-full bg-slate-100 text-slate-800 text-[11px] font-medium border border-slate-200">
                     {agendas.filter(a => a.category === "continuous").length} ข้อ
                   </span>
                 </div>
-                {/* Red Plus Button */}
                 <button
                   type="button"
                   onClick={() => handleAddAgenda("continuous")}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-xs hover:shadow-md cursor-pointer"
+                  className="flex items-center gap-1 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
                 >
-                  <Plus size={15} strokeWidth={3} className="text-white" />
+                  <Plus size={14} strokeWidth={2.5} />
                   <span>เพิ่มวาระ</span>
                 </button>
               </div>
@@ -2132,27 +2527,27 @@ function CreateEditMeetingModal({
                     return (
                       <div 
                         key={ag.id} 
-                        className="p-4 rounded-2xl border border-slate-200/90 bg-white hover:border-indigo-200/90 transition-all space-y-3 shadow-2xs"
+                        className="p-4 rounded-2xl border border-slate-200/90 bg-white hover:border-slate-300 transition-all space-y-3 shadow-2xs"
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="px-2.5 py-0.5 rounded-md bg-indigo-50 text-indigo-900 border border-indigo-200/80 font-bold text-[10px] uppercase tracking-wider">
+                            <span className="px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-900 border border-slate-300 font-bold text-[10px] uppercase tracking-wider">
                               วาระต่อเนื่อง #{contIndex}
                             </span>
                             <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
-                              <CheckSquare size={12} className="text-indigo-600" /> มีเช็กบ็อกซ์ติดตามในรายงาน (ยกยอดอัตโนมัติ)
+                              <CheckSquare size={12} className="text-slate-700" /> มีเช็กบ็อกซ์ติดตามในรายงาน (ยกยอดอัตโนมัติ)
                             </span>
                           </div>
                           <button
                             type="button"
                             onClick={() => handleRemoveAgenda(ag.id)}
-                            className="text-slate-400 hover:text-rose-600 text-[11px] font-semibold px-2 py-0.5 rounded-md hover:bg-rose-50 transition-colors cursor-pointer"
+                            className="text-slate-400 hover:text-rose-600 text-[11px] font-medium px-2 py-0.5 rounded-md hover:bg-rose-50 transition-colors cursor-pointer"
                           >
                             ลบข้อนี้
                           </button>
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="space-y-2.5">
                           <div>
                             <label className="text-[10.5px] font-bold text-slate-700 block mb-1">
                               เรื่อง / หัวข้องานต่อเนื่อง
@@ -2162,56 +2557,27 @@ function CreateEditMeetingModal({
                               value={ag.title}
                               onChange={(e) => handleUpdateAgendaTitle(ag.id, e.target.value)}
                               placeholder="หัวข้องานหรือข้อสั่งการต่อเนื่อง..."
-                              className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-slate-900 text-xs focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20"
+                              className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-slate-900 text-xs focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800/10"
                             />
                           </div>
 
-                          {/* Multi-select Assignees in Uniform Grid */}
-                          <div>
-                            <label className="text-[10.5px] font-bold text-slate-700 block mb-1.5 flex items-center justify-between">
-                              <span className="flex items-center gap-1.5">
-                                <Users size={12} className="text-indigo-600" />
-                                <span>ผู้รับผิดชอบหลัก / ข้อสั่งการถึง (เลือกได้หลายคน):</span>
-                              </span>
-                              <span className="text-[10px] text-slate-500 font-normal">
-                                เลือกแล้ว {(ag.assignees || []).length} คน
-                              </span>
-                            </label>
-                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-1.5 p-2 bg-slate-50/70 rounded-xl border border-slate-200">
-                              {assignees.map((mem) => {
-                                const isSelected = (ag.assignees || []).includes(mem.name);
-                                return (
-                                  <button
-                                    key={mem.id || mem.name}
-                                    type="button"
-                                    onClick={() => handleToggleAgendaAssignee(ag.id, mem.name)}
-                                    className={`w-full py-1.5 px-1.5 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 text-center truncate ${
-                                      isSelected
-                                        ? "bg-indigo-600 text-white shadow-2xs"
-                                        : "bg-white hover:bg-slate-100 text-slate-600 border border-slate-200/90 shadow-2xs hover:text-slate-900"
-                                    }`}
-                                    title={mem.name}
-                                  >
-                                    <span className={`text-[11px] shrink-0 ${isSelected ? "text-white font-black" : "text-slate-400 font-bold"}`}>
-                                      {isSelected ? "✓" : "+"}
-                                    </span>
-                                    <span className="truncate">{mem.name}</span>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
+                          {/* Minimal Collapsible Agenda Assignee Selector */}
+                          <AgendaAssigneeSelector
+                            assignees={assignees}
+                            selectedAssignees={ag.assignees || []}
+                            onToggle={(name) => handleToggleAgendaAssignee(ag.id, name)}
+                          />
 
                           <div>
                             <label className="text-[10.5px] font-bold text-slate-700 block mb-1">
                               มติที่ประชุม / ข้อสั่งการ / รายละเอียดงาน
                             </label>
                             <textarea
-                              rows={3}
+                              rows={2}
                               value={ag.notes || ""}
                               onChange={(e) => handleUpdateAgendaNotes(ag.id, e.target.value)}
                               placeholder="ระบุมติที่ประชุม ข้อสั่งการ หรือกำหนดส่งมอบงาน..."
-                              className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-700 text-xs focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 resize-y leading-relaxed font-light"
+                              className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-700 text-xs focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800/10 resize-y leading-relaxed font-normal"
                             />
                           </div>
                         </div>
@@ -2225,22 +2591,55 @@ function CreateEditMeetingModal({
 
           {/* Section 3: การวิเคราะห์ ข้อสังเกต ความเสี่ยง & แนวทางแก้ไข */}
           <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-2">
               <div className="flex items-center gap-2.5">
-                <span className="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-black">
+                <span className="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-bold">
                   3
                 </span>
-                <h4 className="text-sm sm:text-base font-black text-slate-900 tracking-tight">
+                <h4 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
                   การวิเคราะห์ ข้อสังเกต ความเสี่ยง &amp; แนวทางแก้ไข
                 </h4>
               </div>
-              <span className="text-[11px] font-semibold text-slate-400">Risk &amp; Strategic Solutions</span>
+
+              {/* AI Preliminary Analysis Button */}
+              <button
+                type="button"
+                onClick={handleAiAnalyze}
+                disabled={isAiAnalyzing}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
+                title="คลิกเพื่อให้ AI วิเคราะห์สรุปข้อสังเกต ความเสี่ยง และแนวทางแก้ไขเบื้องต้นจากข้อมูลการประชุม"
+              >
+                {isAiAnalyzing ? (
+                  <>
+                    <Loader2 size={13} className="animate-spin text-slate-300" />
+                    <span>กำลังวิเคราะห์ด้วย AI...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={13} className="text-amber-400" />
+                    <span>วิเคราะห์เบื้องต้น (AI)</span>
+                  </>
+                )}
+              </button>
             </div>
+
+            {/* AI Feedback Banner */}
+            {aiSuccessMessage && (
+              <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 text-xs font-medium rounded-xl border border-emerald-200 dark:border-emerald-800 flex items-center justify-between animate-in fade-in duration-150">
+                <span className="flex items-center gap-1.5">
+                  <Check size={14} className="text-emerald-600" />
+                  {aiSuccessMessage}
+                </span>
+                <button type="button" onClick={() => setAiSuccessMessage(null)} className="text-emerald-600 hover:text-emerald-900 cursor-pointer">
+                  <X size={12} />
+                </button>
+              </div>
+            )}
 
             <div className="space-y-3.5">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-amber-800 flex items-center gap-1.5">
-                  <Sparkles size={13} className="text-amber-500" />
+                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <Sparkles size={12} className="text-slate-400" />
                   <span>ข้อสังเกตสำคัญในที่ประชุม (Observations)</span>
                 </label>
                 <textarea
@@ -2248,13 +2647,13 @@ function CreateEditMeetingModal({
                   value={observations}
                   onChange={(e) => setObservations(e.target.value)}
                   placeholder="ข้อสังเกต เช่น ภาระงานเริ่มล้นช่วงต้นไตรมาส, กำลังคนในแต่ละยูนิต..."
-                  className="w-full px-3.5 py-2.5 bg-amber-50/40 border border-amber-200/70 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all resize-y font-medium"
+                  className="w-full px-3.5 py-2.5 bg-slate-50/70 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800/10 transition-all resize-y font-normal"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-rose-800 flex items-center gap-1.5">
-                  <ShieldAlert size={13} className="text-rose-500" />
+                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <ShieldAlert size={12} className="text-slate-400" />
                   <span>ความเสี่ยงที่ต้องระวัง (Risks)</span>
                 </label>
                 <textarea
@@ -2262,13 +2661,13 @@ function CreateEditMeetingModal({
                   value={risks}
                   onChange={(e) => setRisks(e.target.value)}
                   placeholder="ความเสี่ยงที่อาจทำให้งานล่าช้า เช่น ส่งไฟล์ต้นฉบับไม่ทันกำหนด หรืออุปกรณ์ขัดข้อง..."
-                  className="w-full px-3.5 py-2.5 bg-rose-50/40 border border-rose-200/70 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 transition-all resize-y font-medium"
+                  className="w-full px-3.5 py-2.5 bg-slate-50/70 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800/10 transition-all resize-y font-normal"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
-                  <TrendingUp size={13} className="text-emerald-500" />
+                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <TrendingUp size={12} className="text-slate-400" />
                   <span>แนวทางการพัฒนา / แนวทางแก้ไข (Solutions)</span>
                 </label>
                 <textarea
@@ -2276,7 +2675,7 @@ function CreateEditMeetingModal({
                   value={solutions}
                   onChange={(e) => setSolutions(e.target.value)}
                   placeholder="แนวทางแก้ไข เช่น มอบหมายผู้ช่วยเข้าประกบ, ปรับแผนการทำงาน หรือจัดคิวสตูดิโอ..."
-                  className="w-full px-3.5 py-2.5 bg-emerald-50/40 border border-emerald-200/70 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all resize-y font-medium"
+                  className="w-full px-3.5 py-2.5 bg-slate-50/70 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800/10 transition-all resize-y font-normal"
                 />
               </div>
             </div>
@@ -2284,7 +2683,7 @@ function CreateEditMeetingModal({
 
         </div>
 
-        {/* Dieter Rams Tactile Footer */}
+        {/* Minimal Tactile Footer */}
         <div className="px-6 py-4 border-t border-slate-200 bg-white/95 shrink-0 flex items-center justify-between">
           <button
             type="button"
@@ -2297,7 +2696,7 @@ function CreateEditMeetingModal({
           <button
             type="button"
             onClick={handleSave}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#f97316] hover:bg-[#ea580c] active:scale-95 text-white text-xs font-black tracking-wide shadow-md hover:shadow-lg transition-all cursor-pointer"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 active:scale-95 text-white text-xs font-bold tracking-wide shadow-md hover:shadow-lg transition-all cursor-pointer"
           >
             <Check size={15} strokeWidth={2.5} />
             <span>บันทึกการประชุม</span>
@@ -2305,7 +2704,8 @@ function CreateEditMeetingModal({
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

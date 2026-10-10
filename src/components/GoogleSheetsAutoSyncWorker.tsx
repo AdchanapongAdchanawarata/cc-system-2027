@@ -32,25 +32,28 @@ export default function GoogleSheetsAutoSyncWorker() {
       // 1. Weekly Friday >= 17:00 for R
       if (dayOfWeek === 5 && hour >= 17) {
         const syncKeyR = `cc_auto_sync_r_${fy}_${monthCode}_${weekCode}`;
+        const inflightKeyR = `${syncKeyR}_inflight`;
         const alreadySyncedR = localStorage.getItem(syncKeyR);
 
-        if (!alreadySyncedR) {
+        if (!alreadySyncedR && !sessionStorage.getItem(inflightKeyR)) {
+          sessionStorage.setItem(inflightKeyR, 'true');
           isSyncingRef.current = true;
           try {
             console.log(`[AUTO-SYNC] Triggering Friday 17:00 R-sync for ${weekCode} ${monthCode} ${fy}...`);
             const res = await fetch('/api/sheets-sync', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ type: 'R' })
+              body: JSON.stringify({ type: 'R', force: false, updatedBy: 'auto_sync_worker' })
             });
             const data = await res.json();
-            if (data.status === 'success') {
+            if (data.status === 'success' || data.status === 'skipped') {
               localStorage.setItem(syncKeyR, JSON.stringify({ syncedAt: new Date().toISOString(), result: data }));
-              console.log(`[AUTO-SYNC] R-sync successfully completed!`, data);
+              console.log(`[AUTO-SYNC] R-sync finished with status: ${data.status}`, data);
             }
           } catch (e) {
             console.error(`[AUTO-SYNC] R-sync failed:`, e);
           } finally {
+            sessionStorage.removeItem(inflightKeyR);
             isSyncingRef.current = false;
           }
         }
@@ -59,25 +62,28 @@ export default function GoogleSheetsAutoSyncWorker() {
       // 2. Monthly Last Day >= 17:00 for KR
       if (isLastDayOfMonth && hour >= 17) {
         const syncKeyKR = `cc_auto_sync_kr_${fy}_${monthCode}`;
+        const inflightKeyKR = `${syncKeyKR}_inflight`;
         const alreadySyncedKR = localStorage.getItem(syncKeyKR);
 
-        if (!alreadySyncedKR) {
+        if (!alreadySyncedKR && !sessionStorage.getItem(inflightKeyKR)) {
+          sessionStorage.setItem(inflightKeyKR, 'true');
           isSyncingRef.current = true;
           try {
             console.log(`[AUTO-SYNC] Triggering Month-end 17:00 KR-sync for ${monthCode} ${fy}...`);
             const res = await fetch('/api/sheets-sync', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ type: 'KR' })
+              body: JSON.stringify({ type: 'KR', force: false, updatedBy: 'auto_sync_worker' })
             });
             const data = await res.json();
-            if (data.status === 'success') {
+            if (data.status === 'success' || data.status === 'skipped') {
               localStorage.setItem(syncKeyKR, JSON.stringify({ syncedAt: new Date().toISOString(), result: data }));
-              console.log(`[AUTO-SYNC] KR-sync successfully completed!`, data);
+              console.log(`[AUTO-SYNC] KR-sync finished with status: ${data.status}`, data);
             }
           } catch (e) {
             console.error(`[AUTO-SYNC] KR-sync failed:`, e);
           } finally {
+            sessionStorage.removeItem(inflightKeyKR);
             isSyncingRef.current = false;
           }
         }

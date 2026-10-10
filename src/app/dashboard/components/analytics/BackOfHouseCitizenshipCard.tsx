@@ -95,18 +95,17 @@ export default function BackOfHouseCitizenshipCard({
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-1.5">
-                <span>ดัชนีคุณค่างานหลังบ้านและการมีส่วนร่วมของทีม</span>
+                <span>ดัชนีคุณค่างานช่วยทีมและวินัยการทำงาน</span>
                 <span className="text-xs font-mono font-normal text-slate-300">
-                  (Back-of-House Citizenship & Synergy Index)
+                  (Teamwork & Contribution Index)
                 </span>
               </h3>
               <span className="bg-amber-400 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">
-                Concrete Metric
+                วัดผลได้จริง
               </span>
             </div>
             <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
-              แปลงพฤติกรรมเกื้อกูลทีม งานปฏิบัติการเบื้องหลัง วินัยในระบบ และความรับผิดชอบออกมาเป็นผลประเมินตัวเลขที่โปร่งใส 
-              เพื่อเชิดชูเกียรติคนทำงานหลังบ้าน และป้องกันไม่ให้ผู้ช่วยหรือสายงานสนับสนุนเสียเปรียบงานหน้าร้าน
+              วัดผลความร่วมมือจริง 4 ด้าน: ช่วยงานเพื่อน, งานส่วนกลางของทีม (STeP & RSP), ความสม่ำเสมอในการอัปเดตงาน และการส่งมอบตรงเวลา เพื่อเชิดชูคนที่คอยสนับสนุนทีมเบื้องหลัง
             </p>
           </div>
         </div>
@@ -118,7 +117,7 @@ export default function BackOfHouseCitizenshipCard({
               คะแนนความร่วมมือเฉลี่ยทีม
             </div>
             <div className="text-xs font-bold text-emerald-400">
-              {executiveAnalysis.teamCitizenshipScore >= 75 ? "🌟 ระดับยอดเยี่ยม (High Synergy)" : "🤝 ระดับร่วมมือดี (Good Synergy)"}
+              {executiveAnalysis.teamCitizenshipScore >= 75 ? "🌟 ระดับยอดเยี่ยม (ร่วมมือสูงมาก)" : "🤝 ระดับร่วมมือดี (ร่วมมือดี)"}
             </div>
           </div>
           <div className="w-12 h-12 rounded-xl bg-slate-950 border border-slate-700 flex flex-col items-center justify-center font-mono font-black shadow-inner">
@@ -132,13 +131,13 @@ export default function BackOfHouseCitizenshipCard({
       <div className="border-b border-surface-border bg-muted/5 p-3 sm:px-5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
         <div className="flex items-center gap-2 text-foreground font-bold">
           <ShieldCheck size={15} className="text-amber-500" />
-          <span>โครงสร้างการคำนวณ 4 เสาหลัก (Core Pillars: 25 คะแนน/เสา รวม 100 คะแนนเต็ม)</span>
+          <span>เกณฑ์คะแนน 4 ด้าน (ด้านละ 25 คะแนน รวม 100 คะแนนเต็ม)</span>
         </div>
         <button
           onClick={() => setShowPillarsGuide(!showPillarsGuide)}
           className="text-muted hover:text-foreground font-medium flex items-center gap-1 cursor-pointer transition-colors text-[11px]"
         >
-          <span>{showPillarsGuide ? "ซ่อนรายละเอียดเกณฑ์" : "ดูสูตรการคำนวณ 4 เสา"}</span>
+          <span>{showPillarsGuide ? "ซ่อนคำอธิบายเกณฑ์" : "ดูคำอธิบายทั้ง 4 ด้าน"}</span>
           {showPillarsGuide ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
         </button>
       </div>
@@ -151,14 +150,14 @@ export default function BackOfHouseCitizenshipCard({
               <div className="flex items-center justify-between text-blue-600 dark:text-blue-400 font-bold">
                 <span className="flex items-center gap-1.5">
                   <Users size={14} className="text-blue-600 dark:text-blue-400" />
-                  <span>1. งานเกื้อกูลเพื่อน</span>
+                  <span>1. ช่วยงานเพื่อน</span>
                 </span>
                 <span className="bg-blue-500/15 text-blue-700 dark:text-blue-300 font-mono px-1.5 py-0.5 rounded text-[10px]">
-                  Max 25 pts
+                  เต็ม 25 คะแนน
                 </span>
               </div>
               <p className="text-[11px] text-muted leading-relaxed">
-                คำนวณจากงานช่วย (Assistant tasks) และสัดส่วนงานช่วยต่องานทั้งหมด ตรวจวัดพฤติกรรมการไม่ทิ้งเพื่อนและการพร้อมซัพพอร์ตโหลดของยูนิต
+                คำนวณจากจำนวนงานที่เข้าไปเป็นผู้ช่วยในงานคนอื่น (Assistant tasks) สะท้อนการช่วยเหลือกันและแบ่งเบาภาระงานในทีม
               </p>
             </div>
 
@@ -167,14 +166,14 @@ export default function BackOfHouseCitizenshipCard({
               <div className="flex items-center justify-between text-purple-600 dark:text-purple-400 font-bold">
                 <span className="flex items-center gap-1.5">
                   <FileText size={14} className="text-purple-600 dark:text-purple-400" />
-                  <span>2. ปฏิบัติการหลังบ้าน</span>
+                  <span>2. งานส่วนกลางของทีม</span>
                 </span>
                 <span className="bg-purple-500/15 text-purple-700 dark:text-purple-300 font-mono px-1.5 py-0.5 rounded text-[10px]">
-                  Max 25 pts
+                  เต็ม 25 คะแนน
                 </span>
               </div>
               <p className="text-[11px] text-muted leading-relaxed">
-                คำนวณจากงานภายใน (Internal tasks), งานเอกสาร, จัดซื้อ, เบิกจ่ายบิล และงานส่วนกลางของ STeP/CMU/RSP ที่ไม่มีตัวเลขหน้างานแต่ขับเคลื่อนทีม
+                คำนวณจากงานส่วนกลาง (Internal tasks) เช่น STeP, RSP, งานแอดมิน, งานเอกสารเบื้องหลังที่ขับเคลื่อนองค์กร
               </p>
             </div>
 
@@ -183,14 +182,14 @@ export default function BackOfHouseCitizenshipCard({
               <div className="flex items-center justify-between text-amber-600 dark:text-amber-400 font-bold">
                 <span className="flex items-center gap-1.5">
                   <Zap size={14} className="text-amber-600 dark:text-amber-400" />
-                  <span>3. วินัยในระบบ</span>
+                  <span>3. อัปเดตงานสม่ำเสมอ</span>
                 </span>
                 <span className="bg-amber-500/15 text-amber-700 dark:text-amber-300 font-mono px-1.5 py-0.5 rounded text-[10px]">
-                  Max 25 pts
+                  เต็ม 25 คะแนน
                 </span>
               </div>
               <p className="text-[11px] text-muted leading-relaxed">
-                คำนวณจากความใส่ใจอัปเดตระบบ ไม่อ้อยอิ่งงาน (Zero Stalled Tasks) และไม่มีงานเลยกำหนดเดดไลน์ (Zero Overdue)
+                คำนวณจากการไม่อ้อยอิ่งงาน (Zero Stalled Tasks) และไม่มีงานค้างเลยกำหนดเดดไลน์ (Zero Overdue) อัปเดตระบบสม่ำเสมอ
               </p>
             </div>
 
@@ -199,14 +198,14 @@ export default function BackOfHouseCitizenshipCard({
               <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 font-bold">
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400" />
-                  <span>4. คุณภาพปิดงาน</span>
+                  <span>4. ส่งมอบงานตรงเวลา</span>
                 </span>
                 <span className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-mono px-1.5 py-0.5 rounded text-[10px]">
-                  Max 25 pts
+                  เต็ม 25 คะแนน
                 </span>
               </div>
               <p className="text-[11px] text-muted leading-relaxed">
-                คำนวณจาก On-time delivery rate (ส่งมอบงานตรงกำหนดเวลา) และอัตราการปิดงานสำเร็จโดยไม่ถูกยกเลิกกลางคัน
+                คำนวณจากอัตราส่งมอบงานทันตามกำหนดเวลา (On-time delivery rate) และปิดงานได้สำเร็จลุล่วง
               </p>
             </div>
           </div>
@@ -235,7 +234,7 @@ export default function BackOfHouseCitizenshipCard({
                 : "bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100"
             }`}
           >
-            <span>🏆 เสาหลักหลังบ้าน</span>
+            <span>🏆 เสาหลักช่วยงานทีม</span>
             <span className="font-mono text-[10px]">({championsCount})</span>
           </button>
           <button
@@ -246,7 +245,7 @@ export default function BackOfHouseCitizenshipCard({
                 : "bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20 hover:bg-purple-500/20"
             }`}
           >
-            <span>🤝 ผู้ส่งเสริมความร่วมมือ</span>
+            <span>🤝 เพื่อนร่วมงานที่พึ่งพาได้</span>
             <span className="font-mono text-[10px]">({anchorsCount})</span>
           </button>
           <button
@@ -257,7 +256,7 @@ export default function BackOfHouseCitizenshipCard({
                 : "bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20 hover:bg-blue-500/20"
             }`}
           >
-            <span>🛡️ ผู้สนับสนุนมาตรฐาน</span>
+            <span>🛡️ รักษามาตรฐานวินัยงาน</span>
             <span className="font-mono text-[10px]">({contributorsCount})</span>
           </button>
         </div>
@@ -316,10 +315,10 @@ export default function BackOfHouseCitizenshipCard({
                       </div>
                     </div>
 
-                    {/* Total BOH Score Badge */}
+                    {/* Total Score Badge */}
                     <div className="text-right shrink-0">
-                      <div className="text-[9.5px] uppercase font-bold text-slate-400 dark:text-zinc-400 tracking-wider">
-                        BOH SCORE
+                      <div className="text-[9.5px] uppercase font-bold text-slate-500 dark:text-zinc-400 tracking-wider">
+                        คะแนนช่วยงานทีม
                       </div>
                       <div className="text-xl font-black font-mono text-amber-600 dark:text-amber-400 leading-tight">
                         {member.citizenshipScore}
@@ -328,54 +327,104 @@ export default function BackOfHouseCitizenshipCard({
                     </div>
                   </div>
 
-                  {/* 4 Pillars Stacked Meter Bar */}
-                  <div className="space-y-1 mb-3 bg-slate-50 dark:bg-zinc-800/60 p-2.5 rounded-lg border border-slate-200 dark:border-zinc-700/60">
-                    <div className="flex justify-between items-center text-[10px] font-bold text-slate-800 dark:text-zinc-100">
-                      <span>คะแนนแยก 4 มิติ:</span>
-                      <span className="font-mono text-slate-500 dark:text-zinc-300">
-                        🤝{pillars.peerSupport} | 📋{pillars.internalOps} | ⚡{pillars.systemDiscipline} | 🎯{pillars.qualityClosure}
-                      </span>
+                  {/* 4 Pillars Clear Progress Meters (2x2 Grid) */}
+                  <div className="space-y-2 mb-3 bg-slate-50/90 dark:bg-zinc-800/80 p-2.5 sm:p-3 rounded-xl border border-slate-200 dark:border-zinc-700/80">
+                    <div className="flex justify-between items-center text-[10.5px] font-bold text-slate-700 dark:text-zinc-200">
+                      <span>คะแนน 4 ด้านความร่วมมือ (เต็มด้านละ 25 คะแนน):</span>
+                      <span className="font-mono text-slate-500 dark:text-zinc-400 text-[10px]">รวม {member.citizenshipScore}/100</span>
                     </div>
 
-                    <div className="w-full bg-slate-200 dark:bg-zinc-700/80 h-3 rounded-full overflow-hidden flex gap-0.5 p-[1px] border border-slate-300/60 dark:border-zinc-600">
-                      {/* Peer Support (Blue) */}
-                      <div
-                        style={{ width: `${(pillars.peerSupport / 100) * 100}%` }}
-                        className="bg-blue-500 h-full rounded-l-full transition-all"
-                        title={`1. ช่วยเพื่อน: ${pillars.peerSupport}/25 คะแนน`}
-                      />
-                      {/* Internal Ops (Purple) */}
-                      <div
-                        style={{ width: `${(pillars.internalOps / 100) * 100}%` }}
-                        className="bg-purple-500 h-full transition-all"
-                        title={`2. งานภายใน/หลังบ้าน: ${pillars.internalOps}/25 คะแนน`}
-                      />
-                      {/* System Discipline (Amber) */}
-                      <div
-                        style={{ width: `${(pillars.systemDiscipline / 100) * 100}%` }}
-                        className="bg-amber-400 h-full transition-all"
-                        title={`3. วินัยในระบบ: ${pillars.systemDiscipline}/25 คะแนน`}
-                      />
-                      {/* Quality Closure (Emerald) */}
-                      <div
-                        style={{ width: `${(pillars.qualityClosure / 100) * 100}%` }}
-                        className="bg-emerald-500 h-full rounded-r-full transition-all"
-                        title={`4. ปิดงานตรงเวลา: ${pillars.qualityClosure}/25 คะแนน`}
-                      />
-                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-[10.5px]">
+                      {/* 1. ช่วยงานเพื่อน */}
+                      <div className="bg-white dark:bg-zinc-900/90 p-2 rounded-lg border border-slate-200 dark:border-zinc-800 shadow-2xs">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-blue-700 dark:text-blue-300 font-bold flex items-center gap-1 text-[10.5px]">
+                            🤝 ช่วยงานเพื่อน
+                          </span>
+                          <span className="font-mono font-bold text-slate-700 dark:text-zinc-200 text-[10px]">
+                            {pillars.peerSupport}<span className="text-slate-400 font-normal">/25</span>
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
+                          <div 
+                            style={{ width: `${(pillars.peerSupport / 25) * 100}%` }} 
+                            className="bg-blue-500 h-full rounded-full transition-all" 
+                          />
+                        </div>
+                        <div className="text-[9px] text-slate-400 dark:text-zinc-400 mt-1 truncate">
+                          {member.assistantTaskCount > 0 ? `เป็นผู้ช่วย ${member.assistantTaskCount} งาน` : "ยังไม่ได้ลงเป็นผู้ช่วย"}
+                        </div>
+                      </div>
 
-                    <div className="flex justify-between items-center text-[9.5px] font-mono pt-1">
-                      <span className="text-blue-600 dark:text-blue-300 font-semibold">ช่วยเพื่อน ({pillars.peerSupport})</span>
-                      <span className="text-purple-600 dark:text-purple-300 font-semibold">งานภายใน ({pillars.internalOps})</span>
-                      <span className="text-amber-600 dark:text-amber-300 font-semibold">วินัย ({pillars.systemDiscipline})</span>
-                      <span className="text-emerald-600 dark:text-emerald-300 font-semibold">ส่งตรง ({pillars.qualityClosure})</span>
+                      {/* 2. งานส่วนกลาง / งานทีม */}
+                      <div className="bg-white dark:bg-zinc-900/90 p-2 rounded-lg border border-slate-200 dark:border-zinc-800 shadow-2xs">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-purple-700 dark:text-purple-300 font-bold flex items-center gap-1 text-[10.5px]">
+                            🏢 งานส่วนกลางทีม
+                          </span>
+                          <span className="font-mono font-bold text-slate-700 dark:text-zinc-200 text-[10px]">
+                            {pillars.internalOps}<span className="text-slate-400 font-normal">/25</span>
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
+                          <div 
+                            style={{ width: `${(pillars.internalOps / 25) * 100}%` }} 
+                            className="bg-purple-500 h-full rounded-full transition-all" 
+                          />
+                        </div>
+                        <div className="text-[9px] text-slate-400 dark:text-zinc-400 mt-1 truncate">
+                          {member.internalTasksCount > 0 ? `ช่วยงานทีม ${member.internalTasksCount} งาน` : "ยังไม่มีงานส่วนกลาง"}
+                        </div>
+                      </div>
+
+                      {/* 3. อัปเดตงานสม่ำเสมอ */}
+                      <div className="bg-white dark:bg-zinc-900/90 p-2 rounded-lg border border-slate-200 dark:border-zinc-800 shadow-2xs">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-amber-700 dark:text-amber-300 font-bold flex items-center gap-1 text-[10.5px]">
+                            ⚡ อัปเดตงานสม่ำเสมอ
+                          </span>
+                          <span className="font-mono font-bold text-slate-700 dark:text-zinc-200 text-[10px]">
+                            {pillars.systemDiscipline}<span className="text-slate-400 font-normal">/25</span>
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
+                          <div 
+                            style={{ width: `${(pillars.systemDiscipline / 25) * 100}%` }} 
+                            className="bg-amber-400 h-full rounded-full transition-all" 
+                          />
+                        </div>
+                        <div className="text-[9px] text-slate-400 dark:text-zinc-400 mt-1 truncate">
+                          {member.stalledPendingCount + member.stalledProgressCount + member.overdueTasksCount === 0 ? "ไม่มีงานค้างดองในระบบ" : `มีงานค้าง ${member.stalledPendingCount + member.stalledProgressCount + member.overdueTasksCount} งาน`}
+                        </div>
+                      </div>
+
+                      {/* 4. ส่งมอบงานตรงเวลา */}
+                      <div className="bg-white dark:bg-zinc-900/90 p-2 rounded-lg border border-slate-200 dark:border-zinc-800 shadow-2xs">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-emerald-700 dark:text-emerald-300 font-bold flex items-center gap-1 text-[10.5px]">
+                            🎯 ส่งมอบตรงเวลา
+                          </span>
+                          <span className="font-mono font-bold text-slate-700 dark:text-zinc-200 text-[10px]">
+                            {pillars.qualityClosure}<span className="text-slate-400 font-normal">/25</span>
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
+                          <div 
+                            style={{ width: `${(pillars.qualityClosure / 25) * 100}%` }} 
+                            className="bg-emerald-500 h-full rounded-full transition-all" 
+                          />
+                        </div>
+                        <div className="text-[9px] text-slate-400 dark:text-zinc-400 mt-1 truncate">
+                          {`ตรงเวลา ${member.onTimeRate}% (ส่งสำเร็จ ${member.completedTasks})`}
+                        </div>
+                      </div>
                     </div>
                   </div>
 
                   {/* Concrete Quantifiable Metrics Grid */}
                   <div className="grid grid-cols-3 gap-1.5 text-center text-[10.5px]">
                     <div className="p-1.5 bg-slate-50 dark:bg-zinc-800/80 rounded-lg border border-slate-200 dark:border-zinc-700/80">
-                      <div className="text-[9.5px] text-slate-500 dark:text-zinc-300 font-semibold">งานช่วยเกื้อกูล</div>
+                      <div className="text-[9.5px] text-slate-500 dark:text-zinc-300 font-semibold">งานที่ลงช่วยเพื่อน</div>
                       <div className="font-bold font-mono text-blue-700 dark:text-blue-300 text-xs">
                         {member.assistantTaskCount} งาน
                       </div>
@@ -385,22 +434,22 @@ export default function BackOfHouseCitizenshipCard({
                     </div>
 
                     <div className="p-1.5 bg-slate-50 dark:bg-zinc-800/80 rounded-lg border border-slate-200 dark:border-zinc-700/80">
-                      <div className="text-[9.5px] text-slate-500 dark:text-zinc-300 font-semibold">งานปฏิบัติการหลังบ้าน</div>
+                      <div className="text-[9.5px] text-slate-500 dark:text-zinc-300 font-semibold">งานส่วนกลางของทีม</div>
                       <div className="font-bold font-mono text-purple-700 dark:text-purple-300 text-xs">
                         {member.internalTasksCount} งาน
                       </div>
                       <div className="text-[9px] text-slate-400 dark:text-zinc-400">
-                        STeP/CMU/RSP
+                        STeP / RSP / งานทีม
                       </div>
                     </div>
 
                     <div className="p-1.5 bg-slate-50 dark:bg-zinc-800/80 rounded-lg border border-slate-200 dark:border-zinc-700/80">
-                      <div className="text-[9.5px] text-slate-500 dark:text-zinc-300 font-semibold">ส่งงานตรงเวลา</div>
+                      <div className="text-[9.5px] text-slate-500 dark:text-zinc-300 font-semibold">ส่งมอบงานตรงเวลา</div>
                       <div className="font-bold font-mono text-emerald-700 dark:text-emerald-300 text-xs">
                         {member.onTimeRate}%
                       </div>
                       <div className="text-[9px] text-slate-400 dark:text-zinc-400 font-mono">
-                        ปิดสำเร็จ {member.completedTasks}
+                        ปิดสำเร็จ {member.completedTasks} งาน
                       </div>
                     </div>
                   </div>
@@ -409,10 +458,10 @@ export default function BackOfHouseCitizenshipCard({
                 {/* Footer Insight Note */}
                 <div className="mt-2.5 pt-2 border-t border-slate-200 dark:border-zinc-700/60 flex items-center justify-between text-[10.5px]">
                   <span className="font-medium text-slate-600 dark:text-zinc-300 truncate">
-                    {member.citizenshipTier === "champion" && "🌟 โครงเสาหลักช่วยพยุงโหลดทีมสูงสุด"}
-                    {member.citizenshipTier === "anchor" && "🤝 เป็นที่พึ่งพาและร่วมมือในการทำงาน"}
-                    {member.citizenshipTier === "contributor" && "🛡️ มีวินัยและปฏิบัติตามมาตรฐานระบบดี"}
-                    {member.citizenshipTier === "core" && "⚙️ เชี่ยวชาญการผลิตงานหลักของตนเอง"}
+                    {member.citizenshipTier === "champion" && "🌟 เสาหลักที่คอยช่วยงานเพื่อนและขับเคลื่อนงานส่วนกลางทีมเสมอ"}
+                    {member.citizenshipTier === "anchor" && "🤝 เป็นที่พึ่งพา ร่วมมือช่วยงานเพื่อนและรับผิดชอบงานทีมได้ดี"}
+                    {member.citizenshipTier === "contributor" && "🛡️ มีวินัย อัปเดตงานสม่ำเสมอ และส่งมอบงานตรงเวลาตามมาตรฐาน"}
+                    {member.citizenshipTier === "core" && "⚙️ ปัจจุบันเน้นลุยงานหลักของตนเองเป็นหลัก ยังไม่ได้ลงเป็นผู้ช่วยในงานอื่น"}
                   </span>
                   <span className="text-amber-600 dark:text-amber-400 font-bold group-hover:translate-x-0.5 transition-transform shrink-0 flex items-center gap-0.5">
                     <span>ดูงาน</span>

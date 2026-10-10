@@ -22,6 +22,55 @@ function getSupabase() {
   return createClient(url, key);
 }
 
+// ----------------------------------------------------------------------
+// Centralized Sync Idempotency & Locking (Prevents Duplicate Push & Email)
+// ----------------------------------------------------------------------
+const inMemorySyncRecords = new Map<string, any>();
+const activeSyncLocks = new Set<string>();
+
+async function getSyncRecord(key: string): Promise<any> {
+  if (inMemorySyncRecords.has(key)) {
+    return inMemorySyncRecords.get(key);
+  }
+  const supabase = getSupabase();
+  if (!supabase) return null;
+  try {
+    const { data } = await supabase
+      .from('system_settings')
+      .select('value, updated_at')
+      .eq('key', key)
+      .maybeSingle();
+    if (!data) return null;
+    try {
+      const parsed = JSON.parse(data.value);
+      inMemorySyncRecords.set(key, parsed);
+      return parsed;
+    } catch {
+      const val = { syncedAt: data.updated_at };
+      inMemorySyncRecords.set(key, val);
+      return val;
+    }
+  } catch (err) {
+    console.warn(`[SHEETS SYNC] Could not read sync record for ${key}:`, err);
+    return null;
+  }
+}
+
+async function saveSyncRecord(key: string, record: any): Promise<void> {
+  inMemorySyncRecords.set(key, record);
+  const supabase = getSupabase();
+  if (!supabase) return;
+  try {
+    await supabase.from('system_settings').upsert({
+      key,
+      value: JSON.stringify(record),
+      updated_at: new Date().toISOString()
+    });
+  } catch (err) {
+    console.warn(`[SHEETS SYNC] Could not write sync record for ${key}:`, err);
+  }
+}
+
 // Nodemailer Transporter Helper
 function getEmailTransporter() {
   const smtpHost = process.env.SMTP_HOST;
@@ -291,6 +340,29 @@ async function pushToGoogleSheetWebhook(payload: { type: 'Data_R' | 'Data_KR'; r
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const isAutoSync = searchParams.get('action') === 'auto_sync';
+  const isCheckStatus = searchParams.get('action') === 'check_status';
+
+  const now = new Date();
+  const week = getWeekCode(now);
+  const month = getMonthCode(now);
+  const fy = getFiscalYear(now);
+
+  const syncKeyR = `sheets_sync_r_${fy}_${month}_${week}`;
+  const syncKeyKR = `sheets_sync_kr_${fy}_${month}`;
+
+  // Check sync status only
+  if (isCheckStatus) {
+    const [recordR, recordKR] = await Promise.all([
+      getSyncRecord(syncKeyR),
+      getSyncRecord(syncKeyKR)
+    ]);
+    return NextResponse.json({
+      status: 'ok',
+      currentPeriod: { fy, month, week },
+      R: { key: syncKeyR, isSynced: !!recordR?.syncedAt, record: recordR },
+      KR: { key: syncKeyKR, isSynced: !!recordKR?.syncedAt, record: recordKR }
+    });
+  }
 
   const supabase = getSupabase();
   let tasks: any[] = [];
@@ -298,14 +370,15 @@ export async function GET(request: Request) {
 
   if (supabase) {
     const [tasksRes, assigneesRes] = await Promise.all([
-      supabase.from('briefs').select('*').limit(2000),
+      supabase.from('briefs').select('*').neq('status', 'purged').limit(2000),
       supabase.from('assignees').select('*').limit(100)
     ]);
-    if (tasksRes.data) tasks = tasksRes.data;
+    if (tasksRes.data) {
+      tasks = tasksRes.data.filter(t => t.status !== 'purged' && !t.details?.is_permanently_deleted);
+    }
     if (assigneesRes.data) assignees = assigneesRes.data;
   }
 
-  const now = new Date();
   const rRows = calculateAllRRows(tasks, assignees, now);
   const krRows = calculateAllKRRows(tasks, now);
 
@@ -321,29 +394,59 @@ export async function GET(request: Request) {
 
     const results: any = { executed: [] };
 
-    // Trigger R Sync on Friday >= 17:00
+    // Trigger R Sync on Friday >= 17:00 (with deduplication check)
     if (dayOfWeek === 5 && hour >= 17) {
-      const webhookRes = await pushToGoogleSheetWebhook({ type: 'Data_R', rows: rRows });
-      const emailRes = await sendSyncEmails('R', {
-        rRows,
-        asOfDate: now,
-        week: getWeekCode(now),
-        month: getMonthCode(now),
-        fy: getFiscalYear(now)
-      });
-      results.executed.push({ type: 'Data_R', rowsCount: rRows.length, webhookRes, emailRes });
+      const existingR = await getSyncRecord(syncKeyR);
+      if (!existingR?.syncedAt) {
+        activeSyncLocks.add(syncKeyR);
+        try {
+          const webhookRes = await pushToGoogleSheetWebhook({ type: 'Data_R', rows: rRows });
+          const emailRes = await sendSyncEmails('R', {
+            rRows,
+            asOfDate: now,
+            week,
+            month,
+            fy
+          });
+          await saveSyncRecord(syncKeyR, {
+            syncedAt: now.toISOString(),
+            rowsCount: rRows.length,
+            trigger: 'cron_auto_sync'
+          });
+          results.executed.push({ type: 'Data_R', rowsCount: rRows.length, webhookRes, emailRes });
+        } finally {
+          activeSyncLocks.delete(syncKeyR);
+        }
+      } else {
+        results.executed.push({ type: 'Data_R', skipped: true, reason: 'Already synced for this week', record: existingR });
+      }
     }
 
-    // Trigger KR Sync on Last Day of Month >= 17:00
+    // Trigger KR Sync on Last Day of Month >= 17:00 (with deduplication check)
     if (isLastDayOfMonth && hour >= 17) {
-      const webhookRes = await pushToGoogleSheetWebhook({ type: 'Data_KR', rows: krRows });
-      const emailRes = await sendSyncEmails('KR', {
-        krRows,
-        asOfDate: now,
-        month: getMonthCode(now),
-        fy: getFiscalYear(now)
-      });
-      results.executed.push({ type: 'Data_KR', rowsCount: krRows.length, webhookRes, emailRes });
+      const existingKR = await getSyncRecord(syncKeyKR);
+      if (!existingKR?.syncedAt) {
+        activeSyncLocks.add(syncKeyKR);
+        try {
+          const webhookRes = await pushToGoogleSheetWebhook({ type: 'Data_KR', rows: krRows });
+          const emailRes = await sendSyncEmails('KR', {
+            krRows,
+            asOfDate: now,
+            month,
+            fy
+          });
+          await saveSyncRecord(syncKeyKR, {
+            syncedAt: now.toISOString(),
+            rowsCount: krRows.length,
+            trigger: 'cron_auto_sync'
+          });
+          results.executed.push({ type: 'Data_KR', rowsCount: krRows.length, webhookRes, emailRes });
+        } finally {
+          activeSyncLocks.delete(syncKeyKR);
+        }
+      } else {
+        results.executed.push({ type: 'Data_KR', skipped: true, reason: 'Already synced for this month', record: existingKR });
+      }
     }
 
     return NextResponse.json({
@@ -359,9 +462,9 @@ export async function GET(request: Request) {
   return NextResponse.json({
     status: 'ok',
     asOf: now.toISOString(),
-    month: getMonthCode(now),
-    week: getWeekCode(now),
-    fy: getFiscalYear(now),
+    month,
+    week,
+    fy,
     webhookConfigured: Boolean(process.env.GOOGLE_SHEETS_WEBHOOK_URL || DEFAULT_WEBHOOK_URL),
     googleSheetUrl: "https://docs.google.com/spreadsheets/d/1fjfd7oPCqmfARPjf3XDy1QhcwSbQddMA2C1r0GzxjL0/edit",
     rRowsCount: rRows.length,
@@ -378,6 +481,67 @@ export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
     const targetType: 'R' | 'KR' | 'both' = body.type || 'both';
+    const isForce = Boolean(body.force);
+
+    const now = new Date();
+    const week = getWeekCode(now);
+    const month = getMonthCode(now);
+    const fy = getFiscalYear(now);
+
+    const syncKeyR = `sheets_sync_r_${fy}_${month}_${week}`;
+    const syncKeyKR = `sheets_sync_kr_${fy}_${month}`;
+
+    // 1. Concurrency guard (in-flight locks)
+    if (!isForce) {
+      if (targetType === 'R' && activeSyncLocks.has(syncKeyR)) {
+        return NextResponse.json({
+          status: 'skipped',
+          message: `การนำส่งค่า R ประจำสัปดาห์ (${week} ${month}) กำลังทำงานอยู่ กรุณารอสักครู่`,
+          inProgress: true
+        });
+      }
+      if (targetType === 'KR' && activeSyncLocks.has(syncKeyKR)) {
+        return NextResponse.json({
+          status: 'skipped',
+          message: `การนำส่งค่า KR ประจำเดือน (${month}) กำลังทำงานอยู่ กรุณารอสักครู่`,
+          inProgress: true
+        });
+      }
+
+      // 2. Idempotency Check: if already synced in current period, SKIP!
+      const [recordR, recordKR] = await Promise.all([
+        (targetType === 'R' || targetType === 'both') ? getSyncRecord(syncKeyR) : null,
+        (targetType === 'KR' || targetType === 'both') ? getSyncRecord(syncKeyKR) : null
+      ]);
+
+      if (targetType === 'R' && recordR?.syncedAt) {
+        return NextResponse.json({
+          status: 'skipped',
+          message: `รอบการนำส่งค่า R ประจำสัปดาห์ (${week} ${month} FY${fy}) ได้ถูกนำส่งไปเรียบร้อยแล้วเมื่อ ${new Date(recordR.syncedAt).toLocaleString('th-TH')}`,
+          alreadySynced: true,
+          syncedAt: recordR.syncedAt
+        });
+      }
+
+      if (targetType === 'KR' && recordKR?.syncedAt) {
+        return NextResponse.json({
+          status: 'skipped',
+          message: `รอบการนำส่งค่า KR ประจำเดือน (${month} FY${fy}) ได้ถูกนำส่งไปเรียบร้อยแล้วเมื่อ ${new Date(recordKR.syncedAt).toLocaleString('th-TH')}`,
+          alreadySynced: true,
+          syncedAt: recordKR.syncedAt
+        });
+      }
+
+      if (targetType === 'both' && recordR?.syncedAt && recordKR?.syncedAt) {
+        return NextResponse.json({
+          status: 'skipped',
+          message: `ข้อมูลทั้ง R (${week}) และ KR (${month}) ในรอบนี้ได้ถูกนำส่งไปเรียบร้อยแล้ว`,
+          alreadySynced: true,
+          syncedAtR: recordR.syncedAt,
+          syncedAtKR: recordKR.syncedAt
+        });
+      }
+    }
 
     const supabase = getSupabase();
     let tasks: any[] = [];
@@ -385,57 +549,94 @@ export async function POST(request: Request) {
 
     if (supabase) {
       const [tasksRes, assigneesRes] = await Promise.all([
-        supabase.from('briefs').select('*').limit(2000),
+        supabase.from('briefs').select('*').neq('status', 'purged').limit(2000),
         supabase.from('assignees').select('*').limit(100)
       ]);
-      if (tasksRes.data) tasks = tasksRes.data;
+      if (tasksRes.data) {
+        tasks = tasksRes.data.filter(t => t.status !== 'purged' && !t.details?.is_permanently_deleted);
+      }
       if (assigneesRes.data) assignees = assigneesRes.data;
     }
-
-    const now = new Date();
-    const week = getWeekCode(now);
-    const month = getMonthCode(now);
-    const fy = getFiscalYear(now);
 
     const syncResults: any = {};
 
     // 1. Sync R
     if (targetType === 'R' || targetType === 'both') {
-      const rRows = calculateAllRRows(tasks, assignees, now, body.updatedBy);
-      const webhookRes = await pushToGoogleSheetWebhook({ type: 'Data_R', rows: rRows });
-      const emailRes = await sendSyncEmails('R', {
-        rRows,
-        asOfDate: now,
-        week,
-        month,
-        fy
-      });
+      const recordR = isForce ? null : await getSyncRecord(syncKeyR);
+      if (!recordR?.syncedAt || isForce) {
+        activeSyncLocks.add(syncKeyR);
+        try {
+          const rRows = calculateAllRRows(tasks, assignees, now, body.updatedBy);
+          const webhookRes = await pushToGoogleSheetWebhook({ type: 'Data_R', rows: rRows });
+          const emailRes = await sendSyncEmails('R', {
+            rRows,
+            asOfDate: now,
+            week,
+            month,
+            fy
+          });
 
-      syncResults.R = {
-        success: true,
-        count: rRows.length,
-        webhook: webhookRes,
-        email: emailRes
-      };
+          await saveSyncRecord(syncKeyR, {
+            syncedAt: now.toISOString(),
+            rowsCount: rRows.length,
+            trigger: body.updatedBy || 'user_manual'
+          });
+
+          syncResults.R = {
+            success: true,
+            count: rRows.length,
+            webhook: webhookRes,
+            email: emailRes
+          };
+        } finally {
+          activeSyncLocks.delete(syncKeyR);
+        }
+      } else {
+        syncResults.R = {
+          skipped: true,
+          message: 'Already synced for this period',
+          record: recordR
+        };
+      }
     }
 
     // 2. Sync KR
     if (targetType === 'KR' || targetType === 'both') {
-      const krRows = calculateAllKRRows(tasks, now, body.updatedBy);
-      const webhookRes = await pushToGoogleSheetWebhook({ type: 'Data_KR', rows: krRows });
-      const emailRes = await sendSyncEmails('KR', {
-        krRows,
-        asOfDate: now,
-        month,
-        fy
-      });
+      const recordKR = isForce ? null : await getSyncRecord(syncKeyKR);
+      if (!recordKR?.syncedAt || isForce) {
+        activeSyncLocks.add(syncKeyKR);
+        try {
+          const krRows = calculateAllKRRows(tasks, now, body.updatedBy);
+          const webhookRes = await pushToGoogleSheetWebhook({ type: 'Data_KR', rows: krRows });
+          const emailRes = await sendSyncEmails('KR', {
+            krRows,
+            asOfDate: now,
+            month,
+            fy
+          });
 
-      syncResults.KR = {
-        success: true,
-        count: krRows.length,
-        webhook: webhookRes,
-        email: emailRes
-      };
+          await saveSyncRecord(syncKeyKR, {
+            syncedAt: now.toISOString(),
+            rowsCount: krRows.length,
+            trigger: body.updatedBy || 'user_manual'
+          });
+
+          syncResults.KR = {
+            success: true,
+            count: krRows.length,
+            webhook: webhookRes,
+            email: emailRes
+          };
+        } finally {
+          activeSyncLocks.delete(syncKeyKR);
+        }
+      } else {
+        syncResults.KR = {
+          skipped: true,
+          message: 'Already synced for this period',
+          record: recordKR
+        };
+      }
     }
 
     return NextResponse.json({

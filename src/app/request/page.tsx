@@ -8,6 +8,7 @@ import { useSearchParams } from "next/navigation";
 import { getStandardPriceForTask } from "@/utils/pricing";
 import ModernDatePicker from "@/components/ModernDatePicker";
 import ModernSelect from "@/components/ModernSelect";
+import { generateNextTaskCode, getUnitPrefix } from "@/utils/taskCodeService";
 
 type UnitType = 'creative' | 'content' | 'pr';
 
@@ -371,13 +372,15 @@ function FormContent() {
       const standardSaveCost = getStandardPriceForTask(activeUnit, chosenCategory, project_name) || 0;
 
       // Extract details based on unit - Save Cost is automatically assigned from back-office standard rate
+      // Note: General service requests generate Save Cost for internal units, NOT commercial PM revenue or profit
       const details: Record<string, any> = { 
         notes,
         save_cost: standardSaveCost,
         project_value: standardSaveCost.toString(),
-        revenue: standardSaveCost,
+        revenue: 0,
         cost: 0,
-        profit: standardSaveCost
+        profit: 0,
+        is_pm_project: false
       };
       for (const [key, value] of formData.entries()) {
         if (key.startsWith("details.")) {
@@ -420,28 +423,40 @@ function FormContent() {
 
       details.attachments = uploadedFileUrls;
 
-      // Connect PR event datetime to usage_date and deadline
+      // Connect PR event datetime
       if (activeUnit === 'pr') {
         const fullEventDatetime = prEventEnd ? `${prEventStart} ถึง ${prEventEnd}` : prEventStart;
         if (fullEventDatetime) {
           details.event_datetime = fullEventDatetime;
           details.event_start = prEventStart;
           details.event_end = prEventEnd;
-          const dateOnly = prEventStart ? prEventStart.split(" ")[0] : "";
-          if (!details.usage_date && dateOnly) {
-            details.usage_date = dateOnly;
-          }
+        }
+        if (details.publish_date) {
+          details.usage_date = details.publish_date;
+        } else if (prEventStart) {
+          details.usage_date = prEventStart.split(" ")[0];
         }
       }
 
-      // Compute deadline from usage_date, event_datetime, publish_date, or draft_date
+      // CRITICAL RULE: วันที่เผยแพร่ (publish_date) ใน form คือ วันเดดไลน์ใน task เสมอ ห้ามผิดพลาดเด็ดขาด!
+      // If publish_date is specified, it MUST be the primary deadline and usage_date
+      if (details.publish_date) {
+        details.usage_date = details.publish_date;
+      }
+
       const computedDeadline = (
-        details.usage_date || 
-        (details.event_datetime ? details.event_datetime.split(" ")[0] : null) || 
         details.publish_date || 
+        details.usage_date || 
+        details.delivery_date ||
         details.draft_date || 
+        (details.event_datetime ? details.event_datetime.split(" ")[0] : null) || 
         null
       ) as string | null;
+
+      // Generate guaranteed sequential task code for FY70 (e.g. DS70-1, CT70-1, PR70-1)
+      const prefix = getUnitPrefix(activeUnit);
+      const generatedTaskCode = await generateNextTaskCode(prefix);
+      details.task_code = generatedTaskCode;
 
       // Insert into briefs table
       const { error: insertError } = await supabase.from('briefs').insert({
@@ -789,12 +804,7 @@ function FormContent() {
                     <span className="text-xs text-zinc-500 font-medium">วันและเวลาเริ่มต้น (เริ่ม)</span>
                     <ModernDatePicker
                       value={prEventStart}
-                      onChange={(val) => {
-                        setPrEventStart(val);
-                        if (!prPublishDate && val) {
-                          setPrPublishDate(val.split(" ")[0]);
-                        }
-                      }}
+                      onChange={setPrEventStart}
                       showTimeSelect
                       placeholder="เลือกวันและเวลาเริ่มต้น..."
                       required
@@ -981,10 +991,20 @@ function FormContent() {
 
 export default function PublicRequestFormPage() {
   return (
-    <main className="flex-1 w-full max-w-4xl mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8">
-      <Suspense fallback={<div className="flex justify-center p-12 text-muted-foreground">กำลังโหลดแบบฟอร์ม...</div>}>
-        <FormContent />
-      </Suspense>
+    <main className="flex-1 w-full max-w-4xl mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8 flex flex-col min-h-screen">
+      <div className="flex-1">
+        <Suspense fallback={<div className="flex justify-center p-12 text-muted-foreground">กำลังโหลดแบบฟอร์ม...</div>}>
+          <FormContent />
+        </Suspense>
+      </div>
+      <footer className="w-full mt-8 pt-4 pb-4 text-center select-none">
+        <p className="text-[10px] sm:text-[11px] text-zinc-400/60 font-light tracking-wide leading-relaxed">
+          <span>แบบฟอร์มเข้ารับบริการงานสร้างสรรค์ (FM-CC-010 V.01)</span>
+          <span className="hidden sm:inline mx-1.5 opacity-40">•</span>
+          <br className="sm:hidden" />
+          <span>วันที่บังคับใช้เอกสาร 1 ต.ค. 69 (อายุการจัดเก็บเอกสาร 2 ปี)</span>
+        </p>
+      </footer>
     </main>
   );
 }

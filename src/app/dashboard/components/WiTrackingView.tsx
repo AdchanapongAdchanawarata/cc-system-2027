@@ -405,7 +405,7 @@ export default function WiTrackingView({
       const deviations: string[] = [];
       if (!s1Ok) deviations.push("ข้อมูลในแบบฟอร์มไม่ครบถ้วน");
       if (!s4Ok && (wiType === "WI-CC-001" || wiType === "WI-CC-003")) deviations.push(`มีการแก้ไขงาน ${revisionCount} ครั้ง (เกินเกณฑ์)`);
-      if (isCompleted && !isOnTime) deviations.push("ส่งมอบงานล่าช้ากว่ากำหนด (Overdue SLA)");
+      if (isCompleted && !isOnTime) deviations.push("ส่งมอบงานล่าช้ากว่ากำหนด (Overdue)");
       if (isCompleted && !hasSurvey) deviations.push("ยังไม่ได้จัดส่งแบบสำรวจความพึงพอใจ");
 
       const isCompliant = deviations.length === 0;
@@ -425,7 +425,7 @@ export default function WiTrackingView({
       } else if (hasWarningStep || isOngoingOverdue || isPendingStalled || isRevisionNearLimit) {
         wiAlertLevel = "at_risk";
         const risks: string[] = [];
-        if (isOngoingOverdue) risks.push("งานเกินกำหนดส่งมอบ SLA");
+        if (isOngoingOverdue) risks.push("งานเกินกำหนดส่งมอบ");
         if (isPendingStalled) risks.push("ค้างในสถานะรอนานเกิน 3 วัน");
         if (isRevisionNearLimit) risks.push("แก้ไขงานแล้ว 2 ครั้ง (ใกล้เกินเกณฑ์ 3 ครั้ง)");
         if (hasWarningStep) risks.push("มีขั้นตอนการดำเนินงานที่ต้องเฝ้าระวัง");
@@ -590,7 +590,7 @@ export default function WiTrackingView({
     lines.push(`"จำนวนภาระงานที่แสดง",${filteredTasks.length},"ชิ้นงาน (จากทั้งหมด ${stats.total} ชิ้นงาน)"`);
     lines.push(`"ความสอดคล้องตามมาตรฐาน (WI Compliance)",${stats.complianceRate},"%"`);
     lines.push(`"งานที่มีความเสี่ยง/หลุด WI",${stats.alertTotalCount},"งาน"`);
-    lines.push(`"อัตราส่งมอบตรงเวลา (Lead Time SLA)",${stats.onTimeRate},"%"`);
+    lines.push(`"อัตราส่งมอบตรงเวลา (Lead Time มาตรฐาน)",${stats.onTimeRate},"%"`);
     lines.push("");
 
     // Build header columns dynamically based on currentSpecs
@@ -869,7 +869,7 @@ export default function WiTrackingView({
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-1">
           <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider flex items-center gap-1.5">
             <TrendingUp size={13} className="text-blue-600" />
-            <span>อัตราส่งมอบตรงเวลา (Lead Time SLA)</span>
+            <span>อัตราส่งมอบตรงเวลา (Lead Time มาตรฐาน)</span>
           </span>
           <div className="my-1.5 flex items-baseline gap-2">
             <h3 className="text-2xl sm:text-3xl font-black text-blue-600 tracking-tight">
@@ -1213,7 +1213,7 @@ export default function WiTrackingView({
                               className="text-[9px] text-amber-600 font-medium truncate max-w-[115px] mt-0.5 block"
                               title={task.wiAlertMessage}
                             >
-                              เฝ้าระวัง SLA/แก้ไข
+                              เฝ้าระวังความล่าช้า/แก้ไข
                             </span>
                           </>
                         ) : (

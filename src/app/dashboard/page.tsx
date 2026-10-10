@@ -3,26 +3,49 @@
 import { useState, useEffect } from "react";
 import WeatherWidget from "@/components/WeatherWidget";
 import Link from "next/link";
-import { ArrowLeft, Settings, Plus, LayoutDashboard, LayoutList, FileText, Shield, User, LogOut, BookOpen, Menu, X } from "lucide-react";
+import { ArrowLeft, Settings, Plus, LayoutDashboard, LayoutList, FileText, Shield, User, LogOut, BookOpen, Menu, X, Eye, Sparkles } from "lucide-react";
 import AssignmentsView from "./components/AssignmentsView";
 import DashboardsView from "./components/DashboardsView";
 import DataReportsView from "./components/DataReportsView";
-import SetupModal from "./components/SetupModal";
+import dynamic from "next/dynamic";
+
+const SetupModal = dynamic(() => import("./components/SetupModal"), { ssr: false });
+const InternalTaskModal = dynamic(() => import("./components/InternalTaskModal"), { ssr: false });
+const Avatar3DStudioModal = dynamic(() => import("@/components/Avatar3DStudioModal").then(mod => mod.Avatar3DStudioModal), { ssr: false });
 import AlertSummary from "./components/AlertSummary";
-import InternalTaskModal from "./components/InternalTaskModal";
+import AnimatedMascotLogo from "@/components/AnimatedMascotLogo";
+import { Assignee3DAvatarBadge } from "@/components/Assignee3DAvatarBadge";
+import { createClient } from "@/utils/supabase/client";
+import { syncCustomQuotesFromAssignees } from "@/utils/memberQuote";
+import ActiveAssignmentNotifier from "@/components/ActiveAssignmentNotifier";
 
 export default function DashboardPage() {
   const [activeView, setActiveView] = useState<"assignments" | "dashboards" | "data-reports" | null>(null);
   const [activeSubReport, setActiveSubReport] = useState<string | null>(null);
   const [isSetupOpen, setIsSetupOpen] = useState(false);
   const [isInternalTaskOpen, setIsInternalTaskOpen] = useState(false);
-  const [currentUserRole, setCurrentUserRole] = useState<"admin" | "assignee">(() => {
+  const [isAvatarStudioOpen, setIsAvatarStudioOpen] = useState(false);
+  const [assigneesList, setAssigneesList] = useState<{ id: string; name: string }[]>([]);
+  const [currentUserRole, setCurrentUserRole] = useState<"admin" | "assignee" | "viewer">(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("cc_user_role");
-      if (saved === "admin" || saved === "assignee") return saved;
+      if (saved === "admin" || saved === "assignee" || saved === "viewer") return saved;
     }
     return "admin";
   });
+  const [actualUserRole, setActualUserRole] = useState<"admin" | "assignee" | "viewer">(() => {
+    if (typeof window !== "undefined") {
+      const actual = localStorage.getItem("cc_actual_role");
+      if (actual === "admin" || actual === "assignee" || actual === "viewer") return actual;
+      const email = (localStorage.getItem("cc_user_email") || "").toLowerCase().trim();
+      const name = localStorage.getItem("cc_user_name") || "";
+      if (email.includes("adchanapong") || name.includes("จ๊อบ")) return "admin";
+      const saved = localStorage.getItem("cc_user_role");
+      if (saved === "admin" || saved === "assignee" || saved === "viewer") return saved;
+    }
+    return "assignee";
+  });
+  const isActualAdmin = actualUserRole === "admin";
   const [userDisplayName, setUserDisplayName] = useState<string>(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("cc_user_name") || "";
@@ -47,10 +70,30 @@ export default function DashboardPage() {
     const savedName = localStorage.getItem("cc_user_name");
     if (savedName) setUserDisplayName(savedName);
 
+    const savedActual = localStorage.getItem("cc_actual_role");
+    if (savedActual === "admin" || savedActual === "assignee" || savedActual === "viewer") {
+      setActualUserRole(savedActual);
+    } else {
+      const email = (savedEmail || "").toLowerCase().trim();
+      const name = savedName || "";
+      if (email.includes("adchanapong") || name.includes("จ๊อบ")) {
+        setActualUserRole("admin");
+      }
+    }
+
     const saved = localStorage.getItem("cc_user_role");
-    if (saved === "admin" || saved === "assignee") {
+    if (saved === "admin" || saved === "assignee" || saved === "viewer") {
       setCurrentUserRole(saved);
     }
+
+    // Load assignees list & sync custom quotes
+    const supabase = createClient();
+    supabase.from("assignees").select("id, name, unit").then(({ data }) => {
+      if (data && data.length > 0) {
+        setAssigneesList(data.map((d: any) => ({ id: d.id, name: d.name })));
+        syncCustomQuotesFromAssignees(data);
+      }
+    });
 
     // Read view from URL query if present
     if (typeof window !== "undefined") {
@@ -99,7 +142,7 @@ export default function DashboardPage() {
     }
   };
 
-  const handleToggleRole = (role: "admin" | "assignee") => {
+  const handleToggleRole = (role: "admin" | "assignee" | "viewer") => {
     setCurrentUserRole(role);
     localStorage.setItem("cc_user_role", role);
   };
@@ -116,51 +159,68 @@ export default function DashboardPage() {
         {/* Top Navigation Bar */}
         <div className="w-full flex flex-row justify-between items-center mb-3 sm:mb-4 pb-2 animate-premium-fade print:hidden relative z-30">
           {/* Left: Logo */}
-        <Link href="/" className="text-left inline-flex flex-col w-fit min-w-0 pr-2 select-none group">
-          <h1 className="text-2xl sm:text-3xl md:text-[38px] font-black tracking-[0.055em] text-foreground leading-none group-hover:text-primary transition-colors">
-            CC TEAM
-          </h1>
-          <p className="text-muted-foreground text-[8.5px] sm:text-[10.5px] md:text-[13px] font-medium tracking-[0.005em] mt-1 leading-none whitespace-nowrap">
-            Briefing & Management System
-          </p>
+        <Link href="/" className="text-left inline-flex items-center gap-2.5 sm:gap-3.5 w-fit min-w-0 pr-2 select-none group">
+          <AnimatedMascotLogo sizeClassName="w-8 h-8 sm:w-[38px] sm:h-[38px] md:w-[44px] md:h-[44px]" />
+          <div className="flex flex-col w-fit">
+            <h1 className="text-2xl sm:text-3xl md:text-[38px] font-black tracking-[0.055em] text-foreground leading-none group-hover:text-primary transition-colors whitespace-nowrap">
+              CC TEAM
+            </h1>
+            <p className="w-full text-foreground text-[9.5px] sm:text-[11.85px] md:text-[15px] font-medium leading-none whitespace-nowrap text-justify [text-align-last:justify] select-none box-border mt-0.5 sm:mt-0.5 md:mt-1">
+              Creative and Comunication
+            </p>
+          </div>
         </Link>
         
         {/* Desktop Actions: Visible on md+ */}
         <div className="hidden md:flex items-center gap-1.5 sm:gap-3 z-30 shrink-0">
-          {/* Role Switcher Pill */}
-          <div className="flex bg-surface border border-surface-border rounded-full p-0.5 shadow-sm">
-            <button
-              onClick={() => handleToggleRole("admin")}
-              className={`px-2 sm:px-3 py-1 text-xs font-semibold rounded-full flex items-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
-                currentUserRole === "admin"
-                  ? "bg-slate-900 text-white shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              title="Admin: จัดการทีม, กำหนด KPI, และปรับราคางานหลังบ้านได้"
-            >
-              <Shield size={12} className={currentUserRole === "admin" ? "text-amber-400" : ""} />
-              <span>Admin</span>
-            </button>
-            <button
-              onClick={() => handleToggleRole("assignee")}
-              className={`px-2 sm:px-3 py-1 text-xs font-semibold rounded-full flex items-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
-                currentUserRole === "assignee"
-                  ? "bg-primary text-white shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              title="Assignee: ผู้ปฏิบัติงานทั่วไป (ไม่เห็นปุ่มฟันเฟือง)"
-            >
-              <User size={12} />
-              <span>Assignee</span>
-            </button>
-          </div>
+          {/* Role Switcher Pill: Visible only to Admin, and hidden in Assignee view */}
+          {isActualAdmin && currentUserRole !== "assignee" && (
+            <div className="flex bg-surface border border-surface-border rounded-full p-0.5 shadow-sm">
+              <button
+                onClick={() => handleToggleRole("admin")}
+                className={`px-2 sm:px-3 py-1 text-xs font-semibold rounded-full flex items-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
+                  currentUserRole === "admin"
+                    ? "bg-slate-900 text-white shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Admin: จัดการทีม, กำหนด KPI, และปรับราคางานหลังบ้านได้"
+              >
+                <Shield size={12} className={currentUserRole === "admin" ? "text-amber-400" : ""} />
+                <span>Admin</span>
+              </button>
+              <button
+                onClick={() => handleToggleRole("assignee")}
+                className={`px-2 sm:px-3 py-1 text-xs font-semibold rounded-full flex items-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
+                  (currentUserRole as string) === "assignee"
+                    ? "bg-primary text-white shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Assignee: ผู้ปฏิบัติงานทั่วไป"
+              >
+                <User size={12} />
+                <span>Assignee</span>
+              </button>
+              <button
+                onClick={() => handleToggleRole("viewer")}
+                className={`px-2 sm:px-3 py-1 text-xs font-semibold rounded-full flex items-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
+                  currentUserRole === "viewer"
+                    ? "bg-cyan-600 text-white shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Viewer: ผู้เข้าชม - สิทธิ์ดูได้ทุกอย่าง เหมือน Admin แต่เป็นโหมดอ่านอย่างเดียว (Read-Only) ไม่สามารถแก้ไขได้"
+              >
+                <Eye size={12} />
+                <span>Viewer</span>
+              </button>
+            </div>
+          )}
 
-          {/* Settings Cog: Visible ONLY to Admin */}
-          {currentUserRole === "admin" && (
+          {/* Settings Cog: Visible to Admin and Viewer */}
+          {(currentUserRole === "admin" || currentUserRole === "viewer") && (
             <button 
               onClick={() => setIsSetupOpen(true)}
               className="flex items-center justify-center p-1.5 sm:p-2 rounded-full border border-surface-border bg-surface hover:bg-surface-border transition-all shadow-[2px_4px_8px_rgba(0,0,0,0.05),-1px_-1px_4px_rgba(255,255,255,0.8)] hover:shadow-md animate-in fade-in zoom-in-95 duration-200 cursor-pointer"
-              title="Setup OKRs, Staff & Pricing"
+              title={currentUserRole === "viewer" ? "Setup & Settings (Viewer - อ่านอย่างเดียว)" : "Setup OKRs, Staff & Pricing"}
             >
               <Settings size={18} className="text-foreground sm:w-5 sm:h-5" />
             </button>
@@ -185,18 +245,23 @@ export default function DashboardPage() {
             <span>Internal Task</span>
           </button>
 
-          {/* User Display & Logout Button */}
+          {/* User Display & Avatar Button (Click to open Avatar Studio) */}
           {userDisplayName && (
-            <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 text-xs font-medium border border-slate-200">
-              <User size={13} className="text-slate-500" />
-              <span>{userDisplayName}</span>
-            </div>
+            <button
+              onClick={() => setIsAvatarStudioOpen(true)}
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-surface-border shadow-[2px_4px_8px_rgba(0,0,0,0.05),-1px_-1px_4px_rgba(255,255,255,0.8)] hover:shadow-md transition-all cursor-pointer group"
+              title="คลิกเพื่อปรับแต่ง 2D Avatar ของคุณ"
+            >
+              <Assignee3DAvatarBadge name={userDisplayName} size={24} showBorder={false} />
+              <span className="font-bold">{userDisplayName}</span>
+            </button>
           )}
 
           <button 
             onClick={() => {
               localStorage.removeItem("cc_user_email");
               localStorage.removeItem("cc_user_role");
+              localStorage.removeItem("cc_actual_role");
               localStorage.removeItem("cc_user_name");
               localStorage.removeItem("cc_user_fullname");
               window.location.href = "/login";
@@ -247,45 +312,78 @@ export default function DashboardPage() {
               </button>
             </div>
 
-            {/* Role Switcher */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                บทบาทของคุณ (Role)
-              </label>
-              <div className="grid grid-cols-2 bg-slate-100 p-1 rounded-xl border border-surface-border gap-1">
-                <button
-                  onClick={() => {
-                    handleToggleRole("admin");
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`py-2 px-3 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                    currentUserRole === "admin"
-                      ? "bg-slate-900 text-white shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Shield size={14} className={currentUserRole === "admin" ? "text-amber-400" : ""} />
-                  <span>Admin</span>
-                </button>
-                <button
-                  onClick={() => {
-                    handleToggleRole("assignee");
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`py-2 px-3 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                    currentUserRole === "assignee"
-                      ? "bg-primary text-white shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <User size={14} />
-                  <span>Assignee</span>
-                </button>
+            {/* Role Switcher: Visible only to Admin and hidden in Assignee view */}
+            {isActualAdmin && currentUserRole !== "assignee" && (
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                  บทบาทของคุณ (Role)
+                </label>
+                <div className="grid grid-cols-3 bg-slate-100 p-1 rounded-xl border border-surface-border gap-1">
+                  <button
+                    onClick={() => {
+                      handleToggleRole("admin");
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`py-2 px-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                      currentUserRole === "admin"
+                        ? "bg-slate-900 text-white shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Shield size={13} className={currentUserRole === "admin" ? "text-amber-400" : ""} />
+                    <span>Admin</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleToggleRole("assignee");
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`py-2 px-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                      (currentUserRole as string) === "assignee"
+                        ? "bg-primary text-white shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <User size={13} />
+                    <span>Assignee</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleToggleRole("viewer");
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`py-2 px-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                      currentUserRole === "viewer"
+                        ? "bg-cyan-600 text-white shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Eye size={13} />
+                    <span>Viewer</span>
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Action List */}
             <div className="space-y-2 pt-1">
+              {/* 2D Avatar Studio Button */}
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setIsAvatarStudioOpen(true);
+                }}
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-amber-50/50 hover:bg-amber-100/60 border border-amber-200/60 text-foreground text-xs font-bold transition-all cursor-pointer"
+              >
+                <span className="flex items-center gap-2.5">
+                  <Assignee3DAvatarBadge name={userDisplayName || "จ๊อบ AA"} size={26} showBorder={false} />
+                  <span>2D Avatar Illustration Studio</span>
+                </span>
+                <span className="text-amber-600 text-[10px] font-semibold flex items-center gap-1">
+                  <Sparkles size={11} /> ปรับแต่ง
+                </span>
+              </button>
+
               {/* Internal Task Button */}
               <button
                 onClick={() => {
@@ -303,8 +401,8 @@ export default function DashboardPage() {
                 <span className="text-muted-foreground text-[10px]">บันทึกงาน</span>
               </button>
 
-              {/* Settings / Setup: Admin Only */}
-              {currentUserRole === "admin" && (
+              {/* Settings / Setup: Admin & Viewer */}
+              {(currentUserRole === "admin" || currentUserRole === "viewer") && (
                 <button
                   onClick={() => {
                     setIsMobileMenuOpen(false);
@@ -318,7 +416,9 @@ export default function DashboardPage() {
                     </span>
                     <span>ตั้งค่าระบบ (Setup OKRs & Pricing)</span>
                   </span>
-                  <span className="text-muted-foreground text-[10px]">เฉพาะแอดมิน</span>
+                  <span className="text-muted-foreground text-[10px]">
+                    {currentUserRole === "viewer" ? "โหมดเข้าชม" : "เฉพาะแอดมิน"}
+                  </span>
                 </button>
               )}
 
@@ -351,7 +451,7 @@ export default function DashboardPage() {
                     {userDisplayName || "CC Member"}
                   </span>
                   <span className="text-[10px] text-muted-foreground truncate">
-                    {currentUserRole === "admin" ? "สิทธิ์ผู้ดูแลระบบ" : "ผู้ปฏิบัติงาน"}
+                    {currentUserRole === "admin" ? "สิทธิ์ผู้ดูแลระบบ (Admin)" : currentUserRole === "viewer" ? "ผู้เข้าชม (Viewer - Read-Only)" : "ผู้ปฏิบัติงาน (Assignee)"}
                   </span>
                 </div>
               </div>
@@ -360,6 +460,7 @@ export default function DashboardPage() {
                 onClick={() => {
                   localStorage.removeItem("cc_user_email");
                   localStorage.removeItem("cc_user_role");
+                  localStorage.removeItem("cc_actual_role");
                   localStorage.removeItem("cc_user_name");
                   localStorage.removeItem("cc_user_fullname");
                   window.location.href = "/login";
@@ -378,6 +479,19 @@ export default function DashboardPage() {
       {/* Main Content Area */}
       {!activeView ? (
         <>
+        {/* Viewer Mode Banner */}
+        {currentUserRole === "viewer" && (
+          <div className="w-full mb-3 px-4 py-2.5 bg-cyan-50 border border-cyan-200 rounded-2xl flex items-center justify-between text-cyan-900 text-xs font-semibold shadow-xs animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <Eye size={15} className="text-cyan-600 shrink-0" />
+              <span>โหมดผู้เข้าชม (Viewer Mode) • คุณสามารถเข้าดูข้อมูล รายงาน และตัวชี้วัดทุกระบบได้แบบอ่านอย่างเดียว (Read-Only)</span>
+            </div>
+            <span className="bg-cyan-100 text-cyan-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider border border-cyan-300">
+              Read Only
+            </span>
+          </div>
+        )}
+
         {/* Back to Home Button on Main Control Center */}
         <div className="w-full flex justify-start mb-2 print:hidden z-30 relative">
           <Link 
@@ -403,7 +517,7 @@ export default function DashboardPage() {
         </div>
         
         {/* 3 Buttons Grid: Fully Clickable with High z-index & Pointer cursor */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full mt-2 relative z-20">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full mt-6 sm:mt-8 md:mt-10 lg:mt-12 relative z-20">
             
             {/* 1. Tasks */}
             <div className="flex flex-col items-center text-center animate-premium-fade" style={{ animationDelay: '200ms' }}>
@@ -483,8 +597,53 @@ export default function DashboardPage() {
       </div>
 
       {/* Modals */}
-      {isSetupOpen && <SetupModal onClose={() => setIsSetupOpen(false)} />}
+      {isSetupOpen && (
+        <SetupModal 
+          onClose={() => setIsSetupOpen(false)} 
+          isReadOnly={currentUserRole === "viewer"} 
+        />
+      )}
       {isInternalTaskOpen && <InternalTaskModal onClose={() => setIsInternalTaskOpen(false)} />}
+      <Avatar3DStudioModal
+        isOpen={isAvatarStudioOpen}
+        onClose={() => setIsAvatarStudioOpen(false)}
+        currentMemberName={userDisplayName || "จ๊อบ AA"}
+        assignees={assigneesList}
+      />
+      {/* Floating Admin Switcher: Only visible when an authentic Admin is simulating Assignee view */}
+      {isActualAdmin && currentUserRole === "assignee" && (
+        <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2.5 bg-slate-900/95 text-white px-4 py-2.5 rounded-full shadow-2xl border border-slate-700/80 backdrop-blur-md animate-in fade-in slide-in-from-bottom-2 duration-300 text-xs select-none">
+          <span className="flex items-center gap-1.5 text-slate-300">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="font-medium">มุมมอง Assignee</span>
+          </span>
+          <div className="h-3.5 w-px bg-slate-700" />
+          <button
+            onClick={() => handleToggleRole("admin")}
+            className="flex items-center gap-1.5 font-bold text-amber-400 hover:text-amber-300 transition-colors cursor-pointer"
+            title="คลิกเพื่อกลับสู่โหมด Admin"
+          >
+            <Shield size={13} />
+            <span>กลับเป็น Admin</span>
+          </button>
+        </div>
+      )}
+
+      {/* Active Assignment Desktop & Sound Notifier */}
+      <ActiveAssignmentNotifier
+        currentMemberName={userDisplayName}
+        currentMemberEmail={typeof window !== "undefined" ? (localStorage.getItem("cc_user_email") || "") : ""}
+        assigneesList={assigneesList}
+        onOpenTask={(taskId) => {
+          handleSelectView("assignments");
+          if (typeof window !== "undefined") {
+            const url = new URL(window.location.href);
+            url.searchParams.set("view", "assignments");
+            url.searchParams.set("highlightId", taskId);
+            window.history.pushState({}, "", url.toString());
+          }
+        }}
+      />
     </main>
   );
 }

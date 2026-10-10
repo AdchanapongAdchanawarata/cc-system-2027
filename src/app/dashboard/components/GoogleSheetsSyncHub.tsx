@@ -104,13 +104,19 @@ export default function GoogleSheetsSyncHub({ tasks = [], assignees = [] }: Goog
       const res = await fetch("/api/sheets-sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type })
+        body: JSON.stringify({ type, force: true, updatedBy: "admin_manual_hub" })
       });
       const data = await res.json();
       if (data.status === "success") {
         setSyncStatus({
           success: true,
           message: `นำส่งข้อมูลสำเร็จ! (${type === 'R' ? '108 แถว Data_R' : type === 'KR' ? '4 แถว Data_KR' : 'ทั้ง R และ KR'}) พร้อมส่งอีเมลแจ้งสมาชิกครบ 12 ท่าน`,
+          syncedAt: new Date().toLocaleTimeString("th-TH")
+        });
+      } else if (data.status === "skipped") {
+        setSyncStatus({
+          success: true,
+          message: data.message || "รอบนี้ได้ถูกนำส่งไปแล้วเรียบร้อย",
           syncedAt: new Date().toLocaleTimeString("th-TH")
         });
       } else {

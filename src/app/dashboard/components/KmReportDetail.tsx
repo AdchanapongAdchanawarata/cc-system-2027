@@ -104,257 +104,55 @@ export const STAFF_AUTHORS = [
 
 const DEFAULT_AI_NEWS: AiNewsItem[] = [
   // =========================================================================
-  // กันยายน 2026 (รอบเดือนล่าสุด): ครบ 3 ข่าวเด่น ออกแบบ • PR • Content
+  // ตุลาคม 2026: ครบ 3 ข่าวเด่น ออกแบบ • PR • Content (อัปเดตทุกวันที่ 1 ของเดือน)
   // =========================================================================
   {
-    id: "ai-news-m09-design",
-    month: "กันยายน 2026 (ล่าสุด)",
-    title: "Minimalist Typography & Kinetic Motion: เทรนด์อัตลักษณ์งานอีเวนต์นวัตกรรมระดับโลก 2026",
-    summary: "การออกแบบตัวอักษรแบบมีชีวิต (Kinetic Typography) ผสานเลย์เอาต์มินิมอลตามหลัก Dieter Rams กลายเป็นมาตรฐานใหม่ของงานประชุมวิชาการและงานนิทรรศการสตาร์ทอัพระดับสากล ช่วยสร้างภาพลักษณ์ล้ำสมัยและอ่านง่าย",
+    id: "ai-news-m10-design",
+    month: "ตุลาคม 2026",
+    title: "AI-Native Design & Variable Design Tokens: ยกระดับมาตรฐานการออกแบบข้ามแพลตฟอร์ม 2026",
+    summary: "Figma และสตูดิโอออกแบบชั้นนำอัปเดตแนวทาง Design Systems ยุคใหม่ ผสาน AI-assisted Tokens ช่วยแปลง Key Visual และ Component อัตโนมัติ ลดเวลาทำงานกราฟิกซ้ำซ้อนและรักษาอัตลักษณ์องค์กรได้อย่างแม่นยำ",
     category: "Design",
-    source: "Awwwards Design Trends",
-    url: "https://www.awwwards.com/trends",
-    publishedDate: "18 ก.ย. 2026",
-    readTime: "3 นาที",
-    keyTakeaway: "ทีมออกแบบสามารถนำมาประยุกต์ใช้ใน Key Visual งานสัมมนา NSP Innovation Summit และเทมเพลตจอ LED ประชาสัมพันธ์หน้าอาคาร"
-  },
-  {
-    id: "ai-news-m09-pr",
-    month: "กันยายน 2026 (ล่าสุด)",
-    title: "Data-Driven Public Relations: ยกระดับข่าว PR ด้วย Sentiment Analysis & Regional Media Reach",
-    summary: "การทำข่าวองค์กรวิจัยและอุทยานวิทยาศาสตร์ยุคใหม่ไม่ได้วัดแค่จำนวนชิ้นข่าว แต่เน้นการเจาะกลุ่มเป้าหมายนักลงทุนและภาคอุตสาหกรรม พร้อมการสร้าง Brand Authority ในระดับภูมิภาคด้วย AI Sentiment Monitoring",
-    category: "PR",
-    source: "PRSA Public Relations Society",
-    url: "https://prsay.prsa.org/",
-    publishedDate: "17 ก.ย. 2026",
-    readTime: "5 นาที",
-    keyTakeaway: "ทีม PR สามารถนำสูตร Engagement Score ไปใส่ใน RSP Press Report เพื่อรายงานผลสัมฤทธิ์ต่อผู้บริหารและ สกสว. ได้แม่นยำขึ้น"
-  },
-  {
-    id: "ai-news-m09-content",
-    month: "กันยายน 2026 (ล่าสุด)",
-    title: "Generative AI Video Production: การใช้ Sora & Runway Gen-3 ผลิตสื่อวิดีโอโปรโมตนวัตกรรมอุทยานวิทย์ฯ",
-    summary: "โมเดล AI วิดีโอยุค 2026 สามารถรักษาความสม่ำเสมอของตัวละคร (Consistent Character) และสภาพแวดล้อมแล็บวิทยาศาสตร์ได้ระดับภาพยนตร์ ลดเวลาทำ Storyboard และ 3D Mockup ได้กว่า 70%",
-    category: "Content",
-    source: "Runway Research & AI Video",
-    url: "https://runwayml.com/news",
-    publishedDate: "16 ก.ย. 2026",
+    source: "Figma Official Blog",
+    url: "https://www.figma.com/blog/",
+    publishedDate: "1 ต.ค. 2026",
     readTime: "4 นาที",
-    keyTakeaway: "ทีม Content & Production สามารถนำมาใช้สร้าง Concept Video จำลองผลงานวิจัยและห้องแล็บก่อนลงพื้นที่ถ่ายทำจริง"
-  },
-
-  // =========================================================================
-  // สิงหาคม 2026: ครบ 3 ข่าวเด่น ออกแบบ • PR • Content
-  // =========================================================================
-  {
-    id: "ai-news-m08-design",
-    month: "สิงหาคม 2026",
-    title: "Sustainable Packaging Design: นวัตกรรมบรรจุภัณฑ์ชีวภาพและการสื่อสารแบรนด์รักษ์โลกสู่ตลาดสากล",
-    summary: "กรณีศึกษาแบรนด์กาแฟและเกษตรแปรรูปในภาคเหนือที่ใช้ดีไซน์สื่อสาร Carbon Footprint และวัสดุย่อยสลายได้ จนสามารถคว้ารางวัล Good Design Award และขยายช่องทางจำหน่ายต่างประเทศ",
-    category: "Design",
-    source: "Packaging of the World",
-    url: "https://www.packagingoftheworld.com/",
-    publishedDate: "28 ส.ค. 2026",
-    readTime: "4 นาที",
-    keyTakeaway: "เป็นแนวทางสนับสนุนผู้ประกอบการภายใต้ Innovation Design Center ของ STeP เพื่อคว้ารางวัลการออกแบบระดับประเทศและสากล"
+    keyTakeaway: "ทีมงานออกแบบ (Creative Designer) สามารถนำระบบ Design Tokens ไปใช้ใน Master Template เพื่อสร้างกราฟิกสำหรับสื่อดิจิทัลและงานพิมพ์ได้อย่างรวดเร็วและเป็นเอกภาพ"
   },
   {
-    id: "ai-news-m08-pr",
-    month: "สิงหาคม 2026",
-    title: "Brand Experience & Touchpoint Strategy: การออกแบบ Customer Journey ให้ผู้ประกอบการเข้าถึงบริการอุทยานวิทย์ฯ",
-    summary: "การเชื่อมโยง Touchpoint ตั้งแต่หน้าเว็บไซต์ One-Stop Brief, ป้ายนำทางประชาสัมพันธ์ภายในอาคาร จนถึงการส่งมอบงานบริการ ให้มีความรู้สึกเป็นหนึ่งเดียวกันและเข้าถึงง่าย",
+    id: "ai-news-m10-pr",
+    month: "ตุลาคม 2026",
+    title: "Data-Driven Crisis Management & AI Fact-Checking: กลยุทธ์สื่อสารองค์กรยุคข้อมูลสังเคราะห์",
+    summary: "สมาคมการประชาสัมพันธ์แห่งสหรัฐอเมริกา (PRSA) แนะนำกรอบการทำงานสื่อสารองค์กรยุคใหม่ เน้นการตรวจพิสูจน์ข้อเท็จจริง (Fact-Checking) และวิเคราะห์ความรู้สึกสื่อ (Sentiment Monitoring) เพื่อปกป้องชื่อเสียงองค์กรอย่างทันท่วงที",
     category: "PR",
-    source: "Interaction Design Foundation",
-    url: "https://www.interaction-design.org/literature",
-    publishedDate: "20 ส.ค. 2026",
+    source: "PRSA (Public Relations Society of America)",
+    url: "https://www.prsa.org/",
+    publishedDate: "1 ต.ค. 2026",
     readTime: "5 นาที",
-    keyTakeaway: "นำมาปรับใช้กับคู่มือ One-Stop Brief Portal และจุดต้อนรับผู้มาเยือนภายในอาคารอำนวยการ NSP ให้สะท้อนความเป็นมืออาชีพ"
+    keyTakeaway: "ทีมสื่อสารองค์กร (PR Officer) นำเครื่องมือตรวจสอบและสูตรวัด Sentiment ไปประยุกต์ใช้ในการเผยแพร่ข่าวความร่วมมือวิจัยและรายงานผลต่อผู้มีส่วนได้ส่วนเสีย"
   },
   {
-    id: "ai-news-m08-content",
-    month: "สิงหาคม 2026",
-    title: "Visual Storytelling for Deep Tech: กลยุทธ์การย่อยเนื้อหางานวิจัยเชิงลึกให้กลายเป็น Infographic & Short Clip",
-    summary: "การจัดโครงสร้างข้อมูลงานวิจัยเชิงลึกด้วย Visual Hierarchy 3 ระดับ: หัวข้อดึงดูดความสนใจ, สรุป 3 คุณประโยชน์ที่จับต้องได้ และตัวเลขสถิติยืนยันผลลัพธ์ ช่วยเพิ่มอัตราการแชร์ต่อในโซเชียลมีเดียถึง 3 เท่า",
+    id: "ai-news-m10-content",
+    month: "ตุลาคม 2026",
+    title: "Multimodal Video Generation & AI Prompt Crafting: การผลิตสื่อวิดีโอสั้นและ Storytelling ระดับพรีเมียม",
+    summary: "การพัฒนาของโมเดลวิดีโอและมัลติมีเดียช่วยให้ครีเอเตอร์สามารถแปลงบทความหรือรายงานวิจัยให้กลายเป็น Storyboard และ Video Clip สั้นได้อย่างลื่นไหล รองรับการเผยแพร่บน Social Media และจอประชาสัมพันธ์องค์กร",
     category: "Content",
-    source: "Information is Beautiful",
-    url: "https://informationisbeautiful.net/",
-    publishedDate: "15 ส.ค. 2026",
-    readTime: "3 นาที",
-    keyTakeaway: "ช่วยให้ Content Creator ทำงานร่วมกับนักวิจัย มช. ในการสื่อสารนวัตกรรมให้ประชาชนและนักธุรกิจเข้าใจได้ใน 1 นาที"
-  },
-
-  // =========================================================================
-  // กรกฎาคม 2026: ครบ 3 ข่าวเด่น ออกแบบ • PR • Content
-  // =========================================================================
-  {
-    id: "ai-news-m07-design",
-    month: "กรกฎาคม 2026",
-    title: "Prompt Engineering for Midjourney & Firefly: การสร้างภาพประกอบงานนิทรรศการที่ตรงตาม Brand CI",
-    summary: "คู่มือการผสมคำ Prompt สำหรับสไตล์ Minimalist Architecture, Futuristic Tech และ Clean Lighting เพื่อสร้างภาพประกอบงานประชาสัมพันธ์และนิทรรศการที่เข้ากับอัตลักษณ์ของอุทยานวิทย์ฯ",
-    category: "Design",
-    source: "Adobe Firefly Creative Hub",
-    url: "https://www.adobe.com/sensei/generative-ai/firefly.html",
-    publishedDate: "25 ก.ค. 2026",
-    readTime: "5 นาที",
-    keyTakeaway: "ช่วยลดระยะเวลาค้นหาภาพ Stock Photo และสร้างภาพแบนเนอร์กิจกรรมที่มีความเป็นเอกลักษณ์เฉพาะตัวไม่ซ้ำใคร"
-  },
-  {
-    id: "ai-news-m07-pr",
-    month: "กรกฎาคม 2026",
-    title: "Crisis Communication Management in Digital Era: การบริหารจัดการและรับมือภาวะวิกฤตบนโซเชียลมีเดียอย่างมืออาชีพ",
-    summary: "กรอบการทำงาน 15-Minute Response Protocol สำหรับการตรวจจับประเด็นดราม่าและชี้แจงข้อเท็จจริงอย่างสุภาพ รวดเร็ว และเป็นทางการ พร้อมระบบประสานงานด่วนระหว่างผู้บริหารและทีมประชาสัมพันธ์",
-    category: "PR",
-    source: "PRWeek Global",
-    url: "https://www.prweek.com/",
-    publishedDate: "18 ก.ค. 2026",
-    readTime: "6 นาที",
-    keyTakeaway: "เป็นแนวทางสำคัญที่บรรจุในคู่มือ WI การจัดการความเสี่ยงด้านภาพลักษณ์องค์กรของทีม CC (ISO 9001 Clause 6.1)"
-  },
-  {
-    id: "ai-news-m07-content",
-    month: "กรกฎาคม 2026",
-    title: "Short-Form Video for Science & Innovation: ถอดรหัสคลิป 60 วินาทีให้ไวรัลบน TikTok และ Reels",
-    summary: "การวิเคราะห์โครงสร้างคลิปสั้นทางวิทยาศาสตร์ที่ประสบความสำเร็จ โดยใช้ 3 วินาทีแรกเปิดด้วยคำถามที่ท้าทายความคิด และสอดแทรกเบื้องหลังการทดลองจริงในแล็บ ช่วยสร้างยอดเข้าชมและยอดติดตามกลุ่มคนรุ่นใหม่",
-    category: "Content",
-    source: "Social Media Examiner",
-    url: "https://www.socialmediaexaminer.com/",
-    publishedDate: "12 ก.ค. 2026",
+    source: "OpenAI Research & News",
+    url: "https://openai.com/news/",
+    publishedDate: "1 ต.ค. 2026",
     readTime: "4 นาที",
-    keyTakeaway: "ทีม Content & Video นำเทคนิคนี้ไปผลิตคลิปซีรีส์ 'STeP นวัตกรรมทำได้จริง' โปรโมตสตาร์ทอัพและนักวิจัยรุ่นใหม่"
-  },
-
-  // =========================================================================
-  // มิถุนายน 2026: ครบ 3 ข่าวเด่น ออกแบบ • PR • Content
-  // =========================================================================
-  {
-    id: "ai-news-m06-design",
-    month: "มิถุนายน 2026",
-    title: "Dieter Rams 10 Principles in Digital Media: หลักการออกแบบ 'Less, but better' สำหรับสื่อสารองค์กรยุคใหม่",
-    summary: "การประยุกต์หลักการ 10 ข้อของ Dieter Rams เข้ากับงานออกแบบ Digital Asset, การจัดวางสเปซ, สี และความซื่อตรงของข้อมูลที่ไม่หลอกตาผู้ใช้งาน เพื่อสร้างความน่าเชื่อถือระดับสากล",
-    category: "Design",
-    source: "Industrial Design Archive",
-    url: "https://www.vitsoe.com/us/about/good-design",
-    publishedDate: "26 มิ.ย. 2026",
-    readTime: "5 นาที",
-    keyTakeaway: "เป็นแก่นปรัชญาหลักในการออกแบบระบบ CC 2027 และสื่อสิ่งพิมพ์ทุกประเภทของทีมสร้างสรรค์"
-  },
-  {
-    id: "ai-news-m06-pr",
-    month: "มิถุนายน 2026",
-    title: "Thought Leadership PR: การสร้างภาพลักษณ์ผู้บริหารและนักวิจัยให้อยู่ในฐานะผู้นำทางความคิดระดับภูมิภาค",
-    summary: "กลยุทธ์การนำเสนอบทความเชิงวิเคราะห์ (Op-ed) และการให้สัมภาษณ์สื่อสายธุรกิจ เพื่อผลักดันให้นโยบายระเบียงเศรษฐกิจพิเศษภาคเหนือ (NEC) และผลงานวิจัยเด่นเป็นที่รู้จักในวงกว้าง",
-    category: "PR",
-    source: "Forbes Communications Council",
-    url: "https://www.forbes.com/councils/forbescommunicationscouncil/",
-    publishedDate: "19 มิ.ย. 2026",
-    readTime: "5 นาที",
-    keyTakeaway: "ใช้เป็นกรอบการทำงานสำหรับคอลัมน์สัมภาษณ์ผู้บริหารในจดหมายข่าวและสื่อประชาสัมพันธ์ของอุทยานวิทยาศาสตร์ฯ"
-  },
-  {
-    id: "ai-news-m06-content",
-    month: "มิถุนายน 2026",
-    title: "Motion Graphic Best Practices for Corporate Presentation: การยกระดับสไลด์นำเสนอผู้บริหารด้วยแอนิเมชันระดับพรีเมียม",
-    summary: "เทคนิคการกำหนดจังหวะ Easing Curve, การเคลื่อนไหวของกราฟิกแสดงผลงาน และการลดความรกรุงรังของสไลด์เพื่อให้ผู้บริหารตัดสินใจได้รวดเร็วขึ้น",
-    category: "Content",
-    source: "Motion Design Awards",
-    url: "https://motiondesignawards.com/",
-    publishedDate: "10 มิ.ย. 2026",
-    readTime: "4 นาที",
-    keyTakeaway: "ทีม Content & Designer นำมาพัฒนาเทมเพลต Slide Executive Summary สำหรับรายงานผลการดำเนินงานประจำเดือน"
+    keyTakeaway: "ทีมผลิตสื่อสร้างสรรค์ (Content Creator) สามารถนำเครื่องมือสร้างภาพและตัดต่อด้วย AI มาช่วยจำลองตัวอย่างคลิปวิดีโอสัมภาษณ์และคลิปเล่าเรื่องงานนวัตกรรมได้อย่างรวดเร็ว"
   }
 ];
 
-const DEFAULT_STAFF_ARTICLES: StaffArticle[] = [
-  {
-    id: "art-01",
-    title: "ถอดบทเรียน 5 เทคนิคการจัดทำ Key Visual งานใหญ่ให้เสร็จไวภายใน 48 ชั่วโมง",
-    author: "นางสาวรติพร กัลปพฤกษ์",
-    authorNickname: "จอย RL",
-    unit: "ยูนิตงานออกแบบ (Creative Designer)",
-    category: "Graphic & Branding",
-    content: "การเตรียมตัวก่อนเริ่มงานด่วนเป็นหัวใจสำคัญของงานออกแบบที่มีเดดไลน์บีบคั้น เช่น งาน NSP Innovation Summit หรืองานเปิดตัวโครงการระดับจังหวัด หากไม่มีระบบรองรับ ทีมดีไซเนอร์จะต้องเริ่มต้นจากศูนย์ทุกครั้ง\n\nจากประสบการณ์จริงในการจัดทำ Key Visual งานด่วนภายใน 48 ชั่วโมง ขอสรุป 5 ขั้นตอนสำคัญดังนี้:\n\n1. กำหนด Color Palette 3 สีหลักตาม Brand CI: ตกลงสัดส่วน 60:30:10 ร่วมกับทีมบรีฟทันทีก่อนเปิดโปรแกรม ช่วยตัดปัญหาเรื่องการเปลี่ยนเฉดสีภายหลัง\n\n2. สร้าง Grid System 12 คอลัมน์: ออกแบบเลย์เอาต์ที่ยืดหยุ่น สามารถปรับสเกลระหว่างแนวนอน (จอเวที / LED) และแนวตั้ง (โปสเตอร์ / Standee) ได้โดยไม่ต้องจัดองค์ประกอบใหม่ทั้งหมด\n\n3. จัดเตรียม Font Pairing มาตรฐาน: จับคู่ฟอนต์ภาษาไทยและอังกฤษทางการ เช่น Kanit คู่กับ Inter ที่อ่านง่ายชัดเจนในทุกระยะสายตา\n\n4. ดึงใช้ Asset Bank ส่วนกลาง: นำ 3D Abstract, กริด และ Texture ที่ทีม CC ได้สะสมไว้ในคลัง KM มาประกอบเป็นฉากหลัง ช่วยประหยัดเวลาเรนเดอร์ภาพได้กว่า 70%\n\n5. ส่ง Mockup เสมือนจริงบนพื้นที่ใช้งาน: แทนที่จะส่งเฉพาะไฟล์ภาพแบนๆ ให้เรนเดอร์ภาพ Key Visual บนฉากเวทีจริงและจอประชาสัมพันธ์ เพื่อให้ผู้บริหารเห็นภาพรวมและอนุมัติแบบได้ในรอบเดียว\n\nสรุปผลลัพธ์: ช่วยลดรอบการแก้ไขงานจากเดิมเฉลี่ย 4-5 รอบ เหลือเพียง 1 รอบ และส่งมอบงานสำเร็จตรงเวลาตามมาตรฐาน ISO 9001",
-    readCount: 142,
-    publishedAt: "17 ก.ย. 2026",
-    tags: ["FastTrack", "KeyVisual", "GraphicDesign", "Photoshop", "BrandCI"]
-  },
-  {
-    id: "art-02",
-    title: "เขียนข่าวประชาสัมพันธ์วิทยาศาสตร์อย่างไรให้สื่อมวลชนหยิบไปลงหน้าหนึ่ง",
-    author: "นางสาวสุทธิอาภา คุ้มครอง",
-    authorNickname: "ลูกอิน STK",
-    unit: "ยูนิตสื่อสารองค์กร (PR Officer)",
-    category: "Corporate PR",
-    content: "งานวิจัยและนวัตกรรมทางวิทยาศาสตร์มักมีศัพท์เชิงเทคนิคที่ซับซ้อน ทำให้สื่อมวลชนกระแสหลักมองข้ามได้ง่าย หากเราส่งข่าวประชาสัมพันธ์ในรูปแบบรายงานทางวิชาการ สื่อมวลชนส่วนใหญ่จะไม่นำไปเผยแพร่\n\nหัวใจสำคัญในการเขียนข่าว PR วิทยาศาสตร์ให้ได้พื้นที่หน้าหนึ่งหรือสื่อออนไลน์ชั้นนำ มี 4 กลยุทธ์หลักดังนี้:\n\n1. เปลี่ยนจาก 'Research-Centric' เป็น 'Human-Impact Centric': แทนที่จะพาดหัวว่า 'การสังเคราะห์พอลิเมอร์นาโนชีวภาพต้านเชื้อแบคทีเรีย' ให้เปลี่ยนเป็น 'นักวิจัย มช. คิดค้นถุงย่อยสลายได้จากเปลือกข้าวโพด ลดขยะเชียงใหม่ 100 ตันต่อปี และเพิ่มรายได้เกษตรกร 30%'\n\n2. โครงสร้าง Inverted Pyramid ที่เฉียบคม: พารากราฟแรก (Lead) ต้องตอบคำถาม 5W1H ให้ครบว่า ใคร ทำอะไร ที่ไหน เมื่อไหร่ ทำไม และส่งผลกระทบต่อเศรษฐกิจหรือชีวิตประชาชนอย่างไรใน 3 บรรทัดแรก\n\n3. แนบ Visual Press Kit ครบชุด: นักข่าวยุคดิจิทัลต้องการเนื้อหาพร้อมภาพประกอบทันที เราจึงต้องแนบรูปถ่ายนักวิจัยความคมชัดสูง รูปผลิตภัณฑ์ที่กำลังใช้งานจริง และ Infographic สรุป 1 หน้าแบบพร้อมโพสต์\n\n4. สานสัมพันธ์สื่อและ Follow-up ในเวลาที่เหมาะสม: ส่งข่าวในช่วงเช้า 09:00 - 10:30 น. และทักทายผู้สื่อข่าวสายวิทยาศาสตร์-เศรษฐกิจอย่างสุภาพ เพื่อให้ข้อมูลเพิ่มเติมหากต้องการสัมภาษณ์เจาะลึก\n\nสรุปผลลัพธ์: ตลอดไตรมาสที่ผ่านมา ข่าวของ STeP ได้รับการเผยแพร่ในสื่อชั้นนำอย่าง ไทยรัฐ, มติชน, Brand Inside และช่องโทรทัศน์ คิดเป็นมูลค่า PR Value รวมกว่า 1.2 ล้านบาท",
-    readCount: 189,
-    publishedAt: "12 ก.ย. 2026",
-    tags: ["PressRelease", "PRStrategy", "SciComm", "MediaRelations", "STeP"]
-  },
-  {
-    id: "art-03",
-    title: "สูตรลับการตัดต่อ Short Video 60 วินาทีให้คนดูจบ ไม่ปัดผ่าน",
-    author: "นางสาวศิริลักษณ์ กันจะนะ",
-    authorNickname: "เอ็นจอย SLR",
-    unit: "ยูนิตผลิตสื่อสร้างสรรค์ (Content Creator)",
-    category: "Video Production",
-    content: "ในยุคของ TikTok, Instagram Reels และ YouTube Shorts ความสนใจของผู้ใช้งานเฉลี่ยสั้นลงเหลือเพียงไม่ถึง 3 วินาที หากคลิปวิดีโอไม่สามารถดึงดูดความสนใจได้ตั้งแต่ต้น ผู้ชมจะปัดผ่านทันที\n\nทีมผลิตสื่อสร้างสรรค์ CC ได้ทำการทดลองและถอดสูตรลับการตัดต่อคลิปสั้น 60 วินาทีให้มี Completion Rate สูงสุด ดังนี้:\n\n1. The 3-Second Hook: เริ่มต้นด้วยคำถามกระตุกต่อมคิด หรือภาพผลลัพธ์ที่น่าตื่นเต้นที่สุด เช่น 'รู้หรือไม่ว่าของเหลือทิ้งจากฟาร์มนี้ กำลังจะกลายเป็นแบตเตอรี่รถยนต์ EV?' หลีกเลี่ยงการเปิดด้วยโลโก้องค์กรหรืออินโทรยืดยาว\n\n2. จังหวะการตัดต่อ (Pacing & Jump Cut): ตัดช่วงหายใจหรือเสียง 'เอ่อ...อ่า...' ออกทั้งหมด ให้เสียงพูดต่อเนื่องกระชับ และเปลี่ยนมุมกล้องหรือใส่ B-roll ทุก 2.5 - 4 วินาทีเพื่อป้องกันความน่าเบื่อ\n\n3. Kinetic Typography (คำบรรยายมีชีวิต): ผู้ใช้งานกว่า 70% รับชมวิดีโอบนโซเชียลมีเดียแบบปิดเสียง จึงจำเป็นต้องใส่ Subtitle ตัวโต มีแอนิเมชันเด้งตามจังหวะพูด และเน้นสีไฮไลต์คำสำคัญ\n\n4. Sound Design กำกับอารมณ์: ใช้ Sound Effect (เช่น เสียง Whoosh, Pop, Ding) สอดประสานกับกราฟิกบนหน้าจอ พร้อมดนตรีประกอบแนว Modern Minimalist ที่มีจังหวะสดใส\n\n5. Call to Action ใน 5 วินาทีสุดท้าย: ทิ้งท้ายด้วยประโยคเชิญชวนที่ชัดเจน เช่น 'กดบันทึกคลิปไว้ แล้วพบกับนวัตกรรมนี้ได้ที่อาคาร NSP' เพื่อสร้างการมีส่วนร่วม\n\nสรุปผลลัพธ์: คลิปซีรีส์ 'STeP นวัตกรรมทำได้จริง' มียอด Completion Rate สูงถึง 68% และเพิ่มยอดผู้ติดตามช่องทางโซเชียลมีเดียของ STeP โตขึ้นกว่า 250% ภายใน 1 เดือน",
-    readCount: 215,
-    publishedAt: "8 ก.ย. 2026",
-    tags: ["Reels", "TikTok", "PremierePro", "ShortVideo", "ContentMarketing"]
-  }
-];
+const DEFAULT_STAFF_ARTICLES: StaffArticle[] = [];
 
-const DEFAULT_KM_FILES: KmFileItem[] = [
-  {
-    id: "f-01",
-    name: "STeP_Brand_CI_Guidelines_2026_Full.pdf",
-    category: "Brand CI",
-    size: "18.4 MB",
-    format: "PDF",
-    uploader: "จ๊อบ AA",
-    uploadedAt: "2026-09-01",
-    downloadCount: 88,
-    url: "#"
-  },
-  {
-    id: "f-02",
-    name: "FastTrack_SocialMedia_Templates_1080x1080.psd",
-    category: "Graphic Template",
-    size: "45.2 MB",
-    format: "PSD",
-    uploader: "พิม AC",
-    uploadedAt: "2026-09-10",
-    downloadCount: 64,
-    url: "#"
-  },
-  {
-    id: "f-03",
-    name: "STeP_Official_Kanit_Prompt_Fonts_Pack.zip",
-    category: "Fonts & Typography",
-    size: "12.8 MB",
-    format: "ZIP",
-    uploader: "ก้อง IK",
-    uploadedAt: "2026-08-25",
-    downloadCount: 112,
-    url: "#"
-  },
-  {
-    id: "f-04",
-    name: "FM-CC_Brief_Standard_Checklist_V2.docx",
-    category: "Forms & WI",
-    size: "1.2 MB",
-    format: "DOCX",
-    uploader: "วา WK",
-    uploadedAt: "2026-09-15",
-    downloadCount: 47,
-    url: "#"
-  }
-];
+const DEFAULT_KM_FILES: KmFileItem[] = [];
 
 export default function KmReportDetail() {
   const [activeTab, setActiveTab] = useState<"ai-trends" | "articles" | "files">("ai-trends");
   const [aiNews, setAiNews] = useState<AiNewsItem[]>(DEFAULT_AI_NEWS);
-  const [articles, setArticles] = useState<StaffArticle[]>(DEFAULT_STAFF_ARTICLES);
-  const [files, setFiles] = useState<KmFileItem[]>(DEFAULT_KM_FILES);
+  const [articles, setArticles] = useState<StaffArticle[]>([]);
+  const [files, setFiles] = useState<KmFileItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
 
@@ -514,7 +312,7 @@ export default function KmReportDetail() {
     });
     setArticles(updated);
     if (typeof window !== "undefined") {
-      localStorage.setItem("cc_km_staff_articles_v2", JSON.stringify(updated));
+      localStorage.setItem("cc_km_staff_articles_v3_fy70", JSON.stringify(updated));
     }
     setReadingArticle({ ...art, readCount: (art.readCount || 0) + 1 });
   };
@@ -594,7 +392,7 @@ export default function KmReportDetail() {
 
     setArticles(updated);
     if (typeof window !== "undefined") {
-      localStorage.setItem("cc_km_staff_articles_v2", JSON.stringify(updated));
+      localStorage.setItem("cc_km_staff_articles_v3_fy70", JSON.stringify(updated));
     }
 
     if (readingArticle && readingArticle.id === editingArticle.id) {
@@ -630,7 +428,7 @@ export default function KmReportDetail() {
     const updated = articles.filter(a => a.id !== deletingArticle.id);
     setArticles(updated);
     if (typeof window !== "undefined") {
-      localStorage.setItem("cc_km_staff_articles_v2", JSON.stringify(updated));
+      localStorage.setItem("cc_km_staff_articles_v3_fy70", JSON.stringify(updated));
     }
 
     if (readingArticle && readingArticle.id === deletingArticle.id) {
@@ -646,7 +444,7 @@ export default function KmReportDetail() {
     if (confirm("ต้องการรีเซ็ตบทความทั้งหมดกลับเป็นค่าเริ่มต้น 3 บทความหรือไม่?")) {
       setArticles(DEFAULT_STAFF_ARTICLES);
       if (typeof window !== "undefined") {
-        localStorage.setItem("cc_km_staff_articles_v2", JSON.stringify(DEFAULT_STAFF_ARTICLES));
+        localStorage.setItem("cc_km_staff_articles_v3_fy70", JSON.stringify(DEFAULT_STAFF_ARTICLES));
       }
       showToast("🔄 รีเซ็ตบทความเริ่มต้นเรียบร้อยแล้ว");
     }
@@ -703,7 +501,7 @@ export default function KmReportDetail() {
 
     setFiles(updated);
     if (typeof window !== "undefined") {
-      localStorage.setItem("cc_km_files_v1", JSON.stringify(updated));
+      localStorage.setItem("cc_km_files_v2_fy70", JSON.stringify(updated));
     }
 
     setShowEditFileModal(false);
@@ -726,7 +524,7 @@ export default function KmReportDetail() {
     const updated = files.filter(f => f.id !== deletingFile.id);
     setFiles(updated);
     if (typeof window !== "undefined") {
-      localStorage.setItem("cc_km_files_v1", JSON.stringify(updated));
+      localStorage.setItem("cc_km_files_v2_fy70", JSON.stringify(updated));
     }
 
     setShowDeleteFileModal(false);
@@ -738,7 +536,7 @@ export default function KmReportDetail() {
     if (confirm("ต้องการรีเซ็ตคลังไฟล์ทั้งหมดกลับเป็นค่าเริ่มต้น 4 รายการหรือไม่?")) {
       setFiles(DEFAULT_KM_FILES);
       if (typeof window !== "undefined") {
-        localStorage.setItem("cc_km_files_v1", JSON.stringify(DEFAULT_KM_FILES));
+        localStorage.setItem("cc_km_files_v2_fy70", JSON.stringify(DEFAULT_KM_FILES));
       }
       showToast("🔄 รีเซ็ตคลังไฟล์เริ่มต้นเรียบร้อยแล้ว");
     }
@@ -753,7 +551,7 @@ export default function KmReportDetail() {
     });
     setFiles(updated);
     if (typeof window !== "undefined") {
-      localStorage.setItem("cc_km_files_v1", JSON.stringify(updated));
+      localStorage.setItem("cc_km_files_v2_fy70", JSON.stringify(updated));
     }
     showToast(`📥 ดาวน์โหลดไฟล์ ${file.name} สำเร็จ`);
   };
@@ -773,13 +571,13 @@ export default function KmReportDetail() {
       }
 
       // Load articles & files from Supabase cloud database
-      getCloudJson<StaffArticle[]>(CLOUD_KEYS.KM_DATA, "cc_km_staff_articles_v2").then(data => {
-        if (data && Array.isArray(data) && data.length > 0) {
+      getCloudJson<StaffArticle[]>(CLOUD_KEYS.KM_DATA, "cc_km_staff_articles_v3_fy70").then(data => {
+        if (data && Array.isArray(data)) {
           setArticles(data);
         }
       });
-      getCloudJson<KmFileItem[]>(CLOUD_KEYS.KM_FILES, "cc_km_files_v1").then(data => {
-        if (data && Array.isArray(data) && data.length > 0) {
+      getCloudJson<KmFileItem[]>(CLOUD_KEYS.KM_FILES, "cc_km_files_v2_fy70").then(data => {
+        if (data && Array.isArray(data)) {
           setFiles(data);
         }
       });
@@ -789,13 +587,13 @@ export default function KmReportDetail() {
   // Save articles and files to Supabase cloud database + localStorage
   useEffect(() => {
     if (articles && articles.length > 0) {
-      setCloudJson(CLOUD_KEYS.KM_DATA, articles, "cc_km_staff_articles_v2");
+      setCloudJson(CLOUD_KEYS.KM_DATA, articles, "cc_km_staff_articles_v3_fy70");
     }
   }, [articles]);
 
   useEffect(() => {
     if (files && files.length > 0) {
-      setCloudJson(CLOUD_KEYS.KM_FILES, files, "cc_km_files_v1");
+      setCloudJson(CLOUD_KEYS.KM_FILES, files, "cc_km_files_v2_fy70");
     }
   }, [files]);
 
@@ -933,7 +731,7 @@ export default function KmReportDetail() {
     const updated = [newItem, ...articles];
     setArticles(updated);
     if (typeof window !== "undefined") {
-      localStorage.setItem("cc_km_staff_articles_v2", JSON.stringify(updated));
+      localStorage.setItem("cc_km_staff_articles_v3_fy70", JSON.stringify(updated));
     }
 
     setNewTitle("");
@@ -971,7 +769,7 @@ export default function KmReportDetail() {
     const updated = [newItem, ...files];
     setFiles(updated);
     if (typeof window !== "undefined") {
-      localStorage.setItem("cc_km_files_v1", JSON.stringify(updated));
+      localStorage.setItem("cc_km_files_v2_fy70", JSON.stringify(updated));
     }
 
     setNewFileName("");
@@ -1022,43 +820,45 @@ export default function KmReportDetail() {
           </div>
         </div>
 
-        {/* 3 Nav Tabs */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 border-b border-slate-200 pt-2">
-          <button
-            onClick={() => setActiveTab("ai-trends")}
-            className={`px-3 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer flex items-center justify-center gap-2 text-center ${
-              activeTab === "ai-trends"
-                ? "border-[#E03131] text-[#E03131] bg-red-50/40 rounded-t-xl"
-                : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-xl"
-            }`}
-          >
-            <BrainCircuit size={16} className="shrink-0" />
-            <span className="truncate">1. ข่าวและเทรนด์ AI รายเดือน ({aiNews.length})</span>
-          </button>
+        {/* 3 Nav Tabs - Capsule Red Pill Design (Per Reference) */}
+        <div className="bg-white p-1.5 sm:p-2 rounded-2xl border border-slate-200 shadow-2xs">
+          <div className="grid grid-cols-1 sm:grid-cols-3 bg-slate-100 p-1 rounded-xl sm:rounded-2xl border border-slate-200 gap-1">
+            <button
+              onClick={() => setActiveTab("ai-trends")}
+              className={`px-3 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 text-center ${
+                activeTab === "ai-trends"
+                  ? "bg-[#E03131] text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
+              }`}
+            >
+              <BrainCircuit size={16} className="shrink-0" />
+              <span className="truncate">1. ข่าวและเทรนด์ AI รายเดือน ({aiNews.length})</span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab("articles")}
-            className={`px-3 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer flex items-center justify-center gap-2 text-center ${
-              activeTab === "articles"
-                ? "border-[#E03131] text-[#E03131] bg-red-50/40 rounded-t-xl"
-                : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-xl"
-            }`}
-          >
-            <FileText size={16} className="shrink-0" />
-            <span className="truncate">2. บทความทีมงาน ({articles.length})</span>
-          </button>
+            <button
+              onClick={() => setActiveTab("articles")}
+              className={`px-3 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 text-center ${
+                activeTab === "articles"
+                  ? "bg-[#E03131] text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
+              }`}
+            >
+              <FileText size={16} className="shrink-0" />
+              <span className="truncate">2. บทความทีมงาน ({articles.length})</span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab("files")}
-            className={`px-3 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer flex items-center justify-center gap-2 text-center ${
-              activeTab === "files"
-                ? "border-[#E03131] text-[#E03131] bg-red-50/40 rounded-t-xl"
-                : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-xl"
-            }`}
-          >
-            <FolderDown size={16} className="shrink-0" />
-            <span className="truncate">3. คลังไฟล์ &amp; เทมเพลต ({files.length})</span>
-          </button>
+            <button
+              onClick={() => setActiveTab("files")}
+              className={`px-3 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 text-center ${
+                activeTab === "files"
+                  ? "bg-[#E03131] text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
+              }`}
+            >
+              <FolderDown size={16} className="shrink-0" />
+              <span className="truncate">3. คลังไฟล์ &amp; เทมเพลต ({files.length})</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1067,26 +867,20 @@ export default function KmReportDetail() {
       {/* ===================================================================== */}
       {activeTab === "ai-trends" && (
         <div className="space-y-6">
-          {/* Hero Banner: AI Monthly Creative Digest */}
-          <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white relative overflow-hidden shadow-md">
-            <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute left-1/3 top-0 w-48 h-48 bg-rose-500/10 rounded-full blur-2xl pointer-events-none" />
-
+          {/* Hero Banner: AI Monthly Creative Digest (Dieter Rams Style: Light Gray Background with Orange Text) */}
+          <div className="p-6 sm:p-8 rounded-3xl bg-[#f1f3f5] dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-[#d9480f] dark:text-[#f97316] relative overflow-hidden shadow-xs">
+            <div className="absolute top-0 left-0 w-full h-[3px] bg-[#E8590C]" />
             <div className="relative z-10 max-w-3xl space-y-3">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-indigo-300 text-xs font-bold border border-white/15">
-                <Sparkles size={13} className="text-indigo-400" />
-                <span>AI Creative Radar • 3 ข่าวเด่นประจำเดือน (Monthly Digest)</span>
-              </div>
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-tight">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-tight text-[#d9480f] dark:text-[#f97316]">
                 เจาะลึก 3 เทรนด์นวัตกรรมสร้างสรรค์รายเดือน: ออกแบบ • PR สื่อสารองค์กร • ผลิต Content
               </h2>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              <p className="text-xs sm:text-sm text-[#d9480f]/85 dark:text-[#f97316]/85 leading-relaxed font-normal">
                 คัดกรองข่าวเทคโนโลยีและกรณีศึกษาระดับสากล เดือนละ 3 ข่าวเด่นครบทุกสายงานของทีม CC เพื่อการประยุกต์ใช้อย่างคุ้มค่าและลดภาระการประมวลผลของ Server
               </p>
-              <div className="flex flex-wrap items-center gap-3 pt-2 text-xs font-mono text-slate-400">
-                <span>อัปเดตอัตโนมัติ: รายเดือน (กันยายน 2026)</span>
+              <div className="flex flex-wrap items-center gap-3 pt-2 text-xs font-mono text-slate-500 dark:text-zinc-400">
+                <span>อัปเดตอัตโนมัติ: รายเดือน (ตุลาคม 2026)</span>
                 <span>•</span>
-                <span className="text-indigo-300 font-semibold">เดือนละ 3 ข่าวเด่น (🎨 ออกแบบ • 📢 PR • 🎬 Content)</span>
+                <span className="text-[#d9480f] dark:text-[#f97316] font-semibold">เดือนละ 3 ข่าวเด่น (🎨 ออกแบบ • 📢 PR • 🎬 Content)</span>
                 <span>•</span>
                 <span>คลังสะสมรวม {aiNews.length} ข่าว</span>
               </div>

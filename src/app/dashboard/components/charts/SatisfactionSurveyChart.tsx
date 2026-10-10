@@ -46,9 +46,9 @@ export default function SatisfactionSurveyChart({
   const dimensionList = [
     { key: 'accuracy', name: '1. ความถูกต้องสมบูรณ์', score: analytics.dimensions.accuracy },
     { key: 'timeliness', name: '2. ความตรงต่อเวลา', score: analytics.dimensions.timeliness },
-    { key: 'quality', name: '3. คุณภาพและความคิดสร้างสรรค์', score: analytics.dimensions.quality },
-    { key: 'attentiveness', name: '4. การประสานงานและความใส่ใจ', score: analytics.dimensions.attentiveness },
-    { key: 'ownership', name: '5. ความรับผิดชอบในภาพรวม', score: analytics.dimensions.ownership }
+    { key: 'ownership', name: '3. ความรับผิดชอบในภาพรวม', score: analytics.dimensions.ownership },
+    { key: 'quality', name: '4. คุณภาพและความคิดสร้างสรรค์', score: analytics.dimensions.quality },
+    { key: 'attentiveness', name: '5. การประสานงานและความใส่ใจ', score: analytics.dimensions.attentiveness }
   ];
 
   return (
@@ -79,7 +79,10 @@ export default function SatisfactionSurveyChart({
           </div>
           <div className="h-7 w-[1px] bg-amber-200" />
           <div className="text-xs font-bold text-slate-700">
-            {analytics.totalCompletedTasks} ชิ้นงานเสร็จ
+            {analytics.evaluatedCount} / {analytics.totalCompletedTasks} งาน
+            <span className="text-[10px] text-slate-500 font-normal block">
+              (ประเมินแล้ว {analytics.evaluatedCount} งาน)
+            </span>
           </div>
         </div>
       </div>
@@ -147,7 +150,7 @@ export default function SatisfactionSurveyChart({
               คะแนนเฉลี่ย 5 มิติ (เกณฑ์มาตรฐานเต็ม 5.0 ดาว)
             </span>
             <span className="text-[11px] text-slate-400 font-normal font-mono">
-              *คิดจากงานที่ประเมินแล้วและเกณฑ์มาตรฐาน 85%
+              {analytics.evaluatedCount === 0 ? "*ยังไม่มีงานที่ประเมินในปีงบประมาณ 2570" : `*คิดจากงานที่ประเมินจริง (${analytics.evaluatedCount} งาน)`}
             </span>
           </div>
 

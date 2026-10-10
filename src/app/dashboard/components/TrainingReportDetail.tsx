@@ -56,128 +56,9 @@ export interface TrainingPlanItem {
   idpLink: string;
 }
 
-const DEFAULT_TRAINING_RECORDS: IndividualTrainingRecord[] = [
-  {
-    id: "tr-01",
-    memberCode: "RL",
-    memberName: "นางสาวรติพร กัลปพฤกษ์",
-    memberNickname: "จอย",
-    unit: "ยูนิตงานออกแบบ",
-    courseName: "Generative AI for Visual Creative & Packaging Prototyping",
-    organizer: "Creative Economy Agency (CEA) & CMU STeP",
-    trainingDate: "2026-08-15",
-    hours: 12,
-    certUrl: "https://example.com/cert/rl-ai.pdf",
-    status: "completed"
-  },
-  {
-    id: "tr-02",
-    memberCode: "AC",
-    memberName: "นางสาวอัจฉราภรณ์ ศักดาวงศ์เสรี",
-    memberNickname: "พิม",
-    unit: "ยูนิตงานออกแบบ",
-    courseName: "Advanced 3D Modeling & Good Design Award Standards",
-    organizer: "Design Promotion Association of Thailand",
-    trainingDate: "2026-07-22",
-    hours: 16,
-    certUrl: "https://example.com/cert/ac-3d.pdf",
-    status: "completed"
-  },
-  {
-    id: "tr-03",
-    memberCode: "STK",
-    memberName: "นางสาวสุทธิอาภา คุ้มครอง",
-    memberNickname: "ลูกอิน",
-    unit: "ยูนิตสื่อสารองค์กร",
-    courseName: "Strategic Corporate PR & Crisis Communication in Digital Era",
-    organizer: "สมาคมนักข่าวนักหนังสือพิมพ์แห่งประเทศไทย",
-    trainingDate: "2026-06-18",
-    hours: 14,
-    certUrl: "https://example.com/cert/stk-pr.pdf",
-    status: "completed"
-  },
-  {
-    id: "tr-04",
-    memberCode: "SLR",
-    memberName: "นางสาวศิริลักษณ์ กันจะนะ",
-    memberNickname: "เอ็นจอย",
-    unit: "ยูนิตผลิตสื่อสร้างสรรค์",
-    courseName: "Short-form Video Algorithm Mastery & Premiere Pro Editing",
-    organizer: "Digital Video Production Masterclass",
-    trainingDate: "2026-08-05",
-    hours: 18,
-    certUrl: "https://example.com/cert/slr-video.pdf",
-    status: "completed"
-  },
-  {
-    id: "tr-05",
-    memberCode: "AA",
-    memberName: "นายอัจชนะพงษ์ อัจชนะวราทา",
-    memberNickname: "จ๊อบ",
-    unit: "บริหารทีม CC",
-    courseName: "ISO 9001:2015 Quality Management & Risk-Based Thinking",
-    organizer: "สถาบันเพิ่มผลผลิตแห่งชาติ (FTPI)",
-    trainingDate: "2026-05-10",
-    hours: 24,
-    certUrl: "https://example.com/cert/aa-iso.pdf",
-    status: "completed"
-  },
-  {
-    id: "tr-06",
-    memberCode: "WK",
-    memberName: "นางสาววาสิตา กอบธัญกิจ",
-    memberNickname: "วา",
-    unit: "บริหารทีม CC",
-    courseName: "ISO 9001:2015 Lead Internal Auditor Certification",
-    organizer: "สถาบันรับรองมาตรฐานไอเอสโอ (MASCI)",
-    trainingDate: "2026-05-12",
-    hours: 24,
-    certUrl: "https://example.com/cert/wk-iso.pdf",
-    status: "completed"
-  }
-];
+const DEFAULT_TRAINING_RECORDS: IndividualTrainingRecord[] = [];
 
-const DEFAULT_TRAINING_PLANS: TrainingPlanItem[] = [
-  {
-    id: "tp-01",
-    planCode: "TRN-PLAN-2026-01",
-    courseTitle: "Generative AI Video Production (Sora / Runway / Luma AI)",
-    targetUnit: "ยูนิตผลิตสื่อสร้างสรรค์ & งานออกแบบ",
-    targetMembers: "เอ็นจอย SLR, แก้ว KYK, ต้า TTY, จอย RL, พิม AC",
-    organizer: "สถาบันนวัตกรรมสื่อดิจิทัลภาคเหนือ",
-    targetQuarter: "Q4 (ก.ค.-ก.ย. 2026)",
-    estimatedHours: 16,
-    budget: "฿35,000",
-    status: "approved",
-    idpLink: "https://docs.google.com/forms/d/e/1FAIpQLSc-example-idp-video/viewform"
-  },
-  {
-    id: "tp-02",
-    planCode: "TRN-PLAN-2026-02",
-    courseTitle: "Data Visualization & Interactive Dashboard Design",
-    targetUnit: "ยูนิตงานออกแบบ & บริหารทีม",
-    targetMembers: "จอย RL, นิน MTN, ก้อง IK, วา WK",
-    organizer: "Thai UX/UI & Data Designers Community",
-    targetQuarter: "Q4 (ก.ค.-ก.ย. 2026)",
-    estimatedHours: 12,
-    budget: "฿25,000",
-    status: "approved",
-    idpLink: "https://docs.google.com/forms/d/e/1FAIpQLSc-example-idp-dataviz/viewform"
-  },
-  {
-    id: "tp-03",
-    planCode: "TRN-PLAN-2026-03",
-    courseTitle: "Science Communication & Impact PR for Global Reach",
-    targetUnit: "ยูนิตสื่อสารองค์กร",
-    targetMembers: "ลูกอิน STK, โอ๊ต CNB",
-    organizer: "British Council & สวทช.",
-    targetQuarter: "Q1 (ต.ค.-ธ.ค. 2026)",
-    estimatedHours: 16,
-    budget: "฿30,000",
-    status: "planned",
-    idpLink: "https://docs.google.com/forms/d/e/1FAIpQLSc-example-idp-scicomm/viewform"
-  }
-];
+const DEFAULT_TRAINING_PLANS: TrainingPlanItem[] = [];
 
 const ALL_MEMBERS = [
   { code: "ST", name: "ผศ.ดร.สุริยะ ทองมุณี", nickname: "อ.บ่าว", unit: "บริหารทีม" },
@@ -197,8 +78,8 @@ const ALL_MEMBERS = [
 
 export default function TrainingReportDetail() {
   const [activeTab, setActiveTab] = useState<"records" | "plans">("records");
-  const [records, setRecords] = useState<IndividualTrainingRecord[]>(DEFAULT_TRAINING_RECORDS);
-  const [plans, setPlans] = useState<TrainingPlanItem[]>(DEFAULT_TRAINING_PLANS);
+  const [records, setRecords] = useState<IndividualTrainingRecord[]>([]);
+  const [plans, setPlans] = useState<TrainingPlanItem[]>([]);
   const [selectedMember, setSelectedMember] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddRecordModal, setShowAddRecordModal] = useState(false);
@@ -216,9 +97,9 @@ export default function TrainingReportDetail() {
       try {
         const cloudData = await getCloudJson<IndividualTrainingRecord[]>(
           CLOUD_KEYS.TRAINING_RECORDS,
-          "cc_training_records_v1"
+          "cc_training_records_v2_fy70"
         );
-        if (cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
+        if (cloudData && Array.isArray(cloudData)) {
           setRecords(cloudData);
         }
       } catch (e) {
@@ -230,7 +111,7 @@ export default function TrainingReportDetail() {
 
   const saveRecords = (items: IndividualTrainingRecord[]) => {
     setRecords(items);
-    setCloudJson(CLOUD_KEYS.TRAINING_RECORDS, items, "cc_training_records_v1");
+    setCloudJson(CLOUD_KEYS.TRAINING_RECORDS, items, "cc_training_records_v2_fy70");
   };
 
   const filteredRecords = useMemo(() => {

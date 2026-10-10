@@ -26,22 +26,22 @@ const DIMENSIONS: DimensionItem[] = [
     desc: "ส่งมอบงานดราฟต์และงานไฟนอลตรงตามเวลาที่ตกลงไว้ หรือแจ้งล่วงหน้าอย่างเหมาะสม"
   },
   {
+    id: "ownership",
+    title: "3. ความเป็นเจ้าของงานและความรับผิดชอบ (Ownership)",
+    subtitle: "มุ่งมั่นรับผิดชอบเชิงรุก",
+    desc: "มีความรับผิดชอบต่องานสูง มุ่งมั่นทำให้งานสำเร็จลุล่วงด้วยดี และพร้อมแก้ไขปัญหาอย่างมืออาชีพ"
+  },
+  {
     id: "quality",
-    title: "3. คุณภาพงานและความคิดสร้างสรรค์ (Quality & Creativity)",
+    title: "4. คุณภาพงานและความคิดสร้างสรรค์ (Quality & Creativity)",
     subtitle: "ตอบโจทย์และมีมาตรฐานสูง",
     desc: "ชิ้นงานมีความสวยงาม โดดเด่น มีความคิดสร้างสรรค์ มีคุณค่า และตอบโจทย์การสื่อสารอย่างมีประสิทธิภาพ"
   },
   {
     id: "attentiveness",
-    title: "4. การสื่อสารและการเอาใจใส่ (Attentiveness & Care)",
+    title: "5. การสื่อสารและการเอาใจใส่ (Attentiveness & Care)",
     subtitle: "กระตือรือร้นและใส่ใจ",
     desc: "การประสานงานมีความสุภาพ รวดเร็ว เอาใจใส่ รับฟังความคิดเห็น และให้คำแนะนำที่เป็นประโยชน์"
-  },
-  {
-    id: "ownership",
-    title: "5. ความเป็นเจ้าของงานและความรับผิดชอบ (Ownership)",
-    subtitle: "มุ่งมั่นรับผิดชอบเชิงรุก",
-    desc: "มีความรับผิดชอบต่องานสูง มุ่งมั่นทำให้งานสำเร็จลุล่วงด้วยดี และพร้อมแก้ไขปัญหาอย่างมืออาชีพ"
   }
 ];
 
@@ -218,7 +218,7 @@ function SurveyContent() {
 
   // Google Form Fields
   // ส่วนที่ 1 ข้อมูลทั่วไป
-  const [gender, setGender] = useState<"ชาย" | "หญิง" | "ไม่ต้องการระบุ">("ไม่ต้องการระบุ");
+  const [gender, setGender] = useState<"ชาย" | "หญิง" | "ไม่ต้องการระบุ" | "">("");
   const [stakeholderRole, setStakeholderRole] = useState<string>(() => {
     const b = (paramBy || "").toLowerCase();
     if (b.includes("ผู้บริหาร") || b.includes("exec")) return "ผู้บริหาร";
@@ -328,6 +328,14 @@ function SurveyContent() {
     e.preventDefault();
     setIsSubmitting(true);
     setErrorMsg("");
+
+    if (!gender) {
+      setErrorMsg("กรุณาระบุเพศของผู้ตอบแบบสำรวจ");
+      setIsSubmitting(false);
+      const el = document.getElementById("gender-section");
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
 
     try {
       if (isIdc) {
@@ -560,7 +568,7 @@ function SurveyContent() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* เพศ */}
-            <div className="space-y-2 md:col-span-2">
+            <div id="gender-section" className="space-y-2 md:col-span-2">
               <label className="text-sm font-bold text-zinc-800 block">
                 เพศ <span className="text-rose-500">*</span>
               </label>
@@ -578,6 +586,7 @@ function SurveyContent() {
                       type="radio"
                       name="gender"
                       value={g}
+                      required
                       checked={gender === g}
                       onChange={() => setGender(g)}
                       className="accent-[#e03131] w-4 h-4 cursor-pointer"
@@ -681,51 +690,49 @@ function SurveyContent() {
         {/* ส่วนที่ 2 แบบสำรวจความต้องการ-ความคาดหวัง                              */}
         {/* ===================================================================== */}
         <div className="space-y-6 bg-white p-6 md:p-8 rounded-3xl border border-zinc-200 shadow-sm">
-          <div className="border-b border-zinc-100 pb-3">
+          <div className="border-b border-zinc-100 pb-3 flex items-center justify-between flex-wrap gap-2">
             <h2 className="text-sm font-bold tracking-widest uppercase text-zinc-500 flex items-center gap-2">
               <span className="text-zinc-900">ส่วนที่ 2</span> แบบสำรวจความต้องการ-ความคาดหวัง
             </h2>
+            <span className="text-xs text-zinc-400 font-medium">ตามความสมัครใจ (ไม่บังคับ)</span>
           </div>
 
           {/* 3 Textareas */}
           <div className="space-y-5">
             <div className="space-y-2">
               <label className="text-sm font-bold text-zinc-900 flex items-center justify-between">
-                <span>ความต้องการ (Needs) <span className="text-rose-500">*</span></span>
+                <span>ความต้องการ (Needs)</span>
                 <span className="text-xs text-zinc-400 font-normal">สิ่งที่จำเป็นต้องมีในการให้บริการ</span>
               </label>
               <textarea
-                required
                 rows={3}
                 value={needs}
                 onChange={e => setNeeds(e.target.value)}
-                placeholder="ระบุสิ่งที่ท่านต้องการ เช่น ความถูกต้องตรงตามบรีฟ, ส่งมอบงานตรงเวลา, มีมาตรฐาน CI, สื่อตรงตามวัตถุประสงค์โครงการ..."
+                placeholder="ต้องการให้เราช่วยทำอะไร/สิ่งที่ต้องการจากการบริการของเรา"
                 className="w-full p-3.5 text-sm border border-zinc-200 rounded-2xl bg-[#f9f9fb] focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-400/20 transition-all text-zinc-800 leading-relaxed"
               />
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-bold text-zinc-900 flex items-center justify-between">
-                <span>ความคาดหวัง (Expectations) <span className="text-rose-500">*</span></span>
+                <span>ความคาดหวัง (Expectations)</span>
                 <span className="text-xs text-zinc-400 font-normal">สิ่งที่ถ้ามีจะดีมาก / เสริมความประทับใจ</span>
               </label>
               <textarea
-                required
                 rows={3}
                 value={expectations}
                 onChange={e => setExpectations(e.target.value)}
-                placeholder="ระบุสิ่งที่ท่านคาดหวังเพิ่มเติม เช่น ความคิดสร้างสรรค์ระดับประเทศ, มีเทมเพลตพร้อมใช้, คำแนะนำเชิงรุก, เทคนิคดีไซน์ภาพเคลื่อนไหวล้ำสมัย..."
+                placeholder="อยากให้งานหรือบริการที่ได้รับจากเราดีขึ้นอย่างไร"
                 className="w-full p-3.5 text-sm border border-zinc-200 rounded-2xl bg-[#f9f9fb] focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-400/20 transition-all text-zinc-800 leading-relaxed"
               />
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-bold text-zinc-900 flex items-center justify-between">
-                <span>ข้อเสนอแนะอื่น ๆ (Suggestions) <span className="text-rose-500">*</span></span>
+                <span>ข้อเสนอแนะอื่น ๆ (Suggestions)</span>
                 <span className="text-xs text-zinc-400 font-normal">เพื่อการปรับปรุงและพัฒนาบริการ</span>
               </label>
               <textarea
-                required
                 rows={3}
                 value={suggestions}
                 onChange={e => setSuggestions(e.target.value)}

@@ -334,7 +334,7 @@ export default function TeamDemandOverview({
                           <span>•</span>
                           <span>กำลังทำ {team.inProgressTasks}</span>
                           <span>•</span>
-                          <span>รอเริ่ม {team.pendingTasks}</span>
+                          <span>รอทำ {team.pendingTasks}</span>
                         </div>
                       </div>
                     </div>
@@ -516,7 +516,7 @@ export default function TeamDemandOverview({
                   </div>
 
                   <div className="flex items-center justify-between text-[11px] text-slate-600 bg-white/80 p-2 rounded-lg border border-rose-100">
-                    <span>สถานะงานที่ค้าง: กำลังทำ {team.inProgressTasks} งาน / รอเริ่ม {team.pendingTasks} งาน</span>
+                    <span>สถานะงานที่ค้าง: กำลังทำ {team.inProgressTasks} งาน / รอทำ {team.pendingTasks} งาน</span>
                     <span className="text-rose-700 font-semibold">แนะนำ: นัดตรวจเช็กฟีดแบ็กหรือประสานงานด่วน</span>
                   </div>
                 </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { Flame, AlertTriangle } from "lucide-react";
+import { resolveTaskCode } from "@/utils/taskCodeService";
 
 type Brief = {
   id: string;
@@ -21,10 +22,9 @@ export default function AlertSummary() {
   const [loading, setLoading] = useState(true);
 
   const getTaskCode = (unit: string, id: string, allBriefs: Brief[]) => {
-    const prefix = unit === 'creative' ? 'DS' : unit === 'content' ? 'CT' : unit === 'pr' ? 'PR' : 'IT';
-    const unitBriefs = allBriefs.filter(b => b.unit === unit);
-    const index = unitBriefs.findIndex(b => b.id === id) + 1;
-    return `${prefix}70-${index}`;
+    const b = allBriefs.find(item => item.id === id);
+    if (b?.details?.task_code) return b.details.task_code;
+    return resolveTaskCode(b || { unit, id }, allBriefs);
   };
 
   const getUnitColor = (unit: string) => {
@@ -39,9 +39,7 @@ export default function AlertSummary() {
   useEffect(() => {
     const fetchAlerts = async () => {
       const supabase = createClient();
-      const { data } = await supabase.from('briefs')
-        .select('id, project_name, unit, status, deadline, details, created_at')
-        .order('created_at', { ascending: true });
+      const { data } = await supabase.from('briefs').select('id, project_name, unit, status, deadline, details, created_at').neq('status', 'purged').order('created_at', { ascending: true });
       
       if (data) {
         // Map task codes

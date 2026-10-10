@@ -8,6 +8,14 @@
  * - Tab Data_KR (gid=1942308549): Monthly every last day of month at 17:00 (Cumulative current total for team)
  */
 
+import { 
+  isR1Task, 
+  isR3Task, 
+  isCcPmProject, 
+  computeReachEngagementValues, 
+  getStoredOKRSettings 
+} from '@/utils/okrSettings';
+
 export interface TeamMemberConfig {
   memberId: string;       // CC01 - CC12
   code: string;           // AA, WK, IK, ...
@@ -26,12 +34,12 @@ export const TEAM_MEMBERS: TeamMemberConfig[] = [
   { memberId: "CC04", code: "RL", displayName: "จอย RL", email: "ratiporn@step.cmu.ac.th", unit: "creative" },
   { memberId: "CC05", code: "AC", displayName: "พิม AC", email: "autcharaporn@step.cmu.ac.th", unit: "creative" },
   { memberId: "CC06", code: "LLP", displayName: "เยียร์ LLP", email: "lalipat@step.cmu.ac.th", unit: "creative" },
-  { memberId: "CC07", code: "STK", displayName: "ลูกอิน STK", email: "suthiarpa@step.cmu.ac.th", unit: "pr" },
+  { memberId: "CC07", code: "STK", displayName: "ลูกอิน STK", email: "suthiarpa@step.cmu.ac.th", unit: "content" },
   { memberId: "CC08", code: "MTN", displayName: "นิน MTN", email: "matanin@step.cmu.ac.th", unit: "creative" },
   { memberId: "CC09", code: "CNB", displayName: "โอ๊ต CNB", email: "chonnikarn@step.cmu.ac.th", unit: "pr" },
   { memberId: "CC10", code: "SRL", displayName: "เอ็นจอย SLR", email: "siriluk@step.cmu.ac.th", unit: "content" },
   { memberId: "CC11", code: "KYK", displayName: "แก้ว KYK", email: "kanyakorn@step.cmu.ac.th", unit: "content" },
-  { memberId: "CC12", code: "TTY", displayName: "ต้า TTY", email: "thitiya@step.cmu.ac.th", unit: "content" },
+  { memberId: "CC12", code: "TTY", displayName: "ต้า TTY", email: "thitiya@step.cmu.ac.th", unit: "pr" },
 ];
 
 export interface RDefinition {
@@ -234,18 +242,39 @@ export function calculateAllRRows(
   const timestamp = formatTimestamp(asOfDate);
 
   const rows: SheetDataRRow[] = [];
+  const validTasks = (tasks || []).filter(t => t && t.status !== "purged" && !t.details?.is_permanently_deleted && t.status !== "cancelled");
+
+  // Get current stored Reach & Engagement from OKR Settings if available
+  const okrSettings = getStoredOKRSettings();
+  let latestReach = okrSettings.manualMetrics?.r5Reach || 0;
+  let latestEngagement = okrSettings.manualMetrics?.r6Engagement || 0;
+  if (okrSettings.quarterlyRecords && okrSettings.quarterlyRecords.length > 0) {
+    const sorted = [...okrSettings.quarterlyRecords].sort((a, b) => {
+      if (a.year !== b.year) return b.year - a.year;
+      return b.quarter.localeCompare(a.quarter);
+    });
+    if (sorted[0]) {
+      latestReach = sorted[0].reach;
+      latestEngagement = sorted[0].engagement;
+    }
+  }
+
+  // Count active content and PR members for 50:50 distribution of Reach and Engagement
+  const contentMembersCount = TEAM_MEMBERS.filter(m => m.unit === "content").length || 3;
+  const prMembersCount = TEAM_MEMBERS.filter(m => m.unit === "pr").length || 2;
 
   // Match tasks for each of the 12 members
   for (const member of TEAM_MEMBERS) {
-    // Find assignee ID in DB that matches this member
+    // Find assignee in DB by email or name/code
     const dbAssignee = assignees.find(a => 
+      (a.email && member.email && a.email.toLowerCase().trim() === member.email.toLowerCase().trim()) ||
       a.id === member.memberId || 
       (a.name && (a.name.includes(member.code) || a.name.includes(member.displayName)))
     );
     const targetAssigneeId = dbAssignee ? dbAssignee.id : null;
 
-    // Filter member's tasks (as owner or assistant)
-    const memberTasks = tasks.filter(t => {
+    // Filter member's active tasks (as owner or assistant)
+    const memberTasks = validTasks.filter(t => {
       if (!t) return false;
       const isOwner = targetAssigneeId ? t.assignee_id === targetAssigneeId : false;
       const isNameOwner = t.assignee_name && (t.assignee_name.includes(member.code) || t.assignee_name.includes(member.displayName));
@@ -256,86 +285,128 @@ export function calculateAllRRows(
       return isOwner || isNameOwner || isAssistant;
     });
 
-    // Compute metrics
+    // ONLY COMPLETED tasks count for delivered R metrics (R1 - R4)
+    const completedTasks = memberTasks.filter(t => t.status === "completed");
+
     // T18R1: จำนวนผลงานที่สนับสนุนการให้บริการภายในองค์กร (STeP)
-    const internalTasks = memberTasks.filter(t => {
-      const sector = t.details?.client_sector || (t as any).client_sector || "";
-      const team = t.details?.team || (t as any).team || "";
-      const isInternalUnit = t.unit?.toLowerCase() === "internal";
-      return isInternalUnit || sector === "STeP" || team === "STeP" || (!sector && !team);
-    });
+    const internalTasks = completedTasks.filter(t => isR1Task(t));
     const r1Value = internalTasks.length;
 
-    // T18R2: ร้อยละความพึงพอใจ (ภายในองค์กร)
-    const internalScores = internalTasks
-      .map(t => Number(t.details?.satisfaction_scores?.averagePercent))
-      .filter(s => !isNaN(s) && s > 0);
-    const r2Value = internalScores.length > 0 
-      ? Math.round(internalScores.reduce((a, b) => a + b, 0) / internalScores.length)
-      : (r1Value > 0 ? 85 : 0);
+    // T18R2: ร้อยละความพึงพอใจ (ภายในองค์กร) - ต้องเป็นคะแนนประเมินจริงเท่านั้น ไม่ใส่ค่าสมมติ
+    let internalSatSum = 0;
+    let internalSatCnt = 0;
+    internalTasks.forEach(t => {
+      const details = t.details || {};
+      const score = details.satisfaction_scores?.averagePercent;
+      if (details.survey_status === 'completed' && score !== undefined && score !== null && Number(score) > 0) {
+        internalSatSum += Number(score);
+        internalSatCnt++;
+      }
+    });
+    const r2Value = internalSatCnt > 0 
+      ? Math.round(internalSatSum / internalSatCnt) 
+      : 0;
 
     // T18R3: จำนวนผลงานภายนอกที่สนับสนุนการทำงานของ มช. และ RSP
-    const cmuRspTasks = memberTasks.filter(t => {
-      const sector = t.details?.client_sector || (t as any).client_sector || "";
-      const team = t.details?.team || (t as any).team || "";
-      return sector === "CMU" || sector === "RSP" || team === "CMU" || team === "RSP";
+    const externalTasks = completedTasks.filter(t => isR3Task(t));
+    const r3Value = externalTasks.length;
+
+    // T18R4: ร้อยละความพึงพอใจ (ภายนอก มช./RSP) - ต้องเป็นคะแนนประเมินจริงเท่านั้น
+    let externalSatSum = 0;
+    let externalSatCnt = 0;
+    externalTasks.forEach(t => {
+      const details = t.details || {};
+      const score = details.satisfaction_scores?.averagePercent;
+      if (details.survey_status === 'completed' && score !== undefined && score !== null && Number(score) > 0) {
+        externalSatSum += Number(score);
+        externalSatCnt++;
+      }
     });
-    const r3Value = cmuRspTasks.length;
+    const r4Value = externalSatCnt > 0 
+      ? Math.round(externalSatSum / externalSatCnt) 
+      : 0;
 
-    // T18R4: ร้อยละความพึงพอใจ (ภายนอก มช./RSP)
-    const cmuRspScores = cmuRspTasks
-      .map(t => Number(t.details?.satisfaction_scores?.averagePercent))
-      .filter(s => !isNaN(s) && s > 0);
-    const r4Value = cmuRspScores.length > 0
-      ? Math.round(cmuRspScores.reduce((a, b) => a + b, 0) / cmuRspScores.length)
-      : (r3Value > 0 ? 85 : 0);
-
-    // T18R5: จำนวน Reach (กรอกผลลัพธ์สะสมในระบบ)
+    // T18R5: Reach (สะสมประจำตัวตามสัดส่วนยูนิต Content 50% / PR 50% หรือผลลัพธ์ตรงจากงาน)
     let r5Value = 0;
-    for (const t of memberTasks) {
-      if (t.details?.reach !== undefined) r5Value += Number(t.details.reach) || 0;
-      else if (t.details?.views !== undefined) r5Value += Number(t.details.views) || 0;
-      else if (t.unit?.toLowerCase() === "pr") r5Value += 5000; // estimated fallback per PR post
+    if (member.unit === "content") {
+      r5Value = Math.round((latestReach * 0.5) / contentMembersCount);
+    } else if (member.unit === "pr") {
+      r5Value = Math.round((latestReach * 0.5) / prMembersCount);
     }
+    let taskReachSum = 0;
+    for (const t of completedTasks) {
+      if (t.details?.reach !== undefined) taskReachSum += Number(t.details.reach) || 0;
+      else if (t.details?.views !== undefined) taskReachSum += Number(t.details.views) || 0;
+    }
+    r5Value = Math.max(r5Value, taskReachSum);
 
-    // T18R6: จำนวน Engagement (กรอกผลลัพธ์สะสมในระบบ)
+    // T18R6: Engagement (สะสมประจำตัวตามสัดส่วนยูนิต Content 50% / PR 50% หรือผลลัพธ์ตรงจากงาน)
     let r6Value = 0;
-    for (const t of memberTasks) {
-      if (t.details?.engagement !== undefined) r6Value += Number(t.details.engagement) || 0;
-      else if (t.details?.interactions !== undefined) r6Value += Number(t.details.interactions) || 0;
-      else if (t.unit?.toLowerCase() === "content") r6Value += 200;
+    if (member.unit === "content") {
+      r6Value = Math.round((latestEngagement * 0.5) / contentMembersCount);
+    } else if (member.unit === "pr") {
+      r6Value = Math.round((latestEngagement * 0.5) / prMembersCount);
     }
+    let taskEngageSum = 0;
+    for (const t of completedTasks) {
+      if (t.details?.engagement !== undefined) taskEngageSum += Number(t.details.engagement) || 0;
+      else if (t.details?.interactions !== undefined) taskEngageSum += Number(t.details.interactions) || 0;
+    }
+    r6Value = Math.max(r6Value, taskEngageSum);
 
-    // T18R7: กำไรที่เกิดจากการให้บริการจากภาครัฐ
+    // T18R7 & T18R8: กำไรที่เกิดจากการให้บริการจากภาครัฐ/เอกชน (เฉพาะ PM โครงการของ CC)
     let r7Value = 0;
-    const govTasks = memberTasks.filter(t => {
-      const sector = t.details?.client_sector || (t as any).client_sector || "";
-      return sector === "government" || sector === "ภาครัฐ";
-    });
-    for (const t of govTasks) {
-      const profit = Number(t.details?.profit || t.profit || 0);
-      r7Value += profit > 0 ? profit : (Number(t.details?.save_cost) || 0);
-    }
-
-    // T18R8: กำไรที่เกิดจากการให้บริการจากภาคเอกชน
     let r8Value = 0;
-    const pvtTasks = memberTasks.filter(t => {
-      const sector = t.details?.client_sector || (t as any).client_sector || "";
-      return sector === "private" || sector === "ภาคเอกชน" || sector === "เอกชน";
-    });
-    for (const t of pvtTasks) {
-      const profit = Number(t.details?.profit || t.profit || 0);
-      r8Value += profit > 0 ? profit : (Number(t.details?.save_cost) || 0);
-    }
+    let revenueSatSum = 0;
+    let revenueSatCnt = 0;
 
-    // T18R9: ร้อยละความพึงพอใจ (งานบริการสร้างรายได้)
-    const revenueTasks = [...govTasks, ...pvtTasks];
-    const revScores = revenueTasks
-      .map(t => Number(t.details?.satisfaction_scores?.averagePercent))
-      .filter(s => !isNaN(s) && s > 0);
-    const r9Value = revScores.length > 0
-      ? Math.round(revScores.reduce((a, b) => a + b, 0) / revScores.length)
-      : (revenueTasks.length > 0 ? 85 : 0);
+    memberTasks.forEach(t => {
+      const details = t.details || {};
+      const isPM = isCcPmProject(t);
+      const profit = Number(details.profit !== undefined && details.profit !== null 
+        ? details.profit 
+        : ((Number(details.revenue) || 0) - (Number(details.cost) || 0)));
+      
+      if (isPM && profit > 0) {
+        const isOwner = targetAssigneeId ? t.assignee_id === targetAssigneeId : false;
+        const assistants = (details.assistants || []).filter((a: any) => a.assignee_id && Number(a.percentage) > 0);
+        let sharePct = 100;
+        if (assistants.length > 0) {
+          if (isOwner) {
+            const totalAst = assistants.reduce((s: number, a: any) => s + (Number(a.percentage) || 0), 0);
+            sharePct = Math.max(0, 100 - totalAst);
+          } else {
+            const ast = assistants.find((a: any) => a.assignee_id === targetAssigneeId);
+            sharePct = Number(ast?.percentage) || 0;
+          }
+        } else if (!isOwner) {
+          sharePct = 0;
+        }
+
+        const memberProfit = Math.round((profit * sharePct) / 100);
+        const sector = (details.client_sector || details.sector || "").toString().toLowerCase();
+
+        if (sector === "private" || sector === "ภาคเอกชน" || sector === "เอกชน") {
+          r8Value += memberProfit;
+        } else if (sector === "government" || sector === "ภาครัฐ") {
+          r7Value += memberProfit;
+        } else {
+          r7Value += Math.round(memberProfit * 0.7);
+          r8Value += Math.round(memberProfit * 0.3);
+        }
+
+        const score = details.satisfaction_scores?.averagePercent;
+        if (details.survey_status === 'completed' && score !== undefined && score !== null && Number(score) > 0) {
+          revenueSatSum += Number(score);
+          revenueSatCnt++;
+        }
+      }
+    });
+
+    // T18R9: ร้อยละความพึงพอใจ (งานบริการสร้างรายได้) - ต้องเป็นคะแนนประเมินจริงเท่านั้น
+    const r9Value = revenueSatCnt > 0 
+      ? Math.round(revenueSatSum / revenueSatCnt) 
+      : 0;
 
     const valuesMap: Record<string, number> = {
       T18R1: r1Value,
@@ -376,47 +447,46 @@ export function calculateAllKRRows(
   const month = getMonthCode(asOfDate);
   const fy = getFiscalYear(asOfDate);
   const timestamp = formatTimestamp(asOfDate);
+  const validTasks = (tasks || []).filter(t => t && t.status !== "purged" && !t.details?.is_permanently_deleted && t.status !== "cancelled");
 
-  // T18KR1: จำนวนผลงานภายในองค์กรที่สนับสนุนการทำงานขององค์กร
-  const internalTasks = tasks.filter(t => {
-    if (!t) return false;
-    const sector = t.details?.client_sector || (t as any).client_sector || "";
-    const team = t.details?.team || (t as any).team || "";
-    const isInternalUnit = t.unit?.toLowerCase() === "internal";
-    return isInternalUnit || sector === "STeP" || team === "STeP" || (!sector && !team);
-  });
-  const kr1Value = internalTasks.length;
+  // ONLY COMPLETED tasks count toward delivered KR achievements
+  const completedTasks = validTasks.filter(t => t.status === "completed");
+
+  // T18KR1: จำนวนผลงานภายในองค์กร (STeP)
+  const kr1Value = completedTasks.filter(t => !isR3Task(t)).length;
 
   // T18KR2: จำนวนผลงานภายนอกที่สนับสนุนการทำงานของ มช. และ RSP
-  const cmuRspTasks = tasks.filter(t => {
-    if (!t) return false;
-    const sector = t.details?.client_sector || (t as any).client_sector || "";
-    const team = t.details?.team || (t as any).team || "";
-    return sector === "CMU" || sector === "RSP" || team === "CMU" || team === "RSP";
-  });
-  const kr2Value = cmuRspTasks.length;
+  const kr2Value = completedTasks.filter(t => isR3Task(t)).length;
 
-  // T18KR3: มูลค่าการรับรู้ที่องค์กรได้รับ
-  let kr3Value = 0;
-  for (const t of tasks) {
-    if (!t) continue;
-    const saveCost = Number(t.details?.save_cost) || 0;
-    const prValue = Number(t.details?.pr_value || t.details?.media_value) || 0;
-    kr3Value += prValue > 0 ? prValue : saveCost;
+  // T18KR3: มูลค่าการรับรู้ที่องค์กรได้รับ (Media / PR / Save Cost Value)
+  const okrSettings = getStoredOKRSettings();
+  let manualR5 = okrSettings.manualMetrics?.r5Reach || 0;
+  let manualR6 = okrSettings.manualMetrics?.r6Engagement || 0;
+  if (okrSettings.quarterlyRecords && okrSettings.quarterlyRecords.length > 0) {
+    const sorted = [...okrSettings.quarterlyRecords].sort((a, b) => {
+      if (a.year !== b.year) return b.year - a.year;
+      return b.quarter.localeCompare(a.quarter);
+    });
+    if (sorted[0]) {
+      manualR5 = sorted[0].reach;
+      manualR6 = sorted[0].engagement;
+    }
   }
 
-  // T18KR4: กำไรที่เกิดจากการให้บริการของทีม
+  const { totalValueBaht } = computeReachEngagementValues(manualR5, manualR6, 6000000, 60000);
+  const totalCompletedSaveCost = completedTasks.reduce((sum, t) => sum + (Number(t.details?.save_cost) || 0), 0);
+  const kr3Value = totalValueBaht > 0 ? totalValueBaht : totalCompletedSaveCost;
+
+  // T18KR4: กำไรที่เกิดจากการให้บริการของทีม (เฉพาะ PM โครงการของ CC เท่านั้น)
   let kr4Value = 0;
-  for (const t of tasks) {
+  for (const t of validTasks) {
     if (!t) continue;
-    const isPM = (t.details?.category || (t as any).category) === "PM โครงการของ CC";
-    const profit = Number(t.details?.profit !== undefined ? t.details.profit : ((Number(t.details?.revenue) || 0) - (Number(t.details?.cost) || 0)));
-    if (profit > 0) {
-      kr4Value += profit;
-    } else {
-      const sector = t.details?.client_sector || (t as any).client_sector || "";
-      if (sector === "government" || sector === "private") {
-        kr4Value += Number(t.details?.save_cost) || 0;
+    if (isCcPmProject(t)) {
+      const profit = Number(t.details?.profit !== undefined && t.details?.profit !== null
+        ? t.details.profit 
+        : ((Number(t.details?.revenue) || 0) - (Number(t.details?.cost) || 0)));
+      if (profit > 0) {
+        kr4Value += profit;
       }
     }
   }
@@ -493,24 +563,40 @@ export const GOOGLE_APPS_SCRIPT_TEMPLATE = `/**
  * Google Apps Script Web App for ALL_KR2026_PROD
  * Spreadsheet ID: 1fjfd7oPCqmfARPjf3XDy1QhcwSbQddMA2C1r0GzxjL0
  * 
+ * Features:
+ * - Smart Upsert: Updates existing rows in-place by Primary Key (ZERO DUPLICATES!)
+ * - Script Lock: Prevents simultaneous writes and race conditions
+ * - Deduplicate Tool: Run 'deduplicateSheets()' in Apps Script to clean past duplicates
+ * 
  * Instructions:
  * 1. Open your Google Sheet
  * 2. Click Extensions > Apps Script
  * 3. Replace all code with this script
- * 4. Click Deploy > New Deployment
+ * 4. Click Deploy > Manage Deployments > Edit (or New Deployment)
  * 5. Select type: "Web app"
- * 6. Set Description: "CC System Sync Webhook"
+ * 6. Set Description: "CC System Sync Webhook (Anti-Duplicate Upsert)"
  * 7. Set "Execute as": "Me"
  * 8. Set "Who has access": "Anyone"
  * 9. Click Deploy and copy the Web App URL into CC System!
  */
 
 function doPost(e) {
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000); // Wait up to 30s
+  } catch (t) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Script lock timeout" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
   try {
     var raw = e.postData.contents;
     var payload = JSON.parse(raw);
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     
+    // ------------------------------------------------------------------
+    // 1. Data_R (Weekly 9 metrics per member) - Composite Key: Month_Week_TeamID_MemberID_R_ID
+    // ------------------------------------------------------------------
     if (payload.type === "Data_R") {
       var sheet = ss.getSheetByName("Data_R");
       if (!sheet) {
@@ -518,18 +604,61 @@ function doPost(e) {
           .setMimeType(ContentService.MimeType.JSON);
       }
       var rows = payload.rows || [];
-      // Expected columns: Month, Week, TeamID, MemberID, R_ID, Value, Timestamp, UpdatedBy, FY
-      var appendData = rows.map(function(r) {
-        return [r.month, r.week, r.teamId, r.memberId, r.rId, r.value, r.timestamp, r.updatedBy, r.fy];
-      });
-      if (appendData.length > 0) {
-        var startRow = sheet.getLastRow() + 1;
-        sheet.getRange(startRow, 1, appendData.length, 9).setValues(appendData);
+      var lastRow = sheet.getLastRow();
+      
+      // Index existing rows
+      var existingMap = {};
+      if (lastRow > 1) {
+        var existingData = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
+        for (var i = 0; i < existingData.length; i++) {
+          var k = String(existingData[i][0]).trim() + "_" + 
+                  String(existingData[i][1]).trim() + "_" + 
+                  String(existingData[i][2]).trim() + "_" + 
+                  String(existingData[i][3]).trim() + "_" + 
+                  String(existingData[i][4]).trim();
+          existingMap[k] = i + 2; // 1-indexed row in sheet
+        }
       }
-      return ContentService.createTextOutput(JSON.stringify({ status: "success", type: "Data_R", inserted: appendData.length }))
-        .setMimeType(ContentService.MimeType.JSON);
+
+      var rowsToAppend = [];
+      var updatedCount = 0;
+
+      for (var j = 0; j < rows.length; j++) {
+        var r = rows[j];
+        var rowKey = String(r.month).trim() + "_" + 
+                     String(r.week).trim() + "_" + 
+                     String(r.teamId).trim() + "_" + 
+                     String(r.memberId).trim() + "_" + 
+                     String(r.rId).trim();
+
+        if (existingMap[rowKey]) {
+          // Row already exists! Update in-place (Value, Timestamp, UpdatedBy, FY)
+          var targetRow = existingMap[rowKey];
+          sheet.getRange(targetRow, 6, 1, 4).setValues([[r.value, r.timestamp, r.updatedBy, r.fy]]);
+          updatedCount++;
+        } else {
+          // New row to append
+          rowsToAppend.push([r.month, r.week, r.teamId, r.memberId, r.rId, r.value, r.timestamp, r.updatedBy, r.fy]);
+        }
+      }
+
+      if (rowsToAppend.length > 0) {
+        var startRow = sheet.getLastRow() + 1;
+        sheet.getRange(startRow, 1, rowsToAppend.length, 9).setValues(rowsToAppend);
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({ 
+        status: "success", 
+        type: "Data_R", 
+        inserted: rowsToAppend.length, 
+        updated: updatedCount,
+        total: rows.length
+      })).setMimeType(ContentService.MimeType.JSON);
     }
     
+    // ------------------------------------------------------------------
+    // 2. Data_KR (Monthly 4 metrics for team) - Composite Key: Month_TeamID_KR_ID
+    // ------------------------------------------------------------------
     if (payload.type === "Data_KR") {
       var sheet = ss.getSheetByName("Data_KR");
       if (!sheet) {
@@ -537,16 +666,52 @@ function doPost(e) {
           .setMimeType(ContentService.MimeType.JSON);
       }
       var rows = payload.rows || [];
-      // Expected columns: Month, TeamID, KR_ID, Value, Timestamp, UpdatedBy, FY, Reference
-      var appendData = rows.map(function(r) {
-        return [r.month, r.teamId, r.krId, r.value, r.timestamp, r.updatedBy, r.fy, r.reference || ""];
-      });
-      if (appendData.length > 0) {
-        var startRow = sheet.getLastRow() + 1;
-        sheet.getRange(startRow, 1, appendData.length, 8).setValues(appendData);
+      var lastRow = sheet.getLastRow();
+      
+      // Index existing rows
+      var existingMap = {};
+      if (lastRow > 1) {
+        var existingData = sheet.getRange(2, 1, lastRow - 1, 3).getValues();
+        for (var i = 0; i < existingData.length; i++) {
+          var k = String(existingData[i][0]).trim() + "_" + 
+                  String(existingData[i][1]).trim() + "_" + 
+                  String(existingData[i][2]).trim();
+          existingMap[k] = i + 2;
+        }
       }
-      return ContentService.createTextOutput(JSON.stringify({ status: "success", type: "Data_KR", inserted: appendData.length }))
-        .setMimeType(ContentService.MimeType.JSON);
+
+      var rowsToAppend = [];
+      var updatedCount = 0;
+
+      for (var j = 0; j < rows.length; j++) {
+        var r = rows[j];
+        var rowKey = String(r.month).trim() + "_" + 
+                     String(r.teamId).trim() + "_" + 
+                     String(r.krId).trim();
+
+        if (existingMap[rowKey]) {
+          // Row already exists! Update in-place (Value, Timestamp, UpdatedBy, FY, Reference)
+          var targetRow = existingMap[rowKey];
+          sheet.getRange(targetRow, 4, 1, 5).setValues([[r.value, r.timestamp, r.updatedBy, r.fy, r.reference || ""]]);
+          updatedCount++;
+        } else {
+          // New row to append
+          rowsToAppend.push([r.month, r.teamId, r.krId, r.value, r.timestamp, r.updatedBy, r.fy, r.reference || ""]);
+        }
+      }
+
+      if (rowsToAppend.length > 0) {
+        var startRow = sheet.getLastRow() + 1;
+        sheet.getRange(startRow, 1, rowsToAppend.length, 8).setValues(rowsToAppend);
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({ 
+        status: "success", 
+        type: "Data_KR", 
+        inserted: rowsToAppend.length, 
+        updated: updatedCount,
+        total: rows.length
+      })).setMimeType(ContentService.MimeType.JSON);
     }
 
     return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Unknown payload type" }))
@@ -555,6 +720,8 @@ function doPost(e) {
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
+  } finally {
+    lock.releaseLock();
   }
 }
 
@@ -563,7 +730,65 @@ function doGet(e) {
     status: "online",
     system: "CC TEAM Google Sheet Sync Connector",
     spreadsheet: "ALL_KR2026_PROD",
+    mode: "Smart Upsert (Anti-Duplicate Enabled)",
     time: new Date().toISOString()
   })).setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * ฟังก์ชันทำความสะอาดข้อมูลซ้ำซ้อนในชีต Data_R และ Data_KR
+ * (เลือกฟังก์ชันนี้แล้วกดปุ่ม Run ได้เลยในหน้า Apps Script)
+ */
+function deduplicateSheets() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  // 1. ทำความสะอาด Data_R
+  var sheetR = ss.getSheetByName("Data_R");
+  if (sheetR) {
+    var lastRowR = sheetR.getLastRow();
+    if (lastRowR > 1) {
+      var allDataR = sheetR.getRange(2, 1, lastRowR - 1, 9).getValues();
+      var seenR = {};
+      var uniqueDataR = [];
+      // วนลูปจากล่างขึ้นบนเพื่อเก็บแถวล่าสุดไว้
+      for (var i = allDataR.length - 1; i >= 0; i--) {
+        var r = allDataR[i];
+        var k = String(r[0]).trim() + "_" + String(r[1]).trim() + "_" + String(r[2]).trim() + "_" + String(r[3]).trim() + "_" + String(r[4]).trim();
+        if (k !== "____" && !seenR[k]) {
+          seenR[k] = true;
+          uniqueDataR.unshift(r);
+        }
+      }
+      sheetR.getRange(2, 1, lastRowR - 1, 9).clearContent();
+      if (uniqueDataR.length > 0) {
+        sheetR.getRange(2, 1, uniqueDataR.length, 9).setValues(uniqueDataR);
+      }
+      Logger.log("Data_R ล้างข้อมูลซ้ำเรียบร้อย: เหลือ " + uniqueDataR.length + " แถวจากเดิม " + allDataR.length);
+    }
+  }
+
+  // 2. ทำความสะอาด Data_KR
+  var sheetKR = ss.getSheetByName("Data_KR");
+  if (sheetKR) {
+    var lastRowKR = sheetKR.getLastRow();
+    if (lastRowKR > 1) {
+      var allDataKR = sheetKR.getRange(2, 1, lastRowKR - 1, 8).getValues();
+      var seenKR = {};
+      var uniqueDataKR = [];
+      for (var j = allDataKR.length - 1; j >= 0; j--) {
+        var kr = allDataKR[j];
+        var kk = String(kr[0]).trim() + "_" + String(kr[1]).trim() + "_" + String(kr[2]).trim();
+        if (kk !== "__" && !seenKR[kk]) {
+          seenKR[kk] = true;
+          uniqueDataKR.unshift(kr);
+        }
+      }
+      sheetKR.getRange(2, 1, lastRowKR - 1, 8).clearContent();
+      if (uniqueDataKR.length > 0) {
+        sheetKR.getRange(2, 1, uniqueDataKR.length, 8).setValues(uniqueDataKR);
+      }
+      Logger.log("Data_KR ล้างข้อมูลซ้ำเรียบร้อย: เหลือ " + uniqueDataKR.length + " แถวจากเดิม " + allDataKR.length);
+    }
+  }
 }
 `;

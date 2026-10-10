@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { 
   BarChart3, PiggyBank, Users, CheckCircle2, Clock, 
   Briefcase, Award, Search, Filter, Sparkles, ShieldCheck, 
   Layers, ArrowUpRight, ChevronRight, X, UserCheck, Percent,
   Mail, Copy, Check, Printer, AlertTriangle, Zap, Gauge, 
   FileText, ChevronDown, User, TrendingUp, HelpCircle, Target, Scale, Send,
-  Star, MessageSquare, Info, HeartHandshake, Share2, FileDown, Download, Calendar, DollarSign
+  Star, MessageSquare, Info, HeartHandshake, Share2, FileDown, Download, Calendar, DollarSign, ExternalLink,
+  RotateCcw
 } from "lucide-react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -18,7 +20,8 @@ import {
   RealtimeOKRSummary,
   isR3Task 
 } from "@/utils/okrSettings";
-import { MemberProfile, parseMemberRecord } from "@/utils/memberProfile";
+import { resolveTaskCode } from "@/utils/taskCodeService";
+import { MemberProfile, parseMemberRecord, getMemberOfficialEmail, isExecutive, isOperationalAssignee } from "@/utils/memberProfile";
 import { createClient } from "@/utils/supabase/client";
 import { 
   BriefTaskLike, 
@@ -29,14 +32,17 @@ import {
   generateTeamExecutiveAnalysis,
   TeamExecutiveAnalysis,
   UnitRiskAlert,
-  PersonShare
+  PersonShare,
+  isCcPmProject
 } from "@/utils/stats";
 import MemberTimelineChart, { StockTimeframe, TimelineGranularity } from "./charts/MemberTimelineChart";
 import AnalyticsChartContainer from "./charts/AnalyticsChartContainer";
 import DualAssistantBarChart from "./charts/DualAssistantBarChart";
+import { updateGlobalBriefsStatsCache } from "@/utils/avatarMemberStats";
 import TeamDemandOverview from "./analytics/TeamDemandOverview";
 import MemberSpecializationCard from "./analytics/MemberSpecializationCard";
 import CCIncomingProjectsBanner from "./analytics/CCIncomingProjectsBanner";
+import MemberWorkloadHorizontalChart from "./analytics/MemberWorkloadHorizontalChart";
 import IndividualReportView from "./analytics/IndividualReportView";
 import TeamSynthesisDashboard from "./analytics/TeamSynthesisDashboard";
 import FullComprehensivePdfReport from "./analytics/FullComprehensivePdfReport";
@@ -84,11 +90,11 @@ const UNIT_LABELS: Record<string, { label: string; color: string; bg: string; bo
 };
 
 interface DashboardsViewProps {
-  currentUserRole?: "admin" | "assignee";
+  currentUserRole?: "admin" | "assignee" | "viewer";
 }
 
 export default function DashboardsView({ currentUserRole: propRole }: DashboardsViewProps = {}) {
-  const [currentUserRole, setCurrentUserRole] = useState<"admin" | "assignee">(propRole || "admin");
+  const [currentUserRole, setCurrentUserRole] = useState<"admin" | "assignee" | "viewer">(propRole || "admin");
 
   useEffect(() => {
     if (propRole) {
@@ -96,14 +102,35 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
       return;
     }
     const saved = localStorage.getItem("cc_user_role");
-    if (saved === "admin" || saved === "assignee") {
+    if (saved === "admin" || saved === "assignee" || saved === "viewer") {
       setCurrentUserRole(saved);
     }
   }, [propRole]);
 
   const isAdmin = currentUserRole === "admin";
+  const [isMounted, setIsMounted] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<"workloads" | "time_efficiency" | "individual_360" | "executive_report" | "goals">("workloads");
+  useEffect(() => {
+    setIsMounted(true);
+    if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search);
+      const t = p.get("tab");
+      if (t === "goals" || t === "workloads" || t === "time_efficiency" || t === "individual_360" || t === "executive_report") {
+        setActiveTab(t);
+      }
+    }
+  }, []);
+
+  const [activeTab, setActiveTab] = useState<"workloads" | "time_efficiency" | "individual_360" | "executive_report" | "goals">(() => {
+    if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search);
+      const t = p.get("tab");
+      if (t === "goals" || t === "workloads" || t === "time_efficiency" || t === "individual_360" || t === "executive_report") {
+        return t;
+      }
+    }
+    return "workloads";
+  });
   const [goalTypeFilter, setGoalTypeFilter] = useState<"all" | "KR" | "TIP">("all");
   const [viewMode, setViewMode] = useState<"individual" | "combined">("individual");
   const [unitFilter, setUnitFilter] = useState<string>("All");
@@ -115,8 +142,8 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
   const [selectedMemberScope, setSelectedMemberScope] = useState<string>("all");
   const [profileMemberId, setProfileMemberId] = useState<string>("");
 
-  // Chart metric states for each tab
-  const [workloadChartMetric, setWorkloadChartMetric] = useState<"save_cost" | "tasks_count" | "completed_tasks" | "assist_tasks">("save_cost");
+  // Chart metric states for each tab (ตารางเปรียบเทียบภาระงานกับระยะเวลา เซตไว้ที่ งานทั้งหมด เสมอ)
+  const [workloadChartMetric, setWorkloadChartMetric] = useState<"save_cost" | "tasks_count" | "completed_tasks" | "assist_tasks">("tasks_count");
   const [timeChartMetric, setTimeChartMetric] = useState<"turnaround_days" | "ontime_rate" | "completed_tasks">("turnaround_days");
   const [i360ChartMetric, setI360ChartMetric] = useState<"save_cost" | "tasks_count" | "turnaround_days" | "ontime_rate">("save_cost");
   const [execChartMetric, setExecChartMetric] = useState<"save_cost" | "assist_tasks" | "tasks_count">("save_cost");
@@ -124,14 +151,14 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
 
   const timeline12Months = useMemo(() => get12MonthsTimeline(), []);
 
-  // Monthly Executive Email & LINE Dispatch Modal State
+  // Monthly Executive Email Dispatch Modal State
   const [showEmailDispatchModal, setShowEmailDispatchModal] = useState(false);
   const [customEmailSubject, setCustomEmailSubject] = useState("");
   const [customEmailBody, setCustomEmailBody] = useState("");
-  const [showAllCcStaff, setShowAllCcStaff] = useState(false);
+  const [execToEmails, setExecToEmails] = useState("pitiwat@step.cmu.ac.th, suriyah@step.cmu.ac.th");
+  const [execCcEmails, setExecCcEmails] = useState("");
   const [dispatchSuccessToast, setDispatchSuccessToast] = useState<{
     message: string;
-    lineStatus?: string;
   } | null>(null);
 
   // Copy email notification state
@@ -312,7 +339,7 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
     const endMs = endDate ? new Date(endDate + "T23:59:59.999").getTime() : Infinity;
 
     return briefs.filter((brief) => {
-      const dStr = brief.completed_at || brief.created_at || brief.in_progress_at || brief.deadline || brief.details?.usage_date || brief.details?.publish_date;
+      const dStr = brief.completed_at || brief.created_at || brief.in_progress_at || brief.details?.publish_date || brief.deadline || brief.details?.usage_date;
       if (!dStr) return false;
       const t = new Date(dStr).getTime();
       if (isNaN(t)) return false;
@@ -322,10 +349,23 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
 
   const [okrSettingsRevision, setOkrSettingsRevision] = useState(0);
   const [showReachEngageModal, setShowReachEngageModal] = useState(false);
+
+  useEffect(() => {
+    const handleOkrUpdate = () => {
+      setOkrSettingsRevision((prev) => prev + 1);
+    };
+    window.addEventListener("okr_settings_updated", handleOkrUpdate);
+    window.addEventListener("storage", handleOkrUpdate);
+    return () => {
+      window.removeEventListener("okr_settings_updated", handleOkrUpdate);
+      window.removeEventListener("storage", handleOkrUpdate);
+    };
+  }, []);
+
   const okrSettings = useMemo(() => getStoredOKRSettings(), [okrSettingsRevision]);
 
   const realtimeMetrics = useMemo(() => {
-    const opsCount = assignees.filter(a => !(a.unit || '').includes('|executive')).length;
+    const opsCount = assignees.filter(a => isOperationalAssignee(a)).length;
     // Dynamic scaling: If anyone leaves/inactive, total system targets scale proportionally down
     // without ever pushing or increasing individual targets on remaining creative members
     return computeRealtimeMetrics(effectiveBriefs, okrSettings, opsCount || 11, Math.max(opsCount, 11));
@@ -399,7 +439,7 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
       if (assigneesRes.data) {
         setAssignees(assigneesRes.data);
         if (assigneesRes.data.length > 0 && !profileMemberId) {
-          const ops = assigneesRes.data.filter((a) => !(a.unit || "").includes("|executive"));
+          const ops = assigneesRes.data.filter((a) => isOperationalAssignee(a));
           if (ops.length > 0) setProfileMemberId(ops[0].id);
           else setProfileMemberId(assigneesRes.data[0].id);
         }
@@ -422,14 +462,27 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
 
   // Filter out executives from operational workload assignees (Executives do not perform production tasks)
   const operationalAssignees = useMemo(() => {
-    return assignees.filter((a) => !(a.unit || "").includes("|executive"));
+    return assignees.filter((a) => isOperationalAssignee(a));
   }, [assignees]);
 
-  // Executive members list for executive reports & mail recipients
+  // Executive members list for executive reports & mail recipients (Director first, then Deputy Director)
   const executiveMembers = useMemo(() => {
     return assignees
-      .filter((a) => (a.unit || "").includes("|executive"))
-      .map((a) => parseMemberRecord(a));
+      .filter((a) => isExecutive(a))
+      .map((a) => parseMemberRecord(a))
+      .filter((a) => {
+        const full = a.fullName || a.name || "";
+        const email = a.email || "";
+        // Strict filter: Only Director (รศ.ดร.ปิติวัฒน์ วัฒนชัย) and Deputy Director (ผศ.ดร.สุริยะ ทองมุณี)
+        return email.includes("pitiwat") || email.includes("suriyah") || full.includes("ปิติวัฒน์") || full.includes("สุริยะ") || full.includes("บ่าว");
+      })
+      .sort((a, b) => {
+        const aIsDirector = a.name.includes("ปิติวัฒน์") || (a.fullName || "").includes("ปิติวัฒน์") || (a.email || "").includes("pitiwat");
+        const bIsDirector = b.name.includes("ปิติวัฒน์") || (b.fullName || "").includes("ปิติวัฒน์") || (b.email || "").includes("pitiwat");
+        if (aIsDirector && !bIsDirector) return -1;
+        if (!aIsDirector && bIsDirector) return 1;
+        return 0;
+      });
   }, [assignees]);
 
   // Comprehensive profile mapping for every member (including real name, position, phone)
@@ -449,7 +502,7 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
         fullName: prof?.fullName || a.name,
         position: prof?.position || "เจ้าหน้าที่ปฏิบัติการ",
         phone: prof?.phone || "-",
-        email: prof?.email || `${a.name.toLowerCase().replace(/\s+/g, '')}@step.cmu.ac.th`,
+        email: prof?.email || getMemberOfficialEmail(a.name),
         unit: a.unit || "CC TEAM"
       };
     });
@@ -459,6 +512,13 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
   const memberStats = useMemo(() => {
     return aggregateMemberWorkloadAndFinancials(effectiveBriefs, operationalAssignees);
   }, [effectiveBriefs, operationalAssignees]);
+
+  useEffect(() => {
+    const targetBriefs = briefs.length > 0 ? briefs : effectiveBriefs;
+    if (targetBriefs.length > 0 && operationalAssignees.length > 0) {
+      updateGlobalBriefsStatsCache(targetBriefs, operationalAssignees);
+    }
+  }, [briefs, effectiveBriefs, operationalAssignees]);
 
   // Compute stats separated strictly by unit - using operational assignees
   const unitMemberStatsMap = useMemo(() => {
@@ -505,16 +565,21 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
           totalAssistantCost += ast.save_cost;
         });
 
-        // Compute project profit
-        const details = brief.details || {};
-        const profitVal = Number(details.profit) || (Number(details.revenue || 0) - Number(details.cost || 0)) || 0;
-        if (profitVal > 0) {
-          totalProfit += profitVal;
+        // Compute project profit strictly for CC PM projects
+        const isPM = isCcPmProject(brief);
+        if (isPM && !isCancelled) {
+          const details = brief.details || {};
+          const profitVal = Number(details.profit) !== undefined && details.profit !== null
+            ? Number(details.profit)
+            : (Number(details.revenue || 0) - Number(details.cost || 0));
+          if (profitVal > 0) {
+            totalProfit += profitVal;
+          }
         }
       }
     });
 
-    const activeStaffCount = assignees.length > 0 ? assignees.length : 1;
+    const activeStaffCount = operationalAssignees.length > 0 ? operationalAssignees.length : 1;
     const avgSaveCostPerMember = Math.round(totalSaveCost / activeStaffCount);
     const avgProfitPerMember = Math.round(totalProfit / activeStaffCount);
 
@@ -530,9 +595,9 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
       completedTasks,
       inProgressTasks,
       pendingTasks,
-      activeStaff: assignees.length
+      activeStaff: operationalAssignees.length
     };
-  }, [effectiveBriefs, assignees]);
+  }, [effectiveBriefs, operationalAssignees]);
 
   // Executive Team Analysis with Risk Engine
   const executiveAnalysis: TeamExecutiveAnalysis = useMemo(() => {
@@ -739,13 +804,16 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
       let satCount = 0;
       completedUnitBriefs.forEach((b) => {
         const details = b.details || {};
-        const score = details.satisfaction_scores?.averagePercent ?? details.satisfaction_rate;
-        if (score !== undefined && score !== null) {
-          satSum += Number(score);
+        const scores = details.satisfaction_scores;
+        if (scores && typeof scores.averagePercent === "number" && details.survey_status !== "sent") {
+          satSum += Number(scores.averagePercent);
+          satCount++;
+        } else if (details.survey_status === "completed" && typeof details.satisfaction_rate === "number") {
+          satSum += Number(details.satisfaction_rate);
           satCount++;
         }
       });
-      const avgSatisfaction = satCount > 0 ? Math.round(satSum / satCount) : 85;
+      const avgSatisfaction = satCount > 0 ? Math.round(satSum / satCount) : 0;
 
       const unassignedCount = completedUnitBriefs.filter((b) => !b.assignee_id).length;
 
@@ -828,13 +896,16 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
       let satCnt = 0;
       completed.forEach((b) => {
         const details = b.details || {};
-        const score = details.satisfaction_scores?.averagePercent ?? details.satisfaction_rate;
-        if (score !== undefined && score !== null) {
-          satSum += Number(score);
+        const scores = details.satisfaction_scores;
+        if (scores && typeof scores.averagePercent === "number" && details.survey_status !== "sent") {
+          satSum += Number(scores.averagePercent);
+          satCnt++;
+        } else if (details.survey_status === "completed" && typeof details.satisfaction_rate === "number") {
+          satSum += Number(details.satisfaction_rate);
           satCnt++;
         }
       });
-      const avgSat = satCnt > 0 ? Math.round(satSum / satCnt) : 85;
+      const avgSat = satCnt > 0 ? Math.round(satSum / satCnt) : 0;
 
       // Total goal-aligned tasks
       const totalGoalTasks = r1Count + r3Count + pmCount;
@@ -994,8 +1065,8 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
     });
 
     const execSalutation = executiveMembers.length > 0
-      ? executiveMembers.map(e => `${e.fullName || e.name} (${e.position || 'ผู้บริหาร'})`).join(", ")
-      : "ท่านคณะผู้บริหาร";
+      ? executiveMembers.map(e => `${e.fullName || e.name} (${e.position || 'ผู้บริหาร'})`).join(" และ ")
+      : "รศ.ดร.ปิติวัฒน์ วัฒนชัย (ผู้อำนวยการ) และ ผศ.ดร.สุริยะ ทองมุณี (รองผู้อำนวยการ)";
 
     let text = `เรียน ${execSalutation}\n\n`;
     text += `เรื่อง: รายงานสรุปภาพรวมผลการดำเนินงาน ประสิทธิภาพเวลา และการบริหารความเสี่ยงทีมสร้างสรรค์และการสื่อสาร (Creative and Communication - CC)\n`;
@@ -1051,8 +1122,30 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
     });
     text += `\n`;
 
+    // 4.1 OKRs & Key Results (KR / R Metrics)
     text += `------------------------------------------------------------\n`;
-    text += `5. สรุปผลงานและประสิทธิภาพรายบุคคล (Individual Scorecard)\n`;
+    text += `5. สรุปความก้าวหน้าตัวชี้วัด OKRs & R รายตัว (Key Results & Performance Metrics)\n`;
+    text += `------------------------------------------------------------\n`;
+    if (realtimeMetrics && realtimeMetrics.krs && realtimeMetrics.krs.length > 0) {
+      realtimeMetrics.krs.forEach((krRes) => {
+        const kr = krRes.kr;
+        text += `🎯 [${kr.code}] ${kr.name} (น้ำหนัก ${kr.weightPercent}%)\n`;
+        krRes.rResults.forEach((r) => {
+          const formattedActual = r.isCurrency ? `฿${r.actual.toLocaleString()}` : (r.isPercentage ? `${r.actual}%` : `${r.actual.toLocaleString()} ${r.unit}`);
+          const formattedTarget = r.isCurrency ? `฿${r.target.toLocaleString()}` : (r.isPercentage ? `${r.target}%` : `${r.target.toLocaleString()} ${r.unit}`);
+          text += `  • [${r.code}] ${r.name}: ผลงาน ${formattedActual} / เป้าหมาย ${formattedTarget} (${r.percentage.toFixed(1)}%)\n`;
+        });
+        text += `\n`;
+      });
+    } else {
+      text += `• KR1 (ผลงานบริการภายใน): เป้าหมาย 1,200 งาน • ความพึงพอใจเป้าหมาย ≥ 85%\n`;
+      text += `• KR2 (ผลงานภายนอก มช./RSP): เป้าหมาย 350 งาน • ความพึงพอใจเป้าหมาย ≥ 85%\n`;
+      text += `• KR3 (การรับรู้): เป้าหมาย 6,000,000 Reach | 60,000 Engagements\n`;
+      text += `• KR4 (กำไรการให้บริการ): ภาครัฐ ฿3,000,000 | เอกชน ฿1,000,000\n\n`;
+    }
+
+    text += `------------------------------------------------------------\n`;
+    text += `6. สรุปผลงานและประสิทธิภาพรายบุคคล (Individual Scorecard)\n`;
     text += `------------------------------------------------------------\n`;
     text += `ลำดับ | ชื่อ-สกุล (ชื่อเรียก) | ตำแหน่งทางการ | เบอร์โทร | Save Cost รวม | ภาระงาน (หลัก/ช่วย) | เวลาเฉลี่ย | ตรงเวลา\n`;
     memberStats.forEach((m, idx) => {
@@ -1162,8 +1255,8 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
   const generateMonthlyEmailBody = () => {
     const currentMonth = new Date().toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
     const execNames = executiveMembers.length > 0 
-      ? executiveMembers.map(e => `${e.fullName || e.name} (${e.position || 'ผู้บริหาร'})`).join(", ")
-      : "ท่านคณะผู้บริหารและผู้อำนวยการ";
+      ? executiveMembers.map(e => `${e.fullName || e.name} (${e.position || 'ผู้บริหาร'})`).join(" และ ")
+      : "รศ.ดร.ปิติวัฒน์ วัฒนชัย (ผู้อำนวยการ) และ ผศ.ดร.สุริยะ ทองมุณี (รองผู้อำนวยการ)";
     
     let text = `เรียน ${execNames}\n`;
     text += `สำเนา (CC): ทีมสร้างสรรค์และการสื่อสาร (Creative and Communication - CC) ทุกท่าน\n\n`;
@@ -1229,7 +1322,28 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
     text += `\n`;
 
     text += `============================================================\n`;
-    text += `5. สรุปผลงานและประสิทธิภาพรายบุคคลแบบละเอียดทุกคน (Individual 360° Scorecard)\n`;
+    text += `5. สรุปความก้าวหน้าตัวชี้วัด OKRs & R รายตัว (Key Results & Performance Metrics)\n`;
+    text += `============================================================\n`;
+    if (realtimeMetrics && realtimeMetrics.krs && realtimeMetrics.krs.length > 0) {
+      realtimeMetrics.krs.forEach((krRes) => {
+        const kr = krRes.kr;
+        text += `🔹 [${kr.code}] ${kr.name} (น้ำหนัก ${kr.weightPercent}%)\n`;
+        krRes.rResults.forEach((r) => {
+          const formattedActual = r.isCurrency ? `฿${r.actual.toLocaleString()}` : (r.isPercentage ? `${r.actual}%` : `${r.actual.toLocaleString()} ${r.unit}`);
+          const formattedTarget = r.isCurrency ? `฿${r.target.toLocaleString()}` : (r.isPercentage ? `${r.target}%` : `${r.target.toLocaleString()} ${r.unit}`);
+          text += `  • [${r.code}] ${r.name}: ผลงาน ${formattedActual} / เป้าหมาย ${formattedTarget} (${r.percentage.toFixed(1)}%)\n`;
+        });
+        text += `\n`;
+      });
+    } else {
+      text += `• KR1: จำนวนผลงานภายในองค์กร (1,200 งาน • ความพึงพอใจ ≥ 85%)\n`;
+      text += `• KR2: จำนวนผลงานภายนอก มช./RSP (350 งาน • ความพึงพอใจ ≥ 85%)\n`;
+      text += `• KR3: มูลค่าการรับรู้ (6,000,000 Reach | 60,000 Engagements)\n`;
+      text += `• KR4: กำไรที่เกิดจากการให้บริการ (ภาครัฐ ฿3,000,000 | เอกชน ฿1,000,000)\n\n`;
+    }
+
+    text += `============================================================\n`;
+    text += `6. สรุปผลงานและประสิทธิภาพรายบุคคลแบบละเอียดทุกคน (Individual 360° Scorecard)\n`;
     text += `============================================================\n`;
     text += `ลำดับ | ชื่อ-สกุล (ชื่อเล่น) | ตำแหน่ง | Save Cost รวม | ภาระงาน (หลัก/ช่วย) | ระยะเวลาเฉลี่ย | ตรงเวลา\n`;
     memberStats.forEach((m, idx) => {
@@ -1241,15 +1355,10 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
     text += `\n`;
 
     text += `============================================================\n`;
-    text += `เอกสารแนบทางการ & ลิงก์ระบบตรวจสอบข้อมูล:\n`;
+    text += `ระบบตรวจสอบข้อมูลเชิงลึก (Interactive Dashboard):\n`;
     text += `============================================================\n`;
-    text += `🔗 ลิงก์ระบบ CC Insights (Realtime Interactive Portal): ${typeof window !== "undefined" ? window.location.origin : ""}/dashboard?view=dashboards\n`;
-    text += `📎 เอกสาร PDF แนบครบ 5 มิติ:\n`;
-    text += `  1. รายงานจำนวนงานและมูลค่าความคุ้มค่า (01_Workloads_and_Save_Cost.pdf)\n`;
-    text += `  2. รายงานตัวชี้วัดความสำเร็จเชิงกลยุทธ์ (02_Strategic_Goals_KR_R_KPI_TIP.pdf)\n`;
-    text += `  3. รายงานเวลาและประสิทธิภาพการส่งมอบงาน (03_Time_and_Velocity.pdf)\n`;
-    text += `  4. รายงานภาพรวมทีมและการสังเคราะห์การทำงาน (04_Team_Synthesis.pdf)\n`;
-    text += `  5. รายงานผลการปฏิบัติงานรายบุคคลแบบละเอียดทุกคน (${memberStats.length} ท่าน) (05_Individual_360_All_Staff.pdf)\n\n`;
+    text += `🔗 เปิดดูข้อมูลและกราฟวิเคราะห์แบบ Realtime ได้ที่:\n`;
+    text += `${typeof window !== "undefined" ? window.location.origin : ""}/dashboard?view=dashboards\n\n`;
 
     const reporter = Array.from(memberProfileMap.values()).find(p => p.role === "admin");
     text += `จึงเรียนมาเพื่อโปรดทราบและพิจารณา\n\n`;
@@ -1260,50 +1369,58 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
     return text;
   };
 
-  const generateLineSummaryText = () => {
-    const currentMonth = new Date().toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const portalUrl = `${origin}/dashboard?view=dashboards`;
-
-    return `📊 [CC TEAM • รายงานสรุปประจำเดือน ${currentMonth}]
-เรียน คณะผู้บริหารและทีมงานทุกท่าน
-
-ระบบ CC Insights ได้จัดส่งอีเมลรายงานผลการดำเนินงานทางการประจำเดือนเรียบร้อยแล้ว
-(ส่งถึงผู้บริหาร & CC สมาชิกทีมงานครบทุกคน)
-
-📈 ไฮไลต์สรุปภาพรวม:
-• มูลค่าประหยัดรวม (Save Cost): ฿${executiveAnalysis.totalSaveCost.toLocaleString()} บาท
-• ภาระงานทั้งหมด: ${executiveAnalysis.totalTasks} งาน (เสร็จสิ้น ${executiveAnalysis.completedTasks} งาน)
-• อัตราส่งตรงเวลา (On-Time): ${executiveAnalysis.teamOnTimeRate}%
-• ระยะเวลาเฉลี่ย: ${executiveAnalysis.teamAvgTurnaroundDays} วัน/งาน
-• งานช่วยเกื้อกูลในทีม: ${orgTotals.tasksWithAssistants} งาน
-
-📎 แนบไฟล์รายงานทางการ 5 มิติ และรายงานรายบุคคลครบทุกคนในอีเมลแล้ว
-🔗 เปิดดูข้อมูลเชิงลึกแบบ Interactive ได้ที่:
-${portalUrl}`;
-  };
 
   const handleOpenEmailDispatchModal = () => {
     const currentMonth = new Date().toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
     setCustomEmailSubject(`[CC TEAM] รายงานสรุปผลการดำเนินงาน ประสิทธิภาพ และความคุ้มค่าประจำเดือน ${currentMonth}`);
     setCustomEmailBody(generateMonthlyEmailBody());
+    setExecToEmails("pitiwat@step.cmu.ac.th, suriyah@step.cmu.ac.th");
+    const staffEmails = allStaffMembers.map((s) => s.email).filter(Boolean).join(", ");
+    setExecCcEmails(staffEmails);
     setShowEmailDispatchModal(true);
   };
 
   const handleConfirmDispatchEmailAndLine = async () => {
+    // 1. Copy 100% full email body to clipboard
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        navigator.clipboard.writeText(customEmailBody);
+      }
+    } catch (e) {}
+
+    // 2. Open Gmail Web compose window synchronously so user can send from official account
+    try {
+      const cleanTo = execToEmails.split(",").map(e => e.trim()).filter(Boolean).join(",");
+      const cleanCc = execCcEmails.split(",").map(e => e.trim()).filter(Boolean).join(",");
+      const targetTo = encodeURIComponent(cleanTo);
+      const targetCc = encodeURIComponent(cleanCc);
+      const targetSubject = encodeURIComponent(customEmailSubject.trim());
+      
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const portalUrl = `${origin}/dashboard?view=dashboards`;
+      const safeIntro = `เรียน ผู้อำนวยการ และคณะผู้บริหาร\n\nทีมสร้างสรรค์และการสื่อสาร (CC) ขอส่งรายงานสรุปผลการดำเนินงาน ประสิทธิภาพ และความคุ้มค่าประจำเดือน\n\n🔗 ดูข้อมูลและกราฟวิเคราะห์ Dashboard: ${portalUrl}\n\n--------------------------------------------------\n📋 หมายเหตุ: ระบบได้คัดลอกเนื้อหารายงานฉบับเต็มลงใน Clipboard เรียบร้อยแล้ว\n👉 สามารถกด [Ctrl + V] หรือ Paste เพื่อวางเนื้อหาฉบับเต็มทั้งหมดได้ทันทีครับ\n--------------------------------------------------`;
+      const targetBody = encodeURIComponent(safeIntro);
+      
+      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&to=${targetTo}&cc=${targetCc}&su=${targetSubject}&body=${targetBody}`;
+      window.open(gmailUrl, '_blank');
+    } catch (e) {
+      console.error("Failed to open Gmail compose:", e);
+    }
+
     setIsDispatchingExecEmail(true);
+
     try {
       const reporter = Array.from(memberProfileMap.values()).find((p) => p.role === "admin");
-      const lineSummary = generateLineSummaryText();
 
       const res = await fetch("/api/notify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "executive_report_dispatch",
+          toEmails: execToEmails,
+          ccEmails: execCcEmails,
           subject: customEmailSubject,
           emailBody: customEmailBody,
-          lineSummaryText: lineSummary,
           reporter: {
             fullName: reporter?.fullName || "นายอัจชนะพงษ์ อัจชนะวราทา",
             name: reporter?.name || "จ๊อบ AA",
@@ -1311,29 +1428,13 @@ ${portalUrl}`;
             email: reporter?.email || "adchanapong@step.cmu.ac.th",
             phone: reporter?.phone || "062-4166396",
           },
-          executives: executiveMembers.map((e) => ({
-            id: e.id,
-            name: e.name,
-            fullName: e.fullName,
-            position: e.position,
-            email: e.email,
-          })),
-          ccStaff: allStaffMembers.map((s) => ({
-            id: s.id,
-            name: s.name,
-            fullName: s.fullName,
-            position: s.position,
-            email: s.email,
-            unit: s.unit,
-          })),
         }),
       });
 
       const data = await res.json();
       if (data.success) {
         setDispatchSuccessToast({
-          message: data.message || "ส่งอีเมลถึงคณะผู้บริหารและ CC พนักงานทุกคนสำเร็จ!",
-          lineStatus: data.lineStatusMessage || "ส่งแจ้งเตือนเข้ากลุ่ม LINE เรียบร้อยแล้ว"
+          message: "เปิดหน้าต่าง Gmail และคัดลอกเนื้อหารายงานฉบับเต็มลง Clipboard สำเร็จ! (กด Ctrl+V เพื่อวางเนื้อหาและกดส่งได้ทันที)",
         });
         setTimeout(() => {
           setShowEmailDispatchModal(false);
@@ -1347,6 +1448,7 @@ ${portalUrl}`;
       setIsDispatchingExecEmail(false);
     }
   };
+
 
   // ==========================================
   // CHART DATA MEMOS FOR ALL 5 TABS
@@ -1680,37 +1782,37 @@ ${portalUrl}`;
       
       {/* Top Header & Navigation */}
       <div className="flex flex-col gap-3.5 mb-5 pb-4 border-b border-surface-border print:hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <span className="p-2 rounded-xl bg-[#E03131]/10 text-[#E03131]">
-                <BarChart3 size={22} />
-              </span>
-              <h2 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">
+        <div className="flex flex-row items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            <span className="p-1.5 sm:p-2 rounded-xl bg-[#E03131]/10 text-[#E03131] shrink-0">
+              <BarChart3 size={20} className="sm:w-[22px] sm:h-[22px]" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-foreground leading-tight truncate">
                 Insights
               </h2>
+              <p className="text-[11px] sm:text-xs md:text-sm text-muted-foreground truncate hidden sm:block">
+                สรุปผลงาน มูลค่าความคุ้มค่า และประสิทธิภาพการทำงานของทีม CC
+              </p>
             </div>
-            <p className="text-xs md:text-sm text-muted-foreground mt-1">
-              สรุปผลงาน มูลค่าความคุ้มค่า และประสิทธิภาพการทำงานของทีม CC
-            </p>
           </div>
           
-          <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap print:hidden">
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 print:hidden">
             {/* Copy Link HTML button */}
             <button
               onClick={handleCopyShareLink}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs transition-all active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 shadow-2xs transition-all active:scale-95 cursor-pointer shrink-0"
               title="คัดลอกลิงก์หน้าเว็บ HTML เพื่อส่งให้เปิดดูข้อมูลแบบโต้ตอบได้ทุกส่วน"
             >
               {copiedShareLink ? (
                 <>
-                  <Check size={13} className="text-emerald-600" />
-                  <span className="text-emerald-700 font-bold">คัดลอกลิงก์แล้ว!</span>
+                  <Check size={12} className="text-emerald-600 shrink-0" />
+                  <span className="text-emerald-700 font-bold hidden xs:inline">คัดลอกแล้ว</span>
                 </>
               ) : (
                 <>
-                  <Share2 size={13} className="text-blue-600" />
-                  <span>Copy Link (แชร์หน้าเว็บ)</span>
+                  <Share2 size={12} className="text-blue-600 shrink-0" />
+                  <span className="hidden xs:inline">แชร์ลิงก์</span>
                 </>
               )}
             </button>
@@ -1719,62 +1821,92 @@ ${portalUrl}`;
             {isAdmin && (
               <button
                 onClick={handleOpenEmailDispatchModal}
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-all active:scale-95 cursor-pointer"
-                title="ส่งอีเมลรายงานประจำเดือนถึงคณะผู้บริหาร และ CC พนักงานทุกคน พร้อมแจ้งเตือนเข้ากลุ่ม LINE"
+                className="inline-flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
+                title="ส่งอีเมลรายงานประจำเดือนถึงคณะผู้บริหาร และ CC สมาชิกทีมทุกคน"
               >
-                <Mail size={13} />
-                <span>ส่งอีเมลรายงานประจำเดือน</span>
+                <Mail size={12} className="shrink-0" />
+                <span className="hidden xs:inline">ส่งอีเมล</span>
               </button>
             )}
+
+            {/* Save PDF button opposite Insights icon */}
+            <button
+              onClick={() => window.print()}
+              className="inline-flex items-center gap-1 px-2.5 sm:px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
+              title="บันทึกหรือพิมพ์รายงานเป็น PDF"
+            >
+              <Download size={12} className="shrink-0" />
+              <span>Save PDF</span>
+            </button>
           </div>
         </div>
         
-        {/* Navigation Tabs Bar - Distributed across full width */}
-        <div className="w-full flex items-center gap-1.5 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/80 shadow-2xs overflow-x-auto no-scrollbar">
+        {/* Navigation Tabs Bar - 5 Columns Grid on Mobile (No Scroll), Flex on Desktop */}
+        <div className="w-full grid grid-cols-5 sm:flex sm:items-center gap-1 sm:gap-1.5 bg-slate-100/90 dark:bg-zinc-800/80 p-1 sm:p-1.5 rounded-2xl border border-slate-200/80 dark:border-zinc-700 shadow-2xs">
           <button
             onClick={() => setActiveTab("workloads")}
-            className={`flex-1 shrink-0 sm:shrink min-w-fit justify-center px-3 py-2 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
-              activeTab === "workloads" ? "bg-[#E03131] text-white shadow-xs font-bold" : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
+            className={`flex-1 justify-center px-1 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs md:text-sm font-semibold rounded-xl transition-all flex flex-col sm:flex-row items-center gap-0.5 sm:gap-2 cursor-pointer text-center ${
+              activeTab === "workloads" ? "bg-[#E03131] text-white shadow-xs font-bold" : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 hover:bg-white/80"
             }`}
+            title="จำนวนงาน / มูลค่า"
           >
-            <PiggyBank size={16} />
-            <span>จำนวนงาน / มูลค่า</span>
+            <PiggyBank size={15} className="shrink-0" />
+            <span className="truncate w-full sm:w-auto">
+              <span className="sm:hidden">มูลค่า/งาน</span>
+              <span className="hidden sm:inline">จำนวนงาน / มูลค่า</span>
+            </span>
           </button>
           <button
             onClick={() => setActiveTab("goals")}
-            className={`flex-1 shrink-0 sm:shrink min-w-fit justify-center px-3 py-2 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
-              activeTab === "goals" ? "bg-[#E03131] text-white shadow-xs font-bold" : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
+            className={`flex-1 justify-center px-1 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs md:text-sm font-semibold rounded-xl transition-all flex flex-col sm:flex-row items-center gap-0.5 sm:gap-2 cursor-pointer text-center ${
+              activeTab === "goals" ? "bg-[#E03131] text-white shadow-xs font-bold" : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 hover:bg-white/80"
             }`}
+            title="KR/R , KPI/TIP"
           >
-            <Target size={16} />
-            <span>🎯 KR/R , KPI/TIP</span>
+            <Target size={15} className="shrink-0" />
+            <span className="truncate w-full sm:w-auto">
+              <span className="sm:hidden">KR/KPI</span>
+              <span className="hidden sm:inline">🎯 KR/R , KPI/TIP</span>
+            </span>
           </button>
           <button
             onClick={() => setActiveTab("time_efficiency")}
-            className={`flex-1 shrink-0 sm:shrink min-w-fit justify-center px-3 py-2 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
-              activeTab === "time_efficiency" ? "bg-[#E03131] text-white shadow-xs font-bold" : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
+            className={`flex-1 justify-center px-1 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs md:text-sm font-semibold rounded-xl transition-all flex flex-col sm:flex-row items-center gap-0.5 sm:gap-2 cursor-pointer text-center ${
+              activeTab === "time_efficiency" ? "bg-[#E03131] text-white shadow-xs font-bold" : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 hover:bg-white/80"
             }`}
+            title="เวลา / สถานะงาน"
           >
-            <Clock size={16} />
-            <span>เวลา / สถานะงาน</span>
+            <Clock size={15} className="shrink-0" />
+            <span className="truncate w-full sm:w-auto">
+              <span className="sm:hidden">เวลา/สถานะ</span>
+              <span className="hidden sm:inline">เวลา / สถานะงาน</span>
+            </span>
           </button>
           <button
             onClick={() => setActiveTab("individual_360")}
-            className={`flex-1 shrink-0 sm:shrink min-w-fit justify-center px-3 py-2 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
-              activeTab === "individual_360" ? "bg-[#E03131] text-white shadow-xs font-bold" : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
+            className={`flex-1 justify-center px-1 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs md:text-sm font-semibold rounded-xl transition-all flex flex-col sm:flex-row items-center gap-0.5 sm:gap-2 cursor-pointer text-center ${
+              activeTab === "individual_360" ? "bg-[#E03131] text-white shadow-xs font-bold" : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 hover:bg-white/80"
             }`}
+            title="รายงานรายบุคคล"
           >
-            <User size={16} />
-            <span>รายงานรายบุคคล</span>
+            <User size={15} className="shrink-0" />
+            <span className="truncate w-full sm:w-auto">
+              <span className="sm:hidden">รายบุคคล</span>
+              <span className="hidden sm:inline">รายงานรายบุคคล</span>
+            </span>
           </button>
           <button
             onClick={() => setActiveTab("executive_report")}
-            className={`flex-1 shrink-0 sm:shrink min-w-fit justify-center px-3 py-2 text-xs md:text-sm font-semibold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
-              activeTab === "executive_report" ? "bg-[#E03131] text-white shadow-xs font-bold" : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
+            className={`flex-1 justify-center px-1 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs md:text-sm font-semibold rounded-xl transition-all flex flex-col sm:flex-row items-center gap-0.5 sm:gap-2 cursor-pointer text-center ${
+              activeTab === "executive_report" ? "bg-[#E03131] text-white shadow-xs font-bold" : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 hover:bg-white/80"
             }`}
+            title="รายงานรวมทีม"
           >
-            <HeartHandshake size={16} />
-            <span>รายงานรวมทีม</span>
+            <HeartHandshake size={15} className="shrink-0" />
+            <span className="truncate w-full sm:w-auto">
+              <span className="sm:hidden">รวมทีม</span>
+              <span className="hidden sm:inline">รายงานรวมทีม</span>
+            </span>
           </button>
         </div>
       </div>
@@ -1787,126 +1919,125 @@ ${portalUrl}`;
       ) : (
         <>
           {/* ========================================================================= */}
-          {/* UNIFIED TOP FILTER BAR (ACROSS ALL 5 TABS)                                */}
+          {/* UNIFIED COMPACT TOP FILTER BAR (ACROSS ALL 5 TABS - MINIMAL DESIGN)        */}
           {/* ========================================================================= */}
-          <div className="bg-surface border border-surface-border rounded-2xl p-3.5 sm:p-4 shadow-xs space-y-3 mb-6 print:hidden">
-            {/* Header */}
-            <div className="flex items-center gap-2 pb-2.5 border-b border-surface-border">
-              <span className="p-1.5 rounded-lg bg-slate-900 text-white shadow-2xs">
-                <Filter size={13} />
-              </span>
-              <span className="text-xs font-black text-foreground uppercase tracking-wider">
-                ตัวกรองการแสดงผล (Dashboard Filters)
-              </span>
-              <span className="text-[11px] text-muted-foreground font-normal ml-1 hidden sm:inline">
-                • กำหนดยูนิตและช่วงเวลาสำหรับทุกแท็บ
-              </span>
-            </div>
+          <div className="bg-surface border border-surface-border rounded-2xl p-2.5 sm:p-3 shadow-2xs mb-5 print:hidden">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 sm:gap-2.5">
+              {/* Left Group: Unit & Timeframe Segments */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full lg:w-auto">
+                {/* Unit Segment */}
+                <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                  <span className="text-xs font-bold text-slate-500 dark:text-zinc-400 hidden sm:flex items-center gap-1 shrink-0">
+                    <Filter size={12} className="text-slate-400" />
+                    ยูนิต:
+                  </span>
+                  <div className="flex-1 sm:flex-initial flex items-center bg-slate-100 dark:bg-zinc-800 p-0.5 rounded-xl border border-slate-200/80 dark:border-zinc-700 overflow-x-auto no-scrollbar">
+                    {["All", "Creative", "Content", "PR", "Internal"].map((u) => {
+                      const isSelected = unitFilter.toLowerCase() === u.toLowerCase();
+                      return (
+                        <button
+                          key={u}
+                          onClick={() => setUnitFilter(u)}
+                          className={`flex-1 sm:flex-initial px-2 sm:px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap text-center ${
+                            isSelected
+                              ? "bg-slate-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-2xs"
+                              : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200"
+                          }`}
+                        >
+                          {u}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
-            {/* Row 1: Unit Buttons (Left) & Search (Right) */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-xs font-bold text-slate-500 mr-1">ยูนิต:</span>
-                {["All", "Creative", "Content", "PR", "Internal"].map((u) => {
-                  const isSelected = unitFilter.toLowerCase() === u.toLowerCase();
-                  return (
-                    <button
-                      key={u}
-                      onClick={() => setUnitFilter(u)}
-                      className={`px-3.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                        isSelected
-                          ? "bg-slate-900 text-white shadow-xs"
-                          : "bg-slate-50 text-slate-600 border border-slate-200/80 hover:bg-slate-100 hover:text-slate-900"
-                      }`}
-                    >
-                      {u}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="relative w-full sm:w-64">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="ค้นหาชื่อ..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-8.5 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-full text-xs focus:outline-none focus:border-slate-400 focus:bg-white shadow-2xs font-medium"
-                />
-              </div>
-            </div>
-
-            {/* Row 2: Timeframe Presets (Left) & Date Range Pickers (Right) */}
-            <div className="pt-2.5 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-bold text-slate-500 mr-0.5">เวลา:</span>
-                <div className="flex items-center bg-slate-100/90 p-0.5 rounded-lg border border-slate-200 shadow-2xs">
-                  {([
-                    { id: '1D', title: 'วันนี้ (Today)' },
-                    { id: '1W', title: 'สัปดาห์นี้ (This Week)' },
-                    { id: '1M', title: '1 เดือน' },
-                    { id: '3M', title: '3 เดือน' },
-                    { id: '6M', title: '6 เดือน' },
-                    { id: '1Y', title: '1 ปี' },
-                    { id: 'YTD', title: 'ตั้งแต่ต้นปี (YTD)' },
-                    { id: 'ALL', title: 'ทั้งหมด (ALL)' }
-                  ] as { id: StockTimeframe; title: string }[]).map(({ id: tf, title }) => (
-                    <button
-                      key={tf}
-                      onClick={() => handleTimeframeChange(tf)}
-                      title={title}
-                      className={`px-2.5 sm:px-3 py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer ${
-                        timeframe === tf
-                          ? "bg-slate-900 text-white font-bold shadow-xs"
-                          : "text-slate-500 hover:text-slate-900 hover:bg-slate-100/70"
-                      }`}
-                    >
-                      {tf}
-                    </button>
-                  ))}
+                {/* Timeframe Segment */}
+                <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                  <span className="text-xs font-bold text-slate-500 dark:text-zinc-400 shrink-0 hidden sm:inline">
+                    เวลา:
+                  </span>
+                  <div className="flex-1 sm:flex-initial flex items-center bg-slate-100 dark:bg-zinc-800 p-0.5 rounded-xl border border-slate-200/80 dark:border-zinc-700 overflow-x-auto no-scrollbar">
+                    {([
+                      { id: '1D', title: 'วันนี้ (Today)' },
+                      { id: '1W', title: 'สัปดาห์นี้ (This Week)' },
+                      { id: '1M', title: '1 เดือน' },
+                      { id: '3M', title: '3 เดือน' },
+                      { id: '6M', title: '6 เดือน' },
+                      { id: '1Y', title: '1 ปี' },
+                      { id: 'YTD', title: 'ตั้งแต่ต้นปี (YTD)' },
+                      { id: 'ALL', title: 'ทั้งหมด (ALL)' }
+                    ] as { id: StockTimeframe; title: string }[]).map(({ id: tf, title }) => (
+                      <button
+                        key={tf}
+                        onClick={() => handleTimeframeChange(tf)}
+                        title={title}
+                        className={`flex-1 sm:flex-initial px-2 sm:px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap text-center shrink-0 ${
+                          timeframe === tf
+                            ? "bg-slate-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-2xs"
+                            : "text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200"
+                        }`}
+                      >
+                        {tf}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-zinc-800/90 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-750 shadow-2xs text-xs self-start sm:self-auto">
-                <Calendar size={13} className="text-orange-500 shrink-0" />
-                <div className="flex items-center gap-1 font-mono text-[11px]">
-                  <span className="text-slate-500 dark:text-zinc-400 font-sans font-bold">เริ่ม:</span>
-                  <DatePicker
-                    selected={parsedStartDate}
-                    onChange={(d: Date | null) => {
-                      if (d) {
-                        const y = d.getFullYear();
-                        const m = String(d.getMonth() + 1).padStart(2, '0');
-                        const day = String(d.getDate()).padStart(2, '0');
-                        handleCustomDateChange('start', `${y}-${m}-${day}`);
-                      }
-                    }}
-                    dateFormat="dd/MM/yyyy"
-                    placeholderText="วันเริ่มต้น"
-                    popperClassName="z-[9999]"
-                    className="w-[92px] bg-white dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-100 font-bold border border-slate-200 dark:border-zinc-700 hover:border-slate-300 dark:hover:border-zinc-600 focus:border-orange-500 focus:outline-none rounded-md px-1.5 py-0.5 text-center cursor-pointer shadow-2xs text-[11px] font-mono transition-colors"
-                  />
-                  <span className="text-slate-400 dark:text-zinc-400 font-sans mx-0.5 font-bold">ถึง</span>
-                  <DatePicker
-                    selected={parsedEndDate}
-                    onChange={(d: Date | null) => {
-                      if (d) {
-                        const y = d.getFullYear();
-                        const m = String(d.getMonth() + 1).padStart(2, '0');
-                        const day = String(d.getDate()).padStart(2, '0');
-                        handleCustomDateChange('end', `${y}-${m}-${day}`);
-                      }
-                    }}
-                    dateFormat="dd/MM/yyyy"
-                    placeholderText="วันสิ้นสุด"
-                    popperClassName="z-[9999]"
-                    className="w-[92px] bg-white dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-100 font-bold border border-slate-200 dark:border-zinc-700 hover:border-slate-300 dark:hover:border-zinc-600 focus:border-orange-500 focus:outline-none rounded-md px-1.5 py-0.5 text-center cursor-pointer shadow-2xs text-[11px] font-mono transition-colors"
+              {/* Right Group: Date Range & Search */}
+              <div className="flex items-center gap-2 flex-col sm:flex-row w-full lg:w-auto">
+                {/* Date Range Pickers (Zero Overflow, Full Width on Mobile) */}
+                <div className="flex items-center justify-between gap-1 sm:gap-1.5 bg-slate-50 dark:bg-zinc-800/90 px-2 sm:px-2.5 py-1 rounded-xl border border-slate-200 dark:border-zinc-700 shadow-2xs text-xs w-full sm:w-auto">
+                  <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                    <Calendar size={13} className="text-orange-500 shrink-0" />
+                    <DatePicker
+                      selected={parsedStartDate}
+                      onChange={(d: Date | null) => {
+                        if (d) {
+                          const y = d.getFullYear();
+                          const m = String(d.getMonth() + 1).padStart(2, '0');
+                          const day = String(d.getDate()).padStart(2, '0');
+                          handleCustomDateChange('start', `${y}-${m}-${day}`);
+                        }
+                      }}
+                      dateFormat="dd/MM/yyyy"
+                      placeholderText="วันเริ่มต้น"
+                      popperClassName="z-[9999]"
+                      className="flex-1 min-w-0 w-full sm:w-[92px] bg-white dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-100 font-bold border border-slate-200 dark:border-zinc-700 hover:border-slate-300 dark:hover:border-zinc-600 focus:border-orange-500 focus:outline-none rounded-md px-1.5 py-0.5 text-center cursor-pointer shadow-2xs text-[11px] font-mono transition-colors"
+                    />
+                    <span className="text-slate-400 dark:text-zinc-400 font-sans mx-0.5 font-bold text-[11px] shrink-0">ถึง</span>
+                    <DatePicker
+                      selected={parsedEndDate}
+                      onChange={(d: Date | null) => {
+                        if (d) {
+                          const y = d.getFullYear();
+                          const m = String(d.getMonth() + 1).padStart(2, '0');
+                          const day = String(d.getDate()).padStart(2, '0');
+                          handleCustomDateChange('end', `${y}-${m}-${day}`);
+                        }
+                      }}
+                      dateFormat="dd/MM/yyyy"
+                      placeholderText="วันสิ้นสุด"
+                      popperClassName="z-[9999]"
+                      className="flex-1 min-w-0 w-full sm:w-[92px] bg-white dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-100 font-bold border border-slate-200 dark:border-zinc-700 hover:border-slate-300 dark:hover:border-zinc-600 focus:border-orange-500 focus:outline-none rounded-md px-1.5 py-0.5 text-center cursor-pointer shadow-2xs text-[11px] font-mono transition-colors"
+                    />
+                  </div>
+                  <span className="hidden sm:inline-flex text-[10px] sm:text-[10.5px] text-slate-500 dark:text-zinc-300 font-mono font-bold bg-slate-200/70 dark:bg-zinc-700 px-1.5 py-0.5 rounded-full shrink-0">
+                    {effectiveBriefs.length} งาน
+                  </span>
+                </div>
+
+                {/* Search Input */}
+                <div className="relative w-full sm:w-48">
+                  <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="ค้นหาชื่อ..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-7.5 pr-2.5 py-1 bg-slate-50 dark:bg-zinc-800/90 border border-slate-200 dark:border-zinc-700 rounded-xl text-xs focus:outline-none focus:border-slate-400 focus:bg-white dark:focus:bg-zinc-900 shadow-2xs font-medium"
                   />
                 </div>
-                <span className="text-[10px] text-slate-400 dark:text-zinc-400 font-mono border-l border-slate-200 dark:border-zinc-700 pl-1.5 ml-0.5">
-                  ({effectiveBriefs.length} งาน)
-                </span>
               </div>
             </div>
           </div>
@@ -1929,19 +2060,12 @@ ${portalUrl}`;
                 </div>
               </div>
 
-              {/* Tab 1 Action Bar with Save PDF */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface p-3.5 rounded-2xl border border-surface-border shadow-2xs print:hidden">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-700">รายงาน:</span>
-                  <span className="text-xs font-semibold text-slate-500">จำนวนงานและมูลค่าความคุ้มค่า (Workloads & Save Cost)</span>
+              {/* Tab 1 Action Bar (Compact Single Row) */}
+              <div className="flex items-center justify-between gap-2 bg-surface px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-2xl border border-surface-border shadow-2xs print:hidden">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="text-xs font-bold text-slate-700 dark:text-zinc-200 shrink-0">รายงาน:</span>
+                  <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400 truncate">จำนวนงานและมูลค่าความคุ้มค่า (Workloads & Save Cost)</span>
                 </div>
-                <button
-                  onClick={() => window.print()}
-                  className="px-4 py-2 text-xs font-bold rounded-xl bg-slate-900 hover:bg-slate-800 text-white transition-all shadow-xs flex items-center gap-2 print:hidden cursor-pointer shrink-0"
-                >
-                  <Download size={14} />
-                  <span>Save PDF</span>
-                </button>
               </div>
 
               {/* Top KPI Cards (Including Save Cost & PM Profit with Team Averages Per Member) */}
@@ -1984,7 +2108,7 @@ ${portalUrl}`;
                       ฿{orgTotals.totalProfit.toLocaleString()}
                     </div>
                     <div className="mt-2 flex items-center justify-between text-[11px] text-orange-800 font-medium">
-                      <span>โครงการมีกำไร: {effectiveBriefs.filter(b => (Number(b.details?.profit) || (Number(b.details?.revenue || 0) - Number(b.details?.cost || 0))) > 0).length} โครงการ</span>
+                      <span>โครงการมีกำไร: {effectiveBriefs.filter(b => isCcPmProject(b) && (Number(b.details?.profit) || (Number(b.details?.revenue || 0) - Number(b.details?.cost || 0))) > 0).length} โครงการ</span>
                       <span className="text-orange-700 font-bold">Revenue - Cost</span>
                     </div>
                   </div>
@@ -2013,9 +2137,9 @@ ${portalUrl}`;
                         <CheckCircle2 size={12} /> เสร็จ {orgTotals.completedTasks}
                       </span>
                       <span className="text-slate-300">|</span>
-                      <span className="text-blue-700">ทำ {orgTotals.inProgressTasks}</span>
+                      <span className="text-blue-700">กำลังทำ {orgTotals.inProgressTasks}</span>
                       <span className="text-slate-300">|</span>
-                      <span className="text-amber-700">รอ {orgTotals.pendingTasks}</span>
+                      <span className="text-amber-700">รอทำ {orgTotals.pendingTasks}</span>
                     </div>
                   </div>
                   <div className="mt-2.5 pt-2 border-t border-blue-200/70 flex items-center justify-between text-[11px] font-bold text-blue-900">
@@ -2084,6 +2208,17 @@ ${portalUrl}`;
                 onSelectBrief={(b) => setSelectedBriefForModal(b)}
               />
 
+              {/* กราฟปริมาณงานรายคน: แผนภูมิแนวนอนเรียงจากคนทำงานมากสุด ผสมสัดส่วนงานรอทำ กำลังทำ เสร็จ และกรอง unit ย่อยได้ */}
+              <MemberWorkloadHorizontalChart
+                briefs={effectiveBriefs}
+                assignees={assignees}
+                memberProfiles={memberProfileMap}
+                onSelectMember={(memberId) => {
+                  const found = memberStats.find((m) => m.assignee_id === memberId);
+                  if (found) setSelectedMember(found);
+                }}
+              />
+
               {/* สถิติความต้องการและการสั่งงาน: Rank+Score ทีมไหนสั่งงานเยอะสุด, งานด่วนบ่อยสุด, งานเกินระยะเวลามากสุด, สัดส่วนประเภทงาน */}
               <TeamDemandOverview
                 briefs={unitFilter === "All" ? effectiveBriefs : effectiveBriefs.filter((b) => (b.unit?.toLowerCase() || "") === unitFilter.toLowerCase())}
@@ -2109,10 +2244,10 @@ ${portalUrl}`;
                 title="เปรียบเทียบภาระงานกับระยะเวลา"
                 subtitle="เปรียบเทียบปริมาณงานที่ทำกับช่วงเวลา ว่ามีคนรับโหลดงานหนักตลอดมั้ย และสลับดูมูลค่างานกับระยะเวลาว่าใครทำงานที่มีมูลค่าสูงบ่อย"
                 metricOptions={[
-                  { value: "tasks_count", label: "📦 ปริมาณงานทั้งหมด" },
-                  { value: "completed_tasks", label: "✅ งานที่เสร็จสิ้น" },
-                  { value: "save_cost", label: "💰 มูลค่า Save Cost" },
-                  { value: "assist_tasks", label: "🤝 ปริมาณงานที่ช่วย" },
+                  { value: "tasks_count", label: "📦 งานทั้งหมด" },
+                  { value: "completed_tasks", label: "✅ งานเสร็จ" },
+                  { value: "save_cost", label: "💰 Save Cost" },
+                  { value: "assist_tasks", label: "🤝 งานช่วย" },
                 ]}
                 activeMetric={workloadChartMetric}
                 onMetricChange={(m) => setWorkloadChartMetric(m as any)}
@@ -2546,19 +2681,12 @@ ${portalUrl}`;
                 </div>
               </div>
 
-              {/* Tab 3 Action Bar with Save PDF */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface p-3.5 rounded-2xl border border-surface-border shadow-2xs print:hidden">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-700">รายงาน:</span>
-                  <span className="text-xs font-semibold text-slate-500">เวลาและประสิทธิภาพการส่งมอบ (Time & Efficiency)</span>
+              {/* Tab 3 Action Bar */}
+              <div className="flex items-center justify-between gap-2 bg-surface px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-2xl border border-surface-border shadow-2xs print:hidden">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xs font-bold text-slate-700 dark:text-zinc-200 shrink-0">รายงาน:</span>
+                  <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400 truncate">เวลาและประสิทธิภาพการส่งมอบ (Time & Efficiency)</span>
                 </div>
-                <button
-                  onClick={() => window.print()}
-                  className="px-4 py-2 text-xs font-bold rounded-xl bg-slate-900 hover:bg-slate-800 text-white transition-all shadow-xs flex items-center gap-2 print:hidden cursor-pointer shrink-0"
-                >
-                  <Download size={14} />
-                  <span>Save PDF</span>
-                </button>
               </div>
 
               {/* Header Analysis & Highlights - Scoped to selected Unit filter */}
@@ -2691,7 +2819,7 @@ ${portalUrl}`;
                           <div>
                             <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium">ส่งตรงเวลา</div>
                             <div className="text-xs font-bold font-mono text-emerald-700 dark:text-emerald-400 mt-0.5">
-                              {alert.onTimeRate}%
+                              {alert.completedCount > 0 ? `${alert.onTimeRate}%` : "-"}
                             </div>
                           </div>
                           <div>
@@ -2714,14 +2842,14 @@ ${portalUrl}`;
 
                         {/* Situation */}
                         <p className="text-xs text-slate-800 dark:text-zinc-100 bg-white/90 dark:bg-zinc-800/90 p-2.5 rounded-2xl border border-slate-200/60 dark:border-zinc-700/60 leading-relaxed">
-                          📌 <strong>สถานการณ์:</strong> {alert.situation}
+                          📌 <strong>สถานะภาระงาน:</strong> {alert.situation}
                         </p>
 
                         {/* Action Steps */}
                         <div>
-                          <span className="text-[11px] font-bold text-slate-800 dark:text-zinc-200 uppercase tracking-wider block mb-1.5 flex items-center gap-1">
+                          <span className="text-[11px] font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider block mb-1 flex items-center gap-1">
                             <Zap size={12} className="text-amber-600 dark:text-amber-400" />
-                            แนวทางการจัดการของ {alert.leadName} (วิธีแก้ไข 1, 2, 3):
+                            แนวทางติดตามของ {alert.leadName}:
                           </span>
                           <div className="space-y-1 text-xs text-slate-800 dark:text-zinc-100 bg-white/90 dark:bg-zinc-800/90 p-2.5 rounded-2xl border border-slate-200 dark:border-zinc-700">
                             {alert.actionSteps.map((step, idx) => (
@@ -2733,21 +2861,43 @@ ${portalUrl}`;
                           </div>
                         </div>
 
-                        {/* Risk Impacts */}
-                        <div>
-                          <span className="text-[11px] font-bold text-rose-800 dark:text-rose-300 uppercase tracking-wider block mb-1.5 flex items-center gap-1">
-                            <AlertTriangle size={12} className="text-rose-600 dark:text-rose-400" />
-                            ความเสี่ยงที่จะนำไปสู่ หากไม่รีบแก้ไข:
-                          </span>
-                          <div className="space-y-1 text-xs text-rose-950 dark:text-rose-200 bg-rose-50/80 dark:bg-rose-950/40 p-2.5 rounded-2xl border border-rose-200 dark:border-rose-800/60">
-                            {alert.riskImpacts.map((risk, idx) => (
-                              <div key={idx} className="flex items-start gap-1.5">
-                                <span className="text-rose-600 dark:text-rose-400 font-bold text-xs shrink-0">⚠️</span>
-                                <span>{risk}</span>
+                        {/* Real Tasks in this Unit */}
+                        {(() => {
+                          const tasksInUnit = alert.unit === "internal"
+                            ? briefs.filter(b => (b.unit || "").toLowerCase() === "internal")
+                            : briefs.filter(b => (b.unit || "").toLowerCase() === alert.unit.toLowerCase());
+                          if (tasksInUnit.length === 0) return null;
+                          return (
+                            <div className="space-y-1.5">
+                              <span className="text-[11px] font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider block">
+                                📋 รายการงานในยูนิต ({tasksInUnit.length} งาน):
+                              </span>
+                              <div className="space-y-1 max-h-36 overflow-y-auto custom-scrollbar">
+                                {tasksInUnit.map((b) => {
+                                  const isOverdue = b.deadline && b.status !== 'completed' && b.status !== 'cancelled' && new Date().getTime() > new Date(b.deadline).getTime() + 86400000;
+                                  return (
+                                    <div key={b.id} className="p-2 rounded-xl bg-white dark:bg-zinc-800 border border-slate-200/80 dark:border-zinc-700 flex items-center justify-between gap-2 text-xs">
+                                      <div className="min-w-0 flex-1 truncate">
+                                        <span className="font-mono font-bold text-slate-900 dark:text-zinc-100 mr-1.5">{resolveTaskCode(b, briefs)}</span>
+                                        <span className="text-slate-700 dark:text-zinc-300 truncate">{b.project_name || "ไม่ระบุชื่องาน"}</span>
+                                      </div>
+                                      <div className="flex items-center gap-1.5 shrink-0">
+                                        {isOverdue && (
+                                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300">
+                                            เกินกำหนด
+                                          </span>
+                                        )}
+                                        <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-zinc-700 text-slate-600 dark:text-zinc-300">
+                                          {b.status === 'completed' ? 'เสร็จสิ้น' : b.status === 'in_progress' ? 'กำลังทำ' : (!b.assignee_id ? 'รอมอบหมาย' : 'รอทำ')}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                               </div>
-                            ))}
-                          </div>
-                        </div>
+                            </div>
+                          );
+                        })()}
 
                         {/* Member Speed Roster in this Unit */}
                         <div className="pt-2 border-t border-slate-200/60 dark:border-zinc-700/60 space-y-1.5">
@@ -3109,19 +3259,12 @@ ${portalUrl}`;
                 </div>
               </div>
 
-              {/* Tab 2 Action Bar with Save PDF */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface p-3.5 rounded-2xl border border-surface-border shadow-2xs print:hidden">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-700">รายงาน:</span>
-                  <span className="text-xs font-semibold text-slate-500">ตัวชี้วัดความสำเร็จ (KR/R & KPI/TIP)</span>
+              {/* Tab 2 Action Bar */}
+              <div className="flex items-center justify-between gap-2 bg-surface px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-2xl border border-surface-border shadow-2xs print:hidden">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xs font-bold text-slate-700 dark:text-zinc-200 shrink-0">รายงาน:</span>
+                  <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400 truncate">ตัวชี้วัดความสำเร็จ (KR/R & KPI/TIP)</span>
                 </div>
-                <button
-                  onClick={() => window.print()}
-                  className="px-4 py-2 text-xs font-bold rounded-xl bg-slate-900 hover:bg-slate-800 text-white transition-all shadow-xs flex items-center gap-2 print:hidden cursor-pointer shrink-0"
-                >
-                  <Download size={14} />
-                  <span>Save PDF</span>
-                </button>
               </div>
 
               {/* Top Overview & Summary KPI Badges */}
@@ -3171,13 +3314,13 @@ ${portalUrl}`;
                   <div className="bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800/60 p-3 rounded-2xl">
                     <div className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase">KR ความสำเร็จรวม</div>
                     <div className="text-xl font-mono font-black text-blue-900 dark:text-blue-200 mt-0.5">{realtimeMetrics.overallKRScore}%</div>
-                    <div className="text-[10px] text-blue-700 dark:text-blue-300 font-medium">เฉลี่ยความสำเร็จ 4 KR</div>
+                    <div className="text-[10px] text-blue-700 dark:text-blue-300 font-medium">ถ่วงน้ำหนัก 4 KR</div>
                   </div>
 
                   <div className="bg-amber-50/70 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 p-3 rounded-2xl">
                     <div className="text-[10px] text-amber-600 dark:text-amber-400 font-bold uppercase">TIP ความสำเร็จรวม</div>
                     <div className="text-xl font-mono font-black text-amber-900 dark:text-amber-200 mt-0.5">{realtimeMetrics.overallTIPScore}%</div>
-                    <div className="text-[10px] text-amber-700 dark:text-amber-300 font-medium">ยุทธศาสตร์ & นวัตกรรม</div>
+                    <div className="text-[10px] text-amber-700 dark:text-amber-300 font-medium">ถ่วงน้ำหนัก 4 ตัวชี้วัด</div>
                   </div>
 
                   <div className="bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 p-3 rounded-2xl">
@@ -3194,7 +3337,13 @@ ${portalUrl}`;
                     <div className="text-lg font-mono font-black text-indigo-900 dark:text-indigo-200 mt-0.5 truncate">
                       ฿{(realtimeMetrics.totalProfitGov + realtimeMetrics.totalProfitPrivate).toLocaleString()}
                     </div>
-                    <div className="text-[10px] text-indigo-700 dark:text-indigo-300 font-medium">ภาครัฐ ฿{realtimeMetrics.totalProfitGov.toLocaleString()} | เอกชน ฿{realtimeMetrics.totalProfitPrivate.toLocaleString()}</div>
+                    <div className="text-[10px] text-indigo-700 dark:text-indigo-300 font-medium truncate">
+                      {((realtimeMetrics.pipelineProfitGov || 0) + (realtimeMetrics.pipelineProfitPrivate || 0)) > 0 ? (
+                        <span>เสร็จแล้ว ฿{(realtimeMetrics.totalProfitGov + realtimeMetrics.totalProfitPrivate).toLocaleString()} | กำลังทำ ฿{((realtimeMetrics.pipelineProfitGov || 0) + (realtimeMetrics.pipelineProfitPrivate || 0)).toLocaleString()}</span>
+                      ) : (
+                        <span>ภาครัฐ ฿{realtimeMetrics.totalProfitGov.toLocaleString()} | เอกชน ฿{realtimeMetrics.totalProfitPrivate.toLocaleString()}</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -3277,6 +3426,25 @@ ${portalUrl}`;
                               />
                             </div>
                           </div>
+
+                          {/* Special KR2: External CMU & RSP Pipeline & Scope Notice */}
+                          {kr.code === "KR2" && (
+                            <div className="p-3 bg-purple-50/70 dark:bg-purple-950/40 rounded-2xl border border-purple-200/80 dark:border-purple-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                              <div className="text-xs text-purple-950 dark:text-purple-200">
+                                <div className="font-bold flex items-center gap-1.5">
+                                  <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
+                                  <span>ภาระงาน มช. & RSP (KR2 Pipeline)</span>
+                                </div>
+                                <div className="text-[11px] text-purple-800 dark:text-purple-300 font-medium mt-0.5">
+                                  ส่งมอบแล้ว <strong className="font-mono text-emerald-700 dark:text-emerald-400">{actualAchieved}</strong> งาน 
+                                  • อยู่ระหว่างดำเนินงาน (Pipeline) <strong className="font-mono text-purple-700 dark:text-purple-300">{realtimeMetrics.externalPipelineCount || 0}</strong> งาน
+                                </div>
+                              </div>
+                              <div className="px-2.5 py-1 rounded-xl bg-purple-100 dark:bg-purple-900/60 border border-purple-200 dark:border-purple-700/60 text-[11px] font-mono font-bold text-purple-800 dark:text-purple-300 shrink-0 self-start sm:self-auto">
+                                รวมในระบบ {actualAchieved + (realtimeMetrics.externalPipelineCount || 0)} งาน
+                              </div>
+                            </div>
+                          )}
 
                           {/* Special KR3: 50:50 Content & PR split notice and button */}
                           {kr.code === "KR3" && (
@@ -3655,8 +3823,8 @@ ${portalUrl}`;
       )}
 
       {/* Member Tasks Detailed Modal */}
-      {selectedMember && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+      {selectedMember && isMounted && createPortal(
+        <div className="fixed inset-0 z-[100000] bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
           <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
             <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div className="min-w-0">
@@ -3768,7 +3936,8 @@ ${portalUrl}`;
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Task Brief Details Modal (เปิดดู/แก้ไขรายละเอียดโครงการและตัวเลขการเงิน) */}
@@ -3793,186 +3962,172 @@ ${portalUrl}`;
       {/* ========================================================================= */}
       {/* MODAL: EXECUTIVE MONTHLY EMAIL & LINE DISPATCH (ส่งรายงานประจำเดือน) */}
       {/* ========================================================================= */}
-      {showEmailDispatchModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 md:p-4 animate-in fade-in duration-150 no-print overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-3xl w-full my-auto shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+      {/* ========================================================================= */}
+      {/* MODAL: EXECUTIVE MONTHLY EMAIL & LINE DISPATCH (ส่งรายงานประจำเดือน) */}
+      {/* ========================================================================= */}
+      {showEmailDispatchModal && isMounted && createPortal(
+        <div className="fixed inset-0 bg-[#181a1c]/90 backdrop-blur-md z-[100000] flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200 no-print">
+          <div className="bg-white w-full max-w-3xl h-[92vh] max-h-[92vh] rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-zinc-200">
             
-            {/* Modal Header (Email Client Bar) */}
-            <div className="p-4 md:p-5 bg-gradient-to-r from-slate-900 to-indigo-950 text-white flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center">
-                  <Mail className="text-indigo-300" size={18} />
-                </div>
-                <div>
-                  <h3 className="text-sm md:text-base font-bold text-white flex items-center gap-2">
-                    <span>ส่งอีเมลรายงานผลการดำเนินงานประจำเดือน</span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/30 text-indigo-200 border border-indigo-400/30">
-                      Executive Monthly Dispatch
-                    </span>
-                  </h3>
-                  <p className="text-xs text-indigo-200/80 mt-0.5">
-                    จัดส่งถึงคณะผู้บริหาร และ CC สมาชิกทีมสร้างสรรค์และการสื่อสาร (Creative and Communication - CC) ทุกท่าน พร้อมแจ้งเตือนสรุปสั้นเข้ากลุ่ม LINE
-                  </p>
-                </div>
+            {/* Sleek Gmail-style Title Bar */}
+            <div className="px-4 py-2 border-b border-zinc-800 bg-zinc-900 text-white flex items-center justify-between gap-3 shrink-0">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-white shrink-0">
+                  CC-MONTHLY
+                </span>
+                <span className="text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider text-white shrink-0 bg-indigo-600">
+                  Executive
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 flex items-center gap-1 shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>Monthly Dispatch</span>
+                </span>
+                <span className="text-xs font-semibold text-zinc-300 truncate">
+                  ส่งอีเมลรายงานผลการดำเนินงานประจำเดือน • Executive Monthly Dispatch
+                </span>
               </div>
-              <button
-                onClick={() => setShowEmailDispatchModal(false)}
-                className="text-slate-400 hover:text-white p-1.5 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
-              >
-                <X size={18} />
-              </button>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(customEmailBody);
+                    setCopiedEmail(true);
+                    setTimeout(() => setCopiedEmail(false), 2000);
+                  }}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 transition-colors cursor-pointer"
+                  title="คัดลอกเนื้อหาทั้งหมด"
+                >
+                  {copiedEmail ? (
+                    <>
+                      <Check size={11} className="text-emerald-400 stroke-[2.5]" />
+                      <span className="text-emerald-400 font-bold">คัดลอกแล้ว</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={11} className="text-zinc-400" />
+                      <span>คัดลอก</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowEmailDispatchModal(false)}
+                  className="p-1 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors cursor-pointer"
+                  title="ปิดหน้าต่าง"
+                >
+                  <X size={16} />
+                </button>
+              </div>
             </div>
 
-            {/* Modal Scrollable Body */}
-            <div className="p-4 md:p-6 overflow-y-auto space-y-4 flex-1 text-xs">
+            {/* Modal Form Body - Clean Gmail Compose Window Style */}
+            <div className="flex-1 flex flex-col overflow-hidden text-xs bg-white">
               
-              {/* Recipient & CC Bar */}
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-2.5">
-                {/* TO */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                  <span className="w-16 font-bold text-slate-500 shrink-0">ถึง (To):</span>
-                  <div className="flex flex-wrap items-center gap-1.5 flex-1">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-100/80 text-indigo-900 font-bold border border-indigo-200">
-                      <ShieldCheck size={13} className="text-indigo-600" />
-                      คณะผู้บริหารและผู้อำนวยการ (executives@step.cmu.ac.th)
+              {/* Gmail Metadata Section (Ultra-Minimal, Clean Gmail Compose Headers) */}
+              <div className="px-4 py-1 border-b border-zinc-200 bg-white shrink-0 divide-y divide-zinc-100 text-[11px]">
+                
+                {/* Row 1: จาก (From) */}
+                <div className="flex items-center gap-2 py-1">
+                  <span className="w-14 shrink-0 text-zinc-400 font-medium text-[11px] flex items-center gap-1">
+                    <User size={11} className="text-indigo-600" />
+                    <span>จาก:</span>
+                  </span>
+                  <div className="flex-1 min-w-0 flex items-center gap-2 truncate">
+                    <span className="font-bold text-zinc-900">
+                      {Array.from(memberProfileMap.values()).find(p => p.role === "admin")?.fullName || "นายอัจชนะพงษ์ อัจชนะวราทา"} (จ๊อบ AA)
                     </span>
-                    {executiveMembers.map((ex) => (
-                      <span key={ex.id} className="inline-flex items-center px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700 font-medium text-[11px]">
-                        {ex.fullName || ex.name}
-                      </span>
-                    ))}
+                    <span className="text-[11px] text-zinc-400 font-mono hidden sm:inline">
+                      &lt;adchanapong@step.cmu.ac.th&gt;
+                    </span>
+                    <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 shrink-0 ml-auto">
+                      ผู้จัดทำรายงาน / Team Leader
+                    </span>
                   </div>
                 </div>
 
-                {/* CC */}
-                <div className="flex flex-col sm:flex-row sm:items-start gap-2 pt-2 border-t border-slate-200/70">
-                  <span className="w-16 font-bold text-slate-500 shrink-0 mt-0.5">สำเนา (CC):</span>
-                  <div className="flex-1 space-y-1.5">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100/80 text-emerald-900 font-bold border border-emerald-200">
-                        <Users size={13} className="text-emerald-700" />
-                        cc อีเมลสมาชิกทีมสร้างสรรค์และการสื่อสาร (CC) ทุกคน ({allStaffMembers.length} ท่าน)
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setShowAllCcStaff(!showAllCcStaff)}
-                        className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 underline cursor-pointer ml-1"
-                      >
-                        {showAllCcStaff ? "ย่อรายชื่อ" : "ดูรายชื่อทั้งหมด"}
-                      </button>
-                    </div>
-
-                    {showAllCcStaff && (
-                      <div className="p-2.5 bg-white border border-slate-200 rounded-xl text-[10.5px] text-slate-600 flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
-                        {allStaffMembers.map((s) => (
-                          <span key={s.id} className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200" title={s.email}>
-                            {s.fullName} ({s.name})
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                {/* Row 2: ถึง (To) with editable email field */}
+                <div className="flex items-center gap-2 py-1">
+                  <span className="w-14 shrink-0 text-zinc-400 font-medium text-[11px] flex items-center gap-1">
+                    <Mail size={11} className="text-zinc-400" />
+                    <span>ถึง:</span>
+                  </span>
+                  <div className="flex-1 min-w-0 flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={execToEmails}
+                      onChange={(e) => setExecToEmails(e.target.value)}
+                      placeholder="pitiwat@step.cmu.ac.th, suriyah@step.cmu.ac.th"
+                      className="flex-1 bg-transparent hover:bg-zinc-50 focus:bg-white border-0 px-1.5 text-xs font-semibold text-zinc-900 focus:outline-none h-6 placeholder:text-zinc-400 truncate"
+                      title="ระบุอีเมลผู้บริหาร คั่นด้วยเครื่องหมายจุลภาค (,)"
+                    />
                   </div>
                 </div>
 
-                {/* SUBJECT */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 pt-2 border-t border-slate-200/70">
-                  <span className="w-16 font-bold text-slate-500 shrink-0">หัวข้อ:</span>
-                  <input
-                    type="text"
-                    value={customEmailSubject}
-                    onChange={(e) => setCustomEmailSubject(e.target.value)}
-                    className="flex-1 bg-white border border-slate-300 rounded-xl px-3 py-1.5 font-bold text-slate-800 text-xs focus:outline-none focus:border-indigo-500"
-                    placeholder="ระบุหัวข้ออีเมล..."
-                  />
+                {/* Row 3: สำเนา (Cc) with editable email field & reset button */}
+                <div className="flex items-center gap-2 py-1">
+                  <span className="w-14 shrink-0 text-zinc-400 font-medium text-[11px] flex items-center gap-1">
+                    <Users size={11} className="text-zinc-400" />
+                    <span>สำเนา:</span>
+                  </span>
+                  <div className="flex-1 min-w-0 flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={execCcEmails}
+                      onChange={(e) => setExecCcEmails(e.target.value)}
+                      placeholder="ระบุอีเมลผู้รับสำเนา (CC) เช่น staff1@step.cmu.ac.th, staff2@step.cmu.ac.th..."
+                      className="flex-1 bg-transparent hover:bg-zinc-50 focus:bg-white border-0 px-1.5 text-xs font-medium text-zinc-900 focus:outline-none h-6 placeholder:text-zinc-400 truncate"
+                      title="แก้ไขหรือเพิ่ม/ลด อีเมลผู้รับสำเนาได้ตามต้องการ"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setExecCcEmails(allStaffMembers.map(s => s.email).filter(Boolean).join(", "))}
+                      className="shrink-0 px-2 py-0.5 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-200 text-[10px] font-semibold transition-colors cursor-pointer inline-flex items-center gap-1"
+                      title="รีเซ็ตเป็นอีเมลสมาชิก CC ทุกคน"
+                    >
+                      <RotateCcw size={10} className="text-zinc-500" />
+                      <span>รีเซ็ตสมาชิก ({allStaffMembers.length})</span>
+                    </button>
+                  </div>
                 </div>
+
+                {/* Row 4: หัวข้อ (Subject) */}
+                <div className="flex items-center gap-2 py-1">
+                  <span className="w-14 shrink-0 text-zinc-400 font-medium text-[11px] flex items-center gap-1">
+                    <FileText size={11} className="text-zinc-400" />
+                    <span>หัวข้อ:</span>
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <input
+                      type="text"
+                      value={customEmailSubject}
+                      onChange={(e) => setCustomEmailSubject(e.target.value)}
+                      className="w-full bg-transparent border-0 px-1.5 text-xs font-semibold text-zinc-800 focus:outline-none h-6 select-all truncate"
+                      placeholder="ระบุหัวข้ออีเมล..."
+                    />
+                  </div>
+                </div>
+
               </div>
 
-              {/* Email Content Editable Area */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="font-bold text-slate-800 flex items-center gap-1.5">
-                    <FileText size={14} className="text-indigo-600" />
-                    <span>เนื้อหารายงานในอีเมล (ข้อความสามารถแก้ไขก่อนส่งได้)</span>
-                  </label>
-                  <span className="text-[10px] text-slate-500">
-                    ความคืบหน้า • สิ่งที่ทำได้ • สิ่งที่ต้องพัฒนา • แนวทางแก้ไข • ผลงานทุกคน
-                  </span>
-                </div>
+              {/* Textarea for Email Body (Takes all remaining vertical space >60%) */}
+              <div className="flex-1 flex flex-col p-3 overflow-hidden bg-white">
                 <textarea
                   value={customEmailBody}
                   onChange={(e) => setCustomEmailBody(e.target.value)}
-                  rows={11}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-2xl p-3 font-mono text-[11px] leading-relaxed text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all resize-y"
-                  placeholder="เขียนเนื้อหารายงาน..."
+                  className="w-full flex-1 p-3 text-xs font-mono sm:font-sans leading-relaxed text-zinc-800 focus:outline-none resize-none bg-white rounded-xl border border-transparent focus:border-zinc-200 hover:border-zinc-100 custom-scrollbar select-text"
+                  placeholder="เขียนเนื้อหารายงานในอีเมล..."
+                  spellCheck={false}
                 />
-              </div>
-
-              {/* Attachments and Link info */}
-              <div className="bg-indigo-50/70 border border-indigo-200 rounded-2xl p-3.5 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-indigo-950 flex items-center gap-1.5">
-                    <Layers size={14} className="text-indigo-600" />
-                    <span>เอกสารแนบ PDF 5 มิติ & ลิงก์ระบบที่ส่งไปด้วย:</span>
-                  </span>
-                  <span className="text-[9.5px] font-bold px-2 py-0.5 rounded-full bg-indigo-200 text-indigo-900">
-                    แนบครบทุกไฟล์อัตโนมัติ
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10.5px]">
-                  <div className="p-2 rounded-xl bg-white border border-indigo-100 flex items-center gap-2">
-                    <Share2 size={13} className="text-blue-600 shrink-0" />
-                    <span className="truncate"><strong>ลิงก์หน้าเว็บ:</strong> CC Insights Realtime Portal</span>
-                  </div>
-                  <div className="p-2 rounded-xl bg-white border border-indigo-100 flex items-center gap-2">
-                    <FileText size={13} className="text-rose-600 shrink-0" />
-                    <span className="truncate"><strong>PDF 1:</strong> จำนวนงานและมูลค่าความคุ้มค่า</span>
-                  </div>
-                  <div className="p-2 rounded-xl bg-white border border-indigo-100 flex items-center gap-2">
-                    <FileText size={13} className="text-amber-600 shrink-0" />
-                    <span className="truncate"><strong>PDF 2:</strong> ตัวชี้วัดความสำเร็จ (KR/R & KPI/TIP)</span>
-                  </div>
-                  <div className="p-2 rounded-xl bg-white border border-indigo-100 flex items-center gap-2">
-                    <FileText size={13} className="text-cyan-600 shrink-0" />
-                    <span className="truncate"><strong>PDF 3:</strong> เวลาและประสิทธิภาพการส่งมอบงาน</span>
-                  </div>
-                  <div className="p-2 rounded-xl bg-white border border-indigo-100 flex items-center gap-2">
-                    <FileText size={13} className="text-indigo-600 shrink-0" />
-                    <span className="truncate"><strong>PDF 4:</strong> รายงานรวมทีมและการสังเคราะห์</span>
-                  </div>
-                  <div className="p-2 rounded-xl bg-white border border-indigo-100 flex items-center gap-2">
-                    <Users size={13} className="text-emerald-600 shrink-0" />
-                    <span className="truncate"><strong>PDF 5:</strong> รายงานรายบุคคลของสมาชิกทุกคน ({allStaffMembers.length} ท่าน)</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* LINE Notification Preview */}
-              <div className="bg-emerald-50/80 border border-emerald-300 rounded-2xl p-3.5 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
-                    <Send size={14} className="text-emerald-600" />
-                    <span>แจ้งเตือนเข้ากลุ่ม LINE ผู้บริหารอัตโนมัติ (LINE Group Notification)</span>
-                  </span>
-                  <span className="text-[9.5px] font-bold px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900">
-                    เด้งเข้ากลุ่มทันที
-                  </span>
-                </div>
-                <p className="text-[10.5px] text-emerald-800">
-                  เมื่อกดยืนยันส่งอีเมล ระบบจะยิงข้อความสรุปสั้นไปที่กลุ่ม LINE ที่มีผู้บริหารอยู่ด้วย พร้อมลิงก์เปิดดู CC Insights หรือตรวจสอบอีเมล:
-                </p>
-                <div className="bg-white border border-emerald-200 rounded-xl p-2.5 font-mono text-[10px] text-slate-700 whitespace-pre-wrap leading-relaxed shadow-2xs">
-                  {generateLineSummaryText()}
-                </div>
               </div>
 
             </div>
 
-            {/* Modal Footer */}
-            <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between shrink-0">
+            {/* Footer Actions */}
+            <div className="px-4 py-2.5 border-t border-zinc-200 bg-zinc-50 flex items-center justify-between gap-3 shrink-0">
               <button
                 type="button"
                 onClick={() => setShowEmailDispatchModal(false)}
-                className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+                className="px-4 py-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-900 bg-white border border-zinc-200 hover:border-zinc-300 rounded-lg hover:bg-zinc-50 transition-colors cursor-pointer"
               >
                 ยกเลิก
               </button>
@@ -3981,36 +4136,34 @@ ${portalUrl}`;
                 type="button"
                 onClick={handleConfirmDispatchEmailAndLine}
                 disabled={isDispatchingExecEmail}
-                className="px-5 py-2 text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 rounded-xl shadow-xs transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+                className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 rounded-lg shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {isDispatchingExecEmail ? (
                   <>
                     <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>กำลังส่งอีเมลและแจ้งเตือน LINE...</span>
+                    <span>กำลังส่งอีเมล...</span>
                   </>
                 ) : (
                   <>
-                    <Send size={14} />
-                    <span>ยืนยันส่งอีเมล & แจ้งเตือนเข้า LINE กลุ่ม</span>
+                    <Mail size={14} className="text-white" />
+                    <span>ยืนยันส่งอีเมลรายงานประจำเดือน</span>
                   </>
                 )}
               </button>
             </div>
 
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* Success Toast for Email & LINE Dispatch */}
-      {dispatchSuccessToast && (
-        <div className="fixed bottom-5 right-5 z-50 bg-slate-900 text-white p-4 rounded-2xl shadow-2xl border border-slate-700 flex items-start gap-3 max-w-md animate-in slide-in-from-bottom-5 duration-200 no-print">
+      {/* Success Toast for Email Dispatch */}
+      {dispatchSuccessToast && isMounted && createPortal(
+        <div className="fixed bottom-5 right-5 z-[100001] bg-slate-900 text-white p-4 rounded-2xl shadow-2xl border border-slate-700 flex items-start gap-3 max-w-md animate-in slide-in-from-bottom-5 duration-200 no-print">
           <CheckCircle2 size={20} className="text-emerald-400 shrink-0 mt-0.5" />
           <div className="space-y-1 flex-1">
-            <h4 className="text-xs font-bold text-white">ส่งรายงานและแจ้งเตือนสำเร็จ!</h4>
+            <h4 className="text-xs font-bold text-white">ส่งอีเมลรายงานประจำเดือนสำเร็จ!</h4>
             <p className="text-[11px] text-slate-300">{dispatchSuccessToast.message}</p>
-            {dispatchSuccessToast.lineStatus && (
-              <p className="text-[10px] text-emerald-300 font-medium">💬 {dispatchSuccessToast.lineStatus}</p>
-            )}
           </div>
           <button
             onClick={() => setDispatchSuccessToast(null)}
@@ -4018,7 +4171,8 @@ ${portalUrl}`;
           >
             <X size={14} />
           </button>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

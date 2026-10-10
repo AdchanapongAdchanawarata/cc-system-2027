@@ -41,6 +41,7 @@ import {
 } from "@/utils/stats";
 import { RealtimeOKRSummary } from "@/utils/okrSettings";
 import { TeamWorkloadInsights } from "@/utils/teamAnalytics";
+import { resolveTaskCode } from "@/utils/taskCodeService";
 import TeamSwotTowsAnalysis from "./TeamSwotTowsAnalysis";
 
 interface TeamSynthesisDashboardProps {
@@ -104,7 +105,6 @@ export default function TeamSynthesisDashboard({
   const [copiedMemo, setCopiedMemo] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [activeAnalysisView, setActiveAnalysisView] = useState<"all" | "workload" | "goals" | "time" | "individual">("all");
-  const [selectedUnitFocus, setSelectedUnitFocus] = useState<string>("all");
 
   // 1. Calculate Team Collaboration & Synergy Metrics
   const synergyRate = useMemo(() => {
@@ -151,77 +151,7 @@ export default function TeamSynthesisDashboard({
       .slice(0, 3);
   }, [memberStats]);
 
-  // 3. Intelligent Empathy & Care Recommendations
-  // Identify members who have high active workloads or overdue tasks to offer friendly assistance
-  const membersNeedingCare = useMemo(() => {
-    return memberStats
-      .filter((m) => {
-        const activeTasks = m.inProgressTasks + m.pendingTasks;
-        return m.overdueTasksCount > 0 || activeTasks >= 5 || m.stalledProgressCount > 0;
-      })
-      .map((m) => {
-        let careReason = "";
-        let suggestedAction = "";
-        if (m.overdueTasksCount > 0) {
-          careReason = `มีงานที่ต้องการผู้ช่วยเสริม ${m.overdueTasksCount} งาน เพื่อช่วยกันส่งมอบอย่างสบายใจ`;
-          suggestedAction = "ส่งเพื่อนร่วมยูนิตเข้าไปประกบช่วยดูไฟล์งานหรือเคลียร์ฟีดแบ็ก";
-        } else if (m.inProgressTasks >= 4) {
-          careReason = `กำลังมุ่งมั่นดูแลงานพร้อมกัน ${m.inProgressTasks} งาน ควรสนับสนุนเวลาโฟกัส`;
-          suggestedAction = "จัดลำดับงานด่วน และแบ่งเบางานรองให้เพื่อนร่วมทีมช่วยซัพพอร์ต";
-        } else {
-          careReason = "มีงานกำลังรอขั้นตอนถัดไป เพื่อให้กระบวนการลื่นไหล";
-          suggestedAction = "นัดคุยสั้นๆ 10 นาที เพื่อตรวจเช็กจุดติดขัดและประสานงานต่อ";
-        }
-        return {
-          member: m,
-          careReason,
-          suggestedAction
-        };
-      });
-  }, [memberStats]);
 
-  // 4. Cross-Skilling & Buddy Pairing Suggestions
-  const buddyPairs = useMemo(() => {
-    const creativeMembers = memberStats.filter((m) => m.unit?.toLowerCase() === "creative");
-    const contentMembers = memberStats.filter((m) => m.unit?.toLowerCase() === "content");
-    const prMembers = memberStats.filter((m) => m.unit?.toLowerCase() === "pr");
-
-    const pairs: Array<{
-      leadMember: string;
-      buddyMember: string;
-      synergyTopic: string;
-      benefit: string;
-    }> = [];
-
-    if (creativeMembers.length > 0 && contentMembers.length > 0) {
-      pairs.push({
-        leadMember: creativeMembers[0].name,
-        buddyMember: contentMembers[0].name,
-        synergyTopic: "Storytelling to Visual Synthesis (คิดบรีฟคู่ภาพ)",
-        benefit: "ทำให้งานคอนเทนต์และภาพกราฟิกเข้าขากันตั้งแต่ร่างแรก ลดการแก้งานได้กว่า 30%"
-      });
-    }
-
-    if (contentMembers.length > 1 && prMembers.length > 0) {
-      pairs.push({
-        leadMember: contentMembers[1]?.name || contentMembers[0].name,
-        buddyMember: prMembers[0].name,
-        synergyTopic: "PR Hook & Distribution Rhythm (การจัดจังหวะปล่อยข่าว)",
-        benefit: "ช่วยให้ข่าวสารและคอนเทนต์สำคัญเข้าถึงผู้ติดตามตรงเป้าหมายและตรงเวลา"
-      });
-    }
-
-    if (creativeMembers.length > 1 && prMembers.length > 1) {
-      pairs.push({
-        leadMember: creativeMembers[1].name,
-        buddyMember: prMembers[1].name,
-        synergyTopic: "Branded Social Assets (ภาพประกอบข่าวองค์กรแบบด่วน)",
-        benefit: "สร้าง Template กึ่งสำเร็จรูปเพื่อช่วยให้ปล่อยภาพข่าวด่วนได้ทันทีในเวลาไม่เกิน 2 ชั่วโมง"
-      });
-    }
-
-    return pairs;
-  }, [memberStats]);
 
   // 5. Team Spirit Encouraging Memo (Ready for LINE / Slack)
   const teamSpiritMemo = useMemo(() => {
@@ -657,6 +587,7 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
         </div>
 
         {/* Dimension Cards */}
+        {/* Dimension Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           
           {/* Dimension 1: From Workloads Tab */}
@@ -668,7 +599,7 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
                     <PiggyBank size={18} />
                   </span>
                   <div>
-                    <h4 className="font-bold text-sm text-foreground">1. ช่วยกันเกลี่ยงานให้สมดุล</h4>
+                    <h4 className="font-bold text-sm text-foreground">1. จำนวนงานและมูลค่าประหยัด</h4>
                     <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">จาก: แท็บจำนวนงาน / มูลค่า</p>
                   </div>
                 </div>
@@ -684,12 +615,16 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
 
               <div className="text-xs text-foreground/90 space-y-2 leading-relaxed">
                 <div className="p-3 bg-surface rounded-xl border border-emerald-500/20">
-                  <span className="font-bold text-emerald-700 dark:text-emerald-300 block mb-1">💡 สิ่งที่เห็นในทีม:</span>
-                  ทีมสร้างมูลค่างานเฉลี่ยได้ถึง ฿{Math.round(orgTotals.totalSaveCost / Math.max(1, briefs.length)).toLocaleString()} บาท/งาน โดยมีอัตราการแบ่งปันงานช่วยสูงถึง {synergyRate}% ของภาระงานทั้งหมด
+                  <span className="font-bold text-emerald-700 dark:text-emerald-300 block mb-1">💡 ข้อมูลในระบบ:</span>
+                  {briefs.length === 0 ? (
+                    <span>ขณะนี้ยังไม่มีภาระงานในระบบ</span>
+                  ) : (
+                    <span>ทีมมีมูลค่า In-House Save Cost รวม ฿{orgTotals.totalSaveCost.toLocaleString()} บาท จากงานทั้งหมด {briefs.length} งาน (เฉลี่ย ฿{Math.round(orgTotals.totalSaveCost / Math.max(1, briefs.length)).toLocaleString()} บาท/งาน) {synergyRate > 0 ? `• มีการมอบหมายงานช่วย ${orgTotals.tasksWithAssistants} งาน (${synergyRate}%)` : ""}</span>
+                  )}
                 </div>
                 <div className="p-3 bg-surface rounded-xl border border-emerald-500/20">
-                  <span className="font-bold text-foreground block mb-1">🌱 ชวนทำด้วยกัน:</span>
-                  สำหรับงานที่มีมูลค่าสูงและมีความซับซ้อน ให้กำหนดสัดส่วนผู้ช่วยร่วมรับผิดชอบตั้งแต่ขั้นตอนรับบรีฟ เพื่อป้องกันไม่ให้ภาระไปตกอยู่กับผู้รับผิดชอบหลักเพียงคนเดียว
+                  <span className="font-bold text-foreground block mb-1">📌 ข้อควรปฏิบัติ:</span>
+                  บันทึกการจัดสรรงานและระบุผู้ช่วยในระบบเพื่อสะท้อนความร่วมมือและภาระงานจริง
                 </div>
               </div>
             </div>
@@ -704,7 +639,7 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
                     <Target size={18} />
                   </span>
                   <div>
-                    <h4 className="font-bold text-sm text-foreground">2. ร่วมมือทำตามเป้าหมาย</h4>
+                    <h4 className="font-bold text-sm text-foreground">2. การเชื่อมโยงเป้าหมายยุทธศาสตร์</h4>
                     <p className="text-[11px] text-purple-600 dark:text-purple-400 font-medium">จาก: แท็บ KR/R , KPI/TIP</p>
                   </div>
                 </div>
@@ -720,12 +655,18 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
 
               <div className="text-xs text-foreground/90 space-y-2 leading-relaxed">
                 <div className="p-3 bg-surface rounded-xl border border-purple-500/20">
-                  <span className="font-bold text-purple-700 dark:text-purple-300 block mb-1">🎯 สิ่งที่เห็นในทีม:</span>
-                  งานที่เชื่อมโยงกับเป้าหมายยุทธศาสตร์มีสัดส่วน {strategicAlignmentRate}% สะท้อนว่าทีมกำลังส่งมอบงานที่ตอบโจทย์ทั้งการบริการภายใน (KR) และเป้าหมายมูลค่าทางธุรกิจ (TIP) อย่างเด่นชัด
+                  <span className="font-bold text-purple-700 dark:text-purple-300 block mb-1">🎯 ข้อมูลในระบบ:</span>
+                  {briefs.length === 0 ? (
+                    <span>ยังไม่มีข้อมูลงานในระบบ</span>
+                  ) : strategicAlignmentRate === 0 ? (
+                    <span>ปัจจุบันยังไม่มีการระบุเป้าหมายยุทธศาสตร์ (OKR/TIP) ในรายการบรีฟรอบนี้</span>
+                  ) : (
+                    <span>มีงานที่ระบุเป้าหมายยุทธศาสตร์จำนวน {strategicAlignedTasks} งาน (คิดเป็น {strategicAlignmentRate}% ของงานทั้งหมด)</span>
+                  )}
                 </div>
                 <div className="p-3 bg-surface rounded-xl border border-purple-500/20">
-                  <span className="font-bold text-foreground block mb-1">🚀 ชวนทำด้วยกัน:</span>
-                  ส่งเสริมให้เพื่อนร่วมทีมทุกคนเข้าใจว่างานประจำวันของตนเชื่อมโยงกับความสำเร็จขององค์กรในส่วนใด จะช่วยสร้างความภาคภูมิใจและพลังใจในการสร้างสรรค์ผลงานยิ่งขึ้น
+                  <span className="font-bold text-foreground block mb-1">📌 ข้อควรปฏิบัติ:</span>
+                  สามารถระบุเป้าหมายยุทธศาสตร์ (OKR/TIP) ในขั้นตอนรับบรีฟเพื่อให้เห็นความสอดคล้องกับพันธกิจองค์กร
                 </div>
               </div>
             </div>
@@ -740,7 +681,7 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
                     <Clock size={18} />
                   </span>
                   <div>
-                    <h4 className="font-bold text-sm text-foreground">3. จังหวะการทำงานและการส่งมอบ</h4>
+                    <h4 className="font-bold text-sm text-foreground">3. ประสิทธิภาพเวลาและการส่งมอบ</h4>
                     <p className="text-[11px] text-blue-600 dark:text-blue-400 font-medium">จาก: แท็บเวลา / สถานะงาน</p>
                   </div>
                 </div>
@@ -756,12 +697,16 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
 
               <div className="text-xs text-foreground/90 space-y-2 leading-relaxed">
                 <div className="p-3 bg-surface rounded-xl border border-blue-500/20">
-                  <span className="font-bold text-blue-700 dark:text-blue-300 block mb-1">⏱️ สิ่งที่เห็นในทีม:</span>
-                  อัตราส่งมอบงานตรงเวลา {executiveAnalysis.teamOnTimeRate}% ด้วยระยะเวลาเฉลี่ย {executiveAnalysis.teamAvgTurnaroundDays} วัน สะท้อนถึงมาตรฐานความรับผิดชอบที่สูงมาก
+                  <span className="font-bold text-blue-700 dark:text-blue-300 block mb-1">⏱️ ข้อมูลในระบบ:</span>
+                  {briefs.filter(b => b.status === 'completed').length === 0 ? (
+                    <span>ปัจจุบันยังไม่มีงานที่ปิดสมบูรณ์ในระบบ (มีงานกำลังดำเนินงาน {orgTotals.inProgressTasks} งาน, รอทำ {orgTotals.pendingTasks} งาน)</span>
+                  ) : (
+                    <span>ส่งมอบงานสำเร็จแล้ว {briefs.filter(b => b.status === 'completed').length} งาน (ส่งตรงเวลา {executiveAnalysis.teamOnTimeRate}% เฉลี่ย {executiveAnalysis.teamAvgTurnaroundDays} วัน)</span>
+                  )}
                 </div>
                 <div className="p-3 bg-surface rounded-xl border border-blue-500/20">
-                  <span className="font-bold text-foreground block mb-1">💙 แนวทางดูแลกัน:</span>
-                  สำหรับงานที่เริ่มค้างในสถานะรอนานเกิน 5 วัน ให้เพื่อนหรือหัวหน้ายูนิตประสานสอบถามผู้ขอบรีฟเพื่อช่วยเคลียร์ข้อติดขัด ช่วยให้เจ้าของงานไม่ต้องเผชิญความกดดันเพียงลำพัง
+                  <span className="font-bold text-foreground block mb-1">📌 ข้อควรปฏิบัติ:</span>
+                  ติดตามสถานะและตรวจสอบกำหนดส่งมอบงานของแต่ละบรีฟอย่างสม่ำเสมอ
                 </div>
               </div>
             </div>
@@ -776,7 +721,7 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
                     <Users size={18} />
                   </span>
                   <div>
-                    <h4 className="font-bold text-sm text-foreground">4. จุดเด่นและพลังเสริมกัน</h4>
+                    <h4 className="font-bold text-sm text-foreground">4. บทบาทและภาระงานรายบุคคล</h4>
                     <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">จาก: แท็บรายงานรายบุคคล</p>
                   </div>
                 </div>
@@ -792,12 +737,12 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
 
               <div className="text-xs text-foreground/90 space-y-2 leading-relaxed">
                 <div className="p-3 bg-surface rounded-xl border border-amber-500/20">
-                  <span className="font-bold text-amber-700 dark:text-amber-300 block mb-1">🌟 สิ่งที่เห็นในทีม:</span>
-                  สมาชิกทั้ง {memberStats.length} คนต่างมีความเชี่ยวชาญเฉพาะตัว (Superpower) ที่โดดเด่น ทั้งด้านกราฟิก, การสร้างสรรค์เนื้อหา, และการประชาสัมพันธ์
+                  <span className="font-bold text-amber-700 dark:text-amber-300 block mb-1">🌟 ข้อมูลในระบบ:</span>
+                  สมาชิกในทีม {memberStats.length} คน รับผิดชอบงานหลักรวม {orgTotals.totalTasks} งาน และมีงานที่มีผู้ช่วยร่วมดำเนินงาน {orgTotals.tasksWithAssistants} งาน
                 </div>
                 <div className="p-3 bg-surface rounded-xl border border-amber-500/20">
-                  <span className="font-bold text-foreground block mb-1">🤝 ชวนทำด้วยกัน:</span>
-                  จัดให้มีการแลกเปลี่ยนเทคนิคแบบไม่เป็นทางการ (Micro-Knowledge Sharing) 15 นาทีต่อสัปดาห์ เพื่อให้ทุกคนได้ต่อยอดทักษะใหม่ๆ จากเพื่อนร่วมทีมอย่างอบอุ่น
+                  <span className="font-bold text-foreground block mb-1">📌 ข้อควรปฏิบัติ:</span>
+                  ประสานงานและส่งต่อข้อมูลระหว่างยูนิตเพื่อให้การดำเนินงานเป็นไปตามกำหนด
                 </div>
               </div>
             </div>
@@ -807,198 +752,119 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
       </div>
 
       {/* ========================================================================= */}
-      {/* 5. EMPATHETIC PROBLEM SOLVING & BUDDY ACTIONABLES */}
+      {/* 5. ACTIVE TASKS & OVERDUE FOLLOW-UP (ข้อมูลงานจริงที่ต้องติดตาม)            */}
       {/* ========================================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        {/* Box A: Buddy Pairing & Cross-Skilling */}
-        <div className="bg-surface rounded-3xl border border-surface-border p-6 shadow-xs space-y-4 flex flex-col justify-between">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
-                <HeartHandshake size={16} />
-                การจับคู่บัดดี้ข้ามสายงาน (Cross-Skilling Buddy)
-              </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">
-                เรียนรู้และโตไปด้วยกัน
-              </span>
-            </div>
-
-            <h3 className="text-base font-black text-foreground">
-              ข้อเสนอแนะการเสริมพลังข้ามยูนิต (Creative × Content × PR)
-            </h3>
-            
-            <p className="text-xs text-muted leading-relaxed">
-              การจับคู่ทำงานร่วมกันจะช่วยลดข้อจำกัดของแต่ละสายงาน เพิ่มมุมมองสร้างสรรค์ใหม่ๆ และสร้างความเข้าใจอันดีระหว่างเพื่อนร่วมทีม:
-            </p>
-
-            <div className="space-y-3 pt-1">
-              {buddyPairs.map((p, idx) => (
-                <div key={idx} className="p-3.5 rounded-2xl bg-muted/10 border border-surface-border space-y-1.5 text-xs">
-                  <div className="flex items-center justify-between font-bold text-foreground">
-                    <span className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400">
-                      <span>{p.leadMember}</span>
-                      <span className="text-muted">↔</span>
-                      <span>{p.buddyMember}</span>
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-700 dark:text-indigo-300">
-                      คู่หูเสริมพลัง
-                    </span>
+        {/* Box A: Overdue Tasks */}
+        {(() => {
+          const overdueBriefs = briefs.filter((b) => {
+            const dStr = b.deadline || b.details?.usage_date || b.details?.publish_date;
+            return dStr && b.status !== 'completed' && b.status !== 'cancelled' && Date.now() > new Date(dStr).getTime() + 86400000;
+          });
+          return (
+            <div className="bg-surface rounded-3xl border border-surface-border p-6 shadow-xs space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="p-2 rounded-xl bg-rose-500/15 text-rose-600 dark:text-rose-400">
+                    <Clock size={18} />
+                  </span>
+                  <div>
+                    <h4 className="font-bold text-sm text-foreground">งานที่เกินกำหนดส่ง (Overdue Tasks)</h4>
+                    <p className="text-[11px] text-muted font-medium">รายการงานที่เลยกำหนดส่งมอบและยังไม่ปิดงาน</p>
                   </div>
-                  <div className="font-semibold text-foreground/90">✨ หัวข้อ: {p.synergyTopic}</div>
-                  <div className="text-muted text-[11px] leading-relaxed">💡 คุณค่าที่ทีมจะได้รับ: {p.benefit}</div>
                 </div>
-              ))}
-            </div>
-          </div>
+                <span className={`text-xs font-mono font-bold px-2.5 py-0.5 rounded-full ${
+                  overdueBriefs.length > 0 ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200" : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
+                }`}>
+                  {overdueBriefs.length} งาน
+                </span>
+              </div>
 
-          <div className="p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 text-xs text-indigo-900 dark:text-indigo-200 flex items-start gap-2 mt-4">
-            <Lightbulb size={16} className="text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
-            <div>
-              <span className="font-bold">เคล็ดลับพลังบวก:</span> บัดดี้ไม่ต้องทำงานแทนกันทั้งหมด เพียงแค่ช่วยรีวิวแนวคิดและส่งกำลังใจให้กันตั้งแต่ต้นทาง จะช่วยลดความกังวลและเพิ่มความมั่นใจได้อย่างมาก
-            </div>
-          </div>
-        </div>
-
-        {/* Box B: Care & Workload Support Hub */}
-        <div className="bg-surface rounded-3xl border border-surface-border p-6 shadow-xs space-y-4 flex flex-col justify-between">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Heart size={16} className="text-rose-600 dark:text-rose-400" />
-                พื้นที่ดูแลพลังใจและแบ่งเบาภาระงาน (Heartbeat Care Hub)
-              </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20">
-                ดูแลกันและกัน
-              </span>
-            </div>
-
-            <h3 className="text-base font-black text-foreground">
-              โอกาสในการยื่นมือเข้าไปซัพพอร์ตเพื่อนในทีม
-            </h3>
-
-            <p className="text-xs text-muted leading-relaxed">
-              ระบุสถานการณ์ที่เพื่อนร่วมทีมอาจกำลังต้องการความช่วยเหลือ เพื่อให้ทีมสามารถส่งแรงสนับสนุนเข้าไปอย่างอบอุ่นและทันเวลา:
-            </p>
-
-            <div className="space-y-2.5 pt-1">
-              {membersNeedingCare.length === 0 ? (
+              {overdueBriefs.length === 0 ? (
                 <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center text-xs text-emerald-700 dark:text-emerald-300 font-medium">
-                  🎉 สุขภาวะภาระงานของทุกคนในทีมขณะนี้อยู่ในระดับสมดุลยอดเยี่ยม ไม่มีงานคั่งค้างสะสม!
+                  ✅ ไม่มีงานค้างเกินกำหนดส่งในระบบ
                 </div>
               ) : (
-                membersNeedingCare.slice(0, 3).map((item) => (
-                  <div
-                    key={item.member.assignee_id}
-                    onClick={() => onSelectMember && onSelectMember(item.member.assignee_id)}
-                    className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 hover:border-rose-500/40 transition-all cursor-pointer text-xs space-y-1"
-                  >
-                    <div className="flex items-center justify-between font-bold">
-                      <span className="text-foreground flex items-center gap-2">
-                        <span>{item.member.name}</span>
-                        <span className="text-[10px] text-muted capitalize">({item.member.unit})</span>
-                      </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-300 font-mono">
-                        กำลังทำ {item.member.inProgressTasks} / รอ {item.member.pendingTasks}
-                      </span>
-                    </div>
-                    <div className="text-muted text-[11px]">
-                      ❤️ <span className="font-medium">{item.careReason}</span>
-                    </div>
-                    <div className="text-rose-600 dark:text-rose-400 text-[11px] font-semibold">
-                      🤝 แนวทางเกื้อกูล: {item.suggestedAction}
-                    </div>
-                  </div>
-                ))
+                <div className="space-y-2 max-h-72 overflow-y-auto custom-scrollbar">
+                  {overdueBriefs.map((b) => {
+                    const deadlineStr = b.deadline ? String(b.deadline).split('T')[0] : "-";
+                    return (
+                      <div key={b.id} className="p-3 rounded-2xl bg-rose-500/5 border border-rose-500/20 text-xs space-y-1">
+                        <div className="flex items-center justify-between font-bold">
+                          <span className="text-foreground flex items-center gap-1.5 truncate">
+                            <span className="font-mono text-rose-600 dark:text-rose-400 font-bold">{resolveTaskCode(b, briefs)}</span>
+                            <span className="truncate">{b.project_name || "ไม่ระบุชื่องาน"}</span>
+                          </span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200 shrink-0 uppercase font-bold">
+                            {b.unit || "CC"}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] text-muted pt-1">
+                          <span>ผู้รับผิดชอบ: <strong className="text-foreground">{b.assignee_name || "ทีมงาน CC"}</strong></span>
+                          <span className="font-mono text-rose-600 dark:text-rose-400 font-bold">กำหนดส่ง: {deadlineStr}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
-          </div>
+          );
+        })()}
 
-          <div className="p-3 bg-rose-500/10 rounded-2xl border border-rose-500/20 text-xs text-rose-900 dark:text-rose-200 flex items-start gap-2 mt-4">
-            <Smile size={16} className="text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-            <div>
-              <span className="font-bold">หลักการสำคัญ:</span> การยื่นมือเข้าช่วยไม่ใช่เพราะใครทำไม่ทัน แต่เพราะงานของเราคืองานของทีม ความสำเร็จร่วมกันคือเป้าหมายสูงสุด
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      {/* ========================================================================= */}
-      {/* 6. UNIT-BY-UNIT HARMONY & RISK MITIGATION WITH EMPATHY */}
-      {/* ========================================================================= */}
-      <div className="bg-surface rounded-3xl border border-surface-border p-6 shadow-xs space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-surface-border pb-4">
-          <div>
-            <span className="text-xs font-bold text-muted uppercase tracking-wider flex items-center gap-1.5">
-              <ShieldCheck size={16} className="text-indigo-600 dark:text-indigo-400" />
-              การบริหารความเสี่ยงด้วยความเข้าใจและการร่วมมือ (Unit Care & Action Steps)
-            </span>
-            <h3 className="text-lg font-black text-foreground mt-1">
-              แนวทางการสนับสนุนของแต่ละยูนิต (Creative, Content, PR & Internal)
-            </h3>
-            <p className="text-xs text-muted mt-0.5">
-              วิเคราะห์ความเสี่ยงเชิงโครงสร้าง พร้อมแนวทางที่หัวหน้าทีมและเพื่อนร่วมทีมพร้อมลงไปสนับสนุน
-            </p>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-medium text-muted">กรองยูนิต:</span>
-            <select
-              value={selectedUnitFocus}
-              onChange={(e) => setSelectedUnitFocus(e.target.value)}
-              className="text-xs font-semibold bg-surface border border-surface-border rounded-xl px-3 py-1.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-            >
-              <option value="all">ทุกยูนิต (All Units)</option>
-              <option value="creative">Creative Unit</option>
-              <option value="content">Content Unit</option>
-              <option value="pr">PR Unit</option>
-              <option value="internal">Internal Unit</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {executiveAnalysis.unitRiskAlerts
-            .filter((alert) => selectedUnitFocus === "all" || alert.unit.toLowerCase() === selectedUnitFocus.toLowerCase())
-            .map((alert) => (
-              <div
-                key={alert.unit}
-                className="p-4 rounded-2xl border border-surface-border bg-surface text-xs space-y-3"
-              >
-                <div className="flex items-center justify-between font-bold text-foreground border-b border-surface-border pb-2">
-                  <span className="text-sm text-foreground flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-indigo-600 dark:bg-indigo-400"></span>
-                    <span>{alert.unitLabel}</span>
+        {/* Box B: In Progress Tasks */}
+        {(() => {
+          const inProgressBriefs = briefs.filter((b) => b.status === 'in_progress');
+          return (
+            <div className="bg-surface rounded-3xl border border-surface-border p-6 shadow-xs space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="p-2 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400">
+                    <Layers size={18} />
                   </span>
-                  <span className="text-[11px] font-normal text-muted">
-                    ผู้ประสานหลัก: <span className="font-bold text-foreground">{alert.leadName}</span>
-                  </span>
+                  <div>
+                    <h4 className="font-bold text-sm text-foreground">งานที่กำลังดำเนินงาน (In Progress Tasks)</h4>
+                    <p className="text-[11px] text-muted font-medium">รายการงานที่อยู่ในกระบวนการผลิต</p>
+                  </div>
                 </div>
-
-                <div className="text-foreground/90 leading-relaxed">
-                  <span className="font-bold text-foreground">📌 สถานการณ์ปัจจุบัน:</span> {alert.situation}
-                </div>
-
-                <div className="p-3 bg-indigo-500/10 rounded-xl border border-indigo-500/20 space-y-1.5">
-                  <span className="font-bold text-indigo-600 dark:text-indigo-400 block">🤝 แนวทางที่ทีมและ {alert.leadName} ร่วมมือกัน:</span>
-                  <ul className="space-y-1 text-foreground/90 pl-1">
-                    {alert.actionSteps.map((s, idx) => (
-                      <li key={idx} className="flex items-start gap-1.5">
-                        <span className="text-indigo-600 dark:text-indigo-400 font-bold">•</span>
-                        <span>{s}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="text-[11px] text-muted pt-1 border-t border-surface-border flex items-center justify-between">
-                  <span>ความเสี่ยงที่เฝ้าระวัง: {alert.riskImpacts[0] || "การกระจุกตัวของงาน"}</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">ทีมพร้อมซัพพอร์ต ✓</span>
-                </div>
+                <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200">
+                  {inProgressBriefs.length} งาน
+                </span>
               </div>
-            ))}
-        </div>
+
+              {inProgressBriefs.length === 0 ? (
+                <div className="p-4 rounded-2xl bg-muted/10 border border-surface-border text-center text-xs text-muted font-medium">
+                  ไม่มีงานที่อยู่ระหว่างดำเนินการในขณะนี้
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-72 overflow-y-auto custom-scrollbar">
+                  {inProgressBriefs.map((b) => {
+                    const deadlineStr = b.deadline ? String(b.deadline).split('T')[0] : "-";
+                    return (
+                      <div key={b.id} className="p-3 rounded-2xl bg-blue-500/5 border border-blue-500/20 text-xs space-y-1">
+                        <div className="flex items-center justify-between font-bold">
+                          <span className="text-foreground flex items-center gap-1.5 truncate">
+                            <span className="font-mono text-blue-600 dark:text-blue-400 font-bold">{resolveTaskCode(b, briefs)}</span>
+                            <span className="truncate">{b.project_name || "ไม่ระบุชื่องาน"}</span>
+                          </span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200 shrink-0 uppercase font-bold">
+                            {b.unit || "CC"}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] text-muted pt-1">
+                          <span>ผู้รับผิดชอบ: <strong className="text-foreground">{b.assignee_name || "ทีมงาน CC"}</strong></span>
+                          <span className="font-mono text-foreground">กำหนดส่ง: {deadlineStr}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
       </div>
 
       {/* ========================================================================= */}
@@ -1030,7 +896,7 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
                   <th className="py-3 px-3.5 text-right">Save Cost รวม</th>
                   <th className="py-3 px-3.5 text-right text-orange-600 dark:text-orange-400">กำไร PM</th>
                   <th className="py-3 px-3.5 text-center">สัดส่วนงาน (หลัก / ช่วย)</th>
-                  <th className="py-3 px-3.5 text-center">สถานะงาน (ทำ / รอ / เสร็จ)</th>
+                  <th className="py-3 px-3.5 text-center">สถานะงาน (รอทำ / กำลังทำ / เสร็จสิ้น)</th>
                   <th className="py-3 px-3.5 text-center">เวลาเฉลี่ย</th>
                   <th className="py-3 px-3.5 text-center">ตรงเวลา (%)</th>
                   <th className="py-3 px-3.5 text-center">ดัชนีหลังบ้าน (BOH)</th>
@@ -1061,9 +927,9 @@ ${supportChampions.map((c, i) => `  ${i + 1}. ${c.name} (${c.unit}) ช่วย
                     </td>
                     <td className="py-3 px-3.5 text-center font-mono text-[11px]">
                       <div className="inline-flex items-center gap-1">
-                        <span className="text-blue-600 dark:text-blue-400 font-bold" title="กำลังทำ">{m.inProgressTasks}</span>
+                        <span className="text-amber-600 dark:text-amber-400 font-bold" title="รอทำ">{m.pendingTasks}</span>
                         <span className="text-muted/40">/</span>
-                        <span className="text-amber-600 dark:text-amber-400 font-bold" title="รอเริ่ม">{m.pendingTasks}</span>
+                        <span className="text-blue-600 dark:text-blue-400 font-bold" title="กำลังทำ">{m.inProgressTasks}</span>
                         <span className="text-muted/40">/</span>
                         <span className="text-emerald-600 dark:text-emerald-400 font-bold" title="เสร็จสิ้น">{m.completedTasks}</span>
                         {m.overdueTasksCount > 0 && (

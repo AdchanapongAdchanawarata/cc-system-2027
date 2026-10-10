@@ -153,33 +153,32 @@ export default function AiControlHub() {
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-6 text-white shadow-xl border border-indigo-500/20 relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="bg-gradient-to-b from-zinc-900 via-zinc-900 to-zinc-950 rounded-3xl p-6 sm:p-7 text-white shadow-xl border border-zinc-800 space-y-5 relative overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
           <div className="space-y-1.5">
-            <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl bg-indigo-600/30 border border-indigo-400/30 flex items-center justify-center text-indigo-300">
-                <Brain size={22} className="animate-pulse" />
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-zinc-800/90 border border-zinc-700/80 flex items-center justify-center text-zinc-100 shadow-inner shrink-0">
+                <Brain size={24} className="animate-pulse text-emerald-400" />
               </div>
               <div>
-                <h3 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2.5">
                   AI Control & Anti-Hallucination Hub
-                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono">
                     Active Guardrails
                   </span>
                 </h3>
-                <p className="text-xs text-slate-300">
+                <p className="text-xs sm:text-[13px] text-zinc-200 leading-relaxed font-normal mt-0.5">
                   ระบบควบคุมความโปร่งใส ป้องกันการสร้างข้อมูลหลอน (Zero Hallucination) และตรวจสอบความน่าเชื่อถือของ AI
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={testAiConnectivity}
               disabled={pingResult.status === "testing"}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-lg shadow-indigo-600/30 transition-all cursor-pointer active:scale-95"
+              className="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 active:scale-95 border border-zinc-700 disabled:opacity-50 text-white rounded-2xl text-xs font-bold flex items-center gap-2 shadow-md transition-all cursor-pointer"
             >
               <RefreshCw
                 size={14}
@@ -187,6 +186,39 @@ export default function AiControlHub() {
               />
               {pingResult.status === "testing" ? "กำลังทดสอบ..." : "ทดสอบ AI Live Ping"}
             </button>
+          </div>
+        </div>
+
+        {/* 3 Structured Feature Badges / Mini-Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-2 border-t border-zinc-800/80">
+          <div className="bg-zinc-950/70 border border-zinc-800/90 rounded-2xl p-3.5 flex items-center gap-3 shadow-inner">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+              <Database size={18} />
+            </div>
+            <div>
+              <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Data Grounding</span>
+              <span className="text-xs font-bold text-zinc-100">อ้างอิงข้อมูลจริง 100% จาก DB</span>
+            </div>
+          </div>
+
+          <div className="bg-zinc-950/70 border border-zinc-800/90 rounded-2xl p-3.5 flex items-center gap-3 shadow-inner">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+              <Zap size={18} />
+            </div>
+            <div>
+              <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Heuristic Failover</span>
+              <span className="text-xs font-bold text-zinc-100">สลับระบบสำรองเมื่อ AI ออฟไลน์</span>
+            </div>
+          </div>
+
+          <div className="bg-zinc-950/70 border border-zinc-800/90 rounded-2xl p-3.5 flex items-center gap-3 shadow-inner">
+            <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 shrink-0">
+              <ShieldCheck size={18} />
+            </div>
+            <div>
+              <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">ISO Audit Trail</span>
+              <span className="text-xs font-bold text-zinc-100">บันทึกทุกคำสั่งการตาม ISO 9001</span>
+            </div>
           </div>
         </div>
       </div>

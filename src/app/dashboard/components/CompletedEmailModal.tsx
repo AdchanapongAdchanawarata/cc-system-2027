@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { DEFAULT_MEMBER_METADATA, parseMemberRecord } from "@/utils/memberProfile";
 import { getTaskSurveyUrl } from "@/utils/surveyTokens";
+import { isRspTask } from "@/utils/pricing";
+import { Assignee3DAvatarBadge } from "@/components/Assignee3DAvatarBadge";
 
 interface CompletedEmailModalProps {
   isOpen: boolean;
@@ -55,17 +57,22 @@ export default function CompletedEmailModal({
 
   const unit = (brief?.unit || "creative").toLowerCase();
   const isInternal = unit === "internal";
+  const isRsp = useMemo(() => isRspTask(brief), [brief]);
 
-  const defaultToEmail = brief?.requester_email || (isInternal ? "adchanapong@step.cmu.ac.th" : "");
+  const defaultToEmail = isRsp
+    ? (brief?.requester_email || brief?.details?.reporter_contact || "")
+    : brief?.requester_email || (isInternal ? "adchanapong@step.cmu.ac.th" : "");
   const [toEmail, setToEmail] = useState(defaultToEmail);
 
   useEffect(() => {
-    if (brief?.requester_email) {
+    if (isRsp) {
+      setToEmail(brief?.requester_email || brief?.details?.reporter_contact || "");
+    } else if (brief?.requester_email) {
       setToEmail(brief.requester_email);
     } else if (isInternal) {
       setToEmail("adchanapong@step.cmu.ac.th");
     }
-  }, [brief, isInternal]);
+  }, [brief, isInternal, isRsp]);
 
   const teamLead = {
     name: "จ๊อบ AA",
@@ -88,24 +95,61 @@ export default function CompletedEmailModal({
     return parseMemberRecord(found);
   }, [brief, assignees]);
 
-  const defaultCcEmails = useMemo(() => {
-    const emails = new Set<string>();
-    emails.add(teamLead.email);
-    emails.add(assistantTeamLead.email);
+  // Resolve CC recipients with clean nicknames (e.g. จ๊อบ, วา)
+  const defaultCcRecipients = useMemo(() => {
+    const list: { email: string; nickname: string; name: string; fullName: string }[] = [];
+    const seenEmails = new Set<string>();
 
-    if (assigneeMember?.email) {
-      emails.add(assigneeMember.email);
+    // Current sender's email (คนทำงานหลัก ไม่ต้อง CC ตัวเองที่เป็นคนส่ง)
+    const senderEmail = assigneeMember?.email?.toLowerCase().trim();
+    const senderCmuEmail = assigneeMember?.cmuEmail?.toLowerCase().trim();
+
+    const addCc = (email: string, rawName: string, fullName: string) => {
+      if (!email) return;
+      const lower = email.toLowerCase().trim();
+      // ไม่ CC ตัวเองที่เป็นผู้ส่ง (จาก:)
+      if (senderEmail && lower === senderEmail) return;
+      if (senderCmuEmail && lower === senderCmuEmail) return;
+      // ไม่ CC ซ้ำกับ To ในกรณี internal task ทั่วไป (To: คุณจ๊อบ) ยกเว้นงาน RSP
+      if (isInternal && !isRsp && (lower === teamLead.email.toLowerCase() || lower === "adchanapong@step.cmu.ac.th")) return;
+      if (seenEmails.has(lower)) return;
+      seenEmails.add(lower);
+
+      // ดึงชื่อเล่น เช่น "จ๊อบ AA" -> "จ๊อบ", "วา WK" -> "วา"
+      const nickname = rawName.split(" ")[0].trim() || rawName;
+      list.push({ email: lower, nickname, name: rawName, fullName });
+    };
+
+    // 1. หัวหน้าทีม (จ๊อบ) - ถ้าไม่ใช่งาน internal หรือเป็นงาน RSP ต้อง CC หัวหน้าทีมด้วย
+    if (!isInternal || isRsp) {
+      addCc(teamLead.email, teamLead.name, teamLead.fullName);
     }
 
+    // 2. ผู้ช่วยหัวหน้าทีม (วา)
+    addCc(assistantTeamLead.email, assistantTeamLead.name, assistantTeamLead.fullName);
+
+    // 3. ผู้ช่วยอื่นๆ ในงาน (ถ้ามี)
     if (brief?.details?.assistants && Array.isArray(brief.details.assistants)) {
       brief.details.assistants.forEach((ast: any) => {
         const found = assignees.find((m) => m.id === ast.assignee_id);
-        if (found?.email) emails.add(found.email);
+        if (found?.email) {
+          const meta = DEFAULT_MEMBER_METADATA[found.name] || {};
+          addCc(found.email, found.name, meta.fullName || found.name);
+        }
       });
     }
 
-    return Array.from(emails);
-  }, [assigneeMember, brief, assignees, teamLead, assistantTeamLead]);
+    return list;
+  }, [assigneeMember, brief, assignees, isInternal, isRsp, teamLead, assistantTeamLead]);
+
+  const defaultCcEmails = useMemo(() => {
+    return defaultCcRecipients.map((r) => r.email);
+  }, [defaultCcRecipients]);
+
+  const ccNicknamesText = useMemo(() => {
+    if (defaultCcRecipients.length === 0) return "";
+    return defaultCcRecipients.map((r) => r.nickname).join(", ");
+  }, [defaultCcRecipients]);
 
   // Requester Name for Salutation
   const rawRequesterName = (
@@ -118,9 +162,11 @@ export default function CompletedEmailModal({
     ""
   ).toString().trim();
   const cleanRequesterName = rawRequesterName.replace(/^คุณ\s*/, '').trim();
-  const salutationTarget = isInternal
-    ? (cleanRequesterName ? `คุณ${cleanRequesterName}` : `คุณ${teamLead.name} (${teamLead.position}) และทีมงาน CC`)
-    : (cleanRequesterName ? `คุณ${cleanRequesterName}` : "คุณผู้สั่งงาน");
+  const salutationTarget = isRsp
+    ? (cleanRequesterName ? `คุณ${cleanRequesterName} (ผู้ประสานงาน RSP)` : "คุณผู้ประสานงานเครือข่าย RSP")
+    : isInternal
+      ? (cleanRequesterName ? `คุณ${cleanRequesterName}` : `คุณ${teamLead.name} (${teamLead.position}) และทีมงาน CC`)
+      : (cleanRequesterName ? `คุณ${cleanRequesterName}` : "คุณผู้สั่งงาน");
 
   // Polite particle based on Assignee gender (ครับ / ค่ะ)
   const isAssigneeMale = useMemo(() => {
@@ -168,42 +214,19 @@ export default function CompletedEmailModal({
     if (!brief) return "";
 
     const pName = brief.project_name || "ไม่ระบุชื่องาน";
-    const rawTeam = brief.decision_maker || brief.details?.team || "";
-    const requesterTeam = isInternal
-      ? "ส่วนงานภายใน CC TEAM"
-      : rawTeam || "STeP";
+    const assigneeFullName = assigneeMember?.fullName || assigneeMember?.name || "ทีมงาน CC";
+    const assigneePos = assigneeMember?.position || "ทีมสร้างสรรค์และการสื่อสาร (Creative and Communication - CC)";
+    const assigneePhone = (assigneeMember?.phone && assigneeMember.phone !== "-") ? assigneeMember.phone : "-";
 
-    const deadline = brief.deadline
-      ? String(brief.deadline).split("T")[0]
-      : "-";
-
-    let text = "";
-    if (isInternal) {
-      text += `เรียน ${salutationTarget}\n\n`;
-      text += `ทีมสร้างสรรค์และการสื่อสาร (Creative and Communication - CC TEAM) ขอแจ้งให้ทราบว่า งานภายใน "${pName}" (${taskCode}) ได้ดำเนินการเสร็จสมบูรณ์ (Completed) เรียบร้อยแล้ว${politeWord}\n\n`;
-    } else {
-      text += `เรียน ${salutationTarget}\n\n`;
-      text += `ทีมสร้างสรรค์และการสื่อสาร (Creative and Communication - CC TEAM) ขอแจ้งส่งมอบงาน "${pName}" (${taskCode}) ซึ่งได้ดำเนินการเสร็จสมบูรณ์ (Completed) เรียบร้อยแล้ว${politeWord}\n\n`;
-    }
-
-    text += `----------------------------------------\n`;
-    text += `📋 ข้อมูลสรุปการส่งมอบงาน (Completion Summary):\n`;
-    text += `• รหัสงาน (Task Code): ${taskCode}\n`;
-    text += `• ชื่องาน / โครงการ: ${pName}\n`;
-    text += `• ผู้รับผิดชอบหลัก: ${assigneeMember ? `${assigneeMember.fullName} (${assigneeMember.name})` : "ทีมงาน CC"}\n`;
-    text += `• กำหนดส่งมอบงาน (Deadline): ${deadline}\n`;
-
-    text += `\n----------------------------------------\n`;
-    text += `⭐ แบบประเมินความพึงพอใจการให้บริการ (Satisfaction Survey):\n`;
-    text += `เพื่อการพัฒนาและรักษามาตรฐานการให้บริการของทีม CC ขอความกรุณา${salutationTarget} สละเวลาทำแบบประเมินความพึงพอใจสั้นๆ ผ่านลิงก์ด้านล่างนี้${politeWord}\n\n`;
-    text += `👉 ลิงก์แบบประเมิน: ${surveyUrl}\n\n`;
-
-    text += `----------------------------------------\n`;
-    text += `ทีมงาน CC ขอขอบพระคุณเป็นอย่างยิ่งที่ท่านได้ไว้วางใจให้ทีมงานดูแลผลงานชิ้นนี้ และหวังว่าจะได้ร่วมงานกันอีกในโอกาสต่อไป${politeWord}\n\n`;
-    text += `${signatureBlock}`;
-
-    return text;
-  }, [brief, taskCode, assigneeMember, isInternal, surveyUrl, salutationTarget, politeWord, signatureBlock]);
+    return `เรียน ${salutationTarget}\n\n` +
+      `ทีม CC ขอส่งมอบงาน "${pName}" (${taskCode}) ซึ่งได้ดำเนินการเสร็จสมบูรณ์เรียบร้อยแล้ว${politeWord}\n\n` +
+      `⭐ แบบประเมินความพึงพอใจการให้บริการ:\n` +
+      `${surveyUrl}\n\n` +
+      `ขอแสดงความนับถือ,\n` +
+      `${assigneeFullName}\n` +
+      `${assigneePos}\n` +
+      `เบอร์โทร: ${assigneePhone}`;
+  }, [brief, taskCode, assigneeMember, surveyUrl, salutationTarget, politeWord]);
 
   const [emailBody, setEmailBody] = useState(initialEmailBody);
 
@@ -258,21 +281,32 @@ export default function CompletedEmailModal({
       // ignore
     }
 
-    // 2. Safe URL length under 1,800 chars to avoid Gmail blank screen
+    // Auto-Truncation Guard: Keep total encoded URL strictly under 6,000 bytes (Google server limit: 8,192 bytes)
     const targetTo = encodeURIComponent(toEmail.trim());
     const targetCc = encodeURIComponent(defaultCcEmails.join(","));
     const targetSubject = encodeURIComponent(emailSubject);
 
+    let bodyToSend = emailBody;
     const baseLength = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&to=${targetTo}&cc=${targetCc}&su=${targetSubject}&body=`.length;
-    const maxSafeBodyEncodedLength = Math.max(150, 1800 - baseLength);
+    const maxSafeBodyEncoded = Math.max(500, 6000 - baseLength);
 
-    let urlBodyText = emailBody;
-    if (encodeURIComponent(urlBodyText).length > maxSafeBodyEncodedLength) {
-      const pName = brief?.project_name || 'งาน';
-      urlBodyText = `เรียน ${salutationTarget}\n\nทีม CC ขอส่งมอบงาน "${pName}" (${taskCode}) ซึ่งได้ดำเนินการเสร็จสมบูรณ์เรียบร้อยแล้ว${politeWord}\n\n⭐ แบบประเมินความพึงพอใจการให้บริการ:\n${surveyUrl}\n\n${signatureBlock}`;
+    if (encodeURIComponent(bodyToSend).length > maxSafeBodyEncoded) {
+      const pName = brief?.project_name || "ไม่ระบุชื่องาน";
+      const assigneeFullName = assigneeMember?.fullName || assigneeMember?.name || "ทีมงาน CC";
+      const assigneePos = assigneeMember?.position || "ทีมสร้างสรรค์และการสื่อสาร (Creative and Communication - CC)";
+      const assigneePhone = (assigneeMember?.phone && assigneeMember.phone !== "-") ? assigneeMember.phone : "-";
+
+      bodyToSend = `เรียน ${salutationTarget}\n\n` +
+        `ทีม CC ขอส่งมอบงาน "${pName}" (${taskCode}) ซึ่งได้ดำเนินการเสร็จสมบูรณ์เรียบร้อยแล้ว${politeWord}\n\n` +
+        `⭐ แบบประเมินความพึงพอใจการให้บริการ:\n` +
+        `${surveyUrl}\n\n` +
+        `ขอแสดงความนับถือ,\n` +
+        `${assigneeFullName}\n` +
+        `${assigneePos}\n` +
+        `เบอร์โทร: ${assigneePhone}`;
     }
 
-    const targetBody = encodeURIComponent(urlBodyText);
+    const targetBody = encodeURIComponent(bodyToSend);
     const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&to=${targetTo}&cc=${targetCc}&su=${targetSubject}&body=${targetBody}`;
 
     window.open(gmailUrl, "_blank");
@@ -283,254 +317,212 @@ export default function CompletedEmailModal({
   if (!isOpen || !brief || !mounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 bg-[#181a1c]/90 backdrop-blur-md z-[100000] flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-zinc-200">
+    <div className="fixed inset-0 bg-[#181a1c]/90 backdrop-blur-md z-[100000] flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-3xl h-[92vh] max-h-[92vh] rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-zinc-200">
         
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-zinc-200 bg-zinc-50/90 flex items-start justify-between gap-3 shrink-0">
-          <div className="space-y-1.5 min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs sm:text-sm font-mono font-bold px-3.5 py-1 rounded-full bg-zinc-900 text-white border border-zinc-800 shadow-2xs tracking-wide">
-                {taskCode}
-              </span>
-
-              <span
-                className={`text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-xs text-white ${
-                  unit === "creative"
-                    ? "bg-[#8b5cf6]"
-                    : unit === "content"
-                    ? "bg-[#ec4899]"
-                    : unit === "pr"
-                    ? "bg-[#1877F2]"
-                    : unit === "internal"
-                    ? "bg-[#18181b]"
-                    : "bg-zinc-800"
-                }`}
-              >
-                {unit}
-              </span>
-
-              <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1.5 shadow-2xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-zinc-900 font-bold">Completed</span>
-                <span className="text-emerald-700 font-semibold">&amp; Evaluation</span>
-              </span>
-            </div>
-
-            <div>
-              <h3 className="text-base font-bold text-zinc-900 leading-tight">
-                ร่างอีเมลส่งมอบงานและแบบประเมินความพึงพอใจ
-              </h3>
-              <p className="text-xs text-zinc-500 font-medium line-clamp-1 mt-0.5">
-                {brief.project_name || "ไม่ระบุชื่องาน"}
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={onCancel}
-            className="p-1.5 text-zinc-400 hover:text-zinc-800 hover:bg-zinc-200/70 rounded-full transition-colors cursor-pointer shrink-0"
-            title="ยกเลิกและคงไว้ที่ In Progress"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        {/* Notice Info Card: Option 1 */}
-        <div className="px-6 pt-4 pb-1 shrink-0">
-          <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-3.5 flex items-start gap-3 text-xs shadow-2xs">
-            <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-              <Star size={16} className="fill-white" />
-            </div>
-            <div className="space-y-1 text-zinc-700 flex-1">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <p className="font-bold text-zinc-900 text-xs flex items-center gap-1.5">
-                  <span>ส่งมอบงานและแบบประเมินผ่าน Gmail (@step.cmu.ac.th)</span>
-                </p>
-                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-                  ทางเลือกที่ 1 • ส่งจริง 100%
-                </span>
-              </div>
-              <p className="text-[11.5px] leading-relaxed text-zinc-600">
-                เมื่อกดปุ่ม <strong className="text-[#EA4335] font-bold">&ldquo;🚀 ส่งมอบงาน &amp; เปิดส่งใน Gmail&rdquo;</strong> ระบบจะปรับสถานะเป็น <strong className="text-zinc-900 font-bold">Completed</strong> พร้อมเปิดหน้าต่างเขียนจดหมาย Gmail ของท่าน โดยใส่ผู้รับ (PM), สำเนา (CC), หัวข้อ และลิงก์แบบประเมินความพึงพอใจไว้ครบถ้วนทันที เพื่อให้ท่านกดส่งจากกล่องเมลจริงและมีประวัติใน Sent Items
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Modal Form Body */}
-        <div className="p-6 overflow-y-auto space-y-4 flex-1 text-xs custom-scrollbar">
-          
-          {/* Row 0: Assignee Info */}
-          <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-2xl flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-xs">
-                {assigneeMember?.name?.slice(0, 1) || "CC"}
-              </div>
-              <div>
-                <div className="text-xs font-bold text-zinc-900">
-                  {assigneeMember?.fullName || "ทีมงาน CC"}
-                </div>
-                <div className="text-[11px] text-zinc-500">
-                  {assigneeMember?.position || "ผู้รับผิดชอบงาน"} • {assigneeMember?.email}
-                </div>
-              </div>
-            </div>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-              ผู้ส่งมอบงาน
+        {/* Sleek Gmail-style Title Bar */}
+        <div className="px-4 py-2 border-b border-zinc-800 bg-zinc-900 text-white flex items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-white shrink-0">
+              {taskCode}
+            </span>
+            <span className={`text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider text-white shrink-0 ${
+              unit === "creative" ? "bg-[#8b5cf6]" :
+              unit === "content" ? "bg-[#ec4899]" :
+              unit === "pr" ? "bg-[#1877F2]" :
+              unit === "internal" ? "bg-[#3f3f46]" : "bg-zinc-800"
+            }`}>
+              {unit}
+            </span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 flex items-center gap-1 shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Completed &amp; Evaluation</span>
+            </span>
+            <span className="text-xs font-semibold text-zinc-300 truncate">
+              ส่งมอบงาน • {brief.project_name || "ไม่ระบุชื่องาน"}
             </span>
           </div>
 
-          {/* Row 1: To (PM Email) */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-zinc-800 flex items-center gap-1.5">
-                <User size={13} className="text-zinc-700" />
-                <span>ส่งถึง (To - ผู้สั่งงาน / PM)</span>
-                <span className="text-[#E03131] font-bold">*</span>
-              </label>
-              <span className="text-[11px] text-zinc-400">
-                {brief.coordinator_nickname ? `คุณ${brief.coordinator_nickname}` : ""}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={handleCopyBody}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 transition-colors cursor-pointer"
+              title="คัดลอกเนื้อหาทั้งหมด"
+            >
+              {copied ? (
+                <>
+                  <Check size={11} className="text-emerald-400 stroke-[2.5]" />
+                  <span className="text-emerald-400 font-bold">คัดลอกแล้ว</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={11} className="text-zinc-400" />
+                  <span>คัดลอก</span>
+                </>
+              )}
+            </button>
+            <button
+              onClick={onCancel}
+              className="p-1 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors cursor-pointer"
+              title="ปิดหน้าต่าง"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* Modal Form Body - Clean Gmail Compose Window Style */}
+        <div className="flex-1 flex flex-col overflow-hidden text-xs bg-white">
+          
+          {/* Gmail Metadata Section (Ultra-Minimal, Clean Gmail Compose Headers) */}
+          <div className="px-4 py-1 border-b border-zinc-200 bg-white shrink-0 divide-y divide-zinc-100 text-[11px]">
+            
+            {/* Row 1: จาก (From) */}
+            <div className="flex items-center gap-2 py-1">
+              <span className="w-14 shrink-0 text-zinc-400 font-medium text-[11px] flex items-center gap-1">
+                <User size={11} className="text-emerald-600" />
+                <span>จาก:</span>
               </span>
-            </div>
-            <input
-              type="email"
-              value={toEmail}
-              onChange={(e) => setToEmail(e.target.value)}
-              className="w-full bg-white border border-zinc-200 hover:border-zinc-300 focus:border-[#f97316] focus:ring-2 focus:ring-orange-500/10 rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 focus:outline-none transition-all shadow-2xs"
-              placeholder="อีเมลผู้สั่งงาน เช่น pm@step.cmu.ac.th"
-            />
-          </div>
-
-          {/* Row 2: CC */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-zinc-800 flex items-center gap-1.5">
-                <Users size={13} className="text-zinc-700" />
-                <span>สำเนาอัตโนมัติ (CC)</span>
-              </label>
-              <span className="text-[11px] text-emerald-700 font-bold">
-                คนทำงาน + หัวหน้าทีม + ผู้ช่วย
-              </span>
-            </div>
-            <div className="p-2.5 bg-zinc-50/80 border border-zinc-200/80 rounded-2xl flex flex-wrap gap-1.5 items-center min-h-[42px]">
-              {defaultCcEmails.map((email, idx) => (
-                <span
-                  key={idx}
-                  className="px-3 py-1 rounded-full bg-white border border-zinc-200 text-zinc-800 text-xs font-medium flex items-center gap-1.5 shadow-2xs"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  <span>{email}</span>
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Row 3: Subject */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-zinc-800 flex items-center gap-1.5">
-              <FileText size={13} className="text-zinc-700" />
-              <span>หัวข้ออีเมล (Subject)</span>
-            </label>
-            <div className="px-3.5 py-2.5 bg-zinc-50 border border-zinc-200/80 rounded-xl text-xs font-semibold text-zinc-900 select-all leading-relaxed shadow-2xs">
-              {emailSubject}
-            </div>
-          </div>
-
-          {/* Row 4: Survey Link Preview */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-zinc-800 flex items-center gap-1.5">
-              <Link2 size={13} className="text-blue-600" />
-              <span>ลิงก์แบบประเมินความพึงพอใจ (Satisfaction Survey Link):</span>
-            </label>
-            <div className="p-3 bg-blue-50/60 border border-blue-200 rounded-xl flex items-center justify-between gap-2">
-              <span className="font-mono text-[11px] text-blue-900 truncate">
-                {surveyUrl}
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  navigator.clipboard.writeText(surveyUrl);
-                  alert("คัดลอกลิงก์แบบประเมินแล้ว");
-                }}
-                className="px-3 py-1 rounded-full text-xs font-semibold bg-white text-blue-700 border border-blue-200 hover:border-blue-300 shadow-2xs shrink-0 cursor-pointer"
-              >
-                คัดลอกลิงก์
-              </button>
-            </div>
-          </div>
-
-          {/* Row 5: Body with Copy button */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-zinc-800 flex items-center gap-1.5">
-                <FileText size={13} className="text-emerald-600" />
-                <span>เนื้อหาอีเมลส่งมอบงาน (ตรวจสอบหรือปรับแก้ก่อนส่ง):</span>
-              </label>
-              <button
-                type="button"
-                onClick={handleCopyBody}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white hover:bg-zinc-50 text-zinc-700 border border-zinc-200 hover:border-zinc-300 shadow-2xs transition-colors cursor-pointer"
-              >
-                {copied ? (
-                  <>
-                    <Check size={12} className="text-emerald-600 stroke-[2.5]" />
-                    <span className="text-emerald-700 font-bold">คัดลอกแล้ว</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy size={12} className="text-zinc-500" />
-                    <span>คัดลอกข้อความ</span>
-                  </>
+              <div className="flex-1 min-w-0 flex items-center gap-2 truncate">
+                <Assignee3DAvatarBadge name={assigneeMember?.name} size={22} showBorder />
+                <span className="font-bold text-zinc-900">{assigneeMember?.name || "ทีมงาน CC"}</span>
+                {assigneeMember?.fullName && (
+                  <span className="text-zinc-500 font-normal truncate hidden sm:inline">
+                    ({assigneeMember.fullName})
+                  </span>
                 )}
-              </button>
+                <span className="text-[11px] text-zinc-400 font-mono">
+                  &lt;{assigneeMember?.email || "cc@step.cmu.ac.th"}&gt;
+                </span>
+                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0 ml-auto">
+                  ผู้ส่งมอบงาน
+                </span>
+              </div>
             </div>
+
+            {/* Row 2: ถึง (To) with inline CC nicknames */}
+            <div className="flex items-center gap-2 py-1">
+              <span className="w-14 shrink-0 text-zinc-400 font-medium text-[11px] flex items-center gap-1">
+                <Mail size={11} className="text-zinc-400" />
+                <span>ถึง:</span>
+              </span>
+              <div className="flex-1 min-w-0 flex items-center gap-2">
+                <input
+                  type="email"
+                  value={toEmail}
+                  onChange={(e) => setToEmail(e.target.value)}
+                  placeholder={
+                    isRsp
+                      ? "ระบุอีเมล PM ผู้ประสานงาน RSP เครือข่าย (เช่น user@step.cmu.ac.th)..."
+                      : isInternal 
+                        ? "adchanapong@step.cmu.ac.th (งานภายใน ส่งหัวหน้าทีม)" 
+                        : "requester@step.cmu.ac.th (PM / ผู้สั่งงาน)"
+                  }
+                  className="flex-1 bg-transparent hover:bg-zinc-50 focus:bg-white border-0 px-1.5 text-xs font-medium text-zinc-900 focus:outline-none h-6 placeholder:text-zinc-400 truncate"
+                />
+                {defaultCcRecipients.length > 0 && (
+                  <div className="shrink-0 flex items-center gap-1.5 text-[11px]">
+                    <span className="text-zinc-400 font-medium text-[11px]">Cc:</span>
+                    <span 
+                      className="px-2.5 py-0.5 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-200 text-[11px] font-semibold transition-colors cursor-help inline-flex items-center gap-1"
+                      title={defaultCcRecipients.map((r) => `${r.name} (${r.fullName}) <${r.email}>`).join('\n')}
+                    >
+                      <Users size={11} className="text-zinc-500" />
+                      <span>{ccNicknamesText}</span>
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Row 3: หัวข้อ (Subject) */}
+            <div className="flex items-center gap-2 py-1">
+              <span className="w-14 shrink-0 text-zinc-400 font-medium text-[11px] flex items-center gap-1">
+                <FileText size={11} className="text-zinc-400" />
+                <span>หัวข้อ:</span>
+              </span>
+              <div className="flex-1 min-w-0">
+                <input
+                  type="text"
+                  value={emailSubject}
+                  readOnly
+                  className="w-full bg-transparent border-0 px-1.5 text-xs font-semibold text-zinc-800 focus:outline-none h-6 select-all truncate"
+                />
+              </div>
+            </div>
+
+
+          </div>
+
+          {/* Textarea for Email Body (Takes all remaining vertical space >80%) */}
+          <div className="flex-1 flex flex-col p-3 overflow-hidden">
             <textarea
-              rows={10}
               value={emailBody}
               onChange={(e) => {
                 setEmailBody(e.target.value);
                 setHasEditedBody(true);
               }}
-              className="w-full bg-white border border-zinc-200 hover:border-zinc-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 rounded-2xl p-4 text-xs leading-relaxed text-zinc-800 focus:outline-none transition-all resize-y shadow-2xs custom-scrollbar"
+              className="w-full flex-1 p-3 text-xs font-mono sm:font-sans leading-relaxed text-zinc-800 focus:outline-none resize-none bg-white rounded-xl border border-transparent focus:border-zinc-200 hover:border-zinc-100 custom-scrollbar select-text"
               placeholder="เนื้อหาอีเมลส่งมอบงาน..."
+              spellCheck={false}
             />
+
+            {/* Official CC Email Signature with 2D Avatar (Requested by User: "ตัดที่กากบาทออกและขยายรูปให้ใหญ่ขึ้น") */}
+            <div className="mt-2.5 p-3.5 rounded-2xl bg-gradient-to-r from-slate-50 via-emerald-50/20 to-slate-50 border border-slate-200/80 flex items-center justify-between gap-3.5 shrink-0 shadow-2xs">
+              <div className="flex items-center gap-3.5 min-w-0">
+                <div className="shrink-0 p-1 rounded-full bg-white border border-slate-200 shadow-sm">
+                  <Assignee3DAvatarBadge name={assigneeMember?.name || brief?.assignee_name || "CC"} size={70} showBorder />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-zinc-900 truncate">
+                      {assigneeMember?.fullName || assigneeMember?.name || "ทีมงาน CC"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-600 truncate mt-0.5">
+                    {assigneeMember?.position || "พนักงานสร้างสรรค์และสื่อสารองค์กร (Creative and Communication Officer)"}
+                  </p>
+                  <p className="text-[11px] text-zinc-400 mt-0.5 truncate">
+                    เบอร์โทร: {assigneeMember?.phone && assigneeMember.phone !== "-" ? assigneeMember.phone : "-"} • อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (CMU STeP)
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
         </div>
 
         {/* Footer actions */}
-        <div className="px-6 py-4 border-t border-zinc-200 bg-zinc-50/90 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+        <div className="px-4 py-2.5 border-t border-zinc-200 bg-zinc-50 flex items-center justify-between gap-3 shrink-0">
           <button
             type="button"
             onClick={onCancel}
-            className="w-full sm:w-auto whitespace-nowrap px-6 py-2.5 text-xs font-bold text-zinc-600 hover:text-zinc-900 bg-white border border-zinc-300 hover:border-zinc-400 rounded-full hover:bg-zinc-50 transition-all cursor-pointer shadow-2xs text-center"
+            className="px-4 py-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-900 bg-white border border-zinc-200 hover:border-zinc-300 rounded-lg hover:bg-zinc-50 transition-colors cursor-pointer"
           >
-            ยกเลิก (คงไว้ที่ In Progress)
+            คงไว้ที่ IN PROGRESS
           </button>
 
-          <div className="flex items-center justify-end w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={handleSendAndOpenGmail}
-              disabled={isSending}
-              className="w-full sm:w-auto whitespace-nowrap px-6 py-2.5 text-xs font-bold text-white bg-[#EA4335] hover:bg-[#d93025] active:bg-[#c5221f] rounded-full shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-              title="ทางเลือกที่ 1: บันทึกส่งมอบงานและเปิดส่งใน Gmail (@step.cmu.ac.th)"
-            >
-              {isSending ? (
-                <>
-                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>กำลังบันทึกส่งมอบงาน...</span>
-                </>
-              ) : (
-                <>
-                  <Mail size={14} className="text-white" />
-                  <span>🚀 ส่งมอบงาน &amp; เปิดส่งใน Gmail</span>
-                  <ExternalLink size={12} className="opacity-90" />
-                </>
-              )}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleSendAndOpenGmail}
+            disabled={isSending}
+            className="px-5 py-2 text-xs font-bold text-white bg-[#EA4335] hover:bg-[#d93025] active:bg-[#c5221f] rounded-lg shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            title="ส่งมอบงานและเปิดใน Gmail"
+          >
+            {isSending ? (
+              <>
+                <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>กำลังบันทึกส่งมอบงาน...</span>
+              </>
+            ) : (
+              <>
+                <Mail size={14} className="text-white" />
+                <span>🚀 ส่งมอบงาน &amp; เปิดส่งใน Gmail</span>
+                <ExternalLink size={12} className="opacity-90" />
+              </>
+            )}
+          </button>
         </div>
 
       </div>

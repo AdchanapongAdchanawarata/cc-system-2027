@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { saveLineGroupId, getLineGroupIds } from "@/utils/lineBotConfig";
-import { queryLineAI } from "@/utils/lineAiService";
-import { recordMessage } from "@/utils/lineMemoryService";
+import { saveLineGroupId, getLineGroupIds, getLineQuotaStatus } from "@/utils/lineBotConfig";
+import { queryLineAI, getProperCallerName } from "@/utils/lineAiService";
+import { recordMessage, recordBotMessageId, isBotMessageId, recordBotActivity, getLastBotActivity } from "@/utils/lineMemoryService";
 
 // Helper to fetch user's LINE display name
 async function getUserDisplayName(lineToken: string, groupId?: string, userId?: string): Promise<string> {
@@ -46,11 +46,11 @@ async function handleLineEvent(
 
   if (!lineToken) return;
 
-  // Anti-spam cooldown: ignore triggers in the same group within 2.5 seconds
+  // Anti-spam cooldown: ignore rapid identical triggers in the same group within 1.0 second
   if (groupId) {
     const now = Date.now();
     const lastTime = lastGroupReplyTime.get(groupId) || 0;
-    if (now - lastTime < 2500) {
+    if (now - lastTime < 1000) {
       console.log("[LINE COOLDOWN] Skipping rapid trigger in group to prevent clutter");
       return;
     }
@@ -69,29 +69,54 @@ async function handleLineEvent(
     const lowerRaw = rawText.toLowerCase();
 
     // 1. Check if bot is explicitly called/invoked:
-    // In GROUP CHATS, น้อง CC must NEVER chime in unless explicitly called or @mentioned!
-    // a) LINE @Mention (@CC Report / @น้อง CC)
+    // a) LINE @Mention specifically targeting the bot (@CC Report / @น้อง CC)
     const isMentioned = !!(event.message?.mention?.mentionees?.some((m: any) => m.isSelf === true));
-    // b) Calling bot explicitly by name (e.g. น้อง cc, @น้อง cc, cc, น้องซีซี)
-    const botTriggerRegex = /น้อง[\s_]?cc|@น้อง[\s_]?cc|@cc|^cc\b|น้องซีซี|น้อง\s*cc/i;
-    const isNameCalled = botTriggerRegex.test(rawText);
+    
+    // b) Calling bot strictly by name (e.g. น้อง cc, @น้อง cc, น้องซีซี)
+    const botTriggerRegex = /(?:^|[\s@])(น้อง[\s_]?cc|น้องซีซี|น้อง\s*cc)/i;
+    const isNameCalled = botTriggerRegex.test(rawText) || lowerRaw.includes("น้อง cc") || lowerRaw.includes("น้องcc") || lowerRaw.includes("น้องซีซี");
+    
     // c) Registration commands (allowed in groups and 1-on-1)
-    const isRegistration = lowerRaw.includes("ลงทะเบียน") || lowerRaw.includes("bind") || lowerRaw === "id" || lowerRaw === "เช็ค id";
+    const isRegistration = lowerRaw.includes("ลงทะเบียน noty") || lowerRaw.includes("ลงทะเบียน cc") || lowerRaw.includes("bind noty") || lowerRaw.includes("bind cc") || lowerRaw === "id" || lowerRaw === "เช็ค id";
+    
+    // d) LINE Quote Reply: Checked via persisted message IDs or active conversation window
+    const quotedMessageId = event.message?.quotedMessageId;
+    let isReplyingToBotMessage = false;
+    if (quotedMessageId) {
+      isReplyingToBotMessage = await isBotMessageId(quotedMessageId);
+      if (!isReplyingToBotMessage && groupId) {
+        // Fallback: If quoted message ID was not captured (e.g. serverless cold start), check if bot spoke within 15 minutes
+        const lastActivity = await getLastBotActivity(groupId);
+        if (lastActivity && (Date.now() - lastActivity.timestamp) < 15 * 60 * 1000) {
+          isReplyingToBotMessage = true;
+        }
+      }
+    }
 
-    // Strict invocation check: In groups, bot wakes up if mentioned, called by name, or running registration/ID commands
-    const isExplicitlyInvoked = isMentioned || isNameCalled || isRegistration;
+    // e) Direct short answer/continuation within 3 minutes of bot speaking in group
+    let isConversationContinuation = false;
+    if (groupId && !quotedMessageId && !isNameCalled && !isMentioned) {
+      const lastActivity = await getLastBotActivity(groupId);
+      if (lastActivity && (Date.now() - lastActivity.timestamp) < 3 * 60 * 1000) {
+        const isDirectAnswer = /^(kr\s*\/?\s*r|okr|ขอ\s*ลิงก์|ขอ\s*ลิ้งค์|ขอลบิงก์|ลิงก์|ลิ้งค์|ok|โอเค|ครับ|ค่ะ|ขอบคุณ|อันนี้คือ|ตรวจสอบ)/i.test(rawText.trim());
+        if (isDirectAnswer) {
+          isConversationContinuation = true;
+        }
+      }
+    }
 
-    // In group chats: 100% STRICT SILENCE if nobody explicitly called the bot!
-    // Never reply just because a user swiped to quote/reply to another user or an old message!
+    // In group chats: bot MUST ONLY respond if explicitly called/invoked by name, @mention, direct reply, or active conversation!
+    const isExplicitlyInvoked = isMentioned || isNameCalled || isRegistration || isReplyingToBotMessage || isConversationContinuation;
+
     if (isGroup && !isExplicitlyInvoked) {
-      return;
+      return; // 100% Silent - bot was not called!
     }
 
     // Clean the trigger word
     const queryText = rawText.replace(botTriggerRegex, "").replace(/@\S+/g, "").trim();
     const text = (queryText || rawText).toLowerCase();
 
-    // 2. Stop / Mute commands: If someone tells the bot to be quiet or stop talking, STAY 100% SILENT!
+    // 2. Stop / Mute commands: If someone tells the bot to be quiet, stop talking, or not answer, STAY 100% SILENT!
     const isMuteCommand = (
       text.includes("หยุด") ||
       text.includes("เงียบ") ||
@@ -101,6 +126,11 @@ async function handleLineEvent(
       text.includes("อย่าเพิ่ง") ||
       text.includes("ไม่ต้องตอบ") ||
       text.includes("ห้ามตอบ") ||
+      text.includes("อย่าตอบ") ||
+      text.includes("ห้ามตอบคำถามเอง") ||
+      text.includes("ไม่ต้องพูด") ||
+      text.includes("อย่าพึ่งตอบ") ||
+      text.includes("อย่าเพิ่งตอบ") ||
       text.includes("stop") ||
       text.includes("quiet") ||
       text.includes("shut up")
@@ -149,6 +179,20 @@ async function handleLineEvent(
       const groupRole = groupId === notyGroupId ? "Creative step (NOTY)" : (groupId === execGroupId ? "CC TEAM" : "ยังไม่ได้ผูกกลุ่ม");
       replyText = `📌 ข้อมูล ID ระบบ LINE:\n• Group ID: ${groupId || "ไม่ใช่แชทกลุ่ม"}\n• บทบาทกลุ่ม: ${groupRole}`;
     }
+    // 2.2.1 Quota Status Query
+    else if (text === "โควต้า" || text === "เช็คโควต้า" || text === "quota" || text.includes("โควต้า") || text.includes("quota")) {
+      const q = await getLineQuotaStatus();
+      replyText = `📊 [สรุปสถานะโควต้า LINE Messaging API ประจำเดือน] 🤖✨
+• โควต้ารวมรายเดือน: ${q.total} ข้อความ
+• ใช้งานไปแล้ว: ${q.used} ข้อความ
+• โควต้าคงเหลือ: ${q.remaining} ข้อความ
+
+👥 การคิดโควต้าตามจำนวนคนในกลุ่ม:
+• กลุ่ม Creative step (NOTY): ${q.notyMembers} ท่าน (ส่ง 1 ครั้ง = คิด ${q.notyMembers} ข้อความ)
+• กลุ่ม CC TEAM (ผู้บริหาร): ${q.execMembers} ท่าน (ส่ง 1 ครั้ง = คิด ${q.execMembers} ข้อความ)
+
+💡 ระบบตัดการแจ้งเตือนจุกจิกออกแล้ว เพื่อสำรองโควต้าให้ Morning Brief และรายงานผู้บริหารสิ้นเดือนได้ครบถ้วน 100% ครับ!`;
+    }
     // 2.3 Ask for Brief Link (Only when explicitly requesting the form/link)
     else if (
       text === "ขอบรีฟ" ||
@@ -183,13 +227,14 @@ async function handleLineEvent(
     else {
       const groupName = groupId === notyGroupId ? "Creative step (NOTY)" : (groupId === execGroupId ? "CC TEAM" : "General");
       const targetId = groupId || userId || "";
-      const askerName = await getUserDisplayName(lineToken, groupId, userId);
+      const rawAskerName = await getUserDisplayName(lineToken, groupId, userId);
+      const properAskerName = getProperCallerName(rawAskerName);
       
       if (targetId) {
-        recordMessage(targetId, askerName || "พี่ในทีม", "user", rawText);
+        recordMessage(targetId, properAskerName || "พี่ในทีม", "user", rawText);
       }
 
-      replyText = await queryLineAI(rawText, groupName, targetId, askerName);
+      replyText = await queryLineAI(rawText, groupName, targetId, rawAskerName);
 
       if (targetId && replyText) {
         recordMessage(targetId, "น้อง CC", "assistant", replyText);
@@ -205,9 +250,10 @@ async function handleLineEvent(
 
     let finalMessage = replyText;
     if (event.type === "message" && groupId) {
-      const askerName = await getUserDisplayName(lineToken, groupId, userId);
-      if (askerName) {
-        finalMessage = `💬 [คุณ ${askerName}]\n${replyText}`;
+      const rawAskerName = await getUserDisplayName(lineToken, groupId, userId);
+      if (rawAskerName) {
+        const callerName = getProperCallerName(rawAskerName);
+        finalMessage = `💬 [${callerName}]\n${replyText}`;
       }
     }
 
@@ -226,33 +272,43 @@ async function handleLineEvent(
           }),
         });
 
-        if (replyRes.ok) {
-          sent = true;
-          console.log("[LINE REPLY SUCCESS]");
-        } else {
-          const errText = await replyRes.text();
-          console.warn(`[LINE REPLY FAILED status=${replyRes.status}]: ${errText}. Falling back to Push API!`);
+          if (replyRes.ok) {
+            sent = true;
+            console.log("[LINE REPLY SUCCESS]");
+            if (groupId) recordBotActivity(groupId, finalMessage);
+            try {
+              const data = await replyRes.json().catch(() => ({}));
+              if (data?.sentMessages && Array.isArray(data.sentMessages)) {
+                data.sentMessages.forEach((m: any) => {
+                  if (m?.id) recordBotMessageId(m.id, groupId, finalMessage);
+                });
+              }
+            } catch (e) {}
+          } else {
+            const errText = await replyRes.text();
+            console.warn(`[LINE REPLY FAILED status=${replyRes.status}]: ${errText}. Falling back to Push API!`);
+          }
         }
-      }
 
-      // Fallback to push message directly to group/user if reply was not sent or failed
-      if (!sent) {
-        const targetId = groupId || userId;
-        if (targetId) {
-          const pushRes = await fetch("https://api.line.me/v2/bot/message/push", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${lineToken}`,
-            },
-            body: JSON.stringify({
-              to: targetId,
-              messages: [{ type: "text", text: finalMessage }],
-            }),
-          });
-          console.log(`[LINE PUSH FALLBACK] Status: ${pushRes.status}`);
+        // Fallback to push message directly to group/user if reply was not sent or failed
+        if (!sent) {
+          const targetId = groupId || userId;
+          if (targetId) {
+            const pushRes = await fetch("https://api.line.me/v2/bot/message/push", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${lineToken}`,
+              },
+              body: JSON.stringify({
+                to: targetId,
+                messages: [{ type: "text", text: finalMessage }],
+              }),
+            });
+            console.log(`[LINE PUSH FALLBACK] Status: ${pushRes.status}`);
+            if (groupId) recordBotActivity(groupId, finalMessage);
+          }
         }
-      }
     } catch (err) {
       console.error("[LINE SEND ERROR]", err);
     }

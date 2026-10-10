@@ -7,11 +7,14 @@ import {
   Plus, Trash2, Building2, Palette, FileText, Megaphone
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { getActivePricingList, ServicePriceItem } from "@/utils/pricing";
+import { getActivePricingList, ServicePriceItem, isInternalTaskRequiringEmail } from "@/utils/pricing";
+import { generateNextTaskCode } from "@/utils/taskCodeService";
 import ModernDatePicker from "@/components/ModernDatePicker";
 import ModernSelect, { ModernSelectOption } from "@/components/ModernSelect";
 import CustomSelect from "./CustomSelect";
 import { OFFICIAL_STEP_TEAMS } from "@/utils/teamAnalytics";
+import StepQuotationModal, { StepQuotationData, formatCurrency } from "./StepQuotationModal";
+import { isOperationalAssignee } from "@/utils/memberProfile";
 
 type OKR = { id: string; type: string; description: string };
 type Assignee = { id: string; name: string; unit: string; is_active?: boolean };
@@ -104,6 +107,11 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
   // Track if profit was manually edited by user
   const [manualProfitEdit, setManualProfitEdit] = useState(false);
 
+  // Quotation system state (ตามมาตรฐาน 100% STeP CMU)
+  const [showQuotationModal, setShowQuotationModal] = useState(false);
+  const [quotationData, setQuotationData] = useState<StepQuotationData | null>(null);
+  const [quotationTotal, setQuotationTotal] = useState<number>(0);
+
   useEffect(() => {
     const fetchData = async () => {
       // 1. Fetch OKRs
@@ -113,7 +121,7 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
       // 2. Fetch Assignees (Active members of CC Team - exclude executives)
       const { data: assigneeData } = await supabase.from('assignees').select('id, name, unit, is_active').eq('is_active', true).order('name');
       if (assigneeData && assigneeData.length > 0) {
-        const operationalOnly = assigneeData.filter(a => !(a.unit || '').includes('|executive'));
+        const operationalOnly = assigneeData.filter(a => isOperationalAssignee(a));
         setAssignees(operationalOnly);
       }
 
@@ -159,12 +167,31 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
   }, []);
 
   const categoryOptions: ModernSelectOption[] = useMemo(() => {
-    return internalPricing.map(item => ({
-      value: item.service_name,
-      label: item.service_name,
-      desc: item.description,
-      badge: `฿${item.standard_price.toLocaleString()}`
-    }));
+    // 1. Ensure "ทำใบเสนอราคา" (Quotation STeP) is pinned at top
+    const quoteItem: ModernSelectOption = {
+      value: "ทำใบเสนอราคา",
+      label: "📄 ทำใบเสนอราคา",
+      desc: "สร้างและออกเอกสารใบเสนอราคาตามมาตรฐาน STeP CMU (บันทึกข้อมูลในระบบ ไม่ส่งเมล)",
+      badge: "ระบบเอกสาร"
+    };
+
+    const restItems: ModernSelectOption[] = internalPricing
+      .filter(item => item.service_name !== "ทำใบเสนอราคา" && item.service_name !== "ทำใบเสนราคา")
+      .map(item => {
+        const isEmailReq = isInternalTaskRequiringEmail({
+          unit: "internal",
+          details: { category: item.service_name }
+        });
+
+        return {
+          value: item.service_name,
+          label: item.service_name,
+          desc: item.description,
+          badge: isEmailReq ? "✉️ มีส่งเมล/ประเมิน" : `฿${item.standard_price.toLocaleString()}`
+        };
+      });
+
+    return [quoteItem, ...restItems];
   }, [internalPricing]);
 
   const okrOptions: ModernSelectOption[] = useMemo(() => {
@@ -241,7 +268,12 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
     return cat === "ให้คำปรึกษา / รับโจทย์ ผู้ประกอบการ" || cat.includes("ให้คำปรึกษา / รับโจทย์ ผู้ประกอบการ");
   }, [formData.category]);
 
-  // Category change handler with auto Save Cost update
+  const isQuotationProject = useMemo(() => {
+    const cat = (formData.category || "").trim();
+    return cat === "ทำใบเสนอราคา" || cat === "ทำใบเสนราคา" || cat.includes("ใบเสนอราคา") || cat.includes("ใบเสนราคา") || Boolean(quotationData);
+  }, [formData.category, quotationData]);
+
+  // Category change handler with auto Save Cost update & popup trigger
   const handleCategoryChange = (val: string) => {
     let nextAssigneeId = formData.assignee_id;
     if ((val.trim() === "ให้คำปรึกษา / รับโจทย์ ผู้ประกอบการ" || val.includes("ให้คำปรึกษา / รับโจทย์ ผู้ประกอบการ")) && !formData.assignee_id) {
@@ -249,12 +281,27 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
       if (pim) nextAssigneeId = pim.id;
     }
 
-    setFormData(prev => ({ ...prev, category: val, assignee_id: nextAssigneeId }));
+    // If user selects "ทำใบเสนอราคา" or "ทำใบเสนราคา", immediately pop up UI and compute 30 days deadline
+    if (val === 'ทำใบเสนอราคา' || val === 'ทำใบเสนราคา' || val.includes('ใบเสนอราคา') || val.includes('ใบเสนราคา')) {
+      setShowQuotationModal(true);
+      const targetDate = new Date();
+      targetDate.setDate(targetDate.getDate() + 30);
+      const dl30 = targetDate.toISOString().split("T")[0];
+      setFormData(prev => ({
+        ...prev,
+        category: val,
+        assignee_id: nextAssigneeId,
+        deadline: dl30
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, category: val, assignee_id: nextAssigneeId }));
+    }
+
     const matched = pricingList.find(p => p.service_name.toLowerCase() === val.toLowerCase());
-    const stdPrice = matched ? matched.standard_price : (val.trim() === "PM โครงการของ CC" ? 50000 : 1000);
+    const stdPrice = matched ? matched.standard_price : (val.trim() === "PM โครงการของ CC" ? 50000 : 1500);
     
     if (!manualSaveCostEdit) {
-      setSaveCost(stdPrice);
+      setSaveCost(quotationTotal > 0 ? quotationTotal : stdPrice);
     }
   };
 
@@ -358,7 +405,10 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
     setLoading(true);
 
     try {
-      const okrLinks = formData.selected_okr ? [formData.selected_okr] : [];
+      const isExternal = formData.organization === "CMU" || formData.organization === "RSP" || formData.organization === "Other" || formData.client_sector === "CMU" || formData.client_sector === "RSP";
+      const okrLinks = isExternal 
+        ? ["KR2", "R3", "R4"] 
+        : (formData.selected_okr ? [formData.selected_okr] : ["KR1", "R1", "R2"]);
       const selectedAssignee = assignees.find(a => a.id === formData.assignee_id);
       
       const revNum = Number(formData.revenue) || 0;
@@ -388,6 +438,9 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
         organization: orgValue,
         organization_key: isPMProject ? formData.client_sector : formData.organization,
         organization_other: formData.organization === "Other" ? formData.organization_other.trim() : undefined,
+        selected_okr: isExternal ? 'KR2' : (formData.selected_okr || 'KR1'),
+        okr_kr: isExternal ? 'KR2' : (formData.selected_okr || 'KR1'),
+        r_metrics: isExternal ? ['R3', 'R4'] : ['R1', 'R2'],
         description: formData.description,
         details: formData.description,
         team: formData.team || 'CC',
@@ -538,6 +591,33 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
         }
       }
 
+      // Handle Quotation system details (ตามมาตรฐาน 100% STeP CMU)
+      if (formData.category === 'ทำใบเสนอราคา' || formData.category === 'ทำใบเสนราคา' || quotationData) {
+        detailsPayload.quotation = quotationData;
+        const totalQuote = quotationTotal || finalSaveCost;
+        detailsPayload.revenue = totalQuote;
+        detailsPayload.save_cost = totalQuote;
+        detailsPayload.project_value = totalQuote.toString();
+
+        if (quotationData?.customerName) {
+          finalCoordinator = quotationData.customerName;
+          if (!finalTaskTitle || finalTaskTitle.startsWith("[Quotation]") || finalTaskTitle === "ทำใบเสนอราคา") {
+            finalTaskTitle = `[Quotation] ${quotationData.docId || 'QT'} - ${quotationData.customerName}`;
+          }
+          if (quotationData.customerPhone) {
+            detailsPayload.requester_phone = quotationData.customerPhone;
+          }
+        }
+      }
+
+      // Generate guaranteed sequential task code for FY70 (e.g. IT70-1, IT70-2, IT70-3...)
+      const prefix = isConsultationProject ? 'IDC' : (isQuotationProject || quotationData) ? 'QT' : 'IT';
+      const generatedTaskCode = await generateNextTaskCode(prefix);
+      detailsPayload.task_code = generatedTaskCode;
+      if (prefix === 'IDC') {
+        detailsPayload.idc_code = generatedTaskCode;
+      }
+
       const { error } = await supabase.from('briefs').insert([{
         project_name: finalTaskTitle,
         unit: 'internal',
@@ -566,7 +646,7 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className={`bg-white w-full ${isConsultationProject ? 'max-w-2xl' : 'max-w-xl'} max-h-[92vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 transition-all`}>
+      <div className={`bg-white w-full ${(isConsultationProject || isQuotationProject) ? 'max-w-2xl' : 'max-w-xl'} max-h-[92vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 transition-all`}>
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/80 shrink-0">
@@ -575,7 +655,7 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
               Internal Task
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              บันทึกงานเอกสาร, เคลียร์บิล, จัดซื้อ, และบริหารโครงการ PM ของ CC เพื่อบันทึกเป็น Workload & Save Cost
+              บันทึกงานภายในเชิงข้อมูลในระบบโดยตรง (ไม่ส่งอีเมล) ยกเว้นงาน PM โครงการ, ให้คำปรึกษาเชิงสร้างสรรค์ และให้คำปรึกษา/รับโจทย์ ผู้ประกอบการ
             </p>
           </div>
           <button 
@@ -642,19 +722,29 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
 
           {/* 2.1 Assistants Sub-section inside Assignee (รูปแบบเหมือน task ปรกติ 100%) */}
           <div className="bg-slate-50/70 p-3.5 rounded-2xl border border-slate-200/80 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-xs text-slate-700 font-bold">
-                <Users size={13} className="text-slate-500" />
-                <span>ผู้ช่วยรับผิดชอบ (Assistants)</span>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Users size={13} className="text-slate-500 shrink-0" />
+                <span className="text-xs text-slate-700 font-bold truncate">ผู้ช่วยรับผิดชอบ (Assistants)</span>
+                {isPMProject && (
+                  <span 
+                    className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/90 px-2 py-0.5 rounded-full shrink-0"
+                    title="คิดสัดส่วนเงินจาก % กำไรสุทธิ (Profit) ของโครงการ"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                    คิดจาก % กำไร
+                  </span>
+                )}
               </div>
               <button 
                 type="button"
                 onClick={() => {
                   setAssistants(prev => [...prev, { assignee_id: '', percentage: 0 }]);
                 }}
-                className="text-[11px] text-white bg-[#e03131] hover:bg-[#c92a2a] active:bg-[#b02525] active:scale-95 px-3 py-1 rounded-full transition-all font-semibold tracking-wide shadow-xs border border-transparent flex items-center gap-1 cursor-pointer"
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-[#e03131] hover:text-white bg-rose-50 hover:bg-[#e03131] border border-rose-200 hover:border-[#e03131] rounded-full transition-all cursor-pointer shadow-2xs shrink-0"
               >
-                <Plus size={12} strokeWidth={2.5} /> ขอผู้ช่วย
+                <Plus size={11} strokeWidth={2.5} className="shrink-0" />
+                <span>ขอผู้ช่วย</span>
               </button>
             </div>
 
@@ -665,7 +755,8 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
             ) : (
               <div className="space-y-1.5 pt-1">
                 {(() => {
-                  const effectiveBaseVal = saveCost;
+                  const pmProfitNum = formData.profit !== "" ? Number(formData.profit) : ((Number(formData.revenue) || 0) - (Number(formData.cost) || 0));
+                  const effectiveBaseVal = isPMProject ? pmProfitNum : saveCost;
 
                   return (
                     <>
@@ -710,7 +801,7 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
                             </div>
                             <div 
                               className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-full shrink-0 min-w-[65px] text-right text-emerald-700 bg-emerald-50/80 border border-emerald-200/60"
-                              title="มูลค่า Save Cost ของผู้ช่วยท่านนี้"
+                              title={isPMProject ? "ส่วนแบ่งกำไร (Profit) ของผู้ช่วยท่านนี้" : "มูลค่า Save Cost ของผู้ช่วยท่านนี้"}
                             >
                               ฿{assistantBaht.toLocaleString()}
                             </div>
@@ -747,11 +838,13 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
                             <div className="space-y-1 mt-1.5">
                               <div className="text-[11px] text-slate-600 flex items-center justify-between px-2.5 py-1 bg-slate-50 rounded-lg border border-slate-200/80 font-medium">
                                 <span>
-                                  งานหลัก: <strong className="text-slate-800 font-semibold">{ownerPct}%</strong> <span className="font-mono font-bold text-emerald-700">(฿{ownerBaht.toLocaleString()})</span>
+                                  งานหลัก: <strong className="text-slate-800 font-semibold">{ownerPct}%</strong>{" "}
+                                  <span className="font-mono font-bold text-emerald-700">(฿{ownerBaht.toLocaleString()})</span>
                                 </span>
                                 <span className="text-slate-300">|</span>
                                 <span>
-                                  ผู้ช่วยรวม: <strong className="text-slate-800 font-semibold">{totalPercent}%</strong> <span className="font-mono font-bold text-emerald-700">(฿{assistantBaht.toLocaleString()})</span>
+                                  ผู้ช่วยรวม: <strong className="text-slate-800 font-semibold">{totalPercent}%</strong>{" "}
+                                  <span className="font-mono font-bold text-emerald-700">(฿{assistantBaht.toLocaleString()})</span>
                                 </span>
                               </div>
                             </div>
@@ -777,10 +870,106 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
               onChange={handleCategoryChange}
               options={categoryOptions}
               placeholder="เลือกประเภทงาน..."
-              searchPlaceholder="ค้นหาประเภทงาน (เช่น VDO, ข่าว, PM, Event)..."
+              searchPlaceholder="ค้นหาประเภทงาน (เช่น ทำใบเสนอราคา, VDO, ข่าว, PM, Event)..."
               required
             />
           </div>
+
+          {/* Quotation Document Card (100% STeP CMU Quotation) */}
+          {(formData.category === 'ทำใบเสนอราคา' || formData.category === 'ทำใบเสนราคา' || formData.category.includes('ใบเสนอราคา') || quotationData) && (
+            <div className="bg-gradient-to-br from-amber-50/90 via-orange-50/50 to-amber-50/80 border-2 border-amber-300/90 rounded-2xl p-4.5 space-y-3.5 animate-in fade-in shadow-xs">
+              
+              {/* Card Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-200/70 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-xs shrink-0">
+                    <FileText size={20} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-bold text-slate-900">
+                        ระบบออกใบเสนอราคา (Quotation)
+                      </h4>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200 font-mono">
+                        STeP CMU
+                      </span>
+                    </div>
+                    <p className="text-xs text-amber-800/90 font-medium mt-0.5">
+                      {quotationData 
+                        ? `สร้างและบันทึกใบเสนอราคาเลขที่ ${quotationData.docId} เรียบร้อยแล้ว`
+                        : "เอกสารหัวกระดาษและโลโก้อุทยานฯ ตรงตามระบบ Google Apps Script 100%"}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowQuotationModal(true)}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shrink-0"
+                >
+                  <FileText size={14} />
+                  <span>{quotationData ? "เปิดดู / แก้ไขใบเสนอราคา" : "เปิดฟอร์มออกใบเสนอราคา"}</span>
+                </button>
+              </div>
+
+              {/* Quotation Details Grid */}
+              {quotationData ? (
+                <div className="space-y-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                    
+                    {/* Customer */}
+                    <div className="bg-white/90 p-3 rounded-xl border border-amber-200/70 shadow-2xs">
+                      <span className="text-[10px] text-slate-400 block font-semibold mb-0.5">ลูกค้า / ผู้รับบริการ</span>
+                      <div className="font-bold text-slate-800 text-xs leading-snug break-words">
+                        {quotationData.customerName || "ไม่ระบุ"}
+                      </div>
+                      {quotationData.customerPhone && (
+                        <div className="text-[10px] text-slate-500 mt-1">
+                          โทร: {quotationData.customerPhone}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Summary & Numbers */}
+                    <div className="bg-white/90 p-3 rounded-xl border border-amber-200/70 shadow-2xs flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-semibold mb-0.5">เลขที่เอกสาร & รายการ</span>
+                        <div className="font-mono font-bold text-slate-800">
+                          {quotationData.docId} ({quotationData.items?.length || 0} รายการ)
+                        </div>
+                        <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                          วันที่ออก: {quotationData.docDate || "-"}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] text-slate-400 block font-semibold mb-0.5">ยอดรวมสุทธิ</span>
+                        <div className="font-mono font-extrabold text-amber-700 text-base">
+                          ฿{formatCurrency(quotationTotal)}
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Deadline Notice Pill */}
+                  <div className="bg-amber-100/70 border border-amber-200/90 rounded-xl px-3 py-2 flex items-center justify-between text-xs text-amber-900 font-medium">
+                    <span className="flex items-center gap-1.5">
+                      <span>⏳</span>
+                      <span><strong>กำหนดส่ง (Deadline):</strong> ยืนราคา 30 วันนับจากวันที่ออกเอกสาร</span>
+                    </span>
+                    <span className="font-mono font-bold text-amber-800 bg-white/80 px-2 py-0.5 rounded-lg border border-amber-300">
+                      {formData.deadline || "30 วัน"}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-xs text-amber-800/90 bg-white/60 p-3 rounded-xl border border-amber-200/60 flex items-center justify-between">
+                  <span>ยังไม่มีข้อมูลใบเสนอราคา คลิกปุ่มสีส้มด้านบนเพื่อเริ่มกรอกรายละเอียดและพิมพ์/Export</span>
+                </div>
+              )}
+
+            </div>
+          )}
 
           {/* เป็นภาระงานของหน่วยงานใด Single-Select - Minimal Dieter Rams Style (ซ่อนเมื่อเป็น PM โครงการของ CC) */}
           {!isPMProject && (
@@ -803,7 +992,14 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
                     <button
                       key={item.key}
                       type="button"
-                      onClick={() => setFormData({ ...formData, organization: item.key as any })}
+                      onClick={() => {
+                        const isExternal = item.key === "CMU" || item.key === "RSP" || item.key === "Other";
+                        setFormData({ 
+                          ...formData, 
+                          organization: item.key as any,
+                          selected_okr: isExternal ? "KR2" : "KR1"
+                        });
+                      }}
                       className={`h-10 rounded-full text-xs sm:text-sm font-semibold transition-all duration-150 cursor-pointer select-none flex items-center justify-center gap-1.5 border ${
                         isSelected
                           ? "bg-slate-600 text-white font-bold border-slate-600 shadow-2xs"
@@ -817,6 +1013,32 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
                     </button>
                   );
                 })}
+              </div>
+
+              {/* Interactive OKR & Metric Mapping Badge */}
+              <div className={`mt-2 p-2.5 rounded-2xl border text-xs flex items-center gap-2 transition-all ${
+                formData.organization === "CMU" || formData.organization === "RSP"
+                  ? "bg-purple-50/80 border-purple-200 text-purple-900"
+                  : formData.organization === "STeP"
+                  ? "bg-blue-50/80 border-blue-200 text-blue-900"
+                  : "bg-slate-50 border-slate-200 text-slate-700"
+              }`}>
+                <Target size={14} className="shrink-0 text-amber-500" />
+                <div className="leading-tight">
+                  {formData.organization === "CMU" || formData.organization === "RSP" ? (
+                    <span>
+                      🎯 <strong>ภาระงานภายนอก ({formData.organization}):</strong> ข้อมูลเชื่อมโยงเข้าสู่ <strong>KR2</strong> (ผลงานภายนอก มช. & RSP) • ตัวชี้วัด <strong>R3</strong> และ <strong>R4</strong> อัตโนมัติ
+                    </span>
+                  ) : formData.organization === "STeP" ? (
+                    <span>
+                      🏢 <strong>ภาระงานภายในองค์กร (STeP):</strong> ข้อมูลเชื่อมโยงเข้าสู่ <strong>KR1</strong> (ผลงานบริการภายใน) • ตัวชี้วัด <strong>R1</strong> และ <strong>R2</strong> อัตโนมัติ
+                    </span>
+                  ) : (
+                    <span>
+                      🌐 <strong>หน่วยงานอื่นๆ:</strong> เชื่อมโยงเข้าสู่ <strong>KR2</strong> / R3 / R4 (ภาระงานภายนอก)
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* ถ้าเลือกอื่นๆ จะมีช่องให้กรอก */}
@@ -1458,9 +1680,16 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
           {/* 5. Deadline & Priority */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Deadline
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Deadline (กำหนดส่ง)
+                </label>
+                {(formData.category === 'ทำใบเสนอราคา' || formData.category === 'ทำใบเสนราคา' || quotationData) && (
+                  <span className="text-[10px] text-amber-800 font-bold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                    ยืนราคา 30 วัน
+                  </span>
+                )}
+              </div>
               <ModernDatePicker 
                 value={formData.deadline}
                 onChange={val => setFormData({...formData, deadline: val})}
@@ -1516,6 +1745,44 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
           
         </form>
       </div>
+
+      {/* Step Quotation 100% Modal */}
+      {showQuotationModal && (
+        <StepQuotationModal
+          initialData={quotationData || undefined}
+          onClose={() => setShowQuotationModal(false)}
+          onSave={(data, totalAmount) => {
+            setQuotationData(data);
+            setQuotationTotal(totalAmount);
+            setSaveCost(totalAmount);
+
+            // Compute deadline = docDate + 30 days
+            let dl30 = "";
+            try {
+              const baseDate = data.docDate ? new Date(data.docDate) : new Date();
+              baseDate.setDate(baseDate.getDate() + 30);
+              dl30 = baseDate.toISOString().split("T")[0];
+            } catch {
+              const d = new Date();
+              d.setDate(d.getDate() + 30);
+              dl30 = d.toISOString().split("T")[0];
+            }
+
+            setFormData(prev => ({
+              ...prev,
+              project_name: (!prev.project_name || prev.project_name.startsWith("[Quotation]") || prev.project_name === "ทำใบเสนอราคา")
+                ? `[Quotation] ${data.docId} - ${data.customerName || 'ลูกค้า'}`
+                : prev.project_name,
+              deadline: dl30 || prev.deadline,
+              description: (!prev.description || prev.description.startsWith("ใบเสนอราคาเลขที่"))
+                ? `ใบเสนอราคาเลขที่ ${data.docId}\nลูกค้า: ${data.customerName}\nรายการบริการ:\n${(data.items || []).map((it, idx) => `${idx + 1}. ${it.description} x ${it.quantity} (฿${(it.quantity * it.price).toLocaleString()})`).join("\n")}\nรวมทั้งสิ้น: ฿${formatCurrency(totalAmount)}`
+                : prev.description
+            }));
+
+            // DO NOT close modal on save - user stays inside to print/export until they click close (X)!
+          }}
+        />
+      )}
     </div>
   );
 }

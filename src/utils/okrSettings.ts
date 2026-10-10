@@ -350,6 +350,12 @@ export const SATISFACTION_CRITERIA = [
     description: "ประเมินการส่งมอบงานตรงตามกรอบเวลาที่ได้ตกลงกันไว้"
   },
   {
+    id: "ownership",
+    key: "ownership",
+    name: "มีความเป็นเจ้าของงานและความรับผิดชอบ (Ownership)",
+    description: "ประเมินในแง่ Sense of Ownership และทัศนคติที่ดีต่อการดูแลโครงการ"
+  },
+  {
     id: "quality",
     key: "quality",
     name: "งานมีคุณภาพตรงตามบรีฟ (Quality)",
@@ -360,12 +366,6 @@ export const SATISFACTION_CRITERIA = [
     key: "attentiveness",
     name: "มีมนุษยสัมพันธ์ดี เอาใจใส่ต่องาน (Attentiveness)",
     description: "ประเมินเรื่องการประสานงานและความกระตือรือร้นของทีมงาน"
-  },
-  {
-    id: "ownership",
-    key: "ownership",
-    name: "มีความเป็นเจ้าของงาน (Ownership)",
-    description: "ประเมินในแง่ Sense of Ownership และทัศนคติที่ดีต่อการดูแลโครงการ"
   }
 ];
 
@@ -543,6 +543,9 @@ export function saveStoredOKRSettings(settings: OKRSettingsState): void {
       lastUpdated: new Date().toISOString()
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("okr_settings_updated"));
+    }
   } catch (e) {
     console.error("Failed to save OKR settings to cache:", e);
   }
@@ -694,8 +697,12 @@ export interface RealtimeOKRSummary {
   averageSatisfactionRate: number;
   totalProfitGov: number;
   totalProfitPrivate: number;
+  pipelineProfitGov: number;
+  pipelineProfitPrivate: number;
   totalInternalTasks: number;
   totalExternalTasks: number;
+  externalPipelineCount?: number;
+  internalPipelineCount?: number;
 }
 
 /**
@@ -705,28 +712,68 @@ export interface RealtimeOKRSummary {
  * 2. งานที่มาจากทีม 'NMCO' ผ่าน task
  * 3. หรือเป็นงานภายนอกองค์กรทั่วไป (ไม่ใช่ STeP / ไม่ใช่ internal)
  */
+export function isCcPmProject(brief: any): boolean {
+  if (!brief) return false;
+  const details = brief.details || {};
+  const cat = (details.category || brief.category || "").toString();
+  const srv = (details.service || brief.service || details.type || "").toString();
+  const pName = (brief.project_name || "").toString();
+  return (
+    details.is_pm_project === true ||
+    cat.trim() === "PM โครงการของ CC" ||
+    cat.includes("PM โครงการ") ||
+    srv.includes("PM โครงการ") ||
+    pName.includes("PM โครงการ") ||
+    pName.startsWith("[PM]")
+  );
+}
+
 export function isR3Task(b: any): boolean {
   if (!b) return false;
   const details = b.details || {};
-  const org = (details.organization || b.organization || "").toString().trim().toUpperCase();
-  const team = (b.decision_maker || details.team || b.team || "").toString().trim().toUpperCase();
 
-  // 1. ตรวจสอบหมวดหน่วยงาน (CMU, RSP, อื่นๆ)
-  if (org === "CMU" || org === "RSP" || org === "OTHER" || org === "OTHERS" || org === "อื่นๆ") {
+  // 1. ตรวจสอบจาก OKR Tags โดยตรง (KR2, R3, R4)
+  const okrLinks = Array.isArray(b.okr_links) ? b.okr_links : (Array.isArray(details.okr_links) ? details.okr_links : []);
+  const selectedOkr = (details.selected_okr || details.okr_kr || "").toString().trim().toUpperCase();
+  const rMetrics = Array.isArray(details.r_metrics) ? details.r_metrics : [];
+  if (
+    okrLinks.includes("KR2") || 
+    okrLinks.includes("R3") || 
+    okrLinks.includes("R4") || 
+    selectedOkr === "KR2" || 
+    rMetrics.includes("R3") || 
+    rMetrics.includes("R4")
+  ) {
     return true;
   }
 
-  // 2. งานจากทีม NMCO (ไม่ว่าจะหน่วยงานใด หรือส่งผ่านระบบ task)
+  const org = (details.organization || b.organization || details.work_organization || "").toString().trim().toUpperCase();
+  const orgKey = (details.organization_key || "").toString().trim().toUpperCase();
+  const clientSector = (details.client_sector || "").toString().trim().toUpperCase();
+  const team = (b.decision_maker || details.team || b.team || "").toString().trim().toUpperCase();
+
+  // 2. ตรวจสอบหมวดหน่วยงาน (CMU, RSP, อื่นๆ)
+  if (
+    org === "CMU" || org === "RSP" || org === "OTHER" || org === "OTHERS" || org === "อื่นๆ" ||
+    orgKey === "CMU" || orgKey === "RSP" || orgKey === "OTHER" ||
+    clientSector === "CMU" || clientSector === "RSP" ||
+    org.includes("CMU") || org.includes("RSP") || org.includes("มช") || 
+    org.includes("มหาวิทยาลัยเชียงใหม่") || org.includes("อุทยานวิทยาศาสตร์ภาคเหนือ")
+  ) {
+    return true;
+  }
+
+  // 3. งานจากทีม NMCO (ไม่ว่าจะหน่วยงานใด หรือส่งผ่านระบบ task)
   if (team === "NMCO") {
     return true;
   }
 
-  // 3. หากเลือกเป็น STeP ชัดเจน -> ไม่ใช่ R3 (จะนับเป็น R1)
-  if (org === "STEP") {
+  // 4. หากเลือกเป็น STeP ชัดเจน -> ไม่ใช่ R3 (จะนับเป็น R1)
+  if (org === "STEP" || orgKey === "STEP" || clientSector === "STEP") {
     return false;
   }
 
-  // 4. หากมาจากใบบรีฟฟอร์ม 3 อันหลัก (creative, content, pr)
+  // 5. หากมาจากใบบรีฟฟอร์ม 3 อันหลัก (creative, content, pr)
   const unit = (b.unit || "").toLowerCase();
   const isMain3 = unit === "creative" || unit === "content" || unit === "pr";
   if (isMain3) {
@@ -771,9 +818,13 @@ export function computeRealtimeMetrics(
   // 1. Analyze briefs
   let internalCompletedCount = 0;
   let externalCompletedCount = 0;
+  let internalPipelineCount = 0;
+  let externalPipelineCount = 0;
 
   let totalGovProfit = 0;
   let totalPrivateProfit = 0;
+  let pipelineGovProfit = 0;
+  let pipelinePrivateProfit = 0;
 
   let internalSatisfactionSum = 0;
   let internalSatisfactionCount = 0;
@@ -793,53 +844,64 @@ export function computeRealtimeMetrics(
     const isR3 = isR3Task(b);
     const isInternalTask = !isR3;
     
-    // Check client sector for PM project: government vs private
     const sector = details.client_sector || details.sector || "";
-    const profitVal = Number(details.profit) || (Number(details.revenue || 0) - Number(details.cost || 0)) || 0;
+    const profitVal = Number(details.profit) !== undefined && details.profit !== null
+      ? Number(details.profit)
+      : (Number(details.revenue || 0) - Number(details.cost || 0));
 
-    if (sector === "private") {
-      totalPrivateProfit += profitVal;
-    } else if (sector === "government") {
-      totalGovProfit += profitVal;
-    } else if (profitVal > 0) {
-      // Default PM profit without explicit sector tags goes 70% gov, 30% private
-      totalGovProfit += Math.round(profitVal * 0.7);
-      totalPrivateProfit += Math.round(profitVal * 0.3);
+    // Check client sector for PM project: government vs private
+    // งานโครงการของ CC ทั้งหมดจัดเป็นงานบริการภาครัฐ (R7) ยกเว้นระบุชัดเจนว่าเป็นภาคเอกชน (Private)
+    // รับรู้กำไรจริง (Actual Profit) เฉพาะงานที่เสร็จสิ้นสมบูรณ์ (completed) เท่านั้น เพื่อป้องกันตัวเลขเกินจริง
+    const isPM = isCcPmProject(b);
+    if (isPM && b.status !== "cancelled" && profitVal > 0) {
+      const sec = (sector || "").toLowerCase().trim();
+      const isPrivate = sec === "private" || sec === "เอกชน" || sec === "ภาคเอกชน";
+      if (isCompleted) {
+        if (isPrivate) {
+          totalPrivateProfit += profitVal;
+        } else {
+          totalGovProfit += profitVal;
+        }
+      } else {
+        // งานที่อยู่ระหว่างดำเนินการ (In Progress) จัดเป็น Pipeline ยังไม่รับรู้เป็นผลสำเร็จจริง
+        if (isPrivate) {
+          pipelinePrivateProfit += profitVal;
+        } else {
+          pipelineGovProfit += profitVal;
+        }
+      }
     }
 
-    // Satisfaction score: default 85% if not evaluated or declined
+    // Satisfaction score: ONLY count genuine evaluation results from real survey submissions
     if (isCompleted) {
-      let satScore = 85.0;
-      if (details.satisfaction_scores?.averagePercent !== undefined && details.satisfaction_scores?.averagePercent !== null) {
-        satScore = Number(details.satisfaction_scores.averagePercent);
-      } else if (details.satisfaction_rate !== undefined && details.satisfaction_rate !== null) {
-        satScore = Number(details.satisfaction_rate);
-      } else if (details.satisfaction_scores && typeof details.satisfaction_scores.accuracy === 'number') {
-        const sum = (details.satisfaction_scores.accuracy + 
-                     details.satisfaction_scores.timeliness + 
-                     details.satisfaction_scores.quality + 
-                     details.satisfaction_scores.attentiveness + 
-                     details.satisfaction_scores.ownership);
-        satScore = Math.round((sum / 25) * 100);
-      } else {
-        // Default standard 85.0% when unrated or "ไม่ทำแบบความพึงพอใจ"
-        satScore = 85.0;
+      const scores = details.satisfaction_scores;
+      let realSatScore: number | null = null;
+
+      if (typeof scores?.averagePercent === "number" && details.survey_status !== "declined") {
+        realSatScore = scores.averagePercent;
+      } else if (typeof scores?.accuracy === "number" && details.survey_status !== "declined") {
+        const sum = (scores.accuracy + (scores.timeliness || scores.accuracy) + (scores.quality || scores.accuracy) + (scores.attentiveness || scores.accuracy) + (scores.ownership || scores.accuracy));
+        realSatScore = Math.round((sum / 25) * 100);
+      } else if ((details.survey_status === "completed" || (typeof details.satisfaction_rate === "number" && details.satisfaction_rate > 0)) && details.survey_status !== "declined") {
+        realSatScore = Number(details.satisfaction_rate);
       }
 
-      allSatisfactionSum += satScore;
-      allSatisfactionCount += 1;
+      if (realSatScore !== null) {
+        allSatisfactionSum += realSatScore;
+        allSatisfactionCount += 1;
 
-      if (isInternalTask) {
-        internalSatisfactionSum += satScore;
-        internalSatisfactionCount += 1;
-      } else {
-        externalSatisfactionSum += satScore;
-        externalSatisfactionCount += 1;
-      }
+        if (isInternalTask) {
+          internalSatisfactionSum += realSatScore;
+          internalSatisfactionCount += 1;
+        } else {
+          externalSatisfactionSum += realSatScore;
+          externalSatisfactionCount += 1;
+        }
 
-      if (profitVal > 0 || sector === "government" || sector === "private") {
-        serviceSatisfactionSum += satScore;
-        serviceSatisfactionCount += 1;
+        if (profitVal > 0 || sector === "government" || sector === "private") {
+          serviceSatisfactionSum += realSatScore;
+          serviceSatisfactionCount += 1;
+        }
       }
     }
 
@@ -851,91 +913,118 @@ export function computeRealtimeMetrics(
         // External (มช., RSP, หน่วยงานภายนอก)
         externalCompletedCount += 1;
       }
+    } else if (b.status !== "cancelled") {
+      if (isInternalTask) {
+        internalPipelineCount += 1;
+      } else {
+        externalPipelineCount += 1;
+      }
     }
   });
 
-  // Calculate satisfaction averages (fallback to standard baseline 85.0% if none evaluated yet)
+  // Calculate satisfaction averages (0 if none evaluated yet)
   const avgOverallSatisfaction = allSatisfactionCount > 0 
     ? Math.round((allSatisfactionSum / allSatisfactionCount) * 10) / 10 
-    : 85.0;
+    : 0;
 
   const avgInternalSatisfaction = internalSatisfactionCount > 0
     ? Math.round((internalSatisfactionSum / internalSatisfactionCount) * 10) / 10
-    : avgOverallSatisfaction;
+    : 0;
 
   const avgExternalSatisfaction = externalSatisfactionCount > 0
     ? Math.round((externalSatisfactionSum / externalSatisfactionCount) * 10) / 10
-    : avgOverallSatisfaction;
+    : 0;
 
   const avgServiceSatisfaction = serviceSatisfactionCount > 0
     ? Math.round((serviceSatisfactionSum / serviceSatisfactionCount) * 10) / 10
-    : avgOverallSatisfaction;
+    : 0;
 
   // Active Target scaling helper
   const scaleTarget = (base: number) => computeActiveTarget(base, totalTeamCapacityCount, activeOperationalMembersCount);
 
   // -------------------------------------------------------------
-  // CALCULATE R1 - R9
+  // DYNAMIC TARGETS EXTRACTED FROM SETTINGS (with fallback to defaults)
   // -------------------------------------------------------------
+  const kr1Config = settings.krs.find(k => k.code === "KR1") || settings.krs[0] || DEFAULT_KRS[0];
+  const kr2Config = settings.krs.find(k => k.code === "KR2") || settings.krs[1] || DEFAULT_KRS[1];
+  const kr3Config = settings.krs.find(k => k.code === "KR3") || settings.krs[2] || DEFAULT_KRS[2];
+  const kr4Config = settings.krs.find(k => k.code === "KR4") || settings.krs[3] || DEFAULT_KRS[3];
+
+  const r1Config = kr1Config.rMetrics.find(r => r.code === "R1");
+  const r2Config = kr1Config.rMetrics.find(r => r.code === "R2");
+  const r3Config = kr2Config.rMetrics.find(r => r.code === "R3");
+  const r4Config = kr2Config.rMetrics.find(r => r.code === "R4");
+  const r5Config = kr3Config.rMetrics.find(r => r.code === "R5");
+  const r6Config = kr3Config.rMetrics.find(r => r.code === "R6");
+  const r7Config = kr4Config.rMetrics.find(r => r.code === "R7");
+  const r8Config = kr4Config.rMetrics.find(r => r.code === "R8");
+  const r9Config = kr4Config.rMetrics.find(r => r.code === "R9");
+
   // R1: งานภายใน
-  const targetR1 = scaleTarget(1200);
+  const baseR1 = r1Config?.targetValue ?? 1200;
+  const targetR1 = scaleTarget(baseR1);
   const progR1: RealtimeMetricProgress = {
     code: "R1",
-    name: "จำนวนผลงานที่สนับสนุนการให้บริการภายในองค์กร",
+    name: r1Config?.name || "จำนวนผลงานที่สนับสนุนการให้บริการภายในองค์กร",
     actual: internalCompletedCount,
-    target: 1200,
+    target: baseR1,
     activeTarget: targetR1,
     percentage: targetR1 > 0 ? Math.min(100, Math.round((internalCompletedCount / targetR1) * 100)) : 0,
-    unit: "งาน",
+    unit: r1Config?.unit || "งาน",
     status: internalCompletedCount >= targetR1 ? "on_track" : (internalCompletedCount / targetR1 > 0.5 ? "warning" : "behind"),
     breakdownDetail: `สำเร็จแล้ว ${internalCompletedCount} งาน จากเป้าหมายทีม ${targetR1} งาน`
   };
 
   // R2: ความพึงพอใจภายใน
+  const baseR2 = r2Config?.targetValue ?? 85.0;
   const progR2: RealtimeMetricProgress = {
     code: "R2",
-    name: "ร้อยละความพึงพอใจ (ภายในองค์กร)",
+    name: r2Config?.name || "ร้อยละความพึงพอใจ (ภายในองค์กร)",
     actual: avgInternalSatisfaction,
-    target: 85.0,
-    activeTarget: 85.0,
-    percentage: Math.min(100, Math.round((avgInternalSatisfaction / 85.0) * 100)),
+    target: baseR2,
+    activeTarget: baseR2,
+    percentage: internalSatisfactionCount > 0 ? Math.min(100, Math.round((avgInternalSatisfaction / baseR2) * 100)) : 0,
     unit: "%",
     isPercentage: true,
-    status: avgInternalSatisfaction >= 85 ? "on_track" : "warning",
+    status: internalSatisfactionCount === 0 ? "behind" : (avgInternalSatisfaction >= baseR2 ? "on_track" : "warning"),
     breakdownDetail: `ประเมินแล้ว ${internalSatisfactionCount} งาน (เฉลี่ย ${avgInternalSatisfaction}%)`
   };
 
   // R3: งานภายนอก มช. / RSP
-  const targetR3 = scaleTarget(350);
+  const baseR3 = r3Config?.targetValue ?? 350;
+  const targetR3 = scaleTarget(baseR3);
   const progR3: RealtimeMetricProgress = {
     code: "R3",
-    name: "จำนวนผลงานภายนอกที่สนับสนุนการทำงานของ มช. และ RSP",
+    name: r3Config?.name || "จำนวนผลงานภายนอกที่สนับสนุนการทำงานของ มช. และ RSP",
     actual: externalCompletedCount,
-    target: 350,
+    target: baseR3,
     activeTarget: targetR3,
     percentage: targetR3 > 0 ? Math.min(100, Math.round((externalCompletedCount / targetR3) * 100)) : 0,
-    unit: "งาน",
+    unit: r3Config?.unit || "งาน",
     status: externalCompletedCount >= targetR3 ? "on_track" : (externalCompletedCount / targetR3 > 0.5 ? "warning" : "behind"),
-    breakdownDetail: `สำเร็จแล้ว ${externalCompletedCount} งาน จากเป้าหมายทีม ${targetR3} งาน`
+    breakdownDetail: `ส่งมอบสำเร็จ ${externalCompletedCount} งาน | อยู่ระหว่างดำเนินงาน (Pipeline) ${externalPipelineCount} งาน (เป้าหมายทีม ${targetR3} งาน)`
   };
 
   // R4: ความพึงพอใจภายนอก
+  const baseR4 = r4Config?.targetValue ?? 85.0;
   const progR4: RealtimeMetricProgress = {
     code: "R4",
-    name: "ร้อยละความพึงพอใจ (ภายนอก มช./RSP)",
+    name: r4Config?.name || "ร้อยละความพึงพอใจ (ภายนอก มช./RSP)",
     actual: avgExternalSatisfaction,
-    target: 85.0,
-    activeTarget: 85.0,
-    percentage: Math.min(100, Math.round((avgExternalSatisfaction / 85.0) * 100)),
+    target: baseR4,
+    activeTarget: baseR4,
+    percentage: externalSatisfactionCount > 0 ? Math.min(100, Math.round((avgExternalSatisfaction / baseR4) * 100)) : 0,
     unit: "%",
     isPercentage: true,
-    status: avgExternalSatisfaction >= 85 ? "on_track" : "warning",
-    breakdownDetail: `ประเมินแล้ว ${externalSatisfactionCount} งาน (เฉลี่ย ${avgExternalSatisfaction}%)`
+    status: externalSatisfactionCount === 0 ? "behind" : (avgExternalSatisfaction >= baseR4 ? "on_track" : "warning"),
+    breakdownDetail: externalSatisfactionCount > 0 
+      ? `ประเมินแล้ว ${externalSatisfactionCount} งาน (เฉลี่ย ${avgExternalSatisfaction}% • เป้าหมาย ≥ ${baseR4}%)`
+      : `รอผลประเมินเมื่อส่งมอบงาน (เป้าหมาย ≥ ${baseR4}% • ยังไม่มีงานส่งแบบประเมิน)`
   };
 
   // R5 & R6: Reach & Engagement
-  const targetR5 = settings.krs[2]?.rMetrics.find(r => r.code === "R5")?.targetValue || 6000000;
-  const targetR6 = settings.krs[2]?.rMetrics.find(r => r.code === "R6")?.targetValue || 60000;
+  const targetR5 = r5Config?.targetValue ?? 6000000;
+  const targetR6 = r6Config?.targetValue ?? 60000;
 
   const { reachValueBaht, engagementValueBaht, totalValueBaht, reachRate, engageRate } = computeReachEngagementValues(
     manualR5,
@@ -946,7 +1035,7 @@ export function computeRealtimeMetrics(
 
   const progR5: RealtimeMetricProgress = {
     code: "R5",
-    name: "จำนวน Reach (กรอกผลลัพธ์สะสมในระบบ)",
+    name: r5Config?.name || "จำนวน Reach (กรอกผลลัพธ์สะสมในระบบ)",
     actual: manualR5,
     target: targetR5,
     activeTarget: targetR5,
@@ -958,7 +1047,7 @@ export function computeRealtimeMetrics(
 
   const progR6: RealtimeMetricProgress = {
     code: "R6",
-    name: "จำนวน Engagement (กรอกผลลัพธ์สะสมในระบบ)",
+    name: r6Config?.name || "จำนวน Engagement (กรอกผลลัพธ์สะสมในระบบ)",
     actual: manualR6,
     target: targetR6,
     activeTarget: targetR6,
@@ -969,46 +1058,53 @@ export function computeRealtimeMetrics(
   };
 
   // R7: กำไร PM ภาครัฐ
-  const targetR7 = scaleTarget(1000000);
+  const baseR7 = r7Config?.targetValue ?? 1000000;
+  const targetR7 = scaleTarget(baseR7);
   const progR7: RealtimeMetricProgress = {
     code: "R7",
-    name: "กำไรบริการภาครัฐ",
+    name: r7Config?.name || "กำไรบริการภาครัฐ",
     actual: totalGovProfit,
-    target: 1000000,
+    target: baseR7,
     activeTarget: targetR7,
     percentage: targetR7 > 0 ? Math.min(100, Math.round((totalGovProfit / targetR7) * 100)) : 0,
     unit: "บาท",
     isCurrency: true,
     status: totalGovProfit >= targetR7 ? "on_track" : (totalGovProfit / targetR7 > 0.5 ? "warning" : "behind"),
-    breakdownDetail: `กำไรจริง ฿${totalGovProfit.toLocaleString()} จากเป้าหมาย ฿${targetR7.toLocaleString()}`
+    breakdownDetail: pipelineGovProfit > 0
+      ? `กำไรเสร็จจริง ฿${totalGovProfit.toLocaleString()} | กำลังทำ ฿${pipelineGovProfit.toLocaleString()} (เป้าหมาย ฿${targetR7.toLocaleString()})`
+      : `กำไรจริง ฿${totalGovProfit.toLocaleString()} จากเป้าหมาย ฿${targetR7.toLocaleString()}`
   };
 
   // R8: กำไร PM ภาคเอกชน
-  const targetR8 = scaleTarget(500000);
+  const baseR8 = r8Config?.targetValue ?? 500000;
+  const targetR8 = scaleTarget(baseR8);
   const progR8: RealtimeMetricProgress = {
     code: "R8",
-    name: "กำไรบริการภาคเอกชน",
+    name: r8Config?.name || "กำไรบริการภาคเอกชน",
     actual: totalPrivateProfit,
-    target: 500000,
+    target: baseR8,
     activeTarget: targetR8,
     percentage: targetR8 > 0 ? Math.min(100, Math.round((totalPrivateProfit / targetR8) * 100)) : 0,
     unit: "บาท",
     isCurrency: true,
     status: totalPrivateProfit >= targetR8 ? "on_track" : (totalPrivateProfit / targetR8 > 0.5 ? "warning" : "behind"),
-    breakdownDetail: `กำไรจริง ฿${totalPrivateProfit.toLocaleString()} จากเป้าหมาย ฿${targetR8.toLocaleString()}`
+    breakdownDetail: pipelinePrivateProfit > 0
+      ? `กำไรเสร็จจริง ฿${totalPrivateProfit.toLocaleString()} | กำลังทำ ฿${pipelinePrivateProfit.toLocaleString()} (เป้าหมาย ฿${targetR8.toLocaleString()})`
+      : `กำไรจริง ฿${totalPrivateProfit.toLocaleString()} จากเป้าหมาย ฿${targetR8.toLocaleString()}`
   };
 
   // R9: ความพึงพอใจงานบริการสร้างรายได้
+  const baseR9 = r9Config?.targetValue ?? 85.0;
   const progR9: RealtimeMetricProgress = {
     code: "R9",
-    name: "ร้อยละความพึงพอใจ (งานบริการสร้างรายได้)",
+    name: r9Config?.name || "ร้อยละความพึงพอใจ (งานบริการสร้างรายได้)",
     actual: avgServiceSatisfaction,
-    target: 85.0,
-    activeTarget: 85.0,
-    percentage: Math.min(100, Math.round((avgServiceSatisfaction / 85.0) * 100)),
+    target: baseR9,
+    activeTarget: baseR9,
+    percentage: serviceSatisfactionCount > 0 ? Math.min(100, Math.round((avgServiceSatisfaction / baseR9) * 100)) : 0,
     unit: "%",
     isPercentage: true,
-    status: avgServiceSatisfaction >= 85 ? "on_track" : "warning",
+    status: serviceSatisfactionCount === 0 ? "behind" : (avgServiceSatisfaction >= baseR9 ? "on_track" : "warning"),
     breakdownDetail: `ประเมินแล้ว ${serviceSatisfactionCount} งาน (เฉลี่ย ${avgServiceSatisfaction}%)`
   };
 
@@ -1016,50 +1112,54 @@ export function computeRealtimeMetrics(
   // CALCULATE KR1 - KR4
   // -------------------------------------------------------------
   const kr1Actual = internalCompletedCount;
-  const kr1Target = scaleTarget(computeKRTargetFromR(settings.krs[0] || DEFAULT_KRS[0]));
+  const kr1Raw = computeKRTargetFromR(kr1Config);
+  const kr1Target = scaleTarget(kr1Raw);
   const kr1Percent = kr1Target > 0 ? Math.min(100, Math.round((kr1Actual / kr1Target) * 100)) : 0;
 
   const kr2Actual = externalCompletedCount;
-  const kr2Target = scaleTarget(computeKRTargetFromR(settings.krs[1] || DEFAULT_KRS[1]));
+  const kr2Raw = computeKRTargetFromR(kr2Config);
+  const kr2Target = scaleTarget(kr2Raw);
   const kr2Percent = kr2Target > 0 ? Math.min(100, Math.round((kr2Actual / kr2Target) * 100)) : 0;
 
   const kr3ActualVal = totalValueBaht;
-  const kr3Target = computeKRTargetFromR(settings.krs[2] || DEFAULT_KRS[2]);
+  const kr3Raw = computeKRTargetFromR(kr3Config);
+  const kr3Target = kr3Raw;
   const kr3Percent = kr3Target > 0 ? Math.min(100, Math.round((kr3ActualVal / kr3Target) * 100)) : 0;
 
   const kr4ActualVal = totalGovProfit + totalPrivateProfit;
-  const kr4Target = scaleTarget(computeKRTargetFromR(settings.krs[3] || DEFAULT_KRS[3]));
+  const kr4Raw = computeKRTargetFromR(kr4Config);
+  const kr4Target = scaleTarget(kr4Raw);
   const kr4Percent = kr4Target > 0 ? Math.min(100, Math.round((kr4ActualVal / kr4Target) * 100)) : 0;
 
   const krResults: RealtimeKRResult[] = [
     {
-      kr: settings.krs[0] || DEFAULT_KRS[0],
+      kr: kr1Config,
       actualAchieved: kr1Actual,
-      target: 1200,
+      target: kr1Raw,
       activeTarget: kr1Target,
       percentage: kr1Percent,
       rResults: [progR1, progR2]
     },
     {
-      kr: settings.krs[1] || DEFAULT_KRS[1],
+      kr: kr2Config,
       actualAchieved: kr2Actual,
-      target: 350,
+      target: kr2Raw,
       activeTarget: kr2Target,
       percentage: kr2Percent,
       rResults: [progR3, progR4]
     },
     {
-      kr: settings.krs[2] || DEFAULT_KRS[2],
+      kr: kr3Config,
       actualAchieved: kr3ActualVal,
-      target: 1000000,
+      target: kr3Raw,
       activeTarget: kr3Target,
       percentage: kr3Percent,
       rResults: [progR5, progR6]
     },
     {
-      kr: settings.krs[3] || DEFAULT_KRS[3],
+      kr: kr4Config,
       actualAchieved: kr4ActualVal,
-      target: 1500000,
+      target: kr4Raw,
       activeTarget: kr4Target,
       percentage: kr4Percent,
       rResults: [progR7, progR8, progR9]
@@ -1068,70 +1168,86 @@ export function computeRealtimeMetrics(
 
   // -------------------------------------------------------------
   // CALCULATE TIP1, TIP2, TIP9, TIP10
-  // TIP1 = R7 + R8
-  // TIP2 = R8
-  // TIP9 = TIP1 * 5 (Economic Multiplier)
-  // TIP10 = Average Satisfaction Rate
   // -------------------------------------------------------------
+  const tip1Config = settings.tips.find(t => t.code === "TIP1") || settings.tips[0] || DEFAULT_TIPS[0];
+  const tip2Config = settings.tips.find(t => t.code === "TIP2") || settings.tips[1] || DEFAULT_TIPS[1];
+  const tip9Config = settings.tips.find(t => t.code === "TIP9") || settings.tips[2] || DEFAULT_TIPS[2];
+  const tip10Config = settings.tips.find(t => t.code === "TIP10") || settings.tips[3] || DEFAULT_TIPS[3];
+
   const tip1Actual = totalGovProfit + totalPrivateProfit;
-  const tip1Target = scaleTarget(3000000);
+  const tip1Base = tip1Config.baseTarget ?? (baseR7 + baseR8);
+  const tip1Target = scaleTarget(tip1Base);
   const tip1Percent = tip1Target > 0 ? Math.min(100, Math.round((tip1Actual / tip1Target) * 100)) : 0;
 
   const tip2Actual = totalPrivateProfit;
-  const tip2Target = scaleTarget(1000000);
+  const tip2Base = tip2Config.baseTarget ?? baseR8;
+  const tip2Target = scaleTarget(tip2Base);
   const tip2Percent = tip2Target > 0 ? Math.min(100, Math.round((tip2Actual / tip2Target) * 100)) : 0;
 
   const tip9Actual = tip1Actual * 5;
-  const tip9Target = tip1Target * 5;
+  const tip9Base = tip9Config.baseTarget ?? (tip1Base * 5);
+  const tip9Target = scaleTarget(tip9Base);
   const tip9Percent = tip9Target > 0 ? Math.min(100, Math.round((tip9Actual / tip9Target) * 100)) : 0;
 
   const tip10Actual = avgOverallSatisfaction;
-  const tip10Target = 85.0;
-  const tip10Percent = Math.min(100, Math.round((tip10Actual / tip10Target) * 100));
+  const tip10Base = tip10Config.baseTarget ?? 85.0;
+  const tip10Percent = allSatisfactionCount > 0 ? Math.min(100, Math.round((tip10Actual / tip10Base) * 100)) : 0;
 
   const tipResults: RealtimeTIPResult[] = [
     {
-      tip: settings.tips[0] || DEFAULT_TIPS[0],
+      tip: tip1Config,
       actual: tip1Actual,
-      target: 3000000,
+      target: tip1Base,
       activeTarget: tip1Target,
       percentage: tip1Percent,
       status: tip1Actual >= tip1Target ? "on_track" : (tip1Percent >= 50 ? "warning" : "behind")
     },
     {
-      tip: settings.tips[1] || DEFAULT_TIPS[1],
+      tip: tip2Config,
       actual: tip2Actual,
-      target: 1000000,
+      target: tip2Base,
       activeTarget: tip2Target,
       percentage: tip2Percent,
       status: tip2Actual >= tip2Target ? "on_track" : (tip2Percent >= 50 ? "warning" : "behind")
     },
     {
-      tip: settings.tips[2] || DEFAULT_TIPS[2],
+      tip: tip9Config,
       actual: tip9Actual,
-      target: 15000000,
+      target: tip9Base,
       activeTarget: tip9Target,
       percentage: tip9Percent,
       status: tip9Actual >= tip9Target ? "on_track" : (tip9Percent >= 50 ? "warning" : "behind")
     },
     {
-      tip: settings.tips[3] || DEFAULT_TIPS[3],
+      tip: tip10Config,
       actual: tip10Actual,
-      target: 85.0,
-      activeTarget: 85.0,
+      target: tip10Base,
+      activeTarget: tip10Base,
       percentage: tip10Percent,
-      status: tip10Actual >= 85 ? "on_track" : "warning"
+      status: allSatisfactionCount === 0 ? "behind" : (tip10Actual >= tip10Base ? "on_track" : "warning")
     }
   ];
 
-  // Straight unweighted average of 4 KRs and 4 TIPs
-  const overallKRScore = Math.round(
-    (kr1Percent + kr2Percent + kr3Percent + kr4Percent) / 4
-  );
+  // Weighted average calculation according to official strategic weights
+  const kr1W = kr1Config.weightPercent ?? 40;
+  const kr2W = kr2Config.weightPercent ?? 30;
+  const kr3W = kr3Config.weightPercent ?? 10;
+  const kr4W = kr4Config.weightPercent ?? 20;
+  const totalKrWeight = kr1W + kr2W + kr3W + kr4W;
 
-  const overallTIPScore = Math.round(
-    (tip1Percent + tip2Percent + tip9Percent + tip10Percent) / 4
-  );
+  const overallKRScore = totalKrWeight > 0
+    ? Math.round((kr1Percent * kr1W + kr2Percent * kr2W + kr3Percent * kr3W + kr4Percent * kr4W) / totalKrWeight)
+    : 0;
+
+  const w1 = tip1Config.weightPercent ?? 20;
+  const w2 = tip2Config.weightPercent ?? 10;
+  const w9 = tip9Config.weightPercent ?? 50;
+  const w10 = tip10Config.weightPercent ?? 20;
+  const totalTipWeight = w1 + w2 + w9 + w10;
+
+  const overallTIPScore = totalTipWeight > 0
+    ? Math.round((tip1Percent * w1 + tip2Percent * w2 + tip9Percent * w9 + tip10Percent * w10) / totalTipWeight)
+    : 0;
 
   return {
     krs: krResults,
@@ -1142,8 +1258,12 @@ export function computeRealtimeMetrics(
     averageSatisfactionRate: avgOverallSatisfaction,
     totalProfitGov: totalGovProfit,
     totalProfitPrivate: totalPrivateProfit,
+    pipelineProfitGov: pipelineGovProfit,
+    pipelineProfitPrivate: pipelinePrivateProfit,
     totalInternalTasks: internalCompletedCount,
-    totalExternalTasks: externalCompletedCount
+    totalExternalTasks: externalCompletedCount,
+    externalPipelineCount,
+    internalPipelineCount
   };
 }
 
@@ -1151,7 +1271,7 @@ export function computeRealtimeMetrics(
  * Compute Satisfaction Survey Analytics (Breakdown of Sent, Completed, Declined, and 5-Dimension Averages)
  */
 export function computeSatisfactionAnalytics(briefs: any[]): SatisfactionAnalytics {
-  const completedBriefs = briefs.filter(b => b.status === "completed");
+  const completedBriefs = briefs.filter(b => b.status === "completed" || b.status === "complete");
   const totalCompletedTasks = completedBriefs.length;
 
   let evaluatedCount = 0;
@@ -1172,46 +1292,67 @@ export function computeSatisfactionAnalytics(briefs: any[]): SatisfactionAnalyti
     const details = b.details || {};
     const unit = (b.unit || "other").toLowerCase();
     const scores = details.satisfaction_scores;
-    const surveyStatus: SurveyStatus = details.survey_status 
-      || (scores?.averagePercent ? "completed" : details.survey_status === "declined" ? "declined" : "sent");
 
-    let taskPercent = 85.0; // default 85%
-
-    if (scores && typeof scores.averagePercent === "number" && surveyStatus !== "sent") {
-      evaluatedCount += 1;
+    // Calculate taskPercent with full resilience
+    let taskPercent: number | null = null;
+    if (typeof scores?.averagePercent === "number") {
       taskPercent = scores.averagePercent;
+    } else if (typeof scores?.accuracy === "number") {
+      const sum = (scores.accuracy + (scores.timeliness || scores.accuracy) + (scores.quality || scores.accuracy) + (scores.attentiveness || scores.accuracy) + (scores.ownership || scores.accuracy));
+      taskPercent = Math.round((sum / 25) * 100);
+    } else if (typeof details.satisfaction_rate === "number" && (details.satisfaction_rate > 0 || details.survey_status === "completed")) {
+      taskPercent = Number(details.satisfaction_rate);
+    }
+
+    const isDeclined = details.survey_status === "declined";
+    if (isDeclined) {
+      declinedCount += 1;
+    }
+
+    const isEvaluated = !isDeclined && taskPercent !== null && (
+      details.survey_status === "completed" ||
+      Boolean(scores) ||
+      (typeof details.satisfaction_rate === "number" && details.satisfaction_rate > 0)
+    );
+
+    if (isEvaluated && taskPercent !== null) {
+      evaluatedCount += 1;
+      overallPercentSum += taskPercent;
       
       // 5 Dimensions
-      if (typeof scores.accuracy === "number") accSum += scores.accuracy;
-      if (typeof scores.timeliness === "number") timeSum += scores.timeliness;
-      if (typeof scores.quality === "number") qualSum += scores.quality;
-      if (typeof scores.attentiveness === "number") attSum += scores.attentiveness;
-      if (typeof scores.ownership === "number") ownSum += scores.ownership;
+      const acc = typeof scores?.accuracy === "number" ? scores.accuracy : Math.round((taskPercent / 100) * 5 * 10) / 10;
+      const time = typeof scores?.timeliness === "number" ? scores.timeliness : acc;
+      const qual = typeof scores?.quality === "number" ? scores.quality : acc;
+      const att = typeof scores?.attentiveness === "number" ? scores.attentiveness : acc;
+      const own = typeof scores?.ownership === "number" ? scores.ownership : acc;
+
+      accSum += acc;
+      timeSum += time;
+      qualSum += qual;
+      attSum += att;
+      ownSum += own;
       dimCount += 1;
-    } else {
+
+      if (!byUnit[unit]) {
+        byUnit[unit] = { count: 0, sum: 0, average: 0 };
+      }
+      byUnit[unit].count += 1;
+      byUnit[unit].sum += taskPercent;
+      byUnit[unit].average = Math.round((byUnit[unit].sum / byUnit[unit].count) * 10) / 10;
+    } else if (!isDeclined) {
       sentCount += 1;
-      taskPercent = 85.0; // default 85% standard score
     }
-
-    overallPercentSum += taskPercent;
-
-    if (!byUnit[unit]) {
-      byUnit[unit] = { count: 0, sum: 0, average: 85.0 };
-    }
-    byUnit[unit].count += 1;
-    byUnit[unit].sum += taskPercent;
-    byUnit[unit].average = Math.round((byUnit[unit].sum / byUnit[unit].count) * 10) / 10;
   });
 
-  const overallAverage = totalCompletedTasks > 0 
-    ? Math.round((overallPercentSum / totalCompletedTasks) * 10) / 10 
-    : 85.0;
+  const overallAverage = evaluatedCount > 0 
+    ? Math.round((overallPercentSum / evaluatedCount) * 10) / 10 
+    : 0;
 
   const responseRate = totalCompletedTasks > 0
     ? Math.round((evaluatedCount / totalCompletedTasks) * 100)
     : 0;
 
-  const defaultDimScore = 4.3; // ~85% of 5.0
+  const defaultDimScore = 0; // 0 when no evaluations exist
   const dimensions = {
     accuracy: dimCount > 0 ? Math.round((accSum / dimCount) * 10) / 10 : defaultDimScore,
     timeliness: dimCount > 0 ? Math.round((timeSum / dimCount) * 10) / 10 : defaultDimScore,
@@ -1484,11 +1625,16 @@ export function computeMemberPacingAlerts(
         let cntSat = 0;
         tasks.forEach(b => {
           const details = b.details || {};
-          const score = details.satisfaction_scores?.averagePercent ?? details.satisfaction_rate ?? 85.0;
-          sumSat += Number(score);
-          cntSat += 1;
+          const scores = details.satisfaction_scores;
+          if (scores && typeof scores.averagePercent === "number" && details.survey_status !== "sent") {
+            sumSat += Number(scores.averagePercent);
+            cntSat += 1;
+          } else if (details.survey_status === "completed" && typeof details.satisfaction_rate === "number") {
+            sumSat += Number(details.satisfaction_rate);
+            cntSat += 1;
+          }
         });
-        return cntSat > 0 ? Math.round((sumSat / cntSat) * 10) / 10 : 85.0;
+        return cntSat > 0 ? Math.round((sumSat / cntSat) * 10) / 10 : 0;
       };
       actualAchieved = calcSat(completedMemberTasks);
       actualThisWeek = calcSat(tasksThisWeek);
@@ -1745,11 +1891,16 @@ export function computeMemberPacingAlerts(
         let cntSat = 0;
         tasks.forEach(b => {
           const details = b.details || {};
-          const score = details.satisfaction_scores?.averagePercent ?? details.satisfaction_rate ?? 85.0;
-          sumSat += Number(score);
-          cntSat += 1;
+          const scores = details.satisfaction_scores;
+          if (scores && typeof scores.averagePercent === "number" && details.survey_status !== "sent") {
+            sumSat += Number(scores.averagePercent);
+            cntSat += 1;
+          } else if (details.survey_status === "completed" && typeof details.satisfaction_rate === "number") {
+            sumSat += Number(details.satisfaction_rate);
+            cntSat += 1;
+          }
         });
-        return cntSat > 0 ? Math.round((sumSat / cntSat) * 10) / 10 : 85.0;
+        return cntSat > 0 ? Math.round((sumSat / cntSat) * 10) / 10 : 0;
       };
       actualAchieved = calcSat(completedMemberTasks);
       actualThisWeek = calcSat(tasksThisWeek);

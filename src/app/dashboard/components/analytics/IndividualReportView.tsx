@@ -728,75 +728,47 @@ export default function IndividualReportView({
           <div className="p-3.5 bg-muted/20 rounded-2xl border border-surface-border/60">
             <div className="text-[11px] text-slate-500 font-medium mb-1">อัตราส่งมอบตรงเวลา (On-Time)</div>
             <div className="text-lg font-bold text-emerald-700 font-mono">
-              {currentProfileMember.onTimeRate}%
+              {currentProfileMember.completedTasks === 0 ? "0%" : `${currentProfileMember.onTimeRate}%`}
             </div>
             <div className="text-[11px] text-slate-400 mt-0.5">
-              {currentProfileMember.lateCompletedCount > 0 ? `ล่าช้า ${currentProfileMember.lateCompletedCount} งาน` : "ส่งตรงเวลา 100%"}
+              {currentProfileMember.completedTasks === 0
+                ? "ยังไม่มีงานส่งมอบ"
+                : currentProfileMember.lateCompletedCount > 0
+                ? `ล่าช้า ${currentProfileMember.lateCompletedCount} งาน`
+                : "ส่งตรงเวลา 100%"}
             </div>
           </div>
         </div>
 
-        {/* SWOT ANALYSIS & ACTION PLANS 1 2 3 (คงไว้ในการ์ดโปรไฟล์เหมือนเดิมครบถ้วน) */}
+        {/* จุดเด่นและสิ่งที่ทำได้ดีเยี่ยม & สิ่งที่ต้องพัฒนาเพิ่มเติม (วิเคราะห์เชิงบวก เสริมพลังใจ) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5 pt-5 border-t border-surface-border">
-          {/* Strengths */}
-          <div className="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-100">
-            <h4 className="text-xs font-bold text-emerald-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <CheckCircle2 size={14} className="text-emerald-600" />
-              จุดเด่นและสิ่งที่ทำได้ดีเยี่ยม (Strengths)
+          {/* 1. จุดเด่นและสิ่งที่ทำได้ดีเยี่ยม */}
+          <div className="bg-gradient-to-br from-emerald-50/90 to-teal-50/50 dark:from-emerald-950/30 dark:to-teal-950/20 p-4.5 rounded-2xl border border-emerald-200/80 dark:border-emerald-800/50 shadow-xs">
+            <h4 className="text-xs font-bold text-emerald-900 dark:text-emerald-300 uppercase tracking-wider mb-2.5 flex items-center gap-2">
+              <Sparkles size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span>จุดเด่นและสิ่งที่ทำได้ดีเยี่ยม (Strengths & Key Highlights)</span>
             </h4>
-            <ul className="space-y-1.5 text-xs text-emerald-950 font-medium">
+            <ul className="space-y-2 text-xs text-emerald-950 dark:text-emerald-100 font-medium">
               {currentProfileMember.strengths.map((str, i) => (
-                <li key={i} className="flex items-start gap-1.5">
-                  <span className="text-emerald-600 font-bold">•</span>
-                  <span>{str}</span>
+                <li key={i} className="flex items-start gap-2">
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold shrink-0 mt-0.5">✦</span>
+                  <span className="leading-relaxed">{str}</span>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Weaknesses */}
-          <div className="bg-amber-50/60 p-4 rounded-2xl border border-amber-100">
-            <h4 className="text-xs font-bold text-amber-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <AlertTriangle size={14} className="text-amber-600" />
-              จุดอ่อนหรือคอขวดที่ต้องเฝ้าระวัง (Weaknesses & Bottlenecks)
+          {/* 2. สิ่งที่ต้องพัฒนาเพิ่มเติม */}
+          <div className="bg-gradient-to-br from-indigo-50/90 to-blue-50/50 dark:from-indigo-950/30 dark:to-blue-950/20 p-4.5 rounded-2xl border border-indigo-200/80 dark:border-indigo-800/50 shadow-xs">
+            <h4 className="text-xs font-bold text-indigo-900 dark:text-indigo-300 uppercase tracking-wider mb-2.5 flex items-center gap-2">
+              <TrendingUp size={15} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+              <span>สิ่งที่ต้องพัฒนาเพิ่มเติม (Growth & Improvement Opportunities)</span>
             </h4>
-            <ul className="space-y-1.5 text-xs text-amber-950 font-medium">
-              {currentProfileMember.weaknesses.map((weak, i) => (
-                <li key={i} className="flex items-start gap-1.5">
-                  <span className="text-amber-600 font-bold">•</span>
-                  <span>{weak}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Action Steps 1 2 3 */}
-          <div className="bg-blue-50/60 dark:bg-blue-950/40 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/50">
-            <h4 className="text-xs font-bold text-blue-900 dark:text-blue-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <Zap size={14} className="text-blue-600 dark:text-blue-400" />
-              แนวทางการจัดการที่ควรปฏิบัติ (Action Steps 1, 2, 3)
-            </h4>
-            <ul className="space-y-1.5 text-xs text-blue-950 dark:text-zinc-100 font-medium">
-              {currentProfileMember.actionSteps.map((step, i) => (
-                <li key={i} className="flex items-start gap-1.5">
-                  <span className="text-blue-600 dark:text-blue-400 font-bold">✓</span>
-                  <span>{step}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Risk Impacts 1 2 3 */}
-          <div className="bg-rose-50/60 dark:bg-rose-950/40 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/50">
-            <h4 className="text-xs font-bold text-rose-900 dark:text-rose-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <ShieldCheck size={14} className="text-rose-600 dark:text-rose-400" />
-              ความเสี่ยงที่จะตามมา หากไม่รีบปรับปรุง (Risk Impacts 1, 2, 3)
-            </h4>
-            <ul className="space-y-1.5 text-xs text-rose-950 dark:text-rose-100 font-medium">
-              {currentProfileMember.riskImpacts.map((risk, i) => (
-                <li key={i} className="flex items-start gap-1.5">
-                  <span className="text-rose-600 dark:text-rose-400 font-bold">⚠️</span>
-                  <span>{risk}</span>
+            <ul className="space-y-2 text-xs text-indigo-950 dark:text-indigo-100 font-medium">
+              {(currentProfileMember.improvements || currentProfileMember.weaknesses).map((item, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <span className="text-indigo-600 dark:text-indigo-400 font-bold shrink-0 mt-0.5">✦</span>
+                  <span className="leading-relaxed">{item}</span>
                 </li>
               ))}
             </ul>
@@ -1745,7 +1717,7 @@ export default function IndividualReportView({
                 { value: "all", label: "ทุกสถานะ" },
                 { value: "completed", label: "✅ เสร็จสิ้น" },
                 { value: "in_progress", label: "⚡ กำลังทำ" },
-                { value: "pending", label: "⏳ รอเริ่ม" },
+                { value: "pending", label: "⏳ รอทำ (Pending)" },
               ]}
             />
 
@@ -1823,7 +1795,7 @@ export default function IndividualReportView({
                         <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                           task.brief.status === 'completed' ? 'bg-emerald-500' : task.brief.status === 'in_progress' ? 'bg-blue-500' : 'bg-amber-400'
                         }`} />
-                        <span>{task.brief.status === 'completed' ? 'เสร็จสิ้น' : task.brief.status === 'in_progress' ? 'กำลังทำ' : 'รอเริ่ม'}</span>
+                        <span>{task.brief.status === 'completed' ? 'เสร็จสิ้น' : task.brief.status === 'in_progress' ? 'กำลังทำ' : (!task.brief.assignee_id ? 'รอมอบหมาย' : 'รอทำ')}</span>
                       </span>
                     </td>
 

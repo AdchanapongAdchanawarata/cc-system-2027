@@ -47,5 +47,7 @@ scratch/
 *.txt
 *.ai
 iso report/
+tests/
 
 .vercel
+.env*

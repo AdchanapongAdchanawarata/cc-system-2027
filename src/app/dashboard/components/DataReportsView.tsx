@@ -9,16 +9,38 @@ import {
   HeartHandshake, BrainCircuit, CalendarDays, Link2, Activity, GraduationCap
 } from "lucide-react";
 
-import MeetingReportDetail from "./MeetingReportDetail";
-import InnovationDesignCenterReport from "./InnovationDesignCenterReport";
-import RspPressReport from "./RspPressReport";
-import IsoReportDetail from "./IsoReportDetail";
-import StakeholdersReportDetail from "./StakeholdersReportDetail";
-import KmReportDetail from "./KmReportDetail";
-import TeamActionPlanReportDetail from "./TeamActionPlanReportDetail";
-import WorkLinksReportDetail from "./WorkLinksReportDetail";
-import ActivityLogReportDetail from "./ActivityLogReportDetail";
-import TrainingReportDetail from "./TrainingReportDetail";
+import dynamic from "next/dynamic";
+
+const MeetingReportDetail = dynamic(() => import("./MeetingReportDetail"), {
+  loading: () => <div className="p-8 text-center text-sm text-slate-500 animate-pulse">กำลังโหลดรายงานการประชุม...</div>
+});
+const InnovationDesignCenterReport = dynamic(() => import("./InnovationDesignCenterReport"), {
+  loading: () => <div className="p-8 text-center text-sm text-slate-500 animate-pulse">กำลังโหลดศูนย์ออกแบบนวัตกรรม (IDC)...</div>
+});
+const RspPressReport = dynamic(() => import("./RspPressReport"), {
+  loading: () => <div className="p-8 text-center text-sm text-slate-500 animate-pulse">กำลังโหลดรายงาน RSP Press...</div>
+});
+const IsoReportDetail = dynamic(() => import("./IsoReportDetail"), {
+  loading: () => <div className="p-8 text-center text-sm text-slate-500 animate-pulse">กำลังโหลดรายงานมาตรฐาน ISO & WI...</div>
+});
+const StakeholdersReportDetail = dynamic(() => import("./StakeholdersReportDetail"), {
+  loading: () => <div className="p-8 text-center text-sm text-slate-500 animate-pulse">กำลังโหลดรายงานผู้มีส่วนได้ส่วนเสีย...</div>
+});
+const KmReportDetail = dynamic(() => import("./KmReportDetail"), {
+  loading: () => <div className="p-8 text-center text-sm text-slate-500 animate-pulse">กำลังโหลดคลังความรู้ KM...</div>
+});
+const TeamActionPlanReportDetail = dynamic(() => import("./TeamActionPlanReportDetail"), {
+  loading: () => <div className="p-8 text-center text-sm text-slate-500 animate-pulse">กำลังโหลดแผนปฏิบัติการทีม CC...</div>
+});
+const WorkLinksReportDetail = dynamic(() => import("./WorkLinksReportDetail"), {
+  loading: () => <div className="p-8 text-center text-sm text-slate-500 animate-pulse">กำลังโหลดลิงก์ส่งต่องาน...</div>
+});
+const ActivityLogReportDetail = dynamic(() => import("./ActivityLogReportDetail"), {
+  loading: () => <div className="p-8 text-center text-sm text-slate-500 animate-pulse">กำลังโหลดประวัติกิจกรรม...</div>
+});
+const TrainingReportDetail = dynamic(() => import("./TrainingReportDetail"), {
+  loading: () => <div className="p-8 text-center text-sm text-slate-500 animate-pulse">กำลังโหลดรายงานการอบรม...</div>
+});
 import ExportDataDropdown from "./ExportDataDropdown";
 
 type ReportType =

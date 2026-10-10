@@ -23,6 +23,7 @@ import {
   FileText
 } from "lucide-react";
 import Link from "next/link";
+import { generateNextTaskCode } from "@/utils/taskCodeService";
 import { createClient } from "@/utils/supabase/client";
 import ModernSelect, { ModernSelectOption } from "@/components/ModernSelect";
 import ModernDatePicker from "@/components/ModernDatePicker";
@@ -31,6 +32,7 @@ import {
   PRESS_CATEGORIES,
   PressReleaseItem
 } from "@/app/dashboard/components/RspPressReport";
+import { getCloudJson, setCloudJson, CLOUD_KEYS } from "@/utils/cloudSyncService";
 
 // Assignee Oat (โอ๊ต CNB) ID
 const OAT_ASSIGNEE_ID = "e2c2672d-81c4-411d-89e9-bcbb6eb374f5";
@@ -183,38 +185,47 @@ export default function RspPressFormPage() {
 
     try {
       const timestamp = Date.now();
-      const codeSeq = String(Math.floor(Math.random() * 900) + 100);
-      const generatedCode = `RSP-PR-${new Date().getFullYear()}-${codeSeq}`;
+      // Generate guaranteed sequential task code for FY70 starting at RSP70-1
+      const generatedCode = await generateNextTaskCode("RSP");
 
       const uni = RSP_UNIVERSITIES.find(u => u.id === formData.universityId);
       const uniName = uni ? uni.name : formData.universityId;
       const taskTitle = `[RSP] ข่าวประชาสัมพันธ์: ${formData.title.trim()} (${uniName})`;
+      const attachmentText = files.length > 0 ? files.map(f => f.name).join(", ") : formData.attachmentName;
 
-      // 1. Sync ทางแรก: บันทึกข้อมูลลง LocalStorage (cc_rsp_press_records_v1) สำหรับ Press Log
-      if (typeof window !== "undefined") {
-        try {
-          const saved = localStorage.getItem("cc_rsp_press_records_v1");
-          const existing: PressReleaseItem[] = saved ? JSON.parse(saved) : [];
-          const newRecord: PressReleaseItem = {
-            id: `pr-${timestamp}`,
-            code: generatedCode,
-            universityId: formData.universityId,
-            title: formData.title.trim(),
-            date: formData.date,
-            targetAudience: formData.targetAudience,
-            mediaTypes: formData.mediaTypes.length > 0 ? formData.mediaTypes : ["online"],
-            clippingsCount: Number(formData.clippingsCount) || 1,
-            newsUrl: formData.newsUrl.trim(),
-            reporterName: formData.reporterName.trim(),
-            reporterContact: formData.reporterContact.trim(),
-            details: formData.details.trim(),
-            status: "published",
-            clippingList: formData.newsUrl ? [{ name: "ข่าวออนไลน์", url: formData.newsUrl, date: formData.date }] : []
-          };
-          localStorage.setItem("cc_rsp_press_records_v1", JSON.stringify([newRecord, ...existing]));
-        } catch (storageErr) {
-          console.error("Local storage sync error:", storageErr);
+      const newRecord: PressReleaseItem = {
+        id: `pr-${timestamp}`,
+        code: generatedCode,
+        universityId: formData.universityId,
+        title: formData.title.trim(),
+        date: formData.date,
+        targetAudience: formData.targetAudience,
+        mediaTypes: formData.mediaTypes.length > 0 ? formData.mediaTypes : ["online"],
+        clippingsCount: Number(formData.clippingsCount) || 1,
+        newsUrl: formData.newsUrl.trim(),
+        reporterName: formData.reporterName.trim(),
+        reporterContact: formData.reporterContact.trim(),
+        details: formData.details.trim(),
+        attachmentName: attachmentText,
+        notes: formData.notes?.trim() || "",
+        status: "published",
+        clippingList: formData.newsUrl ? [{ name: "ข่าวออนไลน์", url: formData.newsUrl, date: formData.date }] : []
+      };
+
+      // 1. Sync ทางแรก: บันทึกข้อมูลขึ้น Supabase Cloud (okr_settings) + LocalStorage สำหรับ Press Log
+      try {
+        const cloudData = await getCloudJson<PressReleaseItem[]>(
+          CLOUD_KEYS.RSP_PRESS_RECORDS,
+          "cc_rsp_press_records_v2_fy70"
+        );
+        const existingList = Array.isArray(cloudData) ? cloudData : [];
+        const updatedList = [newRecord, ...existingList.filter(r => r.code !== generatedCode)];
+        await setCloudJson(CLOUD_KEYS.RSP_PRESS_RECORDS, updatedList, "cc_rsp_press_records_v2_fy70");
+        if (typeof window !== "undefined") {
+          localStorage.setItem("cc_rsp_press_records_v1", JSON.stringify(updatedList));
         }
+      } catch (storageErr) {
+        console.error("Cloud/Local storage sync error:", storageErr);
       }
 
       // 2. Sync ทางที่สอง: ซิงค์ไปหน้าบอร์ดรวม (Tasks Board / AssignmentsView)
@@ -230,6 +241,9 @@ export default function RspPressFormPage() {
         decision_maker: uniName,
         deadline: formData.date,
         details: {
+          task_code: generatedCode,
+          rsp_code: generatedCode,
+          title: formData.title.trim(),
           category: "เขียนข่าว ( นอกเหนือจาก Task งาน )",
           type: "เขียนข่าว ( นอกเหนือจาก Task งาน )",
           service: "เขียนข่าว ( นอกเหนือจาก Task งาน )",
@@ -252,12 +266,12 @@ export default function RspPressFormPage() {
           target_audience: formData.targetAudience,
           publish_date: formData.date,
           news_url: formData.newsUrl.trim(),
-          attachment_name: files.length > 0 ? files.map(f => f.name).join(", ") : formData.attachmentName,
+          attachment_name: attachmentText,
           notes: formData.notes?.trim() || "",
           description: formData.details.trim(),
+          details: formData.details.trim(),
           reporter_name: formData.reporterName.trim(),
           reporter_contact: formData.reporterContact.trim(),
-          rsp_code: generatedCode,
           source: "rsp_press_form"
         }
       }]);
@@ -375,24 +389,26 @@ export default function RspPressFormPage() {
           /* Intake Form Card */
           <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
             
-            {/* Header Banner (Black Background with Orange Font per user request) */}
-            <div className="p-6 sm:p-10 bg-[#121214] text-[#E8590C] space-y-4 border-b border-zinc-800 relative">
+            {/* Header Banner (Dieter Rams Style: Light Gray Background with Contrast Orange Font) */}
+            <div className="p-6 sm:p-10 bg-[#f1f3f5] dark:bg-zinc-900 text-[#d9480f] dark:text-[#f97316] space-y-4 border-b border-slate-200 dark:border-zinc-800 relative">
               <div className="absolute top-0 left-0 w-full h-[3px] bg-[#E8590C]" />
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E8590C]/15 border border-[#E8590C]/30 text-[#E8590C] text-xs font-bold backdrop-blur-xs">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white dark:bg-zinc-800 border border-slate-200/90 dark:border-zinc-700 text-[#d9480f] dark:text-[#f97316] text-xs font-bold shadow-2xs">
                 <Building2 size={14} />
                 <span>เครือข่ายอุทยานวิทยาศาสตร์ภูมิภาค ภาคเหนือ 14 สถาบัน</span>
               </div>
 
               {/* Requirement 1: Form title separated into two lines with English subtitle underneath */}
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight text-[#E8590C]">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight text-[#d9480f] dark:text-[#f97316]">
                 <div>แบบฟอร์มงานประชาสัมพันธ์</div>
-                <div className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#f97316] mt-2.5">
+                <div className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#d9480f] dark:text-[#f97316] mt-2.5">
                   เครือข่ายอุทยานวิทยาศาสตร์ภูมิภาค ภาคเหนือ
                 </div>
               </h1>
-              <p className="text-sm sm:text-base font-semibold text-[#f97316]/80 pt-1">
-                (Regional Science Park Northern Network PR Form : RSP NORTH)
-              </p>
+              <div className="pt-1">
+                <p className="text-xs sm:text-sm font-semibold text-[#d9480f]/70 dark:text-[#f97316]/70">
+                  (Regional Science Park Northern Network PR Form : RSP NORTH)
+                </p>
+              </div>
             </div>
 
             {/* RSP Conditions Banner */}

@@ -12,9 +12,9 @@ import {
   DollarSign, Briefcase, TrendingUp, Palette, Layers, Flag, ListChecks, 
   Ban, AlertCircle, Paperclip, Plus, Trash2, LifeBuoy, MapPin, Camera, 
   Check, Sparkles, PiggyBank, Star, MessageSquare, Minus, Building2,
-  Landmark, Network, Globe, Link2, Copy, Loader2
+  Landmark, Network, Globe, Link2, Copy, Loader2, ExternalLink, Newspaper
 } from "lucide-react";
-import { getStandardPriceForTask } from "@/utils/pricing";
+import { getStandardPriceForTask, shouldInternalTaskSkipEmail, getLeadTimeForTask } from "@/utils/pricing";
 import SatisfactionSurveyModal from "./SatisfactionSurveyModal";
 import { SatisfactionScores } from "@/utils/okrSettings";
 import { OFFICIAL_STEP_TEAMS } from "@/utils/teamAnalytics";
@@ -24,6 +24,11 @@ import InProgressEmailModal from "./InProgressEmailModal";
 import CompletedEmailModal from "./CompletedEmailModal";
 import { downloadFileWithSaveDialog } from "@/utils/fileDownloader";
 import { createClient } from "@/utils/supabase/client";
+import StepQuotationModal, { StepQuotationData, formatCurrency } from "./StepQuotationModal";
+import { getCloudJson, setCloudJson, CLOUD_KEYS } from "@/utils/cloudSyncService";
+import { RSP_UNIVERSITIES, PressReleaseItem } from "./RspPressReport";
+import { Assignee3DAvatarBadge } from "@/components/Assignee3DAvatarBadge";
+import { isOperationalAssignee } from "@/utils/memberProfile";
 
 const ALL_CATEGORIES_BY_UNIT: Record<string, { name: string; desc: string }[]> = {
   creative: [
@@ -83,6 +88,7 @@ const ALL_CATEGORIES_BY_UNIT: Record<string, { name: string; desc: string }[]> =
     { name: "อื่นๆ (Others)", desc: "งานประชาสัมพันธ์อื่นๆ นอกเหนือจากที่ระบุ" }
   ],
   internal: [
+    { name: "ทำใบเสนอราคา", desc: "สร้างและออกเอกสารใบเสนอราคา (Quotation) ตามมาตรฐาน STeP CMU" },
     { name: "งานเอกสาร/การเงินโครงการ", desc: "ทำงานเอกสาร/การเงินโครงการที่เกี่ยวข้องกับการจัดซื้อจัดจ้าง" },
     { name: "งานขึ้นรูป Proposal / TOR", desc: "ทำงานเอกสาร กราฟิก ภาพประกอบ ไอเดียอื่นๆ เพื่อประกอบการเสนอโครงการ" },
     { name: "งาน Admin / STeP + RSP", desc: "งาน Admin จัดการข้อมูลหลังบ้าน Social Media ของ STeP และ RSP" },
@@ -137,11 +143,7 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
 
   // Filter operational assignees (exclude executives from being assigned to tasks)
   const operationalAssignees = useMemo(() => {
-    return (assignees || []).filter((a: any) => {
-      const u = a.unit || '';
-      const r = a.role || '';
-      return r !== 'executive' && !u.includes('|executive');
-    });
+    return (assignees || []).filter((a: any) => isOperationalAssignee(a));
   }, [assignees]);
 
   const unit = (brief.unit || 'creative').toLowerCase();
@@ -154,24 +156,31 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
     brief.category || 
     "";
 
-  // Effective deadline resolution: prioritize brief.deadline, fallback to usage_date, event_datetime, publish_date, delivery_date, submission date, or created_at (วันที่กรอกข้อมูลเข้ามา)
+  // CRITICAL RULE: วันที่เผยแพร่ (publish_date) ใน form คือ วันเดดไลน์ใน task เสมอ ห้ามผิดพลาดเด็ดขาด!
+  // Effective deadline resolution: prioritize brief.details?.publish_date ALWAYS over brief.deadline and fallback dates
   const effectiveDeadline = 
+    brief.details?.publish_date || 
     brief.deadline || 
     brief.details?.usage_date || 
     (brief.details?.event_datetime ? brief.details.event_datetime.split(" ")[0] : null) ||
-    brief.details?.publish_date || 
     brief.details?.delivery_date || 
     brief.details?.deadline ||
     (brief.created_at ? brief.created_at.slice(0, 10) : null) ||
     (brief.details?.submission_date || brief.details?.date || null) ||
     new Date().toISOString().slice(0, 10);
 
-  // Auto-sync submission date to brief.deadline if deadline is not yet saved in database
+  // Auto-sync publish date or effective deadline to brief.deadline in database
   useEffect(() => {
-    if (!brief.deadline && effectiveDeadline) {
+    if (brief.details?.publish_date) {
+      const pubDate = String(brief.details.publish_date).split(" ")[0].split("T")[0];
+      const curDeadline = brief.deadline ? String(brief.deadline).split(" ")[0].split("T")[0] : "";
+      if (curDeadline !== pubDate) {
+        onUpdateField(brief.id, "deadline", pubDate);
+      }
+    } else if (!brief.deadline && effectiveDeadline) {
       onUpdateField(brief.id, "deadline", effectiveDeadline);
     }
-  }, [brief.id, brief.deadline, effectiveDeadline]);
+  }, [brief.id, brief.deadline, brief.details?.publish_date, effectiveDeadline]);
 
   // Standard Price resolution from back-office pricing catalog
   const standardPrice = getStandardPriceForTask(unit, currentCategory, brief.project_name);
@@ -240,6 +249,7 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
   const [copiedTaskLink, setCopiedTaskLink] = useState(false);
   const [showInProgressEmailModal, setShowInProgressEmailModal] = useState(false);
   const [showCompletedEmailModal, setShowCompletedEmailModal] = useState(false);
+  const [showQuotationModal, setShowQuotationModal] = useState(false);
 
   const handleConfirmInProgressModal = async (emailData: { to: string; cc: string[]; subject: string; body: string; from?: string; senderName?: string; assigneeId?: string }) => {
     const targetAssigneeId = emailData.assigneeId || brief.assignee_id;
@@ -307,7 +317,8 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
     const updatedDetails = {
       ...existingDetails,
       survey_status: existingDetails.survey_status || 'sent',
-      satisfaction_rate: existingDetails.satisfaction_rate ?? 85.0
+      // Never inject fake 85.0 fallback - only preserve real survey rates if already evaluated
+      ...(existingDetails.satisfaction_scores?.averagePercent ? { satisfaction_rate: existingDetails.satisfaction_scores.averagePercent } : {})
     };
 
     // Directly persist to Supabase to guarantee instantaneous consistency
@@ -462,18 +473,43 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
   const getTaskAges = (b: any) => {
     const now = new Date().getTime();
     const created = new Date(b.created_at).getTime();
+    const assignedTime = b.details?.assigned_at ? new Date(b.details.assigned_at).getTime() : null;
     const inProgress = b.in_progress_at ? new Date(b.in_progress_at).getTime() : null;
     const completed = b.completed_at ? new Date(b.completed_at).getTime() : null;
+    const ONE_DAY = 1000 * 3600 * 24;
 
-    const pendingEnd = inProgress || (b.status === 'cancelled' ? now : now);
-    let pendingDays = Math.max(0, Math.floor((pendingEnd - created) / (1000 * 3600 * 24)));
-    
+    const hasAssignee = Boolean(b.assignee_id && b.assignee_id.trim() !== '');
+
+    let unassignedDays = 0;
+    let pendingDays = 0;
     let inProgressDays = 0;
-    if (inProgress) {
-      const ipEnd = completed || (b.status === 'cancelled' ? now : now);
-      inProgressDays = Math.max(0, Math.floor((ipEnd - inProgress) / (1000 * 3600 * 24)));
+
+    if (!hasAssignee) {
+      const unassignedEnd = inProgress || (b.status === 'cancelled' && completed ? completed : now);
+      unassignedDays = Math.max(0, Math.floor((unassignedEnd - created) / ONE_DAY));
+      pendingDays = 0;
+    } else {
+      if (assignedTime && assignedTime >= created) {
+        unassignedDays = Math.max(0, Math.floor((assignedTime - created) / ONE_DAY));
+        const pendingEnd = inProgress || (b.status === 'cancelled' && completed ? completed : now);
+        pendingDays = Math.max(0, Math.floor((pendingEnd - assignedTime) / ONE_DAY));
+      } else {
+        unassignedDays = 0;
+        const pendingEnd = inProgress || (b.status === 'cancelled' && completed ? completed : now);
+        pendingDays = Math.max(0, Math.floor((pendingEnd - created) / ONE_DAY));
+      }
     }
-    return { pendingDays, inProgressDays };
+
+    if (inProgress) {
+      const ipEnd = completed || (b.status === 'cancelled' && completed ? completed : now);
+      inProgressDays = Math.max(0, Math.floor((ipEnd - inProgress) / ONE_DAY));
+    }
+
+    if (unassignedDays < 0) unassignedDays = 0;
+    if (pendingDays < 0) pendingDays = 0;
+    if (inProgressDays < 0) inProgressDays = 0;
+
+    return { unassignedDays, pendingDays, inProgressDays };
   };
   const ages = getTaskAges(brief);
 
@@ -483,10 +519,16 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
       ...brief.details,
       [key]: val
     });
-    // If usage_date, publish_date, delivery_date, or event_datetime is updated, also sync to brief.deadline!
-    if (key === 'usage_date' || key === 'publish_date' || key === 'delivery_date' || key === 'event_datetime') {
+    // CRITICAL RULE: If publish_date is updated, ALWAYS sync to brief.deadline!
+    if (key === 'publish_date') {
       const datePart = val ? (val.includes(" ") ? val.split(" ")[0] : val) : null;
       onUpdateField(brief.id, 'deadline', datePart || null);
+    } else if (key === 'usage_date' || key === 'delivery_date' || key === 'event_datetime') {
+      // Only sync other dates if there is NO publish_date set
+      if (!brief.details?.publish_date) {
+        const datePart = val ? (val.includes(" ") ? val.split(" ")[0] : val) : null;
+        onUpdateField(brief.id, 'deadline', datePart || null);
+      }
     }
   };
 
@@ -518,14 +560,28 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
     rows?: number;
     isDate?: boolean;
     showTimeSelect?: boolean;
-  }) => (
-    <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 flex flex-col sm:table-row">
-      <td className="px-3 sm:px-4 py-2 sm:py-3 w-full sm:w-1/3 sm:border-r border-slate-100 bg-slate-50/40 align-top">
-        <div className="flex items-center gap-2 text-slate-600">
-          {icon}
-          <span className="font-semibold text-xs uppercase tracking-wider">{label}</span>
-        </div>
-      </td>
+  }) => {
+    const match = label.match(/^(.+?)\s*\((.+?)\)$/);
+    const thaiLabel = match ? match[1].trim() : label;
+    const engLabel = match ? match[2].trim() : null;
+
+    return (
+      <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 flex flex-col sm:table-row">
+        <td className="px-3 sm:px-4 py-2.5 sm:py-3 w-full sm:w-1/3 sm:border-r border-slate-100 bg-slate-50/40 align-top">
+          <div className="flex items-start gap-2.5 text-slate-600">
+            <div className="shrink-0 mt-0.5">{icon}</div>
+            <div className="flex flex-col min-w-0">
+              <span className="font-bold text-xs text-slate-800 leading-snug">
+                {thaiLabel}
+              </span>
+              {engLabel && (
+                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider leading-tight mt-0.5">
+                  {engLabel}
+                </span>
+              )}
+            </div>
+          </div>
+        </td>
       <td className="px-3 sm:px-3 py-2 w-full sm:w-2/3 align-top">
         {isDate ? (
           <div className="relative flex items-center">
@@ -579,6 +635,7 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
       </td>
     </tr>
   );
+};
 
   if (!mounted) return null;
 
@@ -594,17 +651,17 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
         onClick={(e) => e.stopPropagation()}
       >
         
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-200 bg-white sticky top-0 z-20 shadow-xs">
-          <div className="flex items-center justify-between w-full sm:w-auto">
-            <div className="flex flex-wrap items-center gap-2">
+        {/* Header - Minimal & Compact for Mobile */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 sm:px-6 py-2.5 sm:py-3.5 border-b border-slate-200 bg-white sticky top-0 z-20 shadow-xs">
+          <div className="flex items-center justify-between w-full sm:w-auto gap-2">
+            <div className="flex items-center gap-1.5 flex-wrap min-w-0">
               {/* Task Code */}
-              <span className="text-xs sm:text-sm font-mono font-bold px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-slate-100 text-slate-800 border border-slate-300/80 shadow-2xs tracking-wide shrink-0">
+              <span className="text-[11px] sm:text-xs font-mono font-bold px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-slate-100 text-slate-800 border border-slate-300/80 shadow-2xs tracking-wide shrink-0">
                 {taskCode}
               </span>
 
               {/* Unit Badge (Prominent & Clear) */}
-              <span className={`text-xs sm:text-sm font-black px-3 py-1 sm:px-4 sm:py-1.5 rounded-full uppercase tracking-wider shadow-xs text-white shrink-0 ${
+              <span className={`text-[10px] sm:text-xs font-black px-2.5 py-0.5 sm:px-3.5 sm:py-1 rounded-full uppercase tracking-wider shadow-xs text-white shrink-0 ${
                 unit === 'creative' ? 'bg-[#8b5cf6]' :
                 unit === 'content' ? 'bg-[#ec4899]' :
                 unit === 'pr' ? 'bg-[#1877F2]' :
@@ -615,7 +672,7 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
 
               {/* Service / Category Badge */}
               {currentCategory && (
-                <span className="text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-300 shadow-2xs leading-tight inline-block max-w-[200px] sm:max-w-none truncate sm:whitespace-normal">
+                <span className="text-[11px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-300 shadow-2xs leading-tight inline-block max-w-[150px] sm:max-w-[220px] truncate" title={currentCategory}>
                   {currentCategory}
                 </span>
               )}
@@ -624,19 +681,19 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
             {/* Mobile close button (top right) */}
             <button
               onClick={onClose}
-              className="sm:hidden p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors cursor-pointer shrink-0 ml-2"
+              className="sm:hidden p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors cursor-pointer shrink-0 ml-1"
               title="ปิดหน้าต่าง"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
           
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
             <button
               type="button"
               onClick={handleCopyTaskLink}
               title="คัดลอกลิงก์ตรวจสอบสถานะและรายละเอียดงานนี้"
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-full transition-all border shadow-xs cursor-pointer whitespace-nowrap shrink-0 ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1 sm:py-1.5 text-xs font-semibold rounded-full transition-all border shadow-xs cursor-pointer whitespace-nowrap shrink-0 ${
                 copiedTaskLink
                   ? "bg-emerald-50 text-emerald-700 border-emerald-300 ring-2 ring-emerald-200"
                   : "text-slate-700 bg-white border-slate-200 hover:bg-slate-50"
@@ -644,21 +701,21 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
             >
               {copiedTaskLink ? (
                 <>
-                  <Check size={14} className="text-emerald-600 shrink-0" />
+                  <Check size={13} className="text-emerald-600 shrink-0" />
                   <span>คัดลอกลิงก์แล้ว!</span>
                 </>
               ) : (
                 <>
-                  <Copy size={14} className="text-slate-500 shrink-0" />
+                  <Copy size={13} className="text-slate-500 shrink-0" />
                   <span>คัดลอกลิงก์งาน</span>
                 </>
               )}
             </button>
             <button
               onClick={handleDownloadPDF}
-              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-full hover:bg-slate-50 transition-colors shadow-xs cursor-pointer whitespace-nowrap shrink-0"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1 sm:py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-full hover:bg-slate-50 transition-colors shadow-xs cursor-pointer whitespace-nowrap shrink-0"
             >
-              <Download size={14} className="shrink-0" /> 
+              <Download size={13} className="shrink-0" /> 
               <span>Download PDF</span>
             </button>
             <button
@@ -666,7 +723,7 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
               className="hidden sm:flex p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors cursor-pointer shrink-0"
               title="ปิดหน้าต่าง"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
         </div>
@@ -677,10 +734,22 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
           {/* Project Title */}
           <div>
             <textarea
-              className="w-full text-xl font-bold text-slate-800 border border-transparent hover:border-slate-200 focus:border-primary rounded-lg p-2 focus:outline-none resize-none leading-snug"
+              key={brief.id}
+              ref={(el) => {
+                if (el) {
+                  el.style.height = "auto";
+                  el.style.height = `${Math.max(48, el.scrollHeight)}px`;
+                }
+              }}
+              className="w-full text-lg sm:text-xl font-bold text-slate-800 border border-slate-200/80 hover:border-slate-300 focus:border-primary rounded-xl p-3 focus:outline-none resize-none leading-relaxed transition-all shadow-2xs overflow-hidden"
               defaultValue={brief.project_name || ""}
               rows={1}
               placeholder="ชื่องาน / โครงการ"
+              onInput={(e) => {
+                const target = e.currentTarget;
+                target.style.height = "auto";
+                target.style.height = `${Math.max(48, target.scrollHeight)}px`;
+              }}
               onBlur={(e) => {
                 if (e.target.value !== brief.project_name) {
                   onUpdateField(brief.id, "project_name", e.target.value);
@@ -741,6 +810,75 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
             </div>
           )}
 
+          {/* Quotation Document Card (100% STeP CMU Quotation) */}
+          {(brief.details?.quotation || currentCategory === "ทำใบเสนอราคา" || currentCategory === "ทำใบเสนราคา" || currentCategory.includes("ใบเสนอราคา") || currentCategory.includes("ใบเสนราคา") || (brief.project_name || "").includes("[Quotation]")) && (
+            <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-amber-500/10 border-2 border-amber-400 rounded-2xl p-4.5 space-y-3 shadow-xs animate-in fade-in">
+              <div className="flex items-center justify-between border-b border-amber-200/80 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 rounded-lg bg-amber-500 text-white shadow-2xs">
+                    <FileText size={16} />
+                  </span>
+                  <div>
+                    <h4 className="text-xs font-bold text-amber-950 uppercase tracking-wider font-mono flex items-center gap-2">
+                      <span>เอกสารใบเสนอราคา (Quotation / ใบเสนอราคา STeP CMU)</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">มาตรฐาน 100%</span>
+                    </h4>
+                    <span className="text-[11px] font-mono font-bold text-amber-700">
+                      {brief.details?.quotation?.docId ? `เลขที่เอกสาร: ${brief.details.quotation.docId}` : "ยังไม่ได้ออกเลขที่เอกสาร (คลิกปุ่มด้านขวาเพื่อเปิดสร้าง)"}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowQuotationModal(true)}
+                  className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
+                >
+                  <FileText size={13} />
+                  <span>{brief.details?.quotation ? "📄 เปิดดู / แก้ไข / พิมพ์ใบเสนอราคา" : "➕ สร้างใบเสนอราคาใหม่"}</span>
+                </button>
+              </div>
+
+              {brief.details?.quotation ? (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                    <div className="bg-white/80 p-2.5 rounded-xl border border-amber-200/60">
+                      <span className="text-[10px] text-slate-500 block font-semibold">ลูกค้า / ผู้รับบริการ</span>
+                      <span className="font-bold text-slate-800 truncate block">{brief.details.quotation.customerName || "-"}</span>
+                    </div>
+                    <div className="bg-white/80 p-2.5 rounded-xl border border-amber-200/60">
+                      <span className="text-[10px] text-slate-500 block font-semibold">วันที่ออกเอกสาร</span>
+                      <span className="font-bold text-slate-800 font-mono">{brief.details.quotation.docDate || "-"}</span>
+                    </div>
+                    <div className="bg-white/80 p-2.5 rounded-xl border border-amber-200/60">
+                      <span className="text-[10px] text-slate-500 block font-semibold">จำนวนรายการบริการ</span>
+                      <span className="font-bold text-slate-800 font-mono">{brief.details.quotation.items?.length || 0} รายการ</span>
+                    </div>
+                    <div className="bg-white/80 p-2.5 rounded-xl border border-amber-200/60">
+                      <span className="text-[10px] text-slate-400 block font-semibold">ยอดรวมสุทธิ (บาท)</span>
+                      <span className="font-bold text-amber-700 font-mono text-sm">
+                        ฿{formatCurrency(
+                          (brief.details.quotation.items || []).reduce((acc: number, it: any) => acc + (Number(it.quantity) || 0) * (Number(it.price) || 0), 0) - (Number(brief.details.quotation.discountAmount) || 0)
+                        )}
+                      </span>
+                    </div>
+                  </div>
+
+                  {(brief.details.quotation.customerAddress || brief.details.quotation.customerTaxId || brief.details.quotation.customerPhone) && (
+                    <div className="text-[11px] text-slate-600 bg-white/70 p-2.5 rounded-xl border border-amber-200/60 flex flex-wrap items-center gap-4">
+                      {brief.details.quotation.customerTaxId && <span>📋 <strong>Tax ID:</strong> {brief.details.quotation.customerTaxId}</span>}
+                      {brief.details.quotation.customerPhone && <span>📞 <strong>โทร:</strong> {brief.details.quotation.customerPhone}</span>}
+                      {brief.details.quotation.customerAddress && <span className="w-full">📍 <strong>ที่อยู่:</strong> {brief.details.quotation.customerAddress}</span>}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-xs text-amber-800 py-1 flex items-center justify-between">
+                  <span>ยังไม่มีข้อมูลใบเสนอราคาสำหรับงานนี้ คุณสามารถกดปุ่ม "สร้างใบเสนอราคาใหม่" เพื่อออกเอกสารมาตรฐาน STeP CMU ได้ทันที</span>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Top Metadata Grid: Staff & Owner */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
             
@@ -761,9 +899,27 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                         placeholder="Unassigned"
                         value={brief.assignee_id || ""}
                         onChange={(val) => onUpdateField(brief.id, "assignee_id", val)}
+                        renderValue={(val) => {
+                          const matched = assignees.find((a: any) => a.id === val);
+                          if (!matched) return "Unassigned (รอมอบหมาย)";
+                          return (
+                            <div className="flex items-center gap-2 truncate">
+                              <Assignee3DAvatarBadge name={matched.name} size={20} showBorder />
+                              <span className="truncate">{matched.name}</span>
+                            </div>
+                          );
+                        }}
                         options={[
-                          { value: "", label: "Unassigned" },
-                          ...operationalAssignees.map((a: any) => ({ value: a.id, label: a.name }))
+                          { value: "", label: "Unassigned (รอมอบหมาย)" },
+                          ...operationalAssignees.map((a: any) => ({ 
+                            value: a.id, 
+                            label: (
+                              <div className="flex items-center gap-2">
+                                <Assignee3DAvatarBadge name={a.name} size={20} showBorder />
+                                <span>{a.name}</span>
+                              </div>
+                            )
+                          }))
                         ]}
                       />
                     </div>
@@ -772,49 +928,88 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                       <label className="block text-[11px] text-slate-500 mb-1.5 font-semibold">สถานะงาน (Status)</label>
                       <CustomSelect
                         triggerClassName="w-full text-xs font-bold bg-white border border-slate-200 rounded-full px-3.5 py-2 shadow-2xs hover:border-slate-300 transition-all h-[36px] flex items-center justify-between text-left"
-                        value={brief.status || "pending"}
+                        value={
+                          !brief.assignee_id && (brief.status === 'pending' || brief.status === 'unassigned')
+                            ? "unassigned"
+                            : (brief.status || "pending")
+                        }
                         onChange={(val) => {
-                          const currentStatus = brief.status || 'pending';
-
-                          // Prevent moving from pending directly to completed
-                          if (currentStatus === 'pending' && val === 'completed') {
-                            alert(
-                              "⚠️ ไม่สามารถย้ายงานจาก 'Pending' ไปยังสถานะ 'Completed' ได้โดยตรง!\n\n" +
-                              "📌 ขั้นตอนการทำงานที่ถูกต้อง:\n" +
-                              "1. กำหนดผู้รับผิดชอบงาน (Assignee)\n" +
-                              "2. ย้ายสถานะไปที่ 'In Progress (กำลังทำ)' เพื่อส่งอีเมลตั้งต้นแจ้งเริ่มงานและข้อความบรีฟให้ PM และทีมงาน\n" +
-                              "3. ดำเนินการผลิตและตรวจแก้แต่ละดราฟจนส่งมอบงานสมบูรณ์ จึงจะเปลี่ยนสถานะเป็น 'Completed'"
-                            );
+                          if (val === "unassigned") {
+                            onUpdateField(brief.id, "assignee_id", "");
+                            onUpdateField(brief.id, "status", "pending");
+                            setSurveyNotifySuccess("⚪ ย้ายงานไปสถานะ UNASSIGNED (รอมอบหมาย)");
                             return;
                           }
 
+                          if (val === "pending") {
+                            onUpdateField(brief.id, "status", "pending");
+                            setSurveyNotifySuccess("⏳ เปลี่ยนสถานะเป็น TO-DO LIST (รอทำ)");
+                            return;
+                          }
+
+                          if (val === "in_progress" && !brief.assignee_id) {
+                            alert("⚠️ กรุณากำหนดผู้รับผิดชอบงาน (Assignee) ก่อนเปลี่ยนสถานะเป็น 'IN PROGRESS (กำลังทำ)' ครับ");
+                            return;
+                          }
+
+                          const skipEmailForInProgress = shouldInternalTaskSkipEmail(brief, 'in_progress');
+                          const skipEmailForCompleted = shouldInternalTaskSkipEmail(brief, 'completed');
+
                           if (val === "in_progress") {
+                            if (skipEmailForInProgress) {
+                              const now = new Date().toISOString();
+                              try {
+                                const supabase = createClient();
+                                supabase.from("briefs").update({
+                                  status: "in_progress",
+                                  in_progress_at: brief.in_progress_at || now,
+                                }).eq("id", brief.id);
+                              } catch (e) {}
+                              onUpdateField(brief.id, "status", "in_progress", true, true);
+                              if (!brief.in_progress_at) {
+                                onUpdateField(brief.id, "in_progress_at", now, false, true);
+                              }
+                              setSurveyNotifySuccess("⚡ เริ่มงานสำเร็จ (IN PROGRESS)");
+                              return;
+                            }
                             setShowInProgressEmailModal(true);
                             return;
                           }
 
                           if (val === "completed") {
+                            if (skipEmailForCompleted) {
+                              const now = new Date().toISOString();
+                              try {
+                                const supabase = createClient();
+                                supabase.from("briefs").update({
+                                  status: "completed",
+                                  completed_at: now,
+                                }).eq("id", brief.id);
+                              } catch (e) {}
+                              onUpdateField(brief.id, "status", "completed", true, true);
+                              onUpdateField(brief.id, "completed_at", now, false, true);
+                              setSurveyNotifySuccess("✅ ส่งมอบงานสำเร็จ (COMPLETED)");
+                              return;
+                            }
                             setShowCompletedEmailModal(true);
+                            return;
+                          }
+
+                          if (val === "cancelled") {
+                            onUpdateField(brief.id, "status", "cancelled");
+                            setSurveyNotifySuccess("❌ ยกเลิกงาน (CANCELLED)");
                             return;
                           }
 
                           onUpdateField(brief.id, "status", val);
                         }}
-                        options={
-                          (brief.status || 'pending') === 'pending'
-                            ? [
-                                { value: "pending", label: "⏳ Pending (รอทำ)" },
-                                { value: "in_progress", label: "⚡ In Progress (กำลังทำ)" },
-                                { value: "cancelled", label: "❌ Cancelled (ยกเลิก)" },
-                                { value: "completed", label: "🚫 Completed (ต้องผ่าน In Progress ก่อน)", disabled: true }
-                              ]
-                            : [
-                                { value: "pending", label: "⏳ Pending (รอทำ)" },
-                                { value: "in_progress", label: "⚡ In Progress (กำลังทำ)" },
-                                { value: "completed", label: "✅ Completed (เสร็จสิ้น)" },
-                                { value: "cancelled", label: "❌ Cancelled (ยกเลิก)" }
-                              ]
-                        }
+                        options={[
+                          { value: "unassigned", label: "⚪ UNASSIGNED (รอมอบหมาย)" },
+                          { value: "pending", label: "⏳ TO-DO LIST (รอทำ)" },
+                          { value: "in_progress", label: "⚡ IN PROGRESS (กำลังทำ)" },
+                          { value: "completed", label: "✅ COMPLETED (เสร็จสิ้น)" },
+                          { value: "cancelled", label: "❌ CANCELLED (ยกเลิก)" }
+                        ]}
                       />
                     </div>
                   </div>
@@ -836,8 +1031,19 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                     </div>
 
                     <div>
-                      <div className="mb-1.5">
+                      <div className="mb-1.5 flex items-center justify-between">
                         <label className="text-[11px] text-slate-500 font-semibold">Deadline (กำหนดส่ง)</label>
+                        {(() => {
+                          const slaDays = getLeadTimeForTask(brief.unit, currentCategory, brief.project_name);
+                          return (
+                            <span 
+                              className="text-[10px] text-slate-400 font-normal hover:text-slate-600 transition-colors" 
+                              title={`ระยะเวลามาตรฐานสำหรับงานนี้คือ ${slaDays} วัน`}
+                            >
+                              มาตรฐาน {slaDays} วัน
+                            </span>
+                          );
+                        })()}
                       </div>
                       <DatePicker
                         className="w-full text-xs font-semibold bg-white border border-slate-200 rounded-full px-3 py-2 text-center shadow-2xs hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-800/10 transition-all h-[36px]"
@@ -867,6 +1073,23 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                         dateFormat="yyyy-MM-dd"
                         placeholderText="Select date"
                       />
+                      {(() => {
+                        const slaDays = getLeadTimeForTask(brief.unit, currentCategory, brief.project_name);
+                        if (!effectiveDeadline) return null;
+                        const createdTime = brief.created_at ? new Date(brief.created_at).getTime() : Date.now();
+                        const dueTime = new Date(effectiveDeadline).getTime();
+                        const noticeDays = Math.ceil((dueTime - createdTime) / (1000 * 60 * 60 * 24));
+                        const isSlaBreached = noticeDays >= 0 && noticeDays < slaDays;
+                        if (isSlaBreached) {
+                          return (
+                            <div className="mt-1.5 text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-1 rounded-lg flex items-center gap-1">
+                              <span>🚨</span>
+                              <span>งานด่วน: สั่งล่วงหน้า {noticeDays} วัน (ระยะเวลามาตรฐานคือ {slaDays} วัน)</span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -874,10 +1097,23 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
 
               {/* Assistants Sub-section inside CC Staff */}
               <div className="pt-3 border-t border-slate-200/70 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-xs text-slate-700 font-bold">
-                    <Users size={13} className="text-slate-500" />
-                    <span>ผู้ช่วยรับผิดชอบ (Assistants)</span>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <Users size={13} className="text-slate-500 shrink-0" />
+                    <span className="text-xs text-slate-700 font-bold truncate">ผู้ช่วยรับผิดชอบ (Assistants)</span>
+                    {(() => {
+                      const isPMProject = currentCategory === "PM โครงการของ CC" || brief.details?.category === "PM โครงการของ CC" || (brief.details?.category || "").includes("PM โครงการ") || brief.details?.project_code !== undefined || (brief.project_name || "").includes("PM โครงการ") || (brief.project_name || "").startsWith("[PM]");
+                      if (!isPMProject) return null;
+                      return (
+                        <span 
+                          className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/90 px-2 py-0.5 rounded-full shrink-0"
+                          title="คิดสัดส่วนเงินจาก % กำไรสุทธิ (Profit) ของโครงการ"
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                          คิดจาก % กำไร
+                        </span>
+                      );
+                    })()}
                   </div>
                   <button 
                     type="button"
@@ -888,9 +1124,10 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                         assistants: [...currentAssistants, { assignee_id: '', percentage: 0 }]
                       });
                     }}
-                    className="text-[11px] text-white bg-[#e03131] hover:bg-[#c92a2a] active:bg-[#b02525] active:scale-95 px-3.5 py-1.5 rounded-full transition-all font-semibold tracking-wide shadow-xs border border-transparent flex items-center gap-1 cursor-pointer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-[#e03131] hover:text-white bg-rose-50 hover:bg-[#e03131] border border-rose-200 hover:border-[#e03131] rounded-full transition-all cursor-pointer shadow-2xs shrink-0"
                   >
-                    <Plus size={12} strokeWidth={2.5} /> ขอผู้ช่วย
+                    <Plus size={11} strokeWidth={2.5} className="shrink-0" />
+                    <span>ขอผู้ช่วย</span>
                   </button>
                 </div>
 
@@ -901,7 +1138,11 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                 ) : (
                   <div className="space-y-1.5 pt-1">
                     {(() => {
-                      const effectiveBaseVal = currentSaveCost;
+                      const isPMProject = currentCategory === "PM โครงการของ CC" || brief.details?.category === "PM โครงการของ CC" || (brief.details?.category || "").includes("PM โครงการ") || brief.details?.project_code !== undefined || (brief.project_name || "").includes("PM โครงการ") || (brief.project_name || "").startsWith("[PM]");
+                      const pmProfit = Number(brief.details?.profit !== undefined && brief.details?.profit !== null
+                        ? brief.details.profit
+                        : ((Number(brief.details?.revenue) || 0) - (Number(brief.details?.cost) || 0)));
+                      const effectiveBaseVal = isPMProject ? pmProfit : currentSaveCost;
 
                       return (
                         <>
@@ -946,7 +1187,7 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                                 </div>
                                 <div 
                                   className="text-[11px] font-mono font-semibold px-2.5 py-1 rounded-full shrink-0 min-w-[70px] text-right text-emerald-700 bg-emerald-50/80 border border-emerald-200/60 h-[32px] flex items-center justify-end"
-                                  title="มูลค่า Save Cost ของผู้ช่วยท่านนี้"
+                                  title={isPMProject ? "ส่วนแบ่งกำไร (Profit) ของผู้ช่วยท่านนี้" : "มูลค่า Save Cost ของผู้ช่วยท่านนี้"}
                                 >
                                   ฿{assistantBaht.toLocaleString()}
                                 </div>
@@ -1155,6 +1396,29 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                 const currentPercent = brief.details?.satisfaction_scores?.averagePercent ?? (brief.details?.satisfaction_rate ?? 85.0);
 
                 if (!hasEvaluated) {
+                  if (shouldInternalTaskSkipEmail(brief, 'completed')) {
+                    return (
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <span className="p-2.5 rounded-xl bg-slate-100 text-slate-700 shadow-2xs shrink-0 border border-slate-200">
+                            <CheckCircle2 size={18} className="text-emerald-600" />
+                          </span>
+                          <div>
+                            <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2 flex-wrap">
+                              บันทึกข้อมูลงานภายใน (Internal Task Record)
+                              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-300 font-mono">
+                                งานภายในไม่ต้องส่งอีเมล / ไม่ต้องทำแบบประเมิน
+                              </span>
+                            </h4>
+                            <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                              งานประเภทนี้บันทึกเชิงข้อมูลในระบบโดยตรง เพื่อคำนวณ Workload & Save Cost เรียบร้อยแล้ว ไม่ต้องส่งอีเมลหรือทำแบบประเมินความพึงพอใจ
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
                   return (
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
@@ -1183,6 +1447,16 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                         >
                           <Mail size={13} className="text-white" />
                           <span>เปิดส่งใน Gmail</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowSatisfactionModal(true)}
+                          className="px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs bg-amber-500 hover:bg-amber-600 text-white"
+                          title="บันทึกผลการประเมินความพึงพอใจ 5 มิติโดยตรง (กรณี PM แจ้งผลทาง LINE/โทรศัพท์)"
+                        >
+                          <Star size={13} className="text-white fill-white" />
+                          <span>บันทึกผลประเมิน</span>
                         </button>
 
                         <button
@@ -1231,7 +1505,17 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                           </p>
                         </div>
                       </div>
-                      {/* เคารพผู้ประเมิน: ไม่มีปุ่มแก้ไขแบบประเมิน */}
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowSatisfactionModal(true)}
+                          className="px-3 py-1 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs bg-white hover:bg-amber-50 text-amber-800 border border-amber-300"
+                          title="ดูหรือปรับปรุงผลการประเมินความพึงพอใจ"
+                        >
+                          <Star size={12} className="text-amber-600 fill-amber-500" />
+                          <span>ดู/แก้ไขผลประเมิน</span>
+                        </button>
+                      </div>
                     </div>
 
                     {/* Dimensions rating breakdown */}
@@ -1300,12 +1584,12 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                 
                 {/* 0. Category / Service (ประเภทงาน) Row */}
                 <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 bg-amber-50/20 flex flex-col sm:table-row">
-                  <td className="px-3 sm:px-4 py-2 sm:py-3 w-full sm:w-1/3 sm:border-r border-slate-100 bg-slate-50/40 align-middle">
-                    <div className="flex items-center gap-2 text-slate-700">
-                      <Layers size={14} className="text-amber-600 shrink-0" />
-                      <div>
-                        <span className="font-semibold text-xs uppercase tracking-wider block">ประเภทงาน (Service / Category)</span>
-                        <span className="text-[10px] text-slate-400 font-normal">รูปแบบงานตามแคตตาล็อกบริการ</span>
+                  <td className="px-3 sm:px-4 py-2.5 sm:py-3 w-full sm:w-1/3 sm:border-r border-slate-100 bg-slate-50/40 align-top">
+                    <div className="flex items-start gap-2.5 text-slate-700">
+                      <Layers size={14} className="text-amber-600 shrink-0 mt-0.5" />
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-bold text-xs text-slate-800 leading-snug">ประเภทงาน</span>
+                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider leading-tight mt-0.5">Service / Category</span>
                       </div>
                     </div>
                   </td>
@@ -1324,12 +1608,12 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
 
                 {/* 1. Organization (หน่วยงาน) Row */}
                 <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 bg-indigo-50/10 flex flex-col sm:table-row">
-                  <td className="px-3 sm:px-4 py-2 sm:py-3 w-full sm:w-1/3 sm:border-r border-slate-100 bg-slate-50/40 align-middle">
-                    <div className="flex items-center gap-2 text-slate-700">
-                      <Building2 size={14} className="text-indigo-600 shrink-0" />
-                      <div>
-                        <span className="font-semibold text-xs uppercase tracking-wider block">เป็นภาระงานของหน่วยงานใด</span>
-                        <span className="text-[10px] text-slate-400 font-normal">สังกัดหน่วยงานผู้สั่งงาน</span>
+                  <td className="px-3 sm:px-4 py-2.5 sm:py-3 w-full sm:w-1/3 sm:border-r border-slate-100 bg-slate-50/40 align-top">
+                    <div className="flex items-start gap-2.5 text-slate-700">
+                      <Building2 size={14} className="text-indigo-600 shrink-0 mt-0.5" />
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-bold text-xs text-slate-800 leading-snug">เป็นภาระงานของหน่วยงานใด</span>
+                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider leading-tight mt-0.5">Organization / Affiliation</span>
                       </div>
                     </div>
                   </td>
@@ -1448,18 +1732,38 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                                       onUpdateField(brief.id, 'details', {
                                         ...brief.details,
                                         organization: brief.details?.organization_other || 'อื่นๆ',
-                                        organization_other: brief.details?.organization_other || ''
+                                        organization_other: brief.details?.organization_other || '',
+                                        selected_okr: 'KR2',
+                                        okr_kr: 'KR2',
+                                        r_metrics: ['R3', 'R4']
                                       });
-                                    } else {
-                                      // STeP, CMU, RSP
+                                      onUpdateField(brief.id, 'okr_links', ['KR2', 'R3', 'R4']);
+                                    } else if (item.key === 'CMU' || item.key === 'RSP') {
+                                      // CMU or RSP -> Link to KR2 (External support for CMU & RSP), R3, R4
                                       onUpdateField(brief.id, 'details', {
                                         ...brief.details,
                                         organization: item.key,
                                         organization_type: 'government',
                                         client_sector: 'government',
                                         decision_maker: item.key,
-                                        team: item.key
+                                        team: item.key,
+                                        selected_okr: 'KR2',
+                                        okr_kr: 'KR2',
+                                        r_metrics: ['R3', 'R4']
                                       });
+                                      onUpdateField(brief.id, 'decision_maker', item.key);
+                                      onUpdateField(brief.id, 'okr_links', ['KR2', 'R3', 'R4']);
+                                    } else {
+                                      // STeP -> Link to KR1 (Internal support for STeP), R1, R2
+                                      onUpdateField(brief.id, 'details', {
+                                        ...brief.details,
+                                        organization: 'STeP',
+                                        selected_okr: 'KR1',
+                                        okr_kr: 'KR1',
+                                        r_metrics: ['R1', 'R2']
+                                      });
+                                      onUpdateField(brief.id, 'decision_maker', 'STeP');
+                                      onUpdateField(brief.id, 'okr_links', ['KR1', 'R1', 'R2']);
                                     }
                                   }}
                                   className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs transition-all cursor-pointer border select-none active:scale-[0.97] ${
@@ -1484,12 +1788,33 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                                 onUpdateField(brief.id, 'details', {
                                   ...brief.details,
                                   organization: val || 'อื่นๆ',
-                                  organization_other: val
+                                  organization_other: val,
+                                  selected_okr: 'KR2',
+                                  okr_kr: 'KR2',
+                                  r_metrics: ['R3', 'R4']
                                 });
+                                onUpdateField(brief.id, 'okr_links', ['KR2', 'R3', 'R4']);
                               }}
                               className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:border-slate-400"
                             />
                           )}
+
+                          {/* Interactive OKR Mapping Feedback Pill */}
+                          {activeOrgKey === 'CMU' || activeOrgKey === 'RSP' ? (
+                            <div className="mt-1 px-3 py-1.5 rounded-xl bg-orange-50/90 dark:bg-orange-950/40 border border-orange-200/90 dark:border-orange-800/60 text-[11px] text-orange-950 dark:text-orange-200 flex items-center gap-2 animate-in fade-in duration-150">
+                              <span className="px-1.5 py-0.5 rounded-md bg-orange-600 text-white font-mono font-bold text-[9.5px] shrink-0">KR2 • R3 • R4</span>
+                              <span className="leading-tight">
+                                ภาระงานภายนอก ({activeOrgKey}): ระบบเชื่อมโยงข้อมูลเข้าสู่ <strong>KR2 (ผลงานภายนอก มช. &amp; RSP)</strong> • ตัวชี้วัด <strong>R3</strong> และ <strong>R4</strong> อัตโนมัติ
+                              </span>
+                            </div>
+                          ) : activeOrgKey === 'STeP' ? (
+                            <div className="mt-1 px-3 py-1.5 rounded-xl bg-slate-100/90 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-[11px] text-slate-800 dark:text-zinc-200 flex items-center gap-2 animate-in fade-in duration-150">
+                              <span className="px-1.5 py-0.5 rounded-md bg-slate-700 text-white font-mono font-bold text-[9.5px] shrink-0">KR1 • R1 • R2</span>
+                              <span className="leading-tight">
+                                ภาระงานภายในองค์กร (STeP): ระบบเชื่อมโยงข้อมูลเข้าสู่ <strong>KR1 (ผลงานบริการภายใน)</strong> • ตัวชี้วัด <strong>R1</strong> และ <strong>R2</strong> อัตโนมัติ
+                              </span>
+                            </div>
+                          ) : null}
                         </div>
                       );
                     })()}
@@ -1578,10 +1903,13 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                 {unit === 'pr' && (
                   <>
                     <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 flex flex-col sm:table-row">
-                      <td className="px-3 sm:px-4 py-2 sm:py-3 w-full sm:w-1/3 sm:border-r border-slate-100 bg-slate-50/40 align-top">
-                        <div className="flex items-center gap-2 text-slate-600">
-                          <Clock size={14} className="text-indigo-500 shrink-0" />
-                          <span className="font-semibold text-xs uppercase tracking-wider">วันและเวลาจัดกิจกรรม (เริ่ม - ถึง)</span>
+                      <td className="px-3 sm:px-4 py-2.5 sm:py-3 w-full sm:w-1/3 sm:border-r border-slate-100 bg-slate-50/40 align-top">
+                        <div className="flex items-start gap-2.5 text-slate-600">
+                          <Clock size={14} className="text-indigo-500 shrink-0 mt-0.5" />
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-bold text-xs text-slate-800 leading-snug">วันและเวลาจัดกิจกรรม</span>
+                            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider leading-tight mt-0.5">Event Date & Time</span>
+                          </div>
                         </div>
                       </td>
                       <td className="px-3 sm:px-3 py-2 w-full sm:w-2/3 align-top">
@@ -1691,6 +2019,281 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                       isTextarea
                       rows={3}
                     />
+
+                    {/* RSP Press Release Extended Information (สำหรับงานเขียนข่าวประชาสัมพันธ์ RSP เครือข่าย) */}
+                    {(() => {
+                      const isRspTask = brief.details?.source === 'rsp_press_form' || 
+                                        !!brief.details?.rsp_code || 
+                                        (brief.project_name || '').includes('[RSP]') || 
+                                        brief.details?.work_organization === 'RSP' ||
+                                        brief.details?.internal_organization === 'RSP' ||
+                                        brief.details?.university_id !== undefined ||
+                                        brief.details?.news_url !== undefined;
+
+                      if (!isRspTask) return null;
+
+                      const uniId = brief.details?.university_id || 'cmu';
+                      const matchedUni = RSP_UNIVERSITIES.find(u => u.id === uniId);
+                      const uniName = matchedUni ? matchedUni.name : (brief.details?.university_name || brief.decision_maker || 'มหาวิทยาลัยเชียงใหม่');
+
+                      return (
+                        <>
+                          <tr className="bg-orange-50/70 border-y border-orange-200">
+                            <td colSpan={2} className="px-4 py-2.5">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-orange-950 font-bold text-xs uppercase tracking-wider">
+                                  <Newspaper size={15} className="text-orange-600" />
+                                  <span>ข้อมูลข่าวประชาสัมพันธ์เครือข่ายอุทยานวิทยาศาสตร์ภาคเหนือ (RSP Press Release)</span>
+                                </div>
+                                <span className="text-[11px] font-mono text-orange-800 bg-orange-100 px-2.5 py-0.5 rounded-full border border-orange-300 font-bold">
+                                  {brief.details?.rsp_code || brief.details?.task_code || "RSP70-1"}
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+
+                          {/* 1. ลิงก์ข่าวกิจกรรม/โครงการ ที่ดำเนินการเผยแพร่เรียบร้อยแล้ว (News URL / Link) */}
+                          <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 flex flex-col sm:table-row bg-amber-50/20">
+                            <td className="px-3 sm:px-4 py-2.5 sm:py-3 w-full sm:w-1/3 sm:border-r border-slate-100 bg-slate-50/40 align-top">
+                              <div className="flex items-start gap-2.5 text-slate-700">
+                                <Globe size={14} className="text-blue-600 shrink-0 mt-0.5" />
+                                <div className="flex flex-col min-w-0">
+                                  <span className="font-bold text-xs text-slate-800 leading-snug">ลิงก์ข่าวที่เผยแพร่แล้ว</span>
+                                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider leading-tight mt-0.5">News URL / Link</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-3 sm:px-3 py-2 w-full sm:w-2/3 align-top">
+                              <div className="space-y-1.5">
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="url"
+                                    defaultValue={brief.details?.news_url || ""}
+                                    placeholder="https://... (วางลิงก์ข่าวออนไลน์ที่เผยแพร่เรียบร้อยแล้วที่นี่)"
+                                    onBlur={async (e) => {
+                                      const val = e.target.value.trim();
+                                      if (val !== (brief.details?.news_url || "")) {
+                                        updateDetail("news_url", val);
+                                        // Two-way sync to RSP Press Records cloud
+                                        try {
+                                          const cloudData = await getCloudJson<PressReleaseItem[]>(
+                                            CLOUD_KEYS.RSP_PRESS_RECORDS,
+                                            "cc_rsp_press_records_v2_fy70"
+                                          );
+                                          if (cloudData && Array.isArray(cloudData)) {
+                                            const code = brief.details?.rsp_code || brief.details?.task_code || "RSP70-1";
+                                            const idx = cloudData.findIndex(r => r.id === brief.id || r.code === code);
+                                            if (idx >= 0) {
+                                              cloudData[idx].newsUrl = val;
+                                              cloudData[idx].clippingList = val ? [{ name: "ข่าวออนไลน์", url: val, date: cloudData[idx].date }] : [];
+                                              await setCloudJson(CLOUD_KEYS.RSP_PRESS_RECORDS, cloudData, "cc_rsp_press_records_v2_fy70");
+                                            }
+                                          }
+                                        } catch (syncErr) {
+                                          console.warn("Could not sync news_url to cloud:", syncErr);
+                                        }
+                                        setSurveyNotifySuccess("บันทึกลิงก์ข่าวและซิงค์ไปยัง RSP Press Report เรียบร้อยแล้ว");
+                                      }
+                                    }}
+                                    className="flex-1 text-sm text-slate-800 bg-white border border-slate-300 hover:border-slate-400 focus:border-primary rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary font-mono shadow-2xs"
+                                  />
+                                  {brief.details?.news_url && (
+                                    <>
+                                      <a
+                                        href={brief.details.news_url.startsWith("http") ? brief.details.news_url : `https://${brief.details.news_url}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg shadow-2xs transition-colors shrink-0"
+                                        title="เปิดดูหน้าข่าวที่เผยแพร่แล้วในแท็บใหม่"
+                                      >
+                                        <ExternalLink size={13} />
+                                        <span>เปิดลิงก์</span>
+                                      </a>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          navigator.clipboard.writeText(brief.details.news_url);
+                                          setSurveyNotifySuccess("คัดลอกลิงก์ข่าวแล้ว!");
+                                        }}
+                                        className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg border border-slate-200 transition-colors shrink-0 cursor-pointer"
+                                        title="คัดลอก URL"
+                                      >
+                                        <Copy size={14} />
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                                <p className="text-[11px] text-slate-500">
+                                  *เมื่อบันทึก ลิงก์นี้จะเชื่อมโยงเข้าสู่ฐานข้อมูล RSP Press Release Log และนับจำนวนการลงข่าวทันที
+                                </p>
+                              </div>
+                            </td>
+                          </tr>
+
+                          {/* 2. สังกัดเครือข่ายอุทยานวิทยาศาสตร์ภาคเหนือ (มหาวิทยาลัย) */}
+                          <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 flex flex-col sm:table-row">
+                            <td className="px-3 sm:px-4 py-2.5 sm:py-3 w-full sm:w-1/3 sm:border-r border-slate-100 bg-slate-50/40 align-top">
+                              <div className="flex items-start gap-2.5 text-slate-700">
+                                <Building2 size={14} className="text-rose-600 shrink-0 mt-0.5" />
+                                <div className="flex flex-col min-w-0">
+                                  <span className="font-bold text-xs text-slate-800 leading-snug">สังกัดเครือข่าย RSP</span>
+                                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider leading-tight mt-0.5">University / Network</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-3 sm:px-3 py-2 w-full sm:w-2/3 align-top">
+                              <div className="flex items-center gap-2">
+                                <select
+                                  value={uniId}
+                                  onChange={(e) => {
+                                    const selectedUniId = e.target.value;
+                                    const u = RSP_UNIVERSITIES.find(x => x.id === selectedUniId);
+                                    const name = u ? u.name : selectedUniId;
+                                    onUpdateField(brief.id, 'details', {
+                                      ...brief.details,
+                                      university_id: selectedUniId,
+                                      university_name: name
+                                    });
+                                    onUpdateField(brief.id, 'decision_maker', name);
+                                  }}
+                                  className="text-xs font-bold px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-slate-800 focus:outline-none focus:border-primary shadow-2xs"
+                                >
+                                  {RSP_UNIVERSITIES.map(u => (
+                                    <option key={u.id} value={u.id}>{u.name} ({u.shortName})</option>
+                                  ))}
+                                </select>
+                                <span className="text-xs font-medium text-slate-500">
+                                  ({matchedUni?.shortName || "RSP"})
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+
+                          {/* 3. ประเภทข่าวกิจกรรม/โครงการ */}
+                          <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 flex flex-col sm:table-row">
+                            <td className="px-3 sm:px-4 py-2.5 sm:py-3 w-full sm:w-1/3 sm:border-r border-slate-100 bg-slate-50/40 align-top">
+                              <div className="flex items-start gap-2.5 text-slate-700">
+                                <Tag size={14} className="text-violet-600 shrink-0 mt-0.5" />
+                                <div className="flex flex-col min-w-0">
+                                  <span className="font-bold text-xs text-slate-800 leading-snug">ประเภทข่าวกิจกรรม/โครงการ</span>
+                                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider leading-tight mt-0.5">Category / Type</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-3 sm:px-3 py-2 w-full sm:w-2/3 align-top">
+                              <span className="text-xs font-semibold px-2.5 py-1 bg-violet-50 text-violet-800 border border-violet-200 rounded-lg inline-block">
+                                {brief.details?.target_audience || brief.details?.pm_work_category || brief.details?.category || "ข่าวการจัดกิจกรรม/โครงการ"}
+                              </span>
+                            </td>
+                          </tr>
+
+                          {/* 4. ผู้ประสานงาน & อีเมลติดต่อ */}
+                          <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 flex flex-col sm:table-row">
+                            <td className="px-3 sm:px-4 py-2.5 sm:py-3 w-full sm:w-1/3 sm:border-r border-slate-100 bg-slate-50/40 align-top">
+                              <div className="flex items-start gap-2.5 text-slate-700">
+                                <User size={14} className="text-amber-600 shrink-0 mt-0.5" />
+                                <div className="flex flex-col min-w-0">
+                                  <span className="font-bold text-xs text-slate-800 leading-snug">ผู้ประสานงาน / ผู้ส่งข้อมูล</span>
+                                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider leading-tight mt-0.5">Reporter / Contact</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-3 sm:px-3 py-2 w-full sm:w-2/3 align-top">
+                              <div className="text-xs space-y-1">
+                                <p className="font-bold text-slate-800">
+                                  {brief.details?.reporter_name || brief.coordinator_nickname || "ไม่ระบุ"}
+                                </p>
+                                <p className="text-slate-500 font-mono text-[11px] flex items-center gap-1">
+                                  <Mail size={12} className="text-slate-400" />
+                                  <span>{brief.details?.reporter_contact || brief.requester_email || "-"}</span>
+                                </p>
+                              </div>
+                            </td>
+                          </tr>
+
+                          {/* 5. วันที่เผยแพร่ */}
+                          <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 flex flex-col sm:table-row">
+                            <td className="px-3 sm:px-4 py-2.5 sm:py-3 w-full sm:w-1/3 sm:border-r border-slate-100 bg-slate-50/40 align-top">
+                              <div className="flex items-start gap-2.5 text-slate-700">
+                                <Calendar size={14} className="text-sky-600 shrink-0 mt-0.5" />
+                                <div className="flex flex-col min-w-0">
+                                  <span className="font-bold text-xs text-slate-800 leading-snug">วันที่ประชาสัมพันธ์/เผยแพร่</span>
+                                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider leading-tight mt-0.5">Publish Date</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-3 sm:px-3 py-2 w-full sm:w-2/3 align-top">
+                              <span className="text-xs font-semibold text-slate-800">
+                                {brief.details?.publish_date || brief.deadline || "-"}
+                              </span>
+                            </td>
+                          </tr>
+
+                          {/* 6. รายละเอียดเนื้อหาข่าวฉบับเต็ม */}
+                          {(brief.details?.details || brief.details?.description) && (
+                            <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 flex flex-col sm:table-row">
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 w-full sm:w-1/3 sm:border-r border-slate-100 bg-slate-50/40 align-top">
+                                <div className="flex items-center gap-2 text-slate-700">
+                                  <FileText size={14} className="text-blue-600 shrink-0" />
+                                  <span className="font-semibold text-xs uppercase tracking-wider">รายละเอียดข่าวฉบับเต็ม</span>
+                                </div>
+                              </td>
+                              <td className="px-3 sm:px-3 py-2 w-full sm:w-2/3 align-top">
+                                <div className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                  {brief.details?.details || brief.details?.description}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+
+                          {/* 7. รูปภาพ/ไฟล์แนบข่าวกิจกรรมที่ส่งมา */}
+                          {(brief.details?.attachment_name || (brief.details?.attachments && brief.details.attachments.length > 0)) && (
+                            <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 flex flex-col sm:table-row">
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 w-full sm:w-1/3 sm:border-r border-slate-100 bg-slate-50/40 align-top">
+                                <div className="flex items-center gap-2 text-slate-700">
+                                  <Camera size={14} className="text-emerald-600 shrink-0" />
+                                  <span className="font-semibold text-xs uppercase tracking-wider">รูปภาพ/ไฟล์แนบข่าว</span>
+                                </div>
+                              </td>
+                              <td className="px-3 sm:px-3 py-2 w-full sm:w-2/3 align-top">
+                                <div className="flex flex-wrap gap-1.5">
+                                  {(brief.details?.attachment_name || "")
+                                    .split(",")
+                                    .map((fn: string) => fn.trim())
+                                    .filter(Boolean)
+                                    .map((fileName: string, idx: number) => (
+                                      <span
+                                        key={idx}
+                                        className="inline-flex items-center gap-1 text-[11px] font-mono bg-slate-100 text-slate-700 px-2 py-1 rounded-md border border-slate-200"
+                                      >
+                                        <Paperclip size={11} className="text-slate-400" />
+                                        <span>{fileName}</span>
+                                      </span>
+                                    ))}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+
+                          {/* 8. หมายเหตุ (ถ้ามี) */}
+                          {brief.details?.notes && (
+                            <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 flex flex-col sm:table-row">
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 w-full sm:w-1/3 sm:border-r border-slate-100 bg-slate-50/40 align-top">
+                                <div className="flex items-center gap-2 text-slate-700">
+                                  <AlertCircle size={14} className="text-amber-500 shrink-0" />
+                                  <span className="font-semibold text-xs uppercase tracking-wider">หมายเหตุเพิ่มเติม</span>
+                                </div>
+                              </td>
+                              <td className="px-3 sm:px-3 py-2 w-full sm:w-2/3 align-top">
+                                <p className="text-xs text-slate-600 italic">
+                                  {brief.details.notes}
+                                </p>
+                              </td>
+                            </tr>
+                          )}
+                        </>
+                      );
+                    })()}
                     {(brief.details?.project_code !== undefined || currentCategory === "PM โครงการของ CC" || brief.details?.revenue !== undefined) && (
                       <>
                         <DetailRow 
@@ -2016,8 +2619,15 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
               <span className="flex items-center gap-1.5">
                 <Calendar size={13} /> ส่งบรีฟเมื่อ: <strong className="text-slate-700">{new Date(brief.created_at).toLocaleDateString('th-TH')}</strong>
               </span>
-              <span className="flex items-center gap-1.5">
-                <Clock size={13} /> ระยะเวลา: <strong className="text-slate-700">{ages.pendingDays + ages.inProgressDays} วัน</strong>
+              <span className="flex items-center gap-2 flex-wrap">
+                <span className="flex items-center gap-1.5">
+                  <Clock size={13} /> รวม: <strong className="text-slate-700">{ages.unassignedDays + ages.pendingDays + ages.inProgressDays} วัน</strong>
+                </span>
+                <span className="text-[11px] text-slate-400 flex items-center gap-2 font-mono">
+                  <span className="flex items-center gap-1" title="รอมอบหมาย"><span className="w-2 h-2 rounded-full bg-slate-400"></span> รอมอบหมาย {ages.unassignedDays}d</span>
+                  <span className="flex items-center gap-1" title="รอทำ"><span className="w-2 h-2 rounded-full bg-[#f59e0b]"></span> รอทำ {ages.pendingDays}d</span>
+                  <span className="flex items-center gap-1" title="กำลังทำ"><span className="w-2 h-2 rounded-full bg-[#3b82f6]"></span> กำลังทำ {ages.inProgressDays}d</span>
+                </span>
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -2126,20 +2736,22 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
               </div>
 
               {/* Right: Summary Card */}
-              <div className="sm:col-span-6 bg-white/70 p-4 rounded-xl border border-emerald-100 text-xs space-y-2.5">
-                <div className="flex justify-between items-center pb-2 border-b border-emerald-100/60">
-                  <span className="text-slate-500">ประเภทงาน / บริการ:</span>
-                  <span className="font-bold text-slate-800">{currentCategory || "-"}</span>
+              <div className="sm:col-span-6 bg-white/70 p-3 sm:p-4 rounded-xl border border-emerald-100 text-xs space-y-2">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-0.5 pb-2 border-b border-emerald-100/60">
+                  <span className="text-slate-500 text-[11px]">ประเภทงาน / บริการ:</span>
+                  <span className="font-bold text-slate-800 text-left sm:text-right text-xs truncate max-w-full sm:max-w-[65%]" title={currentCategory}>
+                    {currentCategory || "-"}
+                  </span>
                 </div>
-                <div className="flex justify-between items-center pb-2 border-b border-emerald-100/60">
-                  <span className="text-slate-500">อัตราตลาดอ้างอิง (STeP Market Rate):</span>
-                  <span className="font-mono font-bold text-slate-800">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-0.5 pb-2 border-b border-emerald-100/60">
+                  <span className="text-slate-500 text-[11px]">อัตราตลาดอ้างอิง (STeP Rate):</span>
+                  <span className="font-mono font-bold text-slate-800 text-left sm:text-right text-xs">
                     {standardPrice !== null ? `฿${standardPrice.toLocaleString()}` : "-"}
                   </span>
                 </div>
-                <div className="flex justify-between items-center pt-0.5">
-                  <span className="text-slate-500">รูปแบบการบริหารงบ:</span>
-                  <span className="bg-emerald-100 text-emerald-800 font-bold px-2.5 py-0.5 rounded-full text-[11px] border border-emerald-200">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 pt-0.5">
+                  <span className="text-slate-500 text-[11px]">รูปแบบการบริหารงบ:</span>
+                  <span className="bg-emerald-100 text-emerald-800 font-bold px-2.5 py-0.5 rounded-full text-[10.5px] sm:text-[11px] border border-emerald-200 w-fit">
                     🛡️ In-House Cost Saved
                   </span>
                 </div>
@@ -2149,7 +2761,11 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
               {(() => {
                 const assistantsList = (brief.details?.assistants || []).filter((a: any) => a.assignee_id && Number(a.percentage) > 0);
                 if (assistantsList.length === 0) return null;
-                const effectiveBaseVal = currentSaveCost;
+                const isPMProject = currentCategory === "PM โครงการของ CC" || brief.details?.category === "PM โครงการของ CC" || (brief.details?.category || "").includes("PM โครงการ") || brief.details?.project_code !== undefined || (brief.project_name || "").includes("PM โครงการ") || (brief.project_name || "").startsWith("[PM]");
+                const pmProfit = Number(brief.details?.profit !== undefined && brief.details?.profit !== null
+                  ? brief.details.profit
+                  : ((Number(brief.details?.revenue) || 0) - (Number(brief.details?.cost) || 0)));
+                const effectiveBaseVal = isPMProject ? pmProfit : currentSaveCost;
                 const totalAstPercent = assistantsList.reduce((sum: number, a: any) => sum + (Number(a.percentage) || 0), 0);
                 const ownerPercent = Math.max(0, 100 - totalAstPercent);
                 const ownerName = assignees.find(a => a.id === brief.assignee_id)?.name || "เจ้าของงาน (Unassigned)";
@@ -2159,10 +2775,10 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                   <div className="sm:col-span-12 mt-1 pt-3 border-t border-emerald-200/60">
                     <div className="text-[11px] font-bold uppercase tracking-wider mb-2 flex items-center justify-between text-emerald-900">
                       <span className="flex items-center gap-1.5">
-                        <Users size={13} className="text-emerald-600" /> สัดส่วนแบ่งมูลค่า Save Cost รายบุคคล
+                        <Users size={13} className="text-emerald-600" /> {isPMProject ? "สัดส่วนแบ่งกำไร (Profit) รายบุคคล" : "สัดส่วนแบ่งมูลค่า Save Cost รายบุคคล"}
                       </span>
                       <span className="text-slate-400 font-mono text-[11px] font-normal">
-                        รวม 100% = ฿{effectiveBaseVal.toLocaleString()}
+                        รวม 100% = ฿{effectiveBaseVal.toLocaleString()} {isPMProject ? "(กำไร Profit)" : ""}
                       </span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
@@ -2325,6 +2941,45 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
           taskCode={taskCode}
           onConfirmSend={handleConfirmCompletedModal}
           onCancel={handleCancelCompletedModal}
+        />
+      )}
+
+      {/* Step Quotation 100% Modal */}
+      {showQuotationModal && (
+        <StepQuotationModal
+          initialData={brief.details?.quotation || {
+            customerName: brief.coordinator_nickname || brief.details?.client_name || "",
+            customerPhone: brief.requester_phone || brief.details?.phone || "",
+            customerAddress: brief.details?.address || "",
+            customerTaxId: brief.details?.tax_id || "",
+          }}
+          onClose={() => setShowQuotationModal(false)}
+          onSave={(data, totalAmount) => {
+            // Compute deadline = docDate + 30 days
+            let dl30 = "";
+            try {
+              const baseDate = data.docDate ? new Date(data.docDate) : new Date();
+              baseDate.setDate(baseDate.getDate() + 30);
+              dl30 = baseDate.toISOString().split("T")[0];
+            } catch {
+              const d = new Date();
+              d.setDate(d.getDate() + 30);
+              dl30 = d.toISOString().split("T")[0];
+            }
+
+            onUpdateField(brief.id, 'details', {
+              ...brief.details,
+              quotation: data,
+              save_cost: totalAmount,
+              revenue: totalAmount,
+              project_value: totalAmount.toString()
+            });
+
+            if (dl30) {
+              onUpdateField(brief.id, 'deadline', dl30);
+            }
+            // DO NOT close modal on save - user stays inside to print/export!
+          }}
         />
       )}
 

@@ -19,6 +19,7 @@ import {
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import ModernSelect, { ModernSelectOption } from "@/components/ModernSelect";
+import { generateNextTaskCode } from "@/utils/taskCodeService";
 
 // Assignee Pim (พิม AC) ID
 const PIM_ASSIGNEE_ID = "47adfbc2-8d0e-4dc7-87ad-98895be82026";
@@ -139,21 +140,8 @@ export default function IDCFormPage() {
 
       const supabase = createClient();
 
-      // Get count of existing IDC briefs for neat sequential code (e.g. IDC-2026-007)
-      let nextNum = 7;
-      try {
-        const { data: idcList } = await supabase
-          .from('briefs')
-          .select('id')
-          .or('details->>idc_code.not.is.null,project_name.ilike.%[IDC]%');
-        if (idcList && idcList.length > 0) {
-          nextNum = idcList.length + 1;
-        }
-      } catch (e) {
-        console.warn("Could not fetch IDC count, using default sequence", e);
-      }
-
-      const generatedCode = `IDC-${new Date().getFullYear()}-${String(nextNum).padStart(3, "0")}`;
+      // Generate guaranteed sequential task code for FY70 starting at IDC70-1
+      const generatedCode = await generateNextTaskCode("IDC");
 
       const serviceMap: Record<ServiceConsultationType, string> = {
         product_design: "ออกแบบผลิตภัณฑ์",
@@ -195,6 +183,7 @@ export default function IDCFormPage() {
           service_category: serviceLabel,
           service_label: serviceLabel,
           service_main: serviceLabel,
+          task_code: generatedCode,
           idc_code: generatedCode,
           client_name: formData.clientName.trim(),
           company_name: formData.companyName.trim(),
@@ -319,13 +308,14 @@ export default function IDCFormPage() {
           </button>
         </div>
 
-        {/* Top Header Card */}
-        <div className="bg-white p-5 sm:p-7 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs text-center space-y-2 relative overflow-hidden">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
+        {/* Top Header Card (Dieter Rams Style: Light Gray Background with Orange Text & Team Subtitle) */}
+        <div className="bg-[#f1f3f5] dark:bg-zinc-900 p-5 sm:p-7 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-xs text-center space-y-2 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-[3px] bg-[#E8590C]" />
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-[#d9480f] dark:text-[#f97316] tracking-tight">
             แบบฟอร์มขอรับคำปรึกษาด้านงานสร้างสรรค์
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 font-medium">
-            ศูนย์ออกแบบและพัฒนานวัตกรรม • ทีมสร้างสรรค์และการสื่อสาร (STeP)
+          <p className="text-xs sm:text-sm text-[#d9480f]/85 dark:text-[#f97316]/85 font-medium">
+            ทีมสร้างสรรค์และการสื่อสาร • อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (STeP)
           </p>
         </div>
 

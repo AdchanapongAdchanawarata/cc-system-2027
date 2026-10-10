@@ -67,16 +67,19 @@ export default function LoginPage() {
         );
       }
 
-      // 2. Determine Role (Admin for leaders / admin role, Assignee for staff)
+      // 2. Determine Role (Admin for Team Lead / adchanapong, Assignee for staff/unit leads, Viewer for read-only viewer)
+      const isViewerRole = parsedProfile.role === "viewer";
+      const isWa = normalizedEmail.includes("wasita") || (matchedMember.name || "").includes("วา");
       const isAdmin = 
-        parsedProfile.role === "admin" ||
-        normalizedEmail.includes("adchanapong") || 
-        normalizedEmail.includes("wasita") || 
-        matchedMember.name?.includes("จ๊อบ") || 
-        matchedMember.name?.includes("วา");
+        !isViewerRole && !isWa && (
+          parsedProfile.role === "admin" ||
+          normalizedEmail.includes("adchanapong") || 
+          matchedMember.name?.includes("จ๊อบ")
+        );
       
-      const role = isAdmin ? "admin" : "assignee";
+      const role = isViewerRole ? "viewer" : (isAdmin ? "admin" : "assignee");
       localStorage.setItem("cc_user_role", role);
+      localStorage.setItem("cc_actual_role", role);
       localStorage.setItem("cc_user_email", normalizedEmail);
       localStorage.setItem("cc_user_name", matchedMember.name || parsedProfile.name);
       if (parsedProfile.fullName) {

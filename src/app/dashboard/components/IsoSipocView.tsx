@@ -143,7 +143,7 @@ const SIPOC_DATA: SipocNode[] = [
     title: "ระยะที่ 1: รับบรีฟและวิเคราะห์โจทย์การสื่อสาร (Intake & Scoping)",
     unit: "all",
     unitLabel: "ขั้นตอน 1-3 ใน WI",
-    details: ["ประชุมทำความเข้าใจโจทย์ กำหนด SLA และคัดกรองความเสี่ยง", "มอบหมายทีมงานหลัก: Designer, PR, หรือ Content Creator"],
+    details: ["ประชุมทำความเข้าใจโจทย์ กำหนดกรอบเวลาส่งมอบ และคัดกรองความเสี่ยง", "มอบหมายทีมงานหลัก: Designer, PR, หรือ Content Creator"],
     owner: "จ๊อบ AA (หัวหน้า) / วา WK (ผู้ช่วย)",
     isoRef: "ข้อ 8.2.3"
   },

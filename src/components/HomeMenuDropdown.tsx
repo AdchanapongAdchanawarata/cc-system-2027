@@ -112,80 +112,66 @@ export default function HomeMenuDropdown({ onOpenAbout }: HomeMenuDropdownProps 
         </button>
 
         {/* Dropdown Menu */}
+        {/* Dropdown Menu - Sleek Compact Tabs without Description */}
         {isOpen && (
           <div 
-            className="absolute right-0 top-full mt-2.5 w-64 sm:w-72 bg-white/95 backdrop-blur-md rounded-2xl border border-zinc-200/90 shadow-[0_12px_32px_rgba(0,0,0,0.12),0_2px_6px_rgba(0,0,0,0.04)] p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 origin-top-right overflow-hidden"
+            className="absolute right-0 top-full mt-2 w-48 sm:w-52 bg-white/95 backdrop-blur-md rounded-2xl border border-zinc-200/90 shadow-[0_12px_28px_rgba(0,0,0,0.1),0_2px_6px_rgba(0,0,0,0.04)] p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 origin-top-right overflow-hidden"
           >
             {/* Header label */}
-            <div className="px-3 py-2 border-b border-zinc-100 flex items-center justify-between">
-              <span className="text-[10px] font-mono font-bold tracking-widest text-zinc-400 uppercase">
-                CC TEAM • SYSTEM
+            <div className="px-2.5 py-1.5 border-b border-zinc-100 flex items-center justify-between mb-1">
+              <span className="text-[9.5px] font-mono font-bold tracking-wider text-zinc-400 uppercase">
+                CC TEAM
               </span>
-              <span className="flex items-center gap-1 text-[10px] font-mono text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+              <span className="flex items-center gap-1 text-[9.5px] font-mono text-emerald-600 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-100">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 ONLINE
               </span>
             </div>
 
-            <div className="py-1 space-y-0.5">
+            <div className="space-y-0.5">
               {/* Option 1: Track Status */}
               <Link
                 href="/track"
                 onClick={() => setIsOpen(false)}
-                className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-zinc-50 transition-colors text-left group cursor-pointer"
+                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-zinc-50 transition-colors text-left group cursor-pointer"
               >
-                <div className="w-8 h-8 rounded-xl bg-orange-50 border border-orange-100/80 text-primary flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-primary group-hover:text-white transition-all shadow-2xs">
-                  <ClipboardList size={16} strokeWidth={2} />
+                <div className="w-7 h-7 rounded-lg bg-orange-50 border border-orange-100/80 text-primary flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-primary group-hover:text-white transition-all shadow-2xs">
+                  <ClipboardList size={14} strokeWidth={2} />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-zinc-900 group-hover:text-primary transition-colors flex items-center gap-1.5">
-                    Track Status
-                  </div>
-                  <div className="text-[11px] text-zinc-500 truncate">
-                    ติดตามสถานะงาน & ประเมินผล
-                  </div>
-                </div>
-                <ChevronRight size={14} className="text-zinc-300 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+                <span className="flex-1 text-xs font-semibold text-zinc-900 group-hover:text-primary transition-colors truncate">
+                  Track Status
+                </span>
+                <ChevronRight size={13} className="text-zinc-300 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
               </Link>
 
               {/* Option 2: About Team */}
               <button
                 type="button"
                 onClick={handleOpenAboutTeam}
-                className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-zinc-50 transition-colors text-left group cursor-pointer"
+                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-zinc-50 transition-colors text-left group cursor-pointer"
               >
-                <div className="w-8 h-8 rounded-xl bg-violet-50 border border-violet-100/80 text-violet-600 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-violet-600 group-hover:text-white transition-all shadow-2xs">
-                  <Users size={16} strokeWidth={2} />
+                <div className="w-7 h-7 rounded-lg bg-violet-50 border border-violet-100/80 text-violet-600 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-violet-600 group-hover:text-white transition-all shadow-2xs">
+                  <Users size={14} strokeWidth={2} />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-zinc-900 group-hover:text-violet-600 transition-colors flex items-center gap-1.5">
-                    About Team
-                  </div>
-                  <div className="text-[11px] text-zinc-500 truncate">
-                    ผังโครงสร้างและบทบาท 3 ยูนิต
-                  </div>
-                </div>
-                <ChevronRight size={14} className="text-zinc-300 group-hover:text-violet-600 group-hover:translate-x-0.5 transition-all shrink-0" />
+                <span className="flex-1 text-xs font-semibold text-zinc-900 group-hover:text-violet-600 transition-colors truncate">
+                  About Team
+                </span>
+                <ChevronRight size={13} className="text-zinc-300 group-hover:text-violet-600 group-hover:translate-x-0.5 transition-all shrink-0" />
               </button>
 
               {/* Option 3: CC Login */}
               <a
                 href="/login"
                 onClick={handleCCLogin}
-                className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-zinc-50 transition-colors text-left group cursor-pointer"
+                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-zinc-50 transition-colors text-left group cursor-pointer"
               >
-                <div className="w-8 h-8 rounded-xl bg-zinc-100 border border-zinc-200 text-zinc-700 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-zinc-900 group-hover:text-white transition-all shadow-2xs">
-                  <Lock size={15} strokeWidth={2} />
+                <div className="w-7 h-7 rounded-lg bg-zinc-100 border border-zinc-200 text-zinc-700 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-zinc-900 group-hover:text-white transition-all shadow-2xs">
+                  <Lock size={13} strokeWidth={2} />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-zinc-900 group-hover:text-zinc-900 transition-colors flex items-center gap-1.5">
-                    CC Login
-                  </div>
-                  <div className="text-[11px] text-zinc-500 truncate">
-                    เข้าสู่ระบบสำหรับทีมงาน
-                  </div>
-                </div>
-                <ChevronRight size={14} className="text-zinc-300 group-hover:text-zinc-700 group-hover:translate-x-0.5 transition-all shrink-0" />
+                <span className="flex-1 text-xs font-semibold text-zinc-900 group-hover:text-zinc-900 transition-colors truncate">
+                  CC Login
+                </span>
+                <ChevronRight size={13} className="text-zinc-300 group-hover:text-zinc-700 group-hover:translate-x-0.5 transition-all shrink-0" />
               </a>
             </div>
           </div>

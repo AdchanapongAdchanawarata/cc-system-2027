@@ -230,6 +230,55 @@ export async function purgeCompletedTaskAttachments(): Promise<{
   }
 }
 
+/**
+ * Permanently clean/delete tasks that have status 'purged' or 'is_permanently_deleted'
+ * and were purged more than 90 days ago to protect Supabase Free Tier storage.
+ */
+export async function purgeOldPurgedTasksArchival(daysThreshold: number = 90): Promise<{
+  success: boolean;
+  purgedCount: number;
+  error?: string;
+}> {
+  const supabase = createClient();
+  try {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - daysThreshold);
+    const cutoffIso = cutoffDate.toISOString();
+
+    const { data: candidates, error } = await supabase
+      .from("briefs")
+      .select("id, status, details, created_at")
+      .or("status.eq.purged,details->>is_permanently_deleted.eq.true");
+
+    if (error) throw error;
+    if (!candidates || candidates.length === 0) {
+      return { success: true, purgedCount: 0 };
+    }
+
+    const toDeleteIds: string[] = [];
+    for (const c of candidates) {
+      const purgedAt = c.details?.purged_at || c.details?.deleted_at || c.created_at;
+      if (purgedAt && new Date(purgedAt) < new Date(cutoffIso)) {
+        toDeleteIds.push(c.id);
+      }
+    }
+
+    if (toDeleteIds.length === 0) {
+      return { success: true, purgedCount: 0 };
+    }
+
+    for (let i = 0; i < toDeleteIds.length; i += 50) {
+      const chunk = toDeleteIds.slice(i, i + 50);
+      await supabase.from("briefs").delete().in("id", chunk);
+    }
+
+    return { success: true, purgedCount: toDeleteIds.length };
+  } catch (err: any) {
+    console.error("Failed to archive old purged tasks:", err);
+    return { success: false, purgedCount: 0, error: err.message };
+  }
+}
+
 export function purgeLocalCache(): { freedKb: number } {
   if (typeof window === "undefined") return { freedKb: 0 };
 

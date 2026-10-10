@@ -65,7 +65,7 @@ export default function TeamSwotTowsAnalysis({
     const collaborationPct = Math.round((assistantTasks / totalTasks) * 100);
     const onTimeRate = executiveAnalysis.teamOnTimeRate ?? 100;
     const avgTurnaround = executiveAnalysis.teamAvgTurnaroundDays || 2.8;
-    const staffCount = orgTotals.activeStaff || memberStats.length || 14;
+    const staffCount = orgTotals.activeStaff || memberStats.length || 13;
     const pendingTasks = orgTotals.pendingTasks;
     const inProgressTasks = orgTotals.inProgressTasks;
     const overallKR = realtimeMetrics?.overallKRScore ? Math.round(realtimeMetrics.overallKRScore) : 0;
@@ -76,7 +76,9 @@ export default function TeamSwotTowsAnalysis({
       {
         id: "S1",
         title: "มูลค่าการประหยัดงบประมาณองค์กรสูงเด่น (High Save Cost Impact)",
-        desc: `ทีม CC สามารถสร้างผลงานประหยัดงบจ้างภายนอกสะสมได้จริง ฿${saveCost.toLocaleString()} จากการส่งมอบงานสำเร็จแล้ว ${completedTasks} ชิ้นงาน (จากทั้งหมด ${orgTotals.totalTasks} ชิ้น) ช่วยลดภาระงบประมาณองค์กรได้ 100%`,
+        desc: completedTasks > 0
+          ? `ทีม CC สามารถสร้างผลงานประหยัดงบจ้างภายนอกสะสมได้จริง ฿${saveCost.toLocaleString()} จากการส่งมอบงานสำเร็จแล้ว ${completedTasks} ชิ้นงาน (จากทั้งหมด ${orgTotals.totalTasks} ชิ้น) ช่วยลดภาระงบประมาณองค์กรได้ 100%`
+          : `ทีม CC ได้รับภาระงานสร้างสรรค์ในระบบมูลค่า Save Cost รวม ฿${saveCost.toLocaleString()} (จาก ${orgTotals.totalTasks} ภาระงาน) ซึ่งอยู่ระหว่างกระบวนการผลิตเพื่อสร้างความคุ้มค่าสูงสุดแก่องค์กร`,
         metric: `฿${saveCost.toLocaleString()} Save Cost`,
         source: "แท็บ 1: จำนวนงาน & มูลค่า",
         badgeColor: "bg-emerald-50 text-emerald-800 border-emerald-200"
@@ -84,16 +86,20 @@ export default function TeamSwotTowsAnalysis({
       {
         id: "S2",
         title: "การส่งมอบงานตรงเวลาและความรวดเร็วตามมาตรฐาน (On-Time Delivery)",
-        desc: `อัตราการส่งมอบงานตรงเวลาสูงถึง ${onTimeRate}% ด้วยระยะเวลาการทำงานเฉลี่ย ${avgTurnaround} วัน/ชิ้นงาน แสดงถึงมาตรฐานการบริหารกระบวนการทำงานที่มีความคล่องตัวและเชื่อถือได้สูง`,
-        metric: `ตรงเวลา ${onTimeRate}% (${avgTurnaround} วัน/งาน)`,
+        desc: completedTasks > 0
+          ? `อัตราการส่งมอบงานตรงเวลาสูงถึง ${onTimeRate}% ด้วยระยะเวลาการทำงานเฉลี่ย ${avgTurnaround} วัน/ชิ้นงาน แสดงถึงมาตรฐานการบริหารกระบวนการทำงานที่มีความคล่องตัวและเชื่อถือได้สูง`
+          : "การติดตามภาระงานในระบบปัจจุบันยังไม่มีงานเกินกำหนดส่ง (0 Overdue) ทุกชิ้นงานอยู่ในการควบคุมกระบวนการตามกรอบเวลาที่กำหนด",
+        metric: completedTasks > 0 ? `ตรงเวลา ${onTimeRate}% (${avgTurnaround} วัน/งาน)` : "0 Overdue (ตรงตามกำหนดเวลา)",
         source: "แท็บ 3: เวลา & ประสิทธิภาพ",
         badgeColor: "bg-emerald-50 text-emerald-800 border-emerald-200"
       },
       {
         id: "S3",
         title: "วัฒนธรรมเพื่อนช่วยเพื่อนเข้มแข็ง (Cross-Unit Collaboration)",
-        desc: `มีสัดส่วนงานที่มีผู้ช่วย (Assistant) สูงถึง ${collaborationPct}% (${assistantTasks} ชิ้นงาน) สร้างมูลค่าช่วยเหลืองานกันในทีม ฿${assistantCost.toLocaleString()} พลัง "ลมใต้ปีก" ป้องกันความโดดเดี่ยวในการทำงาน`,
-        metric: `ร่วมมือ ${collaborationPct}% (฿${assistantCost.toLocaleString()})`,
+        desc: assistantTasks > 0
+          ? `มีสัดส่วนงานที่มีผู้ช่วย (Assistant) สูงถึง ${collaborationPct}% (${assistantTasks} ชิ้นงาน) สร้างมูลค่าช่วยเหลืองานกันในทีม ฿${assistantCost.toLocaleString()} พลัง "ลมใต้ปีก" ป้องกันความโดดเดี่ยวในการทำงาน`
+          : "ระบบรองรับการมอบหมายผู้ช่วย (Assistant Designer) ในภาระงานสร้างสรรค์ พร้อมสำหรับชิ้นงานที่มีความซับซ้อนสูงหรือมีมูลค่าประหยัดต้นทุนสูง",
+        metric: assistantTasks > 0 ? `ร่วมมือ ${collaborationPct}% (฿${assistantCost.toLocaleString()})` : "พร้อมใช้ระบบผู้ช่วย",
         source: "แท็บ 5: สรุปภาพรวมทีม",
         badgeColor: "bg-blue-50 text-blue-800 border-blue-200"
       },
@@ -120,8 +126,10 @@ export default function TeamSwotTowsAnalysis({
       {
         id: "W2",
         title: "ความไม่สมดุลของภาระงานในบางหน่วยงานและผู้ปฏิบัติงาน (Workload Imbalance)",
-        desc: `หน่วยงานสายการผลิตหลัก (Creative / Content) มีปริมาณงานคิดเป็นสัดส่วนสูงที่สุด เมื่อเทียบกับหน่วยอื่น โดยพบสมาชิกที่มีภาระงานสะสมต่อเนื่องหรือมีความเสี่ยง Burnout จำนวน ${burnoutCount} คน`,
-        metric: `เฝ้าระวังภาระงานสูง ${burnoutCount} คน`,
+        desc: burnoutCount > 0
+          ? `หน่วยงานสายการผลิตหลัก (Creative / Content) มีปริมาณงานคิดเป็นสัดส่วนสูงที่สุด เมื่อเทียบกับหน่วยอื่น โดยพบสมาชิกที่มีภาระงานสะสมต่อเนื่องหรือมีความเสี่ยง Burnout จำนวน ${burnoutCount} คน`
+          : `การกระจายภาระงานยังรวมอยู่ที่บางยูนิตเป็นหลัก ในขณะที่สมาชิกส่วนใหญ่ 12 ท่านมีความพร้อมในการรับภาระงานเพิ่มขึ้นเพื่อสร้างความสมดุล`,
+        metric: burnoutCount > 0 ? `เฝ้าระวังภาระงานสูง ${burnoutCount} คน` : "พร้อมกระจายงาน 12 คน",
         source: "การกระจายภาระงาน",
         badgeColor: "bg-rose-50 text-rose-800 border-rose-200"
       },
@@ -185,7 +193,7 @@ export default function TeamSwotTowsAnalysis({
         id: "T1",
         title: "ความเร่งด่วนของงานบรีฟแทรกและงานด่วนนอกแผน (Ad-hoc & Rush Requests)",
         desc: `งานบรีฟด่วนที่มีกรอบเวลาส่งกระชั้นชิด (< 48 ชั่วโมง) รบกวนตารางงานหลักของทีม และทำให้ต้องสลับบริบทการทำงาน (Context Switching) บ่อยครั้ง`,
-        metric: `ความเสี่ยง SLA งานแทรก`,
+        metric: `ความเสี่ยงงานแทรกเร่งด่วน`,
         source: "พฤติกรรมการส่งบรีฟ",
         badgeColor: "bg-amber-50 text-amber-800 border-amber-200"
       },
@@ -224,13 +232,17 @@ export default function TeamSwotTowsAnalysis({
           {
             code: "SO-1",
             title: "ยกระดับสู่ผู้นำด้าน Strategic Creative Partner เครือข่าย RSP & มช.",
-            detail: `นำสถิติส่งมอบงานตรงเวลา ${onTimeRate}% และมูลค่า Save Cost ฿${saveCost.toLocaleString()} มาเป็น Showcase เพื่อขยายการรับงานแคมเปญใหญ่และงานสื่อสารเชิงกลยุทธ์ระดับภูมิภาค`,
+            detail: completedTasks > 0
+              ? `นำสถิติส่งมอบงานตรงเวลา ${onTimeRate}% และมูลค่า Save Cost ฿${saveCost.toLocaleString()} มาเป็น Showcase เพื่อขยายการรับงานแคมเปญใหญ่และงานสื่อสารเชิงกลยุทธ์ระดับภูมิภาค`
+              : `นำมูลค่า Save Cost ในระบบ ฿${saveCost.toLocaleString()} และความพร้อมของบุคลากร ${staffCount} ท่าน มาเป็นฐานขับเคลื่อนงานสื่อสารเชิงกลยุทธ์ระดับภูมิภาค`,
             links: "S1, S2 x O1, O2"
           },
           {
             code: "SO-2",
             title: "ทวีคูณศักยภาพผลงานด้วย AI x วัฒนธรรมลมใต้ปีก (Assistant Culture)",
-            detail: `นำ Generative AI มาเสริมในกระบวนการทำงานร่วมกันข้ามสายงาน (${collaborationPct}% Collaboration) ช่วยให้ทีมผลิตชิ้นงานต้นแบบได้เร็วขึ้น 2 เท่าโดยไม่ต้องเพิ่มทรัพยากร`,
+            detail: assistantTasks > 0
+              ? `นำ Generative AI มาเสริมในกระบวนการทำงานร่วมกันข้ามสายงาน (${collaborationPct}% Collaboration) ช่วยให้ทีมผลิตชิ้นงานต้นแบบได้เร็วขึ้น 2 เท่าโดยไม่ต้องเพิ่มทรัพยากร`
+              : `ผสานเทคโนโลยี Generative AI เข้ากับโครงสร้าง 4 สายงานสร้างสรรค์ ช่วยให้ทีมผลิตชิ้นงานต้นแบบได้รวดเร็วและมีประสิทธิภาพสูง`,
             links: "S3, S4 x O3"
           }
         ]
@@ -260,13 +272,17 @@ export default function TeamSwotTowsAnalysis({
           {
             code: "ST-1",
             title: "จัดตั้ง Rapid-Response Assistant Buffer รับมืองานแทรกด่วน",
-            detail: `ใช้ประโยชน์จากวัฒนธรรมเพื่อนช่วยเพื่อน (งานช่วย ${assistantTasks} ชิ้น) จัดสรรโควตาผู้ช่วยพร้อมสแตนด์บายรับงานบรีฟด่วน ป้องกันไม่ให้กระทบตารางงานหลัก`,
+            detail: assistantTasks > 0
+              ? `ใช้ประโยชน์จากวัฒนธรรมเพื่อนช่วยเพื่อน (งานช่วย ${assistantTasks} ชิ้น) จัดสรรโควตาผู้ช่วยพร้อมสแตนด์บายรับงานบรีฟด่วน ป้องกันไม่ให้กระทบตารางงานหลัก`
+              : `จัดระบบผู้ช่วยและบุคลากรสำรอง (Standby Assistants) พร้อมรองรับงานบรีฟด่วนฉุกเฉินโดยไม่กระทบตารางงานหลัก`,
             links: "S3 x T1"
           },
           {
             code: "ST-2",
-            title: "กำหนดข้อตกลง SLA ร่วมด้วยสถิติ Lead Time จริง (Data-Backed SLA)",
-            detail: `นำข้อมูลระยะเวลาเฉลี่ย ${avgTurnaround} วัน/งาน มาใช้กำหนดข้อตกลงระยะเวลาส่งบรีฟงานล่วงหน้ากับหน่วยงานผู้ขอรับบริการ เพื่อลดปัญหางานบรีฟกระชั้นชิด`,
+            title: "กำหนดข้อตกลงระยะเวลาส่งมอบร่วมด้วยสถิติ Lead Time จริง (Data-Backed Lead Time)",
+            detail: completedTasks > 0
+              ? `นำข้อมูลระยะเวลาเฉลี่ย ${avgTurnaround} วัน/งาน มาใช้กำหนดข้อตกลงระยะเวลาส่งบรีฟงานล่วงหน้ากับหน่วยงานผู้ขอรับบริการ เพื่อลดปัญหางานบรีฟกระชั้นชิด`
+              : `กำหนดข้อตกลงระยะเวลาส่งบรีฟงานล่วงหน้าตามระยะเวลามาตรฐาน และข้อกำหนดในระบบ WI เพื่อป้องกันงานด่วนกระชั้นชิด`,
             links: "S2 x T1, T3"
           }
         ]

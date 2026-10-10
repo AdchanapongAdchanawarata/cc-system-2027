@@ -53,7 +53,7 @@ export default function MemberSpecializationCard({
           </div>
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20">
             <Clock size={12} className="text-amber-600 dark:text-amber-400" />
-            <span>รอเริ่ม: <strong className="font-bold font-mono">{statusBreakdown.pending}</strong></span>
+            <span>รอทำ: <strong className="font-bold font-mono">{statusBreakdown.pending}</strong></span>
           </div>
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20">
             <CheckCircle2 size={12} className="text-emerald-600 dark:text-emerald-400" />

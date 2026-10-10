@@ -43,7 +43,8 @@ function evaluateHeuristicAudit(brief: any, wiType: string): AiAuditResult {
   
   // Lead time evaluations
   const createdDate = brief.created_at ? new Date(brief.created_at) : new Date();
-  const deadlineDate = brief.deadline ? new Date(brief.deadline) : null;
+  const rawDeadline = details.publish_date || brief.deadline || details.usage_date;
+  const deadlineDate = rawDeadline ? new Date(rawDeadline) : null;
   const completedDate = brief.completed_at ? new Date(brief.completed_at) : null;
   
   const isOnTime = deadlineDate && completedDate
@@ -440,7 +441,7 @@ export async function POST(request: Request) {
 - วันที่ยื่นคำขอ: ${brief.created_at}
 - วันที่เริ่มงาน: ${brief.in_progress_at || "ยังไม่เริ่ม"}
 - วันที่แล้วเสร็จ: ${brief.completed_at || "ยังไม่เสร็จ"}
-- กำหนดส่ง: ${brief.deadline || "ไม่ระบุ"}
+- กำหนดส่ง: ${brief.details?.publish_date || brief.deadline || "ไม่ระบุ"}
 - รายละเอียด: ${JSON.stringify(brief.details || {})}
 
 จงส่งคืนผลลัพธ์เป็น JSON เท่านั้น (Strict JSON) ในรูปแบบ:

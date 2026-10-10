@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CC TEAM : Briefing & Management System — คู่มือการใช้งานระบบฉบับสมบูรณ์ (พร้อมภาพประกอบทุกฟังก์ชัน)</title>
+  <title>คู่มือการใช้งานระบบ CC TEAM : Creative and Communication (ฉบับสมบูรณ์ FY2570)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&display=swap" rel="stylesheet">
@@ -11,7 +11,9 @@
     :root {
       --primary: #f97316;
       --primary-dark: #ea580c;
-      --primary-light: #ffedd5;
+      --primary-light: #fff7ed;
+      --primary-border: #fed7aa;
+      --slate-950: #020617;
       --slate-900: #0f172a;
       --slate-800: #1e293b;
       --slate-700: #334155;
@@ -21,14 +23,22 @@
       --slate-200: #e2e8f0;
       --slate-100: #f1f5f9;
       --slate-50: #f8fafc;
-      --creative: #8b5cf6;
-      --content: #f59e0b;
-      --pr: #10b981;
-      --border: #e2e8f0;
-      --radius: 12px;
-      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      
+      --unit-design: #8b5cf6;
+      --unit-design-bg: #f5f3ff;
+      --unit-content: #f59e0b;
+      --unit-content-bg: #fffbeb;
+      --unit-pr: #10b981;
+      --unit-pr-bg: #ecfdf5;
+      --unit-internal: #0284c7;
+      --unit-internal-bg: #f0f9ff;
+
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+      --shadow-md: 0 4px 12px -2px rgba(0,0,0,0.08);
+      --shadow-lg: 0 12px 28px -6px rgba(0,0,0,0.12);
     }
 
     * {
@@ -37,11 +47,8 @@
       padding: 0;
     }
 
-    html, body {
-      overflow-x: hidden;
-      width: 100%;
-      max-width: 100%;
-      position: relative;
+    html {
+      scroll-behavior: smooth;
     }
 
     body {
@@ -52,105 +59,101 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* Layout Containers */
+    /* Container */
     .container {
       width: 100%;
-      max-width: 980px;
+      max-width: 1040px;
       margin: 0 auto;
-      padding: 30px 24px 80px;
-      box-sizing: border-box;
-      overflow-x: hidden;
+      padding: 24px 20px 100px;
     }
 
-    /* Top Floating Action Bar */
-    .floating-bar {
+    /* Floating Top Nav Bar */
+    .top-nav {
       position: sticky;
       top: 0;
       z-index: 100;
       width: 100%;
-      max-width: 100%;
-      box-sizing: border-box;
-      background: rgba(255, 255, 255, 0.95);
+      background: rgba(255, 255, 255, 0.92);
       backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-      padding: 8px 16px;
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--slate-200);
+      padding: 10px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+      gap: 12px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.03);
     }
-    .floating-bar .logo-badge {
+    .brand-badge {
       display: flex;
       align-items: center;
       gap: 8px;
       font-weight: 800;
       color: var(--slate-900);
-      font-size: 14px;
-      letter-spacing: 0.3px;
+      font-size: 15px;
+      text-decoration: none;
     }
-    .floating-bar .logo-badge span {
-      background: var(--primary);
+    .brand-badge span {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
       color: white;
       font-size: 10px;
       font-weight: 700;
-      padding: 1.5px 7px;
+      padding: 2px 8px;
       border-radius: 9999px;
       letter-spacing: 0.5px;
     }
-    .actions {
+    .nav-actions {
       display: flex;
       align-items: center;
       gap: 8px;
+      flex-wrap: wrap;
     }
-    .btn-pill {
+    .btn-action {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      padding: 5px 12px;
+      gap: 6px;
+      padding: 6px 14px;
       border-radius: 9999px;
-      font-size: 11.5px;
+      font-size: 12px;
       font-weight: 600;
       cursor: pointer;
       text-decoration: none;
-      transition: all 0.15s ease;
+      transition: all 0.2s ease;
       white-space: nowrap;
-      line-height: 1.3;
     }
-    .btn-pill-light {
-      border: 1px solid var(--border);
+    .btn-action-light {
       background: white;
       color: var(--slate-700);
-      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+      border: 1px solid var(--slate-200);
     }
-    .btn-pill-light:hover {
+    .btn-action-light:hover {
       background: var(--slate-50);
       border-color: var(--slate-400);
-      color: var(--slate-900);
+      color: var(--slate-950);
     }
-    .btn-pill-dark {
+    .btn-action-primary {
       background: var(--slate-900);
       color: white;
       border: 1px solid var(--slate-900);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
-    .btn-pill-dark:hover {
-      background: var(--slate-800);
-      border-color: var(--slate-800);
+    .btn-action-primary:hover {
+      background: var(--primary-dark);
+      border-color: var(--primary-dark);
     }
 
-    /* Document Header & Cover */
-    .doc-header {
-      background: linear-gradient(180deg, #ffffff 0%, #fffbf6 100%);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 56px 40px;
-      margin-bottom: 36px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04);
+    /* Hero / Cover Section */
+    .hero-card {
+      background: linear-gradient(135deg, #ffffff 0%, #fff7ed 60%, #fef3c7 100%);
+      border: 1px solid var(--primary-border);
+      border-radius: var(--radius-lg);
+      padding: 44px 32px;
+      margin-bottom: 32px;
+      box-shadow: var(--shadow-md);
       position: relative;
       overflow: hidden;
       text-align: center;
     }
-    .doc-header::before {
+    .hero-card::before {
       content: '';
       position: absolute;
       top: 0;
@@ -159,83 +162,74 @@
       height: 6px;
       background: linear-gradient(90deg, #ea580c, #f97316, #8b5cf6, #10b981);
     }
-    .meta-tag {
-      display: inline-block;
-      font-size: 13px;
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
       font-weight: 700;
       color: var(--primary-dark);
-      background: var(--primary-light);
-      padding: 6px 18px;
+      background: white;
+      border: 1px solid var(--primary-border);
+      padding: 4px 14px;
       border-radius: 30px;
-      margin-bottom: 20px;
-      letter-spacing: 0.5px;
-      max-width: 100%;
-      box-sizing: border-box;
-      word-break: break-word;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-sm);
     }
-    .doc-title {
-      font-size: clamp(22px, 4vw, 36px);
+    .hero-title {
+      font-size: clamp(24px, 4.5vw, 38px);
       font-weight: 900;
       color: var(--slate-950);
       line-height: 1.25;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       letter-spacing: -0.5px;
-      word-break: break-word;
     }
-    .doc-title .title-brand {
-      white-space: normal;
-      word-break: break-word;
-    }
-    .doc-title .title-sub {
-      white-space: normal;
-      word-break: break-word;
-    }
-    .doc-subtitle {
-      font-size: 17px;
+    .hero-subtitle {
+      font-size: 15px;
       color: var(--slate-600);
-      margin-bottom: 24px;
       max-width: 820px;
-      margin-left: auto;
-      margin-right: auto;
+      margin: 0 auto 24px;
       line-height: 1.6;
     }
-    .doc-info-grid {
+    .hero-meta-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
       padding-top: 20px;
-      border-top: 1px solid var(--slate-100);
-      font-size: 13px;
+      border-top: 1px solid rgba(226, 232, 240, 0.8);
+      font-size: 12.5px;
+      text-align: left;
     }
-    .info-item {
-      display: flex;
-      flex-direction: column;
+    .meta-box {
+      background: rgba(255, 255, 255, 0.7);
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(226, 232, 240, 0.6);
     }
-    .info-label {
-      color: var(--slate-400);
-      font-size: 11px;
+    .meta-box-label {
+      font-size: 10.5px;
+      color: var(--slate-500);
+      font-weight: 600;
       text-transform: uppercase;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      margin-bottom: 4px;
     }
-    .info-value {
-      color: var(--slate-800);
-      font-weight: 600;
+    .meta-box-val {
+      font-weight: 700;
+      color: var(--slate-900);
+      margin-top: 2px;
     }
 
     /* Table of Contents */
-    .toc {
+    .toc-card {
       background: white;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 30px;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-md);
+      padding: 24px;
       margin-bottom: 36px;
       box-shadow: var(--shadow-sm);
     }
-    .toc-title {
-      font-size: 18px;
-      font-weight: 700;
+    .toc-header {
+      font-size: 16px;
+      font-weight: 800;
       color: var(--slate-900);
       margin-bottom: 16px;
       display: flex;
@@ -245,160 +239,113 @@
     .toc-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 10px 24px;
+      gap: 10px;
     }
-    .toc-item a {
-      color: var(--slate-700);
-      text-decoration: none;
-      font-size: 13.5px;
+    .toc-link {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 5px 0;
-      transition: color 0.15s;
+      gap: 10px;
+      padding: 10px 14px;
+      background: var(--slate-50);
+      border: 1px solid var(--slate-200);
+      border-radius: 10px;
+      color: var(--slate-700);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.15s ease;
     }
-    .toc-item a:hover {
-      color: var(--primary);
+    .toc-link:hover {
+      background: white;
+      border-color: var(--primary);
+      color: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
     }
-    .toc-num {
-      display: inline-block;
+    .toc-badge {
       width: 22px;
       height: 22px;
       line-height: 22px;
       text-align: center;
-      background: var(--slate-100);
-      color: var(--slate-600);
+      background: white;
+      border: 1px solid var(--slate-200);
       border-radius: 6px;
       font-size: 11px;
-      font-weight: 700;
+      font-weight: 800;
+      color: var(--primary);
+      flex-shrink: 0;
     }
 
-    /* Section Styling */
+    /* Section Cards */
     .section-card {
       background: white;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 36px;
-      margin-bottom: 32px;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-md);
+      padding: 32px 28px;
+      margin-bottom: 36px;
       box-shadow: var(--shadow-sm);
-      page-break-inside: avoid;
-      width: 100%;
-      max-width: 100%;
-      box-sizing: border-box;
-      overflow-x: hidden;
+      scroll-margin-top: 70px;
     }
     .section-header {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       gap: 14px;
       margin-bottom: 20px;
-      padding-bottom: 16px;
+      padding-bottom: 14px;
       border-bottom: 1px solid var(--slate-100);
     }
     .section-icon {
-      width: 38px;
-      height: 38px;
-      border-radius: 10px;
-      background: var(--primary-light);
-      color: var(--primary-dark);
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
-      font-weight: 700;
+      font-weight: 800;
+      font-size: 16px;
       flex-shrink: 0;
+      box-shadow: 0 4px 10px rgba(249, 115, 22, 0.25);
     }
     .section-title {
-      font-size: 21px;
-      font-weight: 700;
+      font-size: clamp(18px, 3.5vw, 22px);
+      font-weight: 800;
       color: var(--slate-900);
       line-height: 1.3;
     }
     .section-desc {
-      font-size: 13.5px;
+      font-size: 13px;
       color: var(--slate-500);
-      margin-top: 4px;
+      margin-top: 3px;
     }
 
-    
-    .module-heading {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin: 28px 0 10px;
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--slate-900);
-      line-height: 1.4;
-    }
-    .module-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      white-space: nowrap;
-      flex-shrink: 0;
-      font-size: 11.5px;
-      font-weight: 700;
-      padding: 3px 10px;
-      border-radius: 9999px;
-      line-height: 1.25;
-      letter-spacing: 0.3px;
-    }
-    .tab-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      white-space: nowrap;
-      flex-shrink: 0;
-      font-size: 11.5px;
-      font-weight: 700;
-      padding: 3px 10px;
-      border-radius: 9999px;
-      line-height: 1.25;
-      letter-spacing: 0.3px;
-      border: 1px solid transparent;
-    }
-
-    /* Subheadings */
-    h3 {
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--slate-900);
-      margin: 24px 0 10px;
-    }
-    p {
-      margin-bottom: 14px;
-      font-size: 14px;
-      color: var(--slate-700);
-    }
-
-    /* Browser Mockup Container for Desktop Screenshots */
-    .browser-mockup {
-      background: white;
+    /* Visual Browser Mockup (Full-Width) */
+    .mockup-container {
+      margin: 22px 0 16px;
+      border-radius: var(--radius-md);
       border: 1px solid var(--slate-200);
-      border-radius: 12px;
+      background: white;
       overflow: hidden;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
-      margin: 18px 0 8px;
+      box-shadow: var(--shadow-md);
+      transition: box-shadow 0.2s ease;
     }
-    .browser-chrome {
+    .mockup-container:hover {
+      box-shadow: var(--shadow-lg);
+    }
+    .mockup-topbar {
       background: #f1f5f9;
       padding: 8px 14px;
       display: flex;
       align-items: center;
       gap: 12px;
       border-bottom: 1px solid var(--slate-200);
-      width: 100%;
-      min-width: 0;
-      box-sizing: border-box;
     }
-    .browser-dots {
+    .mockup-dots {
       display: flex;
       gap: 6px;
-      flex-shrink: 0;
     }
-    .browser-dot {
+    .dot {
       width: 10px;
       height: 10px;
       border-radius: 50%;
@@ -406,1844 +353,1023 @@
     .dot-red { background: #ff5f56; }
     .dot-yellow { background: #ffbd2e; }
     .dot-green { background: #27c93f; }
-    .browser-address {
+    .mockup-url {
       background: white;
       border: 1px solid #cbd5e1;
       border-radius: 6px;
       padding: 3px 12px;
       font-size: 11px;
-      color: #475569;
-      flex: 1;
-      min-width: 0;
-      max-width: 480px;
+      color: #64748b;
       font-family: monospace;
-      white-space: nowrap;
+      flex: 1;
+      max-width: 460px;
       overflow: hidden;
       text-overflow: ellipsis;
+      white-space: nowrap;
     }
-    .browser-mockup img {
+    .mockup-img-wrap {
+      position: relative;
+      cursor: zoom-in;
+      background: #fafafa;
+    }
+    .mockup-img-wrap img {
       width: 100%;
       height: auto;
       display: block;
-      border-bottom: 1px solid var(--slate-100);
+      transition: opacity 0.2s;
     }
-    .img-caption {
-      font-size: 12px;
-      color: var(--slate-500);
-      text-align: center;
-      margin-top: 6px;
-      margin-bottom: 22px;
-      font-style: italic;
+    .mockup-img-wrap:hover img {
+      opacity: 0.96;
     }
-
-    /* Two Columns Device Mockups */
-    .dual-mockup {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 20px;
-      align-items: start;
-      margin: 18px 0 8px;
-    }
-    .mobile-mockup {
-      background: #0f172a;
-      border-radius: 36px;
-      padding: 10px;
-      box-shadow: 0 15px 35px -5px rgba(0,0,0,0.25);
-      border: 3px solid #334155;
-      margin: 0 auto;
-      max-width: 270px;
-    }
-    .mobile-screen {
-      border-radius: 26px;
-      overflow: hidden;
-      background: white;
-    }
-    .mobile-screen img {
-      width: 100%;
-      display: block;
-    }
-
-    /* Grid for Gallery of Works & Features */
-    .feature-gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 16px;
-      margin: 20px 0;
-    }
-    .gallery-card {
-      background: var(--slate-50);
-      border: 1px solid var(--slate-200);
-      border-radius: 10px;
-      padding: 16px;
-      transition: transform 0.2s;
-    }
-    .gallery-card:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-sm);
-    }
-    .gallery-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-    .gallery-card-title {
-      font-weight: 700;
-      font-size: 14px;
-      color: var(--slate-900);
-    }
-    .gallery-price {
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--primary-dark);
-      background: var(--primary-light);
-      padding: 2px 8px;
-      border-radius: 12px;
-    }
-    .gallery-card-desc {
-      font-size: 12px;
-      color: var(--slate-600);
-      line-height: 1.5;
-    }
-
-    /* Flow Chart / Visual Blocks */
-    .flow-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 14px;
-      margin: 18px 0;
-    }
-    .flow-step {
-      background: var(--slate-50);
-      border: 1px solid var(--slate-200);
-      border-radius: 10px;
-      padding: 16px;
-    }
-    .flow-step-num {
-      display: inline-block;
-      background: var(--slate-900);
+    .zoom-hint {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      background: rgba(15, 23, 42, 0.85);
       color: white;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      text-align: center;
-      line-height: 24px;
-      font-size: 12px;
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-    .flow-step-title {
-      font-weight: 700;
-      font-size: 14px;
-      color: var(--slate-900);
-      margin-bottom: 4px;
-    }
-    .flow-step-desc {
-      font-size: 12px;
-      color: var(--slate-600);
-      line-height: 1.5;
-    }
-
-    /* Unit Badges */
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 2px 10px;
-      border-radius: 12px;
-      font-size: 12px;
+      backdrop-filter: blur(4px);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 11px;
       font-weight: 600;
-      letter-spacing: 0.3px;
-    }
-    .badge-creative {
-      background: #f5f3ff;
-      color: #7c3aed;
-      border: 1px solid #ddd6fe;
-    }
-    .badge-content {
-      background: #fffbeb;
-      color: #b45309;
-      border: 1px solid #fef3c7;
-    }
-    .badge-pr {
-      background: #ecfdf5;
-      color: #047857;
-      border: 1px solid #a7f3d0;
-    }
-    .badge-admin {
-      background: #f1f5f9;
-      color: #0f172a;
-      border: 1px solid #cbd5e1;
-    }
-
-    /* Responsive Data Tables */
-    .table-container {
-      width: 100%;
-      max-width: 100%;
-      box-sizing: border-box;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      margin: 16px 0;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-    }
-    .manual-table {
-      width: 100%;
-      min-width: 580px;
-      border-collapse: collapse;
-      margin: 0;
-      font-size: 13px;
-    }
-    .manual-table th {
-      background: var(--slate-100);
-      color: var(--slate-800);
-      font-weight: 700;
-      text-align: left;
-      padding: 10px 14px;
-      border: 1px solid var(--border);
-    }
-    .manual-table td {
-      padding: 10px 14px;
-      border: 1px solid var(--border);
-      color: var(--slate-700);
-      vertical-align: top;
-    }
-    .manual-table tr:nth-child(even) td {
-      background: var(--slate-50);
-    }
-
-    /* Callouts / Alerts */
-    .callout {
-      border-left: 4px solid var(--primary);
-      background: #fff7ed;
-      padding: 14px 18px;
-      border-radius: 0 8px 8px 0;
-      margin: 18px 0;
-      font-size: 13.5px;
-      color: #9a3412;
-    }
-    .callout-title {
-      font-weight: 700;
-      margin-bottom: 4px;
       display: flex;
       align-items: center;
       gap: 6px;
+      pointer-events: none;
+      transition: transform 0.15s;
     }
-    .callout-success {
-      border-left-color: #10b981;
-      background: #f0fdf4;
-      color: #065f46;
+    .mockup-img-wrap:hover .zoom-hint {
+      transform: scale(1.04);
+    }
+    .mockup-caption {
+      font-size: 12px;
+      color: var(--slate-500);
+      text-align: center;
+      margin: 8px 0 24px;
+      font-style: italic;
+    }
+
+    /* Dual Mockup (Side by Side on Desktop, Stack on Mobile) */
+    .dual-mockup-grid {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 16px;
+      align-items: center;
+      margin: 20px 0 10px;
+    }
+    .mobile-mockup-frame {
+      background: #0f172a;
+      border-radius: 32px;
+      padding: 10px;
+      box-shadow: var(--shadow-lg);
+      border: 3px solid #334155;
+      max-width: 280px;
+      margin: 0 auto;
+    }
+    .mobile-inner-screen {
+      border-radius: 24px;
+      overflow: hidden;
+      background: white;
+      cursor: zoom-in;
+    }
+    .mobile-inner-screen img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* Info Callouts & Alert Boxes */
+    .callout {
+      padding: 16px 18px;
+      border-radius: var(--radius-sm);
+      margin: 18px 0;
+      font-size: 13.5px;
+      border-left: 4px solid;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
     }
     .callout-info {
-      border-left-color: #3b82f6;
-      background: #eff6ff;
-      color: #1e40af;
+      background: #f0f9ff;
+      border-color: #0284c7;
+      color: #0c4a6e;
+    }
+    .callout-warning {
+      background: #fffbeb;
+      border-color: #f59e0b;
+      color: #78350f;
+    }
+    .callout-success {
+      background: #ecfdf5;
+      border-color: #10b981;
+      color: #064e3b;
+    }
+    .callout-danger {
+      background: #fef2f2;
+      border-color: #ef4444;
+      color: #7f1d1d;
     }
 
-    /* LINE Chat Bubble Mockup */
-    .line-chat-box {
-      background: #849ebf;
-      border-radius: 12px;
-      padding: 20px;
-      margin: 18px 0;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      max-width: 600px;
+    /* Step Cards Grid */
+    .step-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin: 20px 0;
     }
-    .chat-bubble {
-      max-width: 80%;
-      padding: 12px 16px;
-      border-radius: 14px;
-      font-size: 13px;
-      line-height: 1.5;
+    .step-card {
+      background: var(--slate-50);
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-sm);
+      padding: 18px;
       position: relative;
     }
-    .bubble-user {
-      align-self: flex-end;
-      background: #8ce462;
-      color: #111;
-      border-bottom-right-radius: 2px;
+    .step-number {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
     }
-    .bubble-bot {
-      align-self: flex-start;
-      background: white;
-      color: #111;
-      border-bottom-left-radius: 2px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    .step-title {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--slate-900);
+      margin-bottom: 6px;
     }
-    .chat-sender {
+    .step-text {
+      font-size: 12.5px;
+      color: var(--slate-600);
+      line-height: 1.5;
+    }
+
+    /* Quick Table */
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--slate-200);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
+    th {
+      background: var(--slate-100);
+      padding: 10px 14px;
+      font-weight: 700;
+      color: var(--slate-800);
+      border-bottom: 1px solid var(--slate-200);
+      white-space: nowrap;
+    }
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--slate-100);
+      color: var(--slate-700);
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+    tr:hover td {
+      background: var(--slate-50);
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
       font-size: 11px;
       font-weight: 700;
-      color: #244b7a;
-      margin-bottom: 4px;
+    }
+    .badge-design { background: var(--unit-design-bg); color: var(--unit-design); }
+    .badge-content { background: var(--unit-content-bg); color: var(--unit-content); }
+    .badge-pr { background: var(--unit-pr-bg); color: var(--unit-pr); }
+    .badge-internal { background: var(--unit-internal-bg); color: var(--unit-internal); }
+    .badge-orange { background: var(--primary-light); color: var(--primary-dark); }
+
+    /* Floating Back to Top Button */
+    .back-to-top {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 44px;
+      height: 44px;
+      background: var(--slate-900);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      box-shadow: var(--shadow-lg);
+      font-size: 20px;
+      transition: all 0.2s ease;
+      z-index: 90;
+      opacity: 0.85;
+    }
+    .back-to-top:hover {
+      opacity: 1;
+      transform: translateY(-3px);
+      background: var(--primary);
     }
 
-    code {
-      background: var(--slate-100);
-      color: var(--slate-900);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 12px;
-      font-family: monospace;
+    /* Lightbox Modal */
+    .lightbox-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    .lightbox-modal.active {
+      display: flex;
+      opacity: 1;
+    }
+    .lightbox-content {
+      position: relative;
+      max-width: 95vw;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .lightbox-content img {
+      max-width: 100%;
+      max-height: 85vh;
+      object-fit: contain;
+      border-radius: 12px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .lightbox-caption {
+      color: white;
+      font-size: 13px;
+      margin-top: 10px;
+      text-align: center;
+      font-weight: 500;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    }
+    .lightbox-close {
+      position: absolute;
+      top: -36px;
+      right: 0;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      transition: background 0.15s;
+    }
+    .lightbox-close:hover {
+      background: rgba(255, 255, 255, 0.4);
     }
 
-    /* Mobile Responsive Styles */
+    /* Responsive Queries */
     @media (max-width: 768px) {
-      .module-heading {
-        font-size: 14.5px;
-        gap: 8px;
-        margin: 20px 0 8px;
-      }
-      .module-badge, .tab-badge {
-        font-size: 10px;
-        padding: 2px 8px;
-      }
-
-      body {
-        font-size: 14px;
-      }
       .container {
-        padding: 14px 12px 60px;
-        max-width: 100%;
-        overflow-x: hidden;
+        padding: 16px 12px 80px;
       }
-      .floating-bar {
-        padding: 6px 14px;
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-        gap: 6px;
-      }
-      .floating-bar .logo-badge {
-        font-size: 13px;
-        gap: 6px;
-      }
-      .floating-bar .logo-badge span {
-        font-size: 9px;
-        padding: 1px 6px;
-      }
-      .floating-bar .actions {
-        gap: 6px;
-        width: auto;
-      }
-      .floating-bar .btn-pill {
-        padding: 3.5px 10px;
-        font-size: 10.5px;
-      }
-      .meta-tag {
-        font-size: 11px;
-        padding: 4px 12px;
-        line-height: 1.4;
-      }
-      .doc-header {
-        padding: 28px 16px;
-        margin-bottom: 20px;
-        border-radius: 14px;
-      }
-      .doc-title {
-        font-size: 22px;
-      }
-      .doc-subtitle {
-        font-size: 13px;
-      }
-      .doc-info-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-      }
-      .toc {
-        padding: 18px 14px;
-      }
-      .toc-grid {
-        grid-template-columns: 1fr;
-        gap: 6px;
+      .hero-card {
+        padding: 30px 16px;
       }
       .section-card {
-        padding: 20px 14px;
-        margin-bottom: 20px;
-        border-radius: 12px;
+        padding: 24px 16px;
       }
-      .section-title {
-        font-size: 18px;
-      }
-      .dual-mockup {
-        grid-template-columns: 1fr !important;
-        gap: 14px;
-      }
-      .mobile-mockup {
-        max-width: 100% !important;
-        border-radius: 14px !important;
-        padding: 4px !important;
-        background: #e2e8f0 !important;
-        border: 1px solid var(--border) !important;
-        box-shadow: 0 4px 14px rgba(0,0,0,0.06) !important;
-        margin: 12px auto !important;
-      }
-      .mobile-screen {
-        border-radius: 10px !important;
-        overflow: hidden !important;
-        background: white !important;
-      }
-      .mobile-screen img {
-        width: 100% !important;
-        height: auto !important;
-        display: block !important;
-        border-radius: 10px !important;
-      }
-      .flow-grid {
+      .dual-mockup-grid {
         grid-template-columns: 1fr;
+        gap: 20px;
       }
-      .feature-gallery {
-        grid-template-columns: 1fr;
-      }
-      .chat-bubble {
-        max-width: 92%;
-        font-size: 12.5px;
-      }
-      .browser-mockup {
-        border-radius: 8px;
-      }
-      .browser-chrome {
+      .mockup-topbar {
         padding: 6px 10px;
       }
-      .browser-address {
+      .mockup-url {
         font-size: 9.5px;
-        padding: 2px 8px;
+      }
+      .top-nav {
+        padding: 8px 12px;
       }
     }
 
-    /* Print Optimized Styles */
+    /* Print Styles */
     @media print {
+      .top-nav, .back-to-top, .zoom-hint {
+        display: none !important;
+      }
       body {
         background: white;
         color: black;
-      }
-      .floating-bar {
-        display: none !important;
       }
       .container {
         max-width: 100% !important;
         padding: 0 !important;
       }
-      .doc-header {
-        border: none;
-        box-shadow: none;
-        padding: 0 0 16px 0;
-        margin-bottom: 20px;
-        border-bottom: 2px solid #333;
-      }
       .section-card {
         border: none;
         box-shadow: none;
-        padding: 0 0 16px 0;
-        margin-bottom: 24px;
+        padding: 0 0 20px 0;
         page-break-inside: avoid;
-        border-bottom: 1px dashed #ccc;
       }
-      .browser-mockup {
+      .mockup-container {
         box-shadow: none;
         border: 1px solid #ccc;
-        margin: 12px 0 6px;
         page-break-inside: avoid;
-      }
-      .page-break {
-        page-break-before: always !important;
-      }
-      a {
-        text-decoration: none;
-        color: black;
       }
     }
   </style>
 </head>
 <body>
 
-  <!-- Floating Bar -->
-  <div class="floating-bar">
-    <div class="logo-badge">
-      CC TEAM <span>MANUAL</span>
+  <!-- Floating Sticky Nav -->
+  <header class="top-nav">
+    <a href="#" class="brand-badge">
+      CC TEAM <span>MANUAL FY2570</span>
+    </a>
+    <div class="nav-actions">
+      <a href="#toc" class="btn-action btn-action-light">📑 สารบัญ</a>
+      <button onclick="window.print()" class="btn-action btn-action-light" title="พิมพ์หรือบันทึกเป็น PDF">🖨️ บันทึก PDF</button>
+      <a href="/" class="btn-action btn-action-primary">🌐 กลับหน้าเว็บหลัก</a>
     </div>
-    <div class="actions">
-      <button onclick="window.print()" class="btn-pill btn-pill-dark" title="พิมพ์หรือบันทึกเป็น PDF">
-        🖨️ บันทึก PDF
-      </button>
-      <a href="/" class="btn-pill btn-pill-light" title="ไปยังเว็บไซต์หลัก">
-        🌐 ไปหน้าเว็บ
-      </a>
-    </div>
-  </div>
+  </header>
 
   <div class="container">
 
-    <!-- Document Header / Cover -->
-    <header class="doc-header">
-      <span class="meta-tag">คู่มือการใช้งานระบบฉบับสมบูรณ์ (Official Manual • Complete Visual Guide)</span>
-      <h1 class="doc-title">
-        <span class="title-brand">CC TEAM :</span> <span class="title-sub">Briefing &amp; Management System</span>
-      </h1>
-      <p class="doc-subtitle">
-        ระบบบริหารจัดการและขอรับบริการงานสร้างสรรค์และสื่อสารองค์กร อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (STeP)
+    <!-- Hero / Title Header -->
+    <div class="hero-card">
+      <div class="hero-tag">✨ คู่มือการใช้งานระบบฉบับสมบูรณ์ • ปีงบประมาณ 2570 (Official Visual Guide)</div>
+      <h1 class="hero-title">CC TEAM : Briefing &amp; Management System</h1>
+      <p class="hero-subtitle">
+        แพลตฟอร์มบริหารจัดการและขอรับบริการงานสื่อสารและสร้างสรรค์ อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (STeP)<br>
+        ครอบคลุมทั้งหน้าเว็บผู้ขอรับบริการ, กระดานงานทีม CC, การส่งอีเมล, รายงาน 8 ด้าน, และแจ้งเตือน LINE Bot อัจฉริยะ
       </p>
-    </header>
+
+      <div class="hero-meta-grid">
+        <div class="meta-box">
+          <div class="meta-box-label">ปีงบประมาณ / รอบรันรหัส</div>
+          <div class="meta-box-val">2570 (FY70 Sequential)</div>
+        </div>
+        <div class="meta-box">
+          <div class="meta-box-label">มาตรฐานกระบวนการ</div>
+          <div class="meta-box-val">ISO 9001:2015 &amp; WI-CC</div>
+        </div>
+        <div class="meta-box">
+          <div class="meta-box-label">อุปกรณ์ที่รองรับ</div>
+          <div class="meta-box-val">PC, Notebook, Tablet, Mobile (PWA)</div>
+        </div>
+        <div class="meta-box">
+          <div class="meta-box-label">อัปเดตล่าสุด</div>
+          <div class="meta-box-val">ตุลาคม 2569</div>
+        </div>
+      </div>
+    </div>
 
     <!-- Table of Contents -->
-    <nav class="toc">
-      <div class="toc-title">📑 สารบัญคู่มือการใช้งาน</div>
+    <nav id="toc" class="toc-card">
+      <div class="toc-header">📑 สารบัญคู่มือการใช้งาน (Quick Navigation)</div>
       <div class="toc-grid">
-        <div class="toc-item"><a href="#sec-overview"><span class="toc-num">1</span> ภาพรวมและโครงสร้างสิทธิ์ผู้ใช้งาน (Desktop & Mobile)</a></div>
-        <div class="toc-item"><a href="#sec-requester"><span class="toc-num">2</span> คู่มือการส่งงาน 3 ยูนิตหลัก (ไม่ต้อง Login)</a></div>
-        <div class="toc-item"><a href="#sec-special-forms"><span class="toc-num">3</span> แบบฟอร์มเฉพาะทาง (Innovation Design Center & RSP Press Form)</a></div>
-        <div class="toc-item"><a href="#sec-tracking"><span class="toc-num">4</span> การติดตามสถานะงานและการประเมินผล</a></div>
-        <div class="toc-item"><a href="#sec-staff-login"><span class="toc-num">5</span> การเข้าสู่ระบบทีมงาน (Strict Whitelist)</a></div>
-        <div class="toc-item"><a href="#sec-dashboard"><span class="toc-num">6</span> การบริหารงานและจ่ายงาน (Tasks Board)</a></div>
-        <div class="toc-item"><a href="#sec-reports"><span class="toc-num">7</span> ศูนย์รายงาน Back of House (เต็มรูปแบบ 8 รายการ)</a></div>
-        <div class="toc-item"><a href="#sec-insights"><span class="toc-num">8</span> ศูนย์วิเคราะห์ผลงาน Insights (ครบทั้ง 5 แท็บ)</a></div>
-        <div class="toc-item"><a href="#sec-linebot"><span class="toc-num">9</span> การใช้งาน LINE Bot และ AI ตอบคำถาม</a></div>
-        <div class="toc-item"><a href="#sec-admin-setup"><span class="toc-num">10</span> การจัดการหลังบ้าน (Manage Team & Pricing)</a></div>
-        <div class="toc-item"><a href="#sec-faq"><span class="toc-num">11</span> คำถามที่พบบ่อย (FAQ & Troubleshooting)</a></div>
+        <a href="#sec-overview" class="toc-link">
+          <span class="toc-badge">1</span> ภาพรวมระบบ &amp; การติดตั้งแอป (PWA)
+        </a>
+        <a href="#sec-requester" class="toc-link">
+          <span class="toc-badge">2</span> การส่งคำขอรับบริการ 3 ยูนิตหลัก (Request Portal)
+        </a>
+        <a href="#sec-special-forms" class="toc-link">
+          <span class="toc-badge">3</span> แบบฟอร์มเฉพาะทาง (IDC &amp; RSP Press Release)
+        </a>
+        <a href="#sec-tracking" class="toc-link">
+          <span class="toc-badge">4</span> การติดตามสถานะ &amp; แบบประเมินผล (Tracking &amp; CSAT)
+        </a>
+        <a href="#sec-staff-tasks" class="toc-link">
+          <span class="toc-badge">5</span> กระดานจัดการงานทีม CC (Tasks Board &amp; Assign)
+        </a>
+        <a href="#sec-reports" class="toc-link">
+          <span class="toc-badge">6</span> ศูนย์รายงาน Back of House (เต็มรูปแบบ 8 รายการ)
+        </a>
+        <a href="#sec-insights" class="toc-link">
+          <span class="toc-badge">7</span> แดชบอร์ดวิเคราะห์ผลงาน (Insights &amp; Executive OKRs)
+        </a>
+        <a href="#sec-linebot" class="toc-link">
+          <span class="toc-badge">8</span> การแจ้งเตือน LINE Bot (@ALL &amp; ตารางงานประจำวัน)
+        </a>
       </div>
     </nav>
 
-    <!-- SECTION 1: ภาพรวมระบบและสิทธิ์การเข้าถึง -->
+    <!-- SECTION 1: ภาพรวมระบบ & การติดตั้ง PWA -->
     <section id="sec-overview" class="section-card">
       <div class="section-header">
         <div class="section-icon">1</div>
         <div>
-          <h2 class="section-title">ภาพรวมและโครงสร้างสิทธิ์ผู้ใช้งาน (System Overview & Access Roles)</h2>
-          <div class="section-desc">การแบ่งกลุ่มผู้ใช้งานและหน้าจอแสดงผลทั้งบน Desktop และ Mobile</div>
+          <h2 class="section-title">ภาพรวมระบบ &amp; การติดตั้งแอปพลิเคชัน (Overview &amp; PWA)</h2>
+          <div class="section-desc">โครงสร้างระบบ การเปิดใช้งานบนคอมพิวเตอร์ และการติดตั้งลงบนสมาร์ตโฟน</div>
         </div>
       </div>
 
       <p>
-        <strong>CC TEAM : Briefing & Management System</strong> เป็นแพลตฟอร์มศูนย์กลางในการรับเรื่อง, บริหารจัดการคิวงาน, คำนวณมูลค่างานสร้างสรรค์ และติดตามผลงานของ <strong>ทีมสร้างสรรค์และการสื่อสาร (Creative and Communication - CC)</strong> อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่
+        ระบบ <strong>CC TEAM</strong> ถูกออกแบบให้เป็น <strong>Web App สมัยใหม่ (Progressive Web App - PWA)</strong> ที่ใช้งานได้ทันทีผ่านเว็บเบราว์เซอร์ ไม่ต้องติดตั้งโปรแกรมขนาดใหญ่ และสามารถกด <strong>"Add to Home Screen"</strong> บนโทรศัพท์มือถือ หรือ <strong>"Install App"</strong> บนคอมพิวเตอร์ เพื่อเปิดใช้งานแบบแอปพลิเคชันเต็มหน้าจอได้ทันที
       </p>
 
-      <!-- Dual Mockup: Desktop and Mobile Home -->
-      <div class="dual-mockup">
-        <div>
-          <div class="browser-mockup">
-            <div class="browser-chrome">
-              <div class="browser-dots">
-                <span class="browser-dot dot-red"></span>
-                <span class="browser-dot dot-yellow"></span>
-                <span class="browser-dot dot-green"></span>
-              </div>
-              <div class="browser-address">https://ccteam.vercel.app/</div>
-            </div>
-            <img src="/manual_assets/shot_home_desktop.png" alt="หน้าแรก CC TEAM Portal บน Desktop" loading="lazy" decoding="async">
+      <!-- Mockup Home Desktop & Mobile -->
+      <div class="dual-mockup-grid">
+        <div class="mockup-container">
+          <div class="mockup-topbar">
+            <div class="mockup-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+            <div class="mockup-url">https://ccteam.vercel.app/ (Desktop Portal)</div>
           </div>
-          <div class="img-caption">ภาพที่ 1.1: หน้าแรกบนคอมพิวเตอร์ (Desktop View) แสดง 3 วงกลมหลัก และวิดเจ็ตสภาพอากาศ</div>
+          <div class="mockup-img-wrap" onclick="openLightbox('/manual_assets/shot_home_desktop.png', 'หน้าหลัก CC TEAM Portal บน Desktop')">
+            <img src="/manual_assets/shot_home_desktop.png" alt="หน้าแรก CC TEAM Portal บน Desktop" loading="lazy">
+            <div class="zoom-hint">🔍 แตะเพื่อดูภาพเต็ม</div>
+          </div>
         </div>
 
-        <div>
-          <div class="mobile-mockup">
-            <div class="mobile-screen">
-              <img src="/manual_assets/shot_home_mobile.png" alt="หน้าแรก CC TEAM Portal บนมือถือ" loading="lazy" decoding="async">
-            </div>
+        <div class="mobile-mockup-frame">
+          <div class="mobile-inner-screen" onclick="openLightbox('/manual_assets/shot_home_mobile.png', 'หน้าหลัก CC TEAM Portal บนสมาร์ตโฟน')">
+            <img src="/manual_assets/shot_home_mobile.png" alt="หน้าแรก CC TEAM Portal บนมือถือ" loading="lazy">
           </div>
-          <div class="img-caption">ภาพที่ 1.2: หน้าแรกบนมือถือ (Mobile View) ปุ่มกดพอดีนิ้ว</div>
         </div>
       </div>
+      <div class="mockup-caption">ภาพที่ 1: หน้าจอ Portal หลัก รองรับ Responsive สมบูรณ์แบบทั้งบนคอมพิวเตอร์และสมาร์ตโฟน</div>
 
-      <!-- About Team Popup -->
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
-          </div>
-          <div class="browser-address">https://ccteam.vercel.app/ (About Team Modal)</div>
+      <div class="step-grid">
+        <div class="step-card">
+          <div class="step-number">วิธีติดตั้ง • iOS (iPhone/iPad)</div>
+          <div class="step-title">เปิดผ่าน Safari</div>
+          <div class="step-text">กดปุ่ม <strong>แชร์ (Share)</strong> ด้านล่าง &rarr; เลือก <strong>"เพิ่มไปยังหน้าจอโฮม" (Add to Home Screen)</strong> เพื่อเปิดใช้งานแบบแอปได้ทันที</div>
         </div>
-        <img src="/manual_assets/shot_about_team.png" alt="หน้าต่างแนะนำทีม CC TEAM" loading="lazy" decoding="async">
-      </div>
-      <div class="img-caption">ภาพที่ 1.3: หน้าต่างแนะนำทีมสร้างสรรค์และการสื่อสาร (About Team Modal) แสดงพันธกิจและช่องทางติดต่อ</div>
-
-      <div class="table-container">
-        <table class="manual-table">
-          <thead>
-            <tr>
-              <th style="width: 25%;">กลุ่มผู้ใช้งาน</th>
-              <th style="width: 35%;">หน้าที่และความรับผิดชอบ</th>
-              <th style="width: 40%;">การเข้าสู่ระบบ (Authentication)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>ผู้ขอรับบริการทั่วไป<br>(Public Requester)</strong></td>
-              <td>บุคลากรทุกฝ่ายใน STeP (เช่น NMCO, PITI, INCO, TECH UP, ฯลฯ) รวมถึงหน่วยงานภายนอกที่ต้องการขอให้ทีม CC ช่วยผลิตสื่อ</td>
-              <td><strong>ไม่ต้องล็อกอินใดๆ ทั้งสิ้น 100%</strong> สามารถเข้าหน้าแรก กดส่งงาน ติดตามสถานะงาน และทำแบบประเมินได้ทันทีผ่านลิงก์สาธารณะ</td>
-            </tr>
-            <tr>
-              <td><strong>ทีมงานและผู้บริหาร CC<br>(Internal Staff & Admin)</strong></td>
-              <td>ทีมงานผู้ปฏิบัติงาน CC (Assignees) และหัวหน้าทีม/ผู้บริหาร (Admins/Executives) ที่ต้องตรวจรับงาน มอบหมายงาน อัปเดตไฟล์ และดูสรุปสถิติ</td>
-              <td><strong>ต้องล็อกอินผ่าน Strict Whitelist:</strong> เฉพาะอีเมลที่ระบุไว้ใน Manage Team เท่านั้น อีเมลอื่นถึงแม้จะลงท้ายด้วย <code>@step.cmu.ac.th</code> ก็ไม่สามารถเข้าได้</td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="step-card">
+          <div class="step-number">วิธีติดตั้ง • Android</div>
+          <div class="step-title">เปิดผ่าน Chrome</div>
+          <div class="step-text">กดจุดสามจุดมุมบนขวา &rarr; เลือก <strong>"ติดตั้งแอป" (Install App)</strong> ตัวไอคอน CC TEAM จะปรากฏบนหน้าจอหลัก</div>
+        </div>
+        <div class="step-card">
+          <div class="step-number">วิธีติดตั้ง • Windows / Mac</div>
+          <div class="step-title">เปิดผ่าน Chrome / Edge</div>
+          <div class="step-text">กดไอคอนคอมพิวเตอร์เล็กๆ ที่ช่องพิมพ์ URL มุมบนขวา &rarr; กด <strong>"ติดตั้ง" (Install)</strong> เพื่อเปิดเป็นหน้าต่างโปรแกรมแยก</div>
+        </div>
       </div>
     </section>
 
-    <!-- SECTION 2: การส่งงาน (สำหรับผู้ขอรับบริการ) -->
-    <section id="sec-requester" class="section-card page-break">
+    <!-- SECTION 2: การส่งคำขอรับบริการ 3 ยูนิตหลัก -->
+    <section id="sec-requester" class="section-card">
       <div class="section-header">
         <div class="section-icon">2</div>
         <div>
-          <h2 class="section-title">คู่มือการส่งคำขอรับบริการ 3 ยูนิตหลัก (Requester Guide)</h2>
-          <div class="section-desc">สาธิตการเลือกยูนิต การกรอกข้อมูล การคำนวณราคากลาง และการแนบลิงก์ Google Drive</div>
+          <h2 class="section-title">การส่งคำขอรับบริการ 3 ยูนิตหลัก (Requester Portal)</h2>
+          <div class="section-desc">ขั้นตอนการกรอกบรีฟงานออกแบบ คอนเทนต์ และประชาสัมพันธ์ โดยไม่ต้อง Login</div>
         </div>
       </div>
 
-      <p>ผู้ใช้งานเปิดเบราว์เซอร์ไปที่ <strong><a href="https://ccteam.vercel.app" target="_blank">https://ccteam.vercel.app</a></strong> จะพบ 3 วงกลมบริการหลัก:</p>
+      <p>
+        ผู้ขอรับบริการจากหน่วยงานต่างๆ สามารถเข้าสู่หน้า <strong>"ส่งคำขอรับบริการ" (/request)</strong> ได้ทันทีโดยไม่ต้องเข้าสู่ระบบ ระบบมีระบบนำทางอัจฉริยะ (Smart Stepper) คอยตรวจสอบความครบถ้วนของข้อมูลและระยะเวลาส่งล่วงหน้า:
+      </p>
 
-      <div class="flow-grid">
-        <div class="flow-step">
-          <span class="flow-step-num" style="background:#7c3aed;">1</span>
-          <div class="flow-step-title"><span class="badge badge-creative">Creative Designer</span></div>
-          <div class="flow-step-desc">งานออกแบบกราฟิก, โลโก้, โปสเตอร์, แผ่นพับ, แบนเนอร์, ป้ายแบคดรอป, Layout หนังสือ, และงานถ่ายภาพผลิตภัณฑ์/บุคคล</div>
-        </div>
-        <div class="flow-step">
-          <span class="flow-step-num" style="background:#b45309;">2</span>
-          <div class="flow-step-title"><span class="badge badge-content">Content Creator</span></div>
-          <div class="flow-step-desc">ผลิตคอนเทนต์, บทความประชาสัมพันธ์สั้น/ยาว (SEO), ถ่ายทำและตัดต่อวิดีโอสั้น (TikTok/Reels), งานเขียนคำโฆษณา และ Boost Post</div>
-        </div>
-        <div class="flow-step">
-          <span class="flow-step-num" style="background:#047857;">3</span>
-          <div class="flow-step-title"><span class="badge badge-pr">PR & Communications</span></div>
-          <div class="flow-step-desc">เขียนข่าวแจกสื่อ (Press Release), รายงานข่าวผู้บริหาร/ศึกษาดูงาน, บันทึกภาพกิจกรรม MOU, ประสานงานสื่อมวลชน และคุมคิวพิธีการ</div>
-        </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ยูนิตงาน</th>
+              <th>รหัสงานปี 70</th>
+              <th>ขอบเขตงานที่ให้บริการ</th>
+              <th>ระยะเวลาส่งล่วงหน้า (วันทำการ)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-design">Unit Design</span></td>
+              <td><code>DS70-X</code></td>
+              <td>Artwork, Poster, Key Visual, สื่อสิ่งพิมพ์, Presentation, โลโก้, ป้ายกิจกรรม</td>
+              <td>ล่วงหน้าอย่างน้อย <strong>5 วันทำการ</strong></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-content">Unit Content</span></td>
+              <td><code>CT70-X</code></td>
+              <td>บทความ Facebook, สคริปต์วิดีโอ, คำบรรยายโพสต์, ถ่ายทำสื่อสารองค์กร</td>
+              <td>ล่วงหน้าอย่างน้อย <strong>3-5 วันทำการ</strong></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-pr">Unit PR &amp; Comm</span></td>
+              <td><code>PR70-X</code></td>
+              <td>ข่าวประชาสัมพันธ์ภายนอก, ประสานงานสื่อมวลชน, ยิงแอด, บรอดแคสต์ LINE OA</td>
+              <td>ล่วงหน้าอย่างน้อย <strong>3 วันทำการ</strong></td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <!-- Screenshot: Creative Step 1 -->
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
-          </div>
-          <div class="browser-address">https://ccteam.vercel.app/request?unit=creative</div>
+      <!-- Mockup Request Steps -->
+      <div class="mockup-container">
+        <div class="mockup-topbar">
+          <div class="mockup-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+          <div class="mockup-url">https://ccteam.vercel.app/request (Step 1: เลือกยูนิตและกรอกข้อมูลผู้ขอ)</div>
         </div>
-        <img src="/manual_assets/shot_request_step1.png" alt="ฟอร์มส่งงาน Creative Designer ว่าง" loading="lazy" decoding="async">
-      </div>
-      <div class="img-caption">ภาพที่ 2.1: ฟอร์มส่งงาน Creative Designer หน้าแรก แสดงช่องกรอกข้อมูลผู้ขอรับบริการ, เมนูเลือกสังกัด และหมวดหมู่บริการที่ต้องการ</div>
-
-      <!-- Screenshot: Creative Step 2 (Filled with sample data) -->
-      <div class="browser-mockup" style="margin-top: 24px;">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
-          </div>
-          <div class="browser-address">https://ccteam.vercel.app/request?unit=creative (ตัวอย่างการกรอกข้อมูลงานจริง)</div>
+        <div class="mockup-img-wrap" onclick="openLightbox('/manual_assets/shot_request_step1.png', 'ขั้นตอนที่ 1: เลือกยูนิตงานและกรอกข้อมูลผู้ขอ')">
+          <img src="/manual_assets/shot_request_step1.png" alt="ขั้นตอนการส่งบรีฟงาน Step 1" loading="lazy">
+          <div class="zoom-hint">🔍 แตะเพื่อดูภาพเต็ม</div>
         </div>
-        <img src="/manual_assets/shot_request_step2.png" alt="ตัวอย่างการกรอกข้อมูลฟอร์มส่งงานจริง" loading="lazy" decoding="async">
       </div>
-      <div class="img-caption">ภาพที่ 2.2: ตัวอย่างการกรอกข้อมูลงานจริง: ระบุชื่อผู้ติดต่อ 'แอน (EIC)', ชื่องาน 'นิทรรศการ FoodFab Lanna 2026', สังกัด, ราคากลางประเมิน และวางลิงก์ Google Drive ข้อมูล</div>
+      <div class="mockup-caption">ภาพที่ 2: ขั้นตอนที่ 1 เลือกว่าต้องการงาน Design, Content หรือ PR พร้อมระบุวันที่ต้องใช้งานจริง</div>
 
-      <!-- Screenshot: Content Form -->
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
-          </div>
-          <div class="browser-address">https://ccteam.vercel.app/request?unit=content</div>
+      <div class="mockup-container">
+        <div class="mockup-topbar">
+          <div class="mockup-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+          <div class="mockup-url">https://ccteam.vercel.app/request (Step 2: รายละเอียดโจทย์งานและแนบไฟล์ Reference)</div>
         </div>
-        <img src="/manual_assets/shot_request_content.png" alt="ฟอร์มส่งงาน Content Creator" loading="lazy" decoding="async">
-      </div>
-      <div class="img-caption">ภาพที่ 2.3: ฟอร์มส่งงาน Content Creator รองรับการผลิตคลิปวิดีโอสั้น, สัมภาษณ์บุคคล, และบทความ SEO</div>
-
-      <!-- Screenshot: PR Form -->
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
-          </div>
-          <div class="browser-address">https://ccteam.vercel.app/request?unit=pr</div>
+        <div class="mockup-img-wrap" onclick="openLightbox('/manual_assets/shot_request_step2.png', 'ขั้นตอนที่ 2: กรอกรายละเอียดและแนบลิงก์ไฟล์งาน')">
+          <img src="/manual_assets/shot_request_step2.png" alt="ขั้นตอนการส่งบรีฟงาน Step 2" loading="lazy">
+          <div class="zoom-hint">🔍 แตะเพื่อดูภาพเต็ม</div>
         </div>
-        <img src="/manual_assets/shot_request_pr.png" alt="ฟอร์มส่งงาน PR & Communications" loading="lazy" decoding="async">
       </div>
-      <div class="img-caption">ภาพที่ 2.4: ฟอร์มส่งงาน PR & Communications สำหรับเขียนข่าวแจกสื่อ, ถ่ายภาพพิธีการ, และจัดการสื่อมวลชน</div>
+      <div class="mockup-caption">ภาพที่ 3: ขั้นตอนที่ 2 กรอกโจทย์งาน วัตถุประสงค์ ขนาดที่ต้องการ และแนบลิงก์ Google Drive รวบรวมไฟล์</div>
 
+      <div class="callout callout-success">
+        <div>💡 <strong>ระบบบันทึกร่างอัตโนมัติ (Auto-Save):</strong> หากกรอกค้างไว้แล้วเผลอปิดหน้าจอ ข้อมูลจะถูกบันทึกไว้ในเบราว์เซอร์อัตโนมัติ เมื่อเปิดกลับมาสามารถกรอกต่อได้ทันทีโดยไม่ต้องเริ่มต้นใหม่</div>
+      </div>
     </section>
 
-    <!-- SECTION 3: แบบฟอร์มเฉพาะทาง -->
-    <section id="sec-special-forms" class="section-card page-break">
+    <!-- SECTION 3: แบบฟอร์มเฉพาะทาง IDC & RSP -->
+    <section id="sec-special-forms" class="section-card">
       <div class="section-header">
         <div class="section-icon">3</div>
         <div>
-          <h2 class="section-title">แบบฟอร์มเฉพาะทาง (Specialized Forms)</h2>
-          <div class="section-desc">แบบฟอร์มบริการพิเศษสำหรับการขอนวัตกรรมและข่าวประชาสัมพันธ์เครือข่าย</div>
+          <h2 class="section-title">แบบฟอร์มเฉพาะทาง (IDC &amp; RSP Press Release)</h2>
+          <div class="section-desc">การขอรับบริการออกแบบนวัตกรรมเชิงพาณิชย์ และการส่งข่าวประชาสัมพันธ์ RSP</div>
         </div>
       </div>
 
-      <h3>1. แบบฟอร์มขอรับคำปรึกษาด้านงานสร้างสรรค์ (Innovation Design Center)</h3>
       <p>
-        สำหรับหน่วยงานหรือผู้ประกอบการที่ต้องการขอรับคำปรึกษา ออกแบบโมเดล 3D หรือขึ้นรูปบรรจุภัณฑ์เชิงนวัตกรรม:
-        <br>
-        🔗 <strong><a href="https://ccteam.vercel.app/idc-form" target="_blank">https://ccteam.vercel.app/idc-form</a></strong>
+        นอกจาก 3 ยูนิตหลัก ระบบมีแบบฟอร์มบริการเฉพาะทางที่เชื่อมโยงกับโครงการสำคัญของอุทยานฯ:
       </p>
 
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
-          </div>
-          <div class="browser-address">https://ccteam.vercel.app/idc-form</div>
+      <div class="step-grid">
+        <div class="step-card">
+          <div class="step-number">รหัสงาน IDC70-X</div>
+          <div class="step-title">ศูนย์ออกแบบนวัตกรรม (IDC Form)</div>
+          <div class="step-text">สำหรับผู้ประกอบการ/สตาร์ทอัพ ขอรับบริการออกแบบบรรจุภัณฑ์ (Packaging), ผลิตภัณฑ์ต้นแบบ (Product), ตราสินค้า (Brand CI) และใบเสนอราคา (Quotation <code>QT70-X</code>)</div>
         </div>
-        <img src="/manual_assets/shot_idc_details.png" alt="แบบฟอร์มขอรับคำปรึกษาด้านงานสร้างสรรค์ ศูนย์ออกแบบและพัฒนานวัตกรรม" loading="lazy" decoding="async">
-      </div>
-      <div class="img-caption">ภาพที่ 3.1: หน้าแบบฟอร์มขอรับคำปรึกษาด้านงานสร้างสรรค์ สำหรับงานออกแบบบรรจุภัณฑ์และพัฒนาผลิตภัณฑ์นวัตกรรม</div>
-
-      <h3 style="margin-top: 24px;">2. แบบฟอร์มข่าวกิจกรรมเครือข่าย RSP Press Form</h3>
-      <p>
-        สำหรับเครือข่ายอุทยานวิทยาศาสตร์ภาคเหนือ (Regional Science Park - RSP) ในการส่งประเด็นข่าวและภาพกิจกรรมเพื่อเผยแพร่สู่สื่อมวลชน:
-        <br>
-        🔗 <strong><a href="https://ccteam.vercel.app/rsp-press-form" target="_blank">https://ccteam.vercel.app/rsp-press-form</a></strong>
-      </p>
-
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
-          </div>
-          <div class="browser-address">https://ccteam.vercel.app/rsp-press-form</div>
+        <div class="step-card">
+          <div class="step-number">รหัสงาน RSP70-1 เป็นต้นไป</div>
+          <div class="step-title">ข่าวประชาสัมพันธ์ RSP (Press Form)</div>
+          <div class="step-text">สำหรับส่งประเด็นข่าวโครงการอุทยานวิทยาศาสตร์ภูมิภาค ภาคเหนือ มีปุ่ม <strong>"ดูรายละเอียด"</strong> และจัดเก็บสถิติเข้าสู่รายงาน RSP Press Report แบบอัตโนมัติ</div>
         </div>
-        <img src="/manual_assets/shot_rsp_details.png" alt="แบบฟอร์มข่าวกิจกรรม RSP Press Form" loading="lazy" decoding="async">
       </div>
-      <div class="img-caption">ภาพที่ 3.2: หน้าแบบฟอร์มข่าวกิจกรรม RSP Press ส่งประเด็นข่าวแจกสื่อมวลชนและภาพกิจกรรมเครือข่าย</div>
+
+      <div class="mockup-container">
+        <div class="mockup-topbar">
+          <div class="mockup-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+          <div class="mockup-url">https://ccteam.vercel.app/idc-form (Innovation Design Center Form)</div>
+        </div>
+        <div class="mockup-img-wrap" onclick="openLightbox('/manual_assets/shot_idc_details.png', 'แบบฟอร์มขอรับบริการศูนย์ออกแบบนวัตกรรม IDC')">
+          <img src="/manual_assets/shot_idc_details.png" alt="แบบฟอร์มขอรับบริการศูนย์ออกแบบนวัตกรรม IDC" loading="lazy">
+          <div class="zoom-hint">🔍 แตะเพื่อดูภาพเต็ม</div>
+        </div>
+      </div>
+      <div class="mockup-caption">ภาพที่ 4: แบบฟอร์มขอรับบริการศูนย์ออกแบบนวัตกรรม IDC ระบุกลุ่มอุตสาหกรรมและประเภทผู้ประกอบการ</div>
+
+      <div class="mockup-container">
+        <div class="mockup-topbar">
+          <div class="mockup-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+          <div class="mockup-url">https://ccteam.vercel.app/rsp-press-form (RSP Press Release Form)</div>
+        </div>
+        <div class="mockup-img-wrap" onclick="openLightbox('/manual_assets/shot_rsp_details.png', 'แบบฟอร์มส่งประเด็นข่าวประชาสัมพันธ์ RSP Press Form')">
+          <img src="/manual_assets/shot_rsp_details.png" alt="แบบฟอร์มส่งประเด็นข่าวประชาสัมพันธ์ RSP" loading="lazy">
+          <div class="zoom-hint">🔍 แตะเพื่อดูภาพเต็ม</div>
+        </div>
+      </div>
+      <div class="mockup-caption">ภาพที่ 5: แบบฟอร์มส่งประเด็นข่าวประชาสัมพันธ์ RSP รันรหัสใหม่ RSP70-1 พร้อมระบบดูรายละเอียดครบถ้วน</div>
     </section>
 
-    <!-- SECTION 4: การติดตามสถานะและการประเมินงาน -->
-    <section id="sec-tracking" class="section-card page-break">
+    <!-- SECTION 4: การติดตามสถานะ & ประเมินผล -->
+    <section id="sec-tracking" class="section-card">
       <div class="section-header">
         <div class="section-icon">4</div>
         <div>
-          <h2 class="section-title">การติดตามสถานะงานและการประเมินผล (Tracking & Survey)</h2>
-          <div class="section-desc">วิธีเช็คความคืบหน้าของงานที่ส่ง ทั้งบนคอมพิวเตอร์และมือถือ และการประเมินความพึงพอใจเพื่อปิดงาน</div>
+          <h2 class="section-title">การติดตามสถานะ &amp; แบบประเมินผล (Tracking &amp; CSAT Survey)</h2>
+          <div class="section-desc">การเช็กความคืบหน้าของงานแบบเรียลไทม์ และการประเมินความพึงพอใจเมื่อส่งมอบ</div>
         </div>
       </div>
 
       <p>
-        ผู้ขอรับบริการสามารถติดตามความคืบหน้าของงานตนเองได้ตลอด 24 ชั่วโมง โดยไม่ต้องทักถามทีมงาน:
-        <br>
-        1. ไปที่เมนู <strong>Track Status</strong> ที่มุมขวาบนของหน้าเว็บ หรือเปิด 🔗 <strong><a href="https://ccteam.vercel.app/track" target="_blank">https://ccteam.vercel.app/track</a></strong>
-        <br>
-        2. กรอก <strong>Tracking Code</strong> (เช่น <code>CC-2026-0015</code>) หรือใช้อีเมลของผู้ส่งงานในการค้นหา
+        ผู้ขอรับบริการสามารถเข้าหน้า <strong>"ติดตามสถานะงาน" (/track)</strong> เพื่อตรวจสอบความคืบหน้าได้ตลอด 24 ชม. เพียงพิมพ์ชื่อโครงการ หรือชื่อผู้ประสานงาน ระบบจะแสดงสถานะงาน ผู้รับผิดชอบ วันที่นัดส่งมอบ และดาวน์โหลดไฟล์ผลงานได้ทันที:
       </p>
 
-      <div class="dual-mockup">
-        <div>
-          <div class="browser-mockup">
-            <div class="browser-chrome">
-              <div class="browser-dots">
-                <span class="browser-dot dot-red"></span>
-                <span class="browser-dot dot-yellow"></span>
-                <span class="browser-dot dot-green"></span>
-              </div>
-              <div class="browser-address">https://ccteam.vercel.app/track</div>
-            </div>
-            <img src="/manual_assets/shot_track_search.png" alt="หน้าติดตามสถานะงานบน Desktop" loading="lazy" decoding="async">
+      <div class="dual-mockup-grid">
+        <div class="mockup-container">
+          <div class="mockup-topbar">
+            <div class="mockup-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+            <div class="mockup-url">https://ccteam.vercel.app/track (ค้นหาสถานะงาน)</div>
           </div>
-          <div class="img-caption">ภาพที่ 4.1: หน้าติดตามสถานะงานบน Desktop แสดงช่องค้นหารหัสและประวัติการส่งงาน</div>
+          <div class="mockup-img-wrap" onclick="openLightbox('/manual_assets/shot_track_search.png', 'หน้าค้นหาและติดตามสถานะงานบน Desktop')">
+            <img src="/manual_assets/shot_track_search.png" alt="ค้นหาและติดตามสถานะงาน Desktop" loading="lazy">
+            <div class="zoom-hint">🔍 แตะเพื่อดูภาพเต็ม</div>
+          </div>
         </div>
 
-        <div>
-          <div class="mobile-mockup">
-            <div class="mobile-screen">
-              <img src="/manual_assets/shot_track_mobile.png" alt="หน้าติดตามสถานะงานบนมือถือ" loading="lazy" decoding="async">
-            </div>
+        <div class="mobile-mockup-frame">
+          <div class="mobile-inner-screen" onclick="openLightbox('/manual_assets/shot_track_mobile.png', 'หน้าค้นหาและติดตามสถานะงานบนมือถือ')">
+            <img src="/manual_assets/shot_track_mobile.png" alt="ติดตามสถานะงาน Mobile" loading="lazy">
           </div>
-          <div class="img-caption">ภาพที่ 4.2: ค้นหาสถานะงานบนมือถือได้อย่างรวดเร็ว</div>
         </div>
       </div>
+      <div class="mockup-caption">ภาพที่ 6: หน้าระบบติดตามสถานะงานแบบ Real-time แสดงไทม์ไลน์สถานะตั้งแต่ Pending &rarr; In Progress &rarr; Completed</div>
 
-      <h3>การประเมินความพึงพอใจ (Satisfaction Survey)</h3>
-      <p>
-        เมื่องานอยู่ในสถานะ <strong>Completed</strong> ผู้ขอรับบริการสามารถกดลิงก์ <strong>"ทำแบบประเมินความพึงพอใจ"</strong> (หรือเปิดที่ 🔗 <strong><a href="https://ccteam.vercel.app/survey" target="_blank">https://ccteam.vercel.app/survey</a></strong>) เพื่อให้คะแนน 1-5 ดาว:
-      </p>
-
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
-          </div>
-          <div class="browser-address">https://ccteam.vercel.app/survey</div>
+      <!-- Survey Mockup -->
+      <div class="mockup-container">
+        <div class="mockup-topbar">
+          <div class="mockup-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+          <div class="mockup-url">https://ccteam.vercel.app/survey (แบบประเมินความพึงพอใจ CSAT 5 ดาว)</div>
         </div>
-        <img src="/manual_assets/shot_survey_rating.png" alt="แบบประเมินความพึงพอใจงาน" loading="lazy" decoding="async">
+        <div class="mockup-img-wrap" onclick="openLightbox('/manual_assets/shot_survey_rating.png', 'แบบประเมินความพึงพอใจการให้บริการ')">
+          <img src="/manual_assets/shot_survey_rating.png" alt="แบบประเมินความพึงพอใจ 5 ดาว" loading="lazy">
+          <div class="zoom-hint">🔍 แตะเพื่อดูภาพเต็ม</div>
+        </div>
       </div>
-      <div class="img-caption">ภาพที่ 4.3: แบบประเมินความพึงพอใจ (Satisfaction Survey) ให้คะแนน 5 ดาวเพื่อปิดงานและนำเข้าตัวชี้วัด ISO</div>
+      <div class="mockup-caption">ภาพที่ 7: แบบประเมินความพึงพอใจ (CSAT) ให้คะแนน 5 ดาวและข้อเสนอแนะ นำไปคำนวณในดัชนีชี้วัด ISO 9001</div>
     </section>
 
-    <!-- SECTION 5: การเข้าสู่ระบบทีมงาน CC -->
-    <section id="sec-staff-login" class="section-card page-break">
+    <!-- SECTION 5: กระดานจัดการงานทีม CC -->
+    <section id="sec-staff-tasks" class="section-card">
       <div class="section-header">
         <div class="section-icon">5</div>
         <div>
-          <h2 class="section-title">การเข้าสู่ระบบสำหรับทีมงาน CC (Strict Whitelist Authentication)</h2>
-          <div class="section-desc">ขั้นตอนและมาตรฐานความปลอดภัยสำหรับบุคลากร CC TEAM</div>
+          <h2 class="section-title">กระดานจัดการงานทีม CC (Tasks Board &amp; Assign)</h2>
+          <div class="section-desc">การจ่ายงาน, ย้ายสถานะ, การกรองคน, ส่งอีเมลแจ้งเตือน และเปิดงานภายใน</div>
         </div>
       </div>
 
       <p>
-        เพื่อรักษาความปลอดภัยของข้อมูลแผนงาน งบประมาณ และตัวชี้วัดองค์กร หน้าบริหารจัดการ <strong>Dashboard</strong> จะถูกปกป้องด้วยระบบ <strong>Strict Whitelist</strong>:
+        ทีมงาน CC เข้าสู่ระบบผ่าน <strong>Google Login (@cmu.ac.th)</strong> ภายใต้ระบบรักษาความปลอดภัย <strong>Strict Whitelist</strong> ที่อนุญาตเฉพาะบุคลากรที่ลงทะเบียนไว้เท่านั้น
       </p>
 
+      <div class="mockup-container">
+        <div class="mockup-topbar">
+          <div class="mockup-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+          <div class="mockup-url">https://ccteam.vercel.app/dashboard (กระดาน Tasks Board)</div>
+        </div>
+        <div class="mockup-img-wrap" onclick="openLightbox('/manual_assets/shot_tasks_board.png', 'กระดานจัดการงาน Tasks Board พร้อมตัวกรองคนและยูนิต')">
+          <img src="/manual_assets/shot_tasks_board.png" alt="กระดาน Tasks Board จัดการงาน" loading="lazy">
+          <div class="zoom-hint">🔍 แตะเพื่อดูภาพเต็ม</div>
+        </div>
+      </div>
+      <div class="mockup-caption">ภาพที่ 8: กระดาน Tasks Board แสดงรายการงาน รหัสงาน กำหนดส่ง และผู้รับผิดชอบอย่างชัดเจน</div>
+
+      <!-- Highlights of latest mobile improvements -->
       <div class="callout callout-info">
-        <div class="callout-title">🔒 กฎการอนุญาตเข้าสู่ระบบ (Security Rules)</div>
-        <ol style="margin-left: 16px; margin-top: 6px;">
-          <li>ต้องเป็นอีเมลที่ถูกลงทะเบียนไว้ในตาราง <strong>Manage Team (Assignees & Admin)</strong> หลังบ้านเท่านั้น</li>
-          <li><strong>อีเมลอื่นถึงแม้จะลงท้ายด้วย <code>@step.cmu.ac.th</code> ก็ไม่สามารถเข้าได้</strong> (ระบบจะปฏิเสธการเข้าถึงและแจ้งเตือน Access Denied ทันที)</li>
-          <li>สถานะสมาชิกในระบบต้องเป็น Active (เปิดใช้งาน) หากถูกระงับสิทธิ์จะไม่สามารถเข้าระบบได้</li>
-        </ol>
+        <div>
+          <strong>📱 การปรับปรุง UI บนมือถือล่าสุด:</strong><br>
+          • <strong>ปุ่ม "กรองคน" (Filter Member):</strong> ย้ายไปอยู่มุมบนขวา ในบรรทัดเดียวกับหัวข้อ <code>Tasks</code> กดแล้วเลือกดูงานเฉพาะบุคคลได้ทันที<br>
+          • <strong>แถบเลือกยูนิต 5 ปุ่ม:</strong> ปุ่ม <code>ALL</code>, <code>DESIGN</code>, <code>CONTENT</code>, <code>PR</code>, <code>INTERNAL</code> ขยายกว้างเต็มหน้าจอพอดี โดยไม่ต้องเลื่อนหน้าจอไปด้านข้าง (Zero horizontal scroll)
+        </div>
       </div>
 
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
-          </div>
-          <div class="browser-address">https://ccteam.vercel.app/login</div>
+      <div class="step-grid">
+        <div class="step-card">
+          <div class="step-number">ขั้นตอนที่ 1</div>
+          <div class="step-title">ตรวจรับบรีฟ &amp; มอบหมายงาน</div>
+          <div class="step-text">หัวหน้ายูนิตกดเลือกรายชื่อผู้รับผิดชอบจาก Dropdown รายชื่อจะอัปเดตแบบ Real-time และระบบแจ้งเตือนเข้าสู่กลุ่ม LINE ทันที</div>
         </div>
-        <img src="/manual_assets/shot_login_screen.png" alt="หน้าเข้าสู่ระบบ CC Login พร้อมระบบ Strict Whitelist" loading="lazy" decoding="async">
+        <div class="step-card">
+          <div class="step-number">ขั้นตอนที่ 2</div>
+          <div class="step-title">เริ่มดำเนินงาน (In Progress)</div>
+          <div class="step-text">เมื่อกดปุ่มย้ายสถานะเป็น In Progress ระบบจะเปิดหน้าต่างร่างอีเมลแจ้งผู้ขอรับบริการ เพื่อยืนยันว่าเริ่มลงมือผลิตแล้ว</div>
+        </div>
+        <div class="step-card">
+          <div class="step-number">ขั้นตอนที่ 3</div>
+          <div class="step-title">ส่งมอบงาน (Completed)</div>
+          <div class="step-text">เมื่อกด Complete ระบบจะเปิดหน้าต่างร่างอีเมลส่งมอบงาน พร้อมแนบลิงก์ผลงานและลิงก์แบบประเมินความพึงพอใจส่งถึงผู้ขออัตโนมัติ</div>
+        </div>
       </div>
-      <div class="img-caption">ภาพที่ 5.1: หน้าเข้าสู่ระบบ (CC Login) รองรับเฉพาะอีเมลทีมงานที่ระบุใน Manage Team เท่านั้น</div>
+
+      <!-- Internal Task Mockup -->
+      <div class="mockup-container">
+        <div class="mockup-topbar">
+          <div class="mockup-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+          <div class="mockup-url">https://ccteam.vercel.app/internal (การเปิดงานภายใน Internal Task)</div>
+        </div>
+        <div class="mockup-img-wrap" onclick="openLightbox('/manual_assets/shot_internal_task.png', 'หน้าต่างเปิดงานภายใน Internal Task สำหรับทีม CC')">
+          <img src="/manual_assets/shot_internal_task.png" alt="หน้าต่างเปิดงานภายใน Internal Task" loading="lazy">
+          <div class="zoom-hint">🔍 แตะเพื่อดูภาพเต็ม</div>
+        </div>
+      </div>
+      <div class="mockup-caption">ภาพที่ 9: หน้าต่างเปิดงานภายในทีม (Internal Task) เพื่อบันทึกภาระงาน Routine รันรหัส IT70-X</div>
     </section>
 
-    <!-- SECTION 6: Dashboard & Tasks Board -->
-    <section id="sec-dashboard" class="section-card page-break">
+    <!-- SECTION 6: ศูนย์รายงาน 8 ด้าน Back of House -->
+    <section id="sec-reports" class="section-card">
       <div class="section-header">
         <div class="section-icon">6</div>
         <div>
-          <h2 class="section-title">การบริหารจัดการงาน (Control Center & Tasks Board)</h2>
-          <div class="section-desc">คู่มือการรับงาน จ่ายงาน อัปเดตสถานะ และแนบไฟล์ส่งมอบงาน</div>
+          <h2 class="section-title">ศูนย์รายงาน Back of House (เต็มรูปแบบ 8 รายการ)</h2>
+          <div class="section-desc">การจัดทำเอกสารและรายงานสนับสนุนการดำเนินงานครบวงจร พร้อมส่งออก PDF/Excel</div>
         </div>
       </div>
 
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
+      <p>
+        ระบบ Back of House รวบรวมรายงานสำคัญของฝ่ายสื่อสารฯ ทั้ง 8 รายการ เพื่อใช้ในการประเมินผล ตรวจประเมิน ISO 9001 และรายงานฝ่ายบริหาร:
+      </p>
+
+      <div class="mockup-container">
+        <div class="mockup-topbar">
+          <div class="mockup-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+          <div class="mockup-url">https://ccteam.vercel.app/dashboard?view=reports (ศูนย์รวมรายงาน 8 หมวด)</div>
+        </div>
+        <div class="mockup-img-wrap" onclick="openLightbox('/manual_assets/shot_dashboard_reports_full.png', 'ศูนย์รวมรายงาน Back of House ทั้ง 8 ด้าน')">
+          <img src="/manual_assets/shot_dashboard_reports_full.png" alt="ศูนย์รายงาน Back of House ครบ 8 ด้าน" loading="lazy">
+          <div class="zoom-hint">🔍 แตะเพื่อดูภาพเต็ม</div>
+        </div>
+      </div>
+      <div class="mockup-caption">ภาพที่ 10: เมนูศูนย์รายงาน Back of House ครบทั้ง 8 ด้าน สามารถคลิกเพื่อดูและแก้ไขรายละเอียดได้</div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ลำดับ</th>
+              <th>ชื่อรายงาน</th>
+              <th>วัตถุประสงค์และการนำไปใช้</th>
+              <th>ฟังก์ชันเด่น</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td><strong>Meeting Report</strong></td>
+              <td>รายงานการประชุมภายในทีม CC และการประชุมร่วมกับหน่วยงานอื่น</td>
+              <td>บันทึกมติที่ประชุม, ผู้เข้าร่วม, ข้อสั่งการ</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td><strong>Innovation Design Center Report</strong></td>
+              <td>รายงานการให้บริการออกแบบนวัตกรรมแก่ภาคธุรกิจ (IDC)</td>
+              <td>จำแนกกลุ่มอุตสาหกรรม, มูลค่าบริการ</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td><strong>RSP Press Report</strong></td>
+              <td>รายงานการเผยแพร่ข่าวประชาสัมพันธ์อุทยานวิทยาศาสตร์ภูมิภาค</td>
+              <td>ปุ่ม "ดูรายละเอียด" ครบถ้วน, รันรหัส RSP70-1</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td><strong>Activity Log Report</strong></td>
+              <td>บันทึกประวัติการกระทำในระบบ (Audit Trail) เพื่อความโปร่งใส</td>
+              <td>บันทึกใคร แก้ไขอะไร เมื่อใด ป้องกันข้อมูลสูญหาย</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td><strong>ISO 9001:2015 Report</strong></td>
+              <td>รายงานระบบบริหารคุณภาพ WI-CC, SIPOC, Risk &amp; Opportunity</td>
+              <td>การติดตามความตรงต่อเวลา, บันทึกข้อบกพร่อง CAR/PAR</td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td><strong>KM (Knowledge Management)</strong></td>
+              <td>คลังความรู้ ถอดบทเรียน และคู่มือขั้นตอนการทำงาน</td>
+              <td>ค้นหาองค์ความรู้และเทคนิคการผลิตงาน</td>
+            </tr>
+            <tr>
+              <td>7</td>
+              <td><strong>Team Action Plan (TAP)</strong></td>
+              <td>แผนปฏิบัติการประจำปีงบประมาณและโครงการยุทธศาสตร์</td>
+              <td>ติดตามความก้าวหน้าโครงการเทียบกับเป้าหมาย</td>
+            </tr>
+            <tr>
+              <td>8</td>
+              <td><strong>Work Links &amp; Drive Repository</strong></td>
+              <td>ศูนย์รวมลิงก์โฟลเดอร์ Google Drive, Canva, Figma และ Asset</td>
+              <td>ค้นหาลิงก์ไฟล์งานสะดวกและปลอดภัย</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Sample Report Screenshots -->
+      <div class="dual-mockup-grid">
+        <div class="mockup-container">
+          <div class="mockup-topbar">
+            <div class="mockup-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+            <div class="mockup-url">Meeting Report View</div>
           </div>
-          <div class="browser-address">https://ccteam.vercel.app/dashboard</div>
-        </div>
-        <img src="/manual_assets/shot_control_center.png" alt="หน้าหลัก Control Center Dashboard" loading="lazy" decoding="async">
-      </div>
-      <div class="img-caption">ภาพที่ 6.1: หน้าหลัก Control Center Dashboard แบ่ง 3 ส่วน: Tasks (จัดการงาน), Insights (วิเคราะห์ผลงาน), Data Reports (รายงาน)</div>
-
-      <p>เมื่อเข้าสู่ <strong>Tasks View</strong> สมาชิกทีมจะพบกระดานคิวงานที่รวมทุกใบงานจากทุกยูนิตเข้ามาไว้ที่เดียว:</p>
-
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
+          <div class="mockup-img-wrap" onclick="openLightbox('/manual_assets/shot_boh_meeting.png', 'รายงานการประชุม Meeting Report')">
+            <img src="/manual_assets/shot_boh_meeting.png" alt="Meeting Report" loading="lazy">
+            <div class="zoom-hint">🔍 แตะเพื่อดูภาพเต็ม</div>
           </div>
-          <div class="browser-address">https://ccteam.vercel.app/dashboard?view=assignments</div>
         </div>
-        <img src="/manual_assets/shot_tasks_board.png" alt="กระดาน Tasks Board สำหรับจ่ายงานและติดตามสถานะงาน" loading="lazy" decoding="async">
-      </div>
-      <div class="img-caption">ภาพที่ 6.2: กระดาน Tasks Board แสดงรายการงาน กรองตามยูนิต ปุ่มจ่ายงาน และแถบติดตามความคืบหน้า</div>
-
-      <!-- Screenshot: Internal Task Modal -->
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
+        <div class="mockup-container">
+          <div class="mockup-topbar">
+            <div class="mockup-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+            <div class="mockup-url">RSP Press Report View</div>
           </div>
-          <div class="browser-address">https://ccteam.vercel.app/dashboard (Internal Task Modal)</div>
+          <div class="mockup-img-wrap" onclick="openLightbox('/manual_assets/shot_boh_rsp.png', 'รายงานข่าวประชาสัมพันธ์ RSP Press Report')">
+            <img src="/manual_assets/shot_boh_rsp.png" alt="RSP Press Report" loading="lazy">
+            <div class="zoom-hint">🔍 แตะเพื่อดูภาพเต็ม</div>
+          </div>
         </div>
-        <img src="/manual_assets/shot_internal_task.png" alt="หน้าต่างสร้าง Internal Task" loading="lazy" decoding="async">
       </div>
-      <div class="img-caption">ภาพที่ 6.3: หน้าต่างสร้าง Internal Task สำหรับงานภายในทีม เช่น Proposal, ซ่อมบำรุง, หรืองานกิจกรรม</div>
+      <div class="mockup-caption">ภาพที่ 11: ตัวอย่างหน้ารายละเอียด Meeting Report และ RSP Press Report มีปุ่มดูข้อมูลครบถ้วน</div>
     </section>
 
-    <!-- SECTION 7: ศูนย์รายงาน Back of House -->
-    <section id="sec-reports" class="section-card page-break">
+    <!-- SECTION 7: แดชบอร์ดวิเคราะห์ผลงาน Insights -->
+    <section id="sec-insights" class="section-card">
       <div class="section-header">
         <div class="section-icon">7</div>
         <div>
-          <h2 class="section-title">ศูนย์รายงาน Back of House (เต็มรูปแบบ 8 รายการ)</h2>
-          <div class="section-desc">ระบบสนับสนุนการทำงานเบื้องหลัง รายงานสถิติ การจัดการความรู้ แผนงาน และเอกสารมาตรฐานทีม CC ครบทั้ง 8 โมดูล</div>
+          <h2 class="section-title">แดชบอร์ดวิเคราะห์ผลงาน (Insights &amp; Executive OKRs)</h2>
+          <div class="section-desc">การวิเคราะห์ภาระงาน มูลค่า Save Cost, ความคุ้มค่า, ความรวดเร็ว และสถิติระดับบริหาร</div>
         </div>
       </div>
 
       <p>
-        ศูนย์รวมข้อมูลเบื้องหลังและรายงานสนับสนุนงานของทีม CC ประกอบด้วย 8 วงกลมหลักที่ครอบคลุมทุกมิติการดำเนินงาน ทั้งมาตรฐาน ISO, การประชุม, การประหยัดงบประมาณ, ผลงานต้นแบบ และระบบบันทึกความแอคทีฟ:
+        ศูนย์วิเคราะห์ <strong>Insights Hub</strong> จำแนกสถิติออกเป็น 5 มุมมองหลัก ช่วยให้หัวหน้าทีมและผู้บริหารเห็นภาพรวมได้ทันที:
       </p>
 
-      <!-- Full View Back of House Mockup -->
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
-          </div>
-          <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports</div>
+      <div class="step-grid">
+        <div class="step-card">
+          <div class="step-number">Tab 1</div>
+          <div class="step-title">ภาพรวมภาระงาน (Workloads)</div>
+          <div class="step-text">สัดส่วนงานระหว่างยูนิต Design, Content, PR และ Internal พร้อมเปรียบเทียบปริมาณงานในแต่ละเดือน</div>
         </div>
-        <img src="/manual_assets/shot_dashboard_reports_full.png" alt="ศูนย์รวมรายงาน Back of House แสดงครบทั้ง 8 วงกลม" loading="lazy" decoding="async">
-      </div>
-      <div class="img-caption">ภาพที่ 7.1: ศูนย์รวมรายงาน Back of House แสดงครบทั้ง 8 โมดูล (แถวบน 4 รายการ และแถวล่าง 4 รายการ สมบูรณ์ 100%)</div>
-
-      <div class="table-container">
-        <table class="manual-table">
-          <thead>
-            <tr>
-              <th style="width: 28%;">โมดูลรายงาน</th>
-              <th style="width: 42%;">รายละเอียดและการใช้งาน</th>
-              <th style="width: 30%;">ประโยชน์ต่อองค์กร</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>1. Meeting Report</strong></td>
-              <td>บันทึกการประชุมทีม CC สรุปมติที่ประชุมและข้อสั่งการ พร้อมระบบติดตามผลการดำเนินงาน</td>
-              <td>ติดตามงานประชุมและมติไม่ตกหล่น</td>
-            </tr>
-            <tr>
-              <td><strong>2. Innovation Design Center Report</strong></td>
-              <td>รายงานสถิติงานออกแบบผลงานนวัตกรรมต้นแบบ บรรจุภัณฑ์ และสถิติการใช้งานห้องแล็บ</td>
-              <td>วัดผลผลิตนวัตกรรมกายภาพของ STeP</td>
-            </tr>
-            <tr>
-              <td><strong>3. RSP Press Report</strong></td>
-              <td>ข่าวประชาสัมพันธ์เครือข่าย สรุปยอดเผยแพร่ผ่านสื่อมวลชน และผลสัมฤทธิ์การสื่อสาร</td>
-              <td>ประเมินผลการสร้างการรับรู้ (Awareness)</td>
-            </tr>
-            <tr>
-              <td><strong>4. ISO Report</strong></td>
-              <td>เอกสารระบบคุณภาพ ISO 9001 ขั้นตอนการปฏิบัติงาน (WI) และการตรวจประเมินความเสี่ยง</td>
-              <td>รักษามาตรฐานคุณภาพตามระบบสากล</td>
-            </tr>
-            <tr>
-              <td><strong>5. KM คลังความรู้</strong></td>
-              <td>คลังความรู้และนวัตกรรม AI Weekly Creative Trends บทความ และไฟล์แบ่งปันในทีม</td>
-              <td>ยกระดับทักษะทีมงานอย่างต่อเนื่อง</td>
-            </tr>
-            <tr>
-              <td><strong>6. แผนดำเนินงานของทีม</strong></td>
-              <td>แผนการดำเนินงานประจำปี ติดตาม Timeline และผู้รับผิดชอบ แก้ไขและอัปเดตได้ทุกรายการ</td>
-              <td>ขับเคลื่อนตามแผนกลยุทธ์อุทยานฯ</td>
-            </tr>
-            <tr>
-              <td><strong>7. ลิ้งค์อื่นๆ ที่เกี่ยวข้อง</strong></td>
-              <td>รวมลิงก์เครื่องมือและไฟล์ทำงาน คลาวด์ไดรฟ์ และแบบฟอร์มทางการ อัปเดตได้ตลอดเวลา</td>
-              <td>เข้าถึงทรัพยากรส่วนกลางได้รวดเร็ว</td>
-            </tr>
-            <tr>
-              <td><strong>8. Activity Log</strong></td>
-              <td>บันทึกกิจกรรมและความแอคทีฟ ตรวจสอบการมีส่วนร่วมในระบบ แจ้งเตือนงานค้างและประวัติงาน</td>
-              <td>ความโปร่งใสและตรวจสอบย้อนหลังได้</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- 8 Back of House Modules Detailed Showcase -->
-      
-      <!-- 7.1 Meeting Report -->
-      <div style="margin-top: 32px;">
-        <h3 class="module-heading">
-          <span class="module-badge" style="background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe;">โมดูลที่ 1</span>
-          <span>Meeting Report (บันทึกการประชุมทีม CC)</span>
-        </h3>
-        <p>บันทึกการประชุมประจำสัปดาห์ สรุปมติที่ประชุม ข้อสั่งการเร่งด่วน พร้อมระบบติดตามผลการดำเนินงาน (Action Items) เพื่อให้งานขับเคลื่อนต่อเนื่องและไม่ตกหล่น:</p>
-        <div class="browser-mockup">
-          <div class="browser-chrome">
-            <div class="browser-dots">
-              <span class="browser-dot dot-red"></span>
-              <span class="browser-dot dot-yellow"></span>
-              <span class="browser-dot dot-green"></span>
-            </div>
-            <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=meeting</div>
-          </div>
-          <img src="/manual_assets/shot_boh_meeting.png" alt="หน้า Meeting Report บันทึกการประชุมทีม CC" loading="lazy" decoding="async">
+        <div class="step-card">
+          <div class="step-number">Tab 2</div>
+          <div class="step-title">เป้าหมาย &amp; ความคุ้มค่า (OKRs &amp; Save Cost)</div>
+          <div class="step-text">คำนวณมูลค่าความคุ้มค่างบประมาณที่ประหยัดได้ (Save Cost) และสถิติผลกำไรบริการภาครัฐ/เอกชน</div>
         </div>
-        <div class="img-caption">ภาพที่ 7.2: หน้า Meeting Report แสดงรายการบันทึกการประชุม มติสำคัญ และระบบติดตามความคืบหน้ารายสัปดาห์</div>
-        <div class="callout callout-info" style="margin-top: 12px;">
-          <div class="callout-title">💡 วิธีใช้งาน Meeting Report</div>
-          <ol style="margin-left: 18px; margin-top: 6px; font-size: 13.5px; line-height: 1.6;">
-            <li>คลิกเลือกวงกลม <strong>Meeting Report</strong> จากหน้า Back of House</li>
-            <li>เลือกรอบการประชุมที่ต้องการเปิดดู หรือกดปุ่ม <strong>+ บันทึกการประชุมใหม่</strong></li>
-            <li>ตรวจสอบ Action Items ที่ได้รับมอบหมาย ติดตามผู้รับผิดชอบ และกำหนดส่งมอบ</li>
-            <li>สามารถกดปุ่มพิมพ์ / บันทึกรายงานประชุมเป็นเอกสาร PDF สำหรับส่งผู้บริหารได้ทันที</li>
-          </ol>
+        <div class="step-card">
+          <div class="step-number">Tab 3</div>
+          <div class="step-title">ประสิทธิภาพและความตรงต่อเวลา</div>
+          <div class="step-text">ระยะเวลาเฉลี่ยในการผลิตผลงาน (Turnaround Time) และอัตราส่งมอบงานตรงเวลาตามมาตรฐาน</div>
+        </div>
+        <div class="step-card">
+          <div class="step-number">Tab 4 &amp; 5</div>
+          <div class="step-title">วิเคราะห์บุคคล &amp; ผู้บริหาร</div>
+          <div class="step-text">สถิติและคะแนนความพึงพอใจรายบุคคล พร้อมบทวิเคราะห์ Executive Summary สำหรับการประชุมยุทธศาสตร์</div>
         </div>
       </div>
 
-      <!-- 7.2 Innovation Design Center Report -->
-      <div style="margin-top: 36px;">
-        <h3 class="module-heading">
-          <span class="module-badge" style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a;">โมดูลที่ 2</span>
-          <span>Innovation Design Center Report (ศูนย์ออกแบบและพัฒนานวัตกรรม)</span>
-        </h3>
-        <p>รายงานสถิติงานออกแบบผลงานนวัตกรรมต้นแบบ บรรจุภัณฑ์ และสถิติการใช้งานห้องปฏิบัติการแล็บ พร้อมสถิติมูลค่าที่ทีม CC ช่วยสร้างสรรค์ให้กับอุทยานวิทยาศาสตร์ฯ:</p>
-        <div class="browser-mockup">
-          <div class="browser-chrome">
-            <div class="browser-dots">
-              <span class="browser-dot dot-red"></span>
-              <span class="browser-dot dot-yellow"></span>
-              <span class="browser-dot dot-green"></span>
-            </div>
-            <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=design-center</div>
-          </div>
-          <img src="/manual_assets/shot_boh_idc.png" alt="หน้า Innovation Design Center Report" loading="lazy" decoding="async">
+      <div class="mockup-container">
+        <div class="mockup-topbar">
+          <div class="mockup-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+          <div class="mockup-url">https://ccteam.vercel.app/dashboard?view=insights (Tab 1: Workloads &amp; Volume Analytics)</div>
         </div>
-        <div class="img-caption">ภาพที่ 7.3: หน้า Innovation Design Center Report แสดงสถิติงานต้นแบบนวัตกรรม รายการสิ่งประดิษฐ์ บรรจุภัณฑ์ และการใช้งานห้องแล็บ</div>
-        <div class="callout callout-info" style="margin-top: 12px;">
-          <div class="callout-title">💡 วิธีใช้งาน Innovation Design Center Report</div>
-          <ol style="margin-left: 18px; margin-top: 6px; font-size: 13.5px; line-height: 1.6;">
-            <li>คลิกเลือก <strong>Innovation Design Center Report</strong> จากหน้า Back of House</li>
-            <li>ดูแท็บ <strong>Records</strong> เพื่อสืบค้นรายการชิ้นงานนวัตกรรมต้นแบบและผู้ขอรับบริการ</li>
-            <li>ดูแท็บ <strong>Dashboard</strong> เพื่อประเมินสถิติเชิงปริมาณและมูลค่าเชิงพาณิชย์</li>
-            <li>กดปุ่ม <strong>Export Report</strong> เพื่อดาวน์โหลดสรุปผลงาน Innovation Design Center ไปประกอบรายงานประจำปี</li>
-          </ol>
+        <div class="mockup-img-wrap" onclick="openLightbox('/manual_assets/shot_insight_tab1_workloads.png', 'สถิติภาระงานเชิงลึก Workload Analytics')">
+          <img src="/manual_assets/shot_insight_tab1_workloads.png" alt="สถิติภาระงาน Workloads" loading="lazy">
+          <div class="zoom-hint">🔍 แตะเพื่อดูภาพเต็ม</div>
         </div>
       </div>
+      <div class="mockup-caption">ภาพที่ 12: กราฟสถิติภาระงานและสัดส่วนประเภทงานสร้างสรรค์ในระบบ</div>
 
-      <!-- 7.3 RSP Press Report -->
-      <div style="margin-top: 36px;">
-        <h3 class="module-heading">
-          <span class="module-badge" style="background: #d1fae5; color: #047857; border: 1px solid #a7f3d0;">โมดูลที่ 3</span>
-          <span>RSP Press Report (ข่าวประชาสัมพันธ์เครือข่าย)</span>
-        </h3>
-        <p>รายงานรวบรวมข่าวสารประชาสัมพันธ์เครือข่ายอุทยานวิทยาศาสตร์ภาคเหนือ (RSP) สรุปยอดเผยแพร่ผ่านสื่อมวลชนชั้นนำ และผลสัมฤทธิ์การสร้างการรับรู้:</p>
-        <div class="browser-mockup">
-          <div class="browser-chrome">
-            <div class="browser-dots">
-              <span class="browser-dot dot-red"></span>
-              <span class="browser-dot dot-yellow"></span>
-              <span class="browser-dot dot-green"></span>
-            </div>
-            <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=rsp-press</div>
-          </div>
-          <img src="/manual_assets/shot_boh_rsp.png" alt="หน้า RSP Press Report ข่าวประชาสัมพันธ์เครือข่าย" loading="lazy" decoding="async">
+      <div class="mockup-container">
+        <div class="mockup-topbar">
+          <div class="mockup-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+          <div class="mockup-url">https://ccteam.vercel.app/dashboard?view=insights (Tab 5: Executive Synthesis &amp; OKRs)</div>
         </div>
-        <div class="img-caption">ภาพที่ 7.4: หน้า RSP Press Report สรุปรายการข่าวประชาสัมพันธ์ ลิงก์สื่อมวลชน และสถิติการเผยแพร่</div>
-        <div class="callout callout-info" style="margin-top: 12px;">
-          <div class="callout-title">💡 วิธีใช้งาน RSP Press Report</div>
-          <ol style="margin-left: 18px; margin-top: 6px; font-size: 13.5px; line-height: 1.6;">
-            <li>คลิกเลือก <strong>RSP Press Report</strong> จากหน้า Back of House</li>
-            <li>ค้นหาข่าวตามชื่อโครงการ หรือกรองตามช่วงวันที่จัดกิจกรรม</li>
-            <li>คลิกลิงก์เพื่อเปิดดูข่าวดั้งเดิมที่ได้รับการตีพิมพ์ในสื่อมวลชนแต่ละสำนัก</li>
-            <li>เพิ่มบันทึกการส่งข่าวใหม่พร้อมลิงก์และภาพข่าวยืนยัน (Clipping Proof)</li>
-          </ol>
+        <div class="mockup-img-wrap" onclick="openLightbox('/manual_assets/shot_insight_tab5_executive.png', 'แดชบอร์ดสรุปผลงานระดับผู้บริหาร Executive Synthesis')">
+          <img src="/manual_assets/shot_insight_tab5_executive.png" alt="Executive Synthesis OKRs" loading="lazy">
+          <div class="zoom-hint">🔍 แตะเพื่อดูภาพเต็ม</div>
         </div>
       </div>
-
-      <!-- 7.4 ISO Report -->
-      <div style="margin-top: 36px;">
-        <h3 class="module-heading">
-          <span class="module-badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;">โมดูลที่ 4</span>
-          <span>ISO Report & WI Task Tracking (ระบบบริหารคุณภาพ ISO 9001 & แทร็กงานตามขั้นตอน WI)</span>
-        </h3>
-        <p>ศูนย์รวมระบบบริหารคุณภาพมาตรฐานสากล ISO 9001:2015 ของทีม CC เชื่อมโยงระเบียบปฏิบัติงานมาตรฐาน (Work Instructions - WI) เข้ากับการปฏิบัติงานจริงในทุกขั้นตอน พร้อมระบบประเมินความเสี่ยง การทบทวนฝ่ายบริหาร และคลังหลักฐานการตรวจประเมินแบบดิจิทัลครบวงจร:</p>
-
-        <!-- SUBSECTION: WI Tracking with Tasks -->
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 24px; margin-top: 20px;">
-          <h4 style="font-size: 16px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 9999px; background: #0284c7;"></span>
-            <span>ความพิเศษของการ Tracking WI กับงานจริง (Task-WI Realtime Integration)</span>
-          </h4>
-          <p style="font-size: 13.5px; color: #475569; line-height: 1.6; margin-bottom: 16px;">
-            ระบบ CC Insights Portal มีความพิเศษที่<strong>เหนือกว่าระบบบันทึกเอกสารทั่วไป</strong> โดยทำการเชื่อมโยงสถานะงานจริงบนกระดานบอร์ด (Pending, In Progress, Completed) เข้าสู่ขั้นตอนของระเบียบปฏิบัติงาน (Work Instruction) แบบ <em>Dynamic Step Detection</em> อัตโนมัติ โดยแบ่งตาม 4 ระเบียบปฏิบัติงานหลัก:
-          </p>
-
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 20px;">
-            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-              <div style="font-weight: 700; color: #0284c7; font-size: 13.5px; margin-bottom: 6px;">📢 WI-CC-001: งานบริการประชาสัมพันธ์ (6 ขั้นตอน)</div>
-              <div style="font-size: 12px; color: #64748b; line-height: 1.5;">
-                • เอกสารกำกับ: <strong>FM-CC-001</strong><br>
-                • ขั้นตอน: รับฟอร์ม (1 วัน) → มอบหมาย (15 นาที) → หารือบรีฟ (2 ชม.+) → ตรวจร่างข้อความ/สื่อ (15 นาที) → เผยแพร่ (30 นาที) → ประเมินความพึงพอใจ 5 ดาว (30 นาที)
-              </div>
-            </div>
-
-            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-              <div style="font-weight: 700; color: #b45309; font-size: 13.5px; margin-bottom: 6px;">🎬 WI-CC-003: งานผลิตสื่อสร้างสรรค์ (6 ขั้นตอน)</div>
-              <div style="font-size: 12px; color: #64748b; line-height: 1.5;">
-                • เอกสารกำกับ: <strong>FM-CC-008</strong><br>
-                • ขั้นตอน: รับฟอร์ม (1 วัน) → มอบหมายผลิตสื่อ (15 นาที) → หารือบรีฟเชิงลึก (2 ชม.+) → ส่งตรวจดราฟต์ Artwork (15 นาที) → เผยแพร่สื่อตามช่องทาง (30 นาที) → ประเมินผล (30 นาที)
-              </div>
-            </div>
-
-            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-              <div style="font-weight: 700; color: #7c3aed; font-size: 13.5px; margin-bottom: 6px;">🎨 WI-CC-004: งานออกแบบภายในองค์กร (7 ขั้นตอน)</div>
-              <div style="font-size: 12px; color: #64748b; line-height: 1.5;">
-                • เอกสารกำกับ: <strong>FM-CC-010</strong><br>
-                • ขั้นตอน: รับฟอร์ม (1 วัน) → มอบหมายดีไซเนอร์ (15 นาที) → หารือแนวคิด Concept (1 วัน+) → ออกแบบร่าง (1 วัน+) → <strong>ตรวจทานผ่าน AD Gate (30 นาที)</strong> → ส่งมอบ (30 นาที) → ทบทวนเสร็จสิ้น
-              </div>
-            </div>
-
-            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-              <div style="font-weight: 700; color: #047857; font-size: 13.5px; margin-bottom: 6px;">🏢 WI-CC-005: งานออกแบบภายนอกองค์กร (8 ขั้นตอน)</div>
-              <div style="font-size: 12px; color: #64748b; line-height: 1.5;">
-                • เอกสารกำกับ: <strong>FM-CC-011 / FM-CC-005 / FM-AF-008</strong><br>
-                • ขั้นตอน: รับความต้องการ → รับโจทย์เชิงลึก (2 ชม.) → ใบเสนอราคา (30 นาที) → ชำระเงินมัดจำ/ออกใบเสร็จ (2 วัน) → มอบหมาย → ออกแบบ → <strong>ตรวจทาน AD Gate</strong> → ประเมินผล
-              </div>
-            </div>
-          </div>
-
-          <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 16px; margin-bottom: 20px;">
-            <div style="font-weight: 800; color: #1e40af; font-size: 13px; margin-bottom: 6px;">⭐ 4 ฟังชันก์ความพิเศษของระบบการ Tracking WI ที่เหนือกว่าทั่วไป:</div>
-            <ol style="margin-left: 18px; font-size: 13px; color: #1e3a8a; line-height: 1.6;">
-              <li><strong>Auto SLA & Lead-Time Monitoring:</strong> ตรวจวัดระยะเวลาจริงที่ชิ้นงานดำเนินอยู่ในแต่ละสเต็ป เทียบกับ Lead Time ที่กำหนดไว้ในข้อกำหนด ISO อย่างแม่นยำ พร้อมติดป้ายแจ้งเตือนทันที (Compliant = สีเขียว, Alert = สีส้ม, Non-compliant = สีแดง)</li>
-              <li><strong>Art Director (AD) Review Gate:</strong> มีจุดตรวจควบคุมคุณภาพพิเศษ (Quality Gate) โดยผู้กำกับศิลป์และ PM สำหรับงานออกแบบตาม WI-CC-004 และ WI-CC-005 เพื่อให้มั่นใจในคุณภาพและอัตลักษณ์องค์กร 100% ก่อนส่งมอบ</li>
-              <li><strong>Audit Trail & FM Document Linkage:</strong> เชื่อมโยงรหัสแบบฟอร์มควบคุมคุณภาพ (FM-CC-001, FM-CC-008, FM-CC-010, FM-CC-011, FM-AF-008) เข้ากับไฟล์งานและลิงก์ Drive จริงในแต่ละ Task ทำให้พร้อมรับการตรวจประเมิน ISO จากผู้ตรวจประเมินภายนอกได้ทันที</li>
-              <li><strong>Interactive Step Drill-Down:</strong> คลิกเลือกดูชิ้นงานจริงที่กำลังอยู่ในขั้นตอนนั้นๆ พร้อมแสดงชื่อผู้รับผิดชอบ, หน่วยงานที่ขอรับบริการ, และระยะเวลาที่ใช้ไปแบบละเอียด</li>
-            </ol>
-          </div>
-
-          <!-- Screenshot: WI Tracking -->
-          <div class="browser-mockup">
-            <div class="browser-chrome">
-              <div class="browser-dots">
-                <span class="browser-dot dot-red"></span>
-                <span class="browser-dot dot-yellow"></span>
-                <span class="browser-dot dot-green"></span>
-              </div>
-              <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=iso (Tab: WI Tracking)</div>
-            </div>
-            <img src="/manual_assets/shot_iso_wi_tracking.png" alt="หน้า WI Tracking ตรวจสอบขั้นตอนการปฏิบัติงานและ SLA" loading="lazy" decoding="async">
-          </div>
-          <div class="img-caption">ภาพที่ 7.5: ระบบแทร็กงานตามขั้นตอน Work Instructions (WI Tracking) แสดงขั้นตอน SLA Lead-Time, อัตรา Compliance, และการ์ดงานจริง</div>
-        </div>
-
-        <!-- SUBSECTION: 7 Tabs in ISO Report -->
-        <div style="margin-top: 32px;">
-          <h4 style="font-size: 16px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
-            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 9999px; background: #0284c7;"></span>
-            <span>คำอธิบายเจาะลึก 7 แท็บ (Tabs) ในระบบรายงาน ISO Report</span>
-          </h4>
-
-          <div style="display: flex; flex-direction: column; gap: 24px;">
-            
-            <!-- Tab 1: Risk Analysis -->
-            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-                <h5 style="font-size: 15px; font-weight: 800; color: #0f172a;">1. 📊 Risk & Opportunity Analysis (วิเคราะห์ความเสี่ยงและโอกาส)</h5>
-                <span class="badge" style="background:#e0f2fe; color:#0369a1;">ข้อกำหนด 6.1</span>
-              </div>
-              <p style="font-size: 13.5px; color: #475569; line-height: 1.6; margin-bottom: 14px;">
-                แสดงตารางเมทริกซ์ความเสี่ยง 5x5 Matrix (โอกาสเกิด Likelihood x ความรุนแรง Consequence) พร้อมการจัดหมวดหมู่ <strong>11 ประเด็นความเสี่ยงและโอกาสของทีม CC</strong> ตามเอกสาร <em>3_ประเมินความเสี่ยงและโอกาส CC.xlsx</em> โดยแยกเป็นกลยุทธ์ "ลดความเสี่ยง" เช่น การจัดการงานด่วน การเพิ่มทักษะพนักงาน และกลยุทธ์ "โอกาสในการพัฒนา" เช่น การขยายขีดความสามารถงานสร้างสรรค์แข่งขันกับหน่วยงานภายนอก
-              </p>
-              <div class="browser-mockup">
-                <div class="browser-chrome">
-                  <div class="browser-dots">
-                    <span class="browser-dot dot-red"></span>
-                    <span class="browser-dot dot-yellow"></span>
-                    <span class="browser-dot dot-green"></span>
-                  </div>
-                  <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=iso (Tab: Risk Analysis)</div>
-                </div>
-                <img src="/manual_assets/shot_iso_risk_matrix.png" alt="หน้า Risk & Opportunity Analysis เมทริกซ์ 5x5 และ 11 ประเด็นวิเคราะห์" loading="lazy" decoding="async">
-              </div>
-              <div class="img-caption">ภาพที่ 7.6: เมทริกซ์ 5x5 และตารางวิเคราะห์ความเสี่ยง/โอกาส (Risk & Opportunity) 11 ประเด็น พร้อมแนวทางกลยุทธ์</div>
-            </div>
-
-            <!-- Tab 2: SWOT & Stakeholders -->
-            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-                <h5 style="font-size: 15px; font-weight: 800; color: #0f172a;">2. 🧭 SWOT & Context of the Organization (บริบทองค์กรตามข้อกำหนด ISO)</h5>
-                <span class="badge" style="background:#fef3c7; color:#b45309;">ข้อกำหนด 4.1 & 4.2</span>
-              </div>
-              <p style="font-size: 13.5px; color: #475569; line-height: 1.6;">
-                วิเคราะห์ 4 ด้าน จุดแข็ง (Strength), จุดอ่อน (Weakness), โอกาส (Opportunity), และอุปสรรค (Threat) ของทีม CC ในฐานะหน่วยงานสื่อสารและสร้างสรรค์ของอุทยานวิทยาศาสตร์ฯ มช. เชื่อมโยงปัจจัยภายในและภายนอกสู่แผนยุทธศาสตร์องค์กร
-              </p>
-            </div>
-
-            <!-- Tab 3: Risk Register -->
-            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-                <h5 style="font-size: 15px; font-weight: 800; color: #0f172a;">3. 🛡️ Risk Treatment Plan & Risk Register (ทะเบียนความเสี่ยงและแผนปฏิบัติการ)</h5>
-                <span class="badge" style="background:#fee2e2; color:#b91c1c;">ข้อกำหนด 6.1.2</span>
-              </div>
-              <p style="font-size: 13.5px; color: #475569; line-height: 1.6;">
-                ทะเบียนลงบันทึกความเสี่ยงที่ได้รับการจัดลำดับความสำคัญ พร้อมแผนปฏิบัติการจัดการความเสี่ยง (Action Plan), ผู้รับผิดชอบ (Risk Owner), กรอบเวลาดำเนินงาน และดัชนีชี้วัดผลเพื่อลดระดับความเสี่ยงให้อยู่ในเกณฑ์ที่ยอมรับได้ (Acceptable Level)
-              </p>
-            </div>
-
-            <!-- Tab 4: WI Tracking -->
-            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-                <h5 style="font-size: 15px; font-weight: 800; color: #0f172a;">4. ⚡ Work Instructions (WI) & Compliance Monitor (ระบบแทร็กงานตามระเบียบปฏิบัติงาน)</h5>
-                <span class="badge" style="background:#f3e8ff; color:#7c3aed;">ข้อกำหนด 8.1 & 8.5</span>
-              </div>
-              <p style="font-size: 13.5px; color: #475569; line-height: 1.6;">
-                แท็บหลักสำหรับการตรวจสอบความสอดคล้องตามระเบียบปฏิบัติงานจริง สามารถสลับดูระหว่าง 4 ระเบียบปฏิบัติงาน (WI-CC-001, 003, 004, 005) และติดตามสถานะงานที่รันอยู่ในแต่ละ Step แบบ Live Interactive
-              </p>
-            </div>
-
-            <!-- Tab 5: Management Review -->
-            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-                <h5 style="font-size: 15px; font-weight: 800; color: #0f172a;">5. 📈 Management Review (รายงานการประชุมทบทวนฝ่ายบริหาร)</h5>
-                <span class="badge" style="background:#dcfce7; color:#15803d;">ข้อกำหนด 9.3</span>
-              </div>
-              <p style="font-size: 13.5px; color: #475569; line-height: 1.6; margin-bottom: 14px;">
-                สรุปข้อมูลเชิงสถิติที่จำเป็นสำหรับการรายงานผู้บริหารระดับสูงและคณะกรรมการระบบคุณภาพ ประกอบด้วย: อัตราการส่งมอบงานตรงเวลา <strong>100% On-Time Delivery</strong>, คะแนนความพึงพอใจของผู้รับบริการเฉลี่ย <strong>98.4% CSAT</strong>, สถิติข้อร้องเรียน <strong>Zero Complaints (0 ข้อร้องเรียน)</strong> และรายงานแนวทางการปรับปรุงอย่างต่อเนื่อง (Continual Improvement)
-              </p>
-              <div class="browser-mockup">
-                <div class="browser-chrome">
-                  <div class="browser-dots">
-                    <span class="browser-dot dot-red"></span>
-                    <span class="browser-dot dot-yellow"></span>
-                    <span class="browser-dot dot-green"></span>
-                  </div>
-                  <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=iso (Tab: Management Review)</div>
-                </div>
-                <img src="/manual_assets/shot_iso_mgmt_review.png" alt="หน้า Management Review รายงานการประชุมทบทวนฝ่ายบริหาร" loading="lazy" decoding="async">
-              </div>
-              <div class="img-caption">ภาพที่ 7.7: รายงานการประชุมทบทวนฝ่ายบริหาร (Management Review) แสดงสถิติคุณภาพ CSAT และการส่งมอบตรงเวลา</div>
-            </div>
-
-            <!-- Tab 6: Standards Evidence Vault -->
-            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-                <h5 style="font-size: 15px; font-weight: 800; color: #0f172a;">6. 🗂️ Requirements & Standards Evidence Vault (คลังหลักฐานข้อกำหนดคุณภาพ)</h5>
-                <span class="badge" style="background:#f1f5f9; color:#475569;">ข้อกำหนด 7.5 & 9.1</span>
-              </div>
-              <p style="font-size: 13.5px; color: #475569; line-height: 1.6; margin-bottom: 14px;">
-                เช็คลิสต์ตรวจสอบความสอดคล้องตามข้อกำหนด ISO 9001:2015 ทีละข้อ (Clauses Checklist) พร้อมคลังไฟล์หลักฐานและลิงก์เอกสารระบบคุณภาพที่เกี่ยวข้อง ช่วยให้การตรวจประเมินคุณภาพภายใน (Internal Audit) และการตรวจรับรอง (Certification Audit) เป็นไปอย่างรวดเร็วและเป็นระบบ
-              </p>
-              <div class="browser-mockup">
-                <div class="browser-chrome">
-                  <div class="browser-dots">
-                    <span class="browser-dot dot-red"></span>
-                    <span class="browser-dot dot-yellow"></span>
-                    <span class="browser-dot dot-green"></span>
-                  </div>
-                  <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=iso (Tab: Requirements & Evidence)</div>
-                </div>
-                <img src="/manual_assets/shot_iso_evidence.png" alt="หน้าคลังหลักฐานข้อกำหนดคุณภาพ Standards Evidence Vault" loading="lazy" decoding="async">
-              </div>
-              <div class="img-caption">ภาพที่ 7.8: คลังหลักฐานข้อกำหนดคุณภาพ (Standards Evidence Vault) เชื่อมโยงเช็คลิสต์และไฟล์เอกสารอ้างอิง</div>
-            </div>
-
-            <!-- Tab 7: Stakeholders Needs & Expectations -->
-            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-                <h5 style="font-size: 15px; font-weight: 800; color: #0f172a;">7. 🤝 Stakeholders Needs & Expectations (ความคาดหวังของผู้มีส่วนได้ส่วนเสีย)</h5>
-                <span class="badge" style="background:#e0e7ff; color:#4338ca;">ข้อกำหนด 4.2</span>
-              </div>
-              <p style="font-size: 13.5px; color: #475569; line-height: 1.6;">
-                ตารางวิเคราะห์ความต้องการและความคาดหวังของผู้มีส่วนได้ส่วนเสียทั้ง 5 กลุ่มหลัก: ผู้บริหารมหาวิทยาลัยเชียงใหม่, ส่วนงานภายในอุทยานวิทยาศาสตร์ฯ STeP, ผู้ประกอบการและภาคเอกชนภายนอก, เครือข่ายอุทยานวิทยาศาสตร์ภูมิภาค (RSP), และสื่อมวลชน พร้อมระบุมาตรการตอบสนองความคาดหวังอย่างเป็นรูปธรรม
-              </p>
-            </div>
-
-          </div>
-        </div>
-
-        <div class="callout callout-info" style="margin-top: 24px;">
-          <div class="callout-title">💡 ประโยชน์เชิงกลยุทธ์ของระบบ ISO Report & WI Tracking สำหรับทีม CC</div>
-          <ol style="margin-left: 18px; margin-top: 6px; font-size: 13.5px; line-height: 1.6;">
-            <li><strong>ตรวจประเมินระบบคุณภาพได้ทันที (Audit-Ready at Any Time):</strong> ไม่ต้องเสียเวลาเตรียมเอกสารก่อนการ Audit เพราะข้อมูลจริงและไฟล์หลักฐานถูกบันทึกและเชื่อมโยงแบบเรียลไทม์</li>
-            <li><strong>ควบคุมมาตรฐานงานสร้างสรรค์ (Consistent Design & Content Quality):</strong> ระบบ AD Review Gatekeeper ช่วยให้งานที่ออกจากทีม CC ทุกชิ้นได้มาตรฐานอัตลักษณ์องค์กร</li>
-            <li><strong>ป้องกันคอขวดและงานส่งมอบล่าช้า (Bottleneck Prevention):</strong> ระบบ SLA Lead-Time Tracking ช่วยส่งสัญญาณเตือนตั้งแต่ขั้นตอนดราฟต์แรก ทำให้แก้ไขได้ก่อนเลยกำหนดส่งมอบ</li>
-          </ol>
-        </div>
-      </div>
-
-      <!-- 7.5 KM คลังความรู้ -->
-      <div style="margin-top: 36px;">
-        <h3 class="module-heading">
-          <span class="module-badge" style="background: #fae8ff; color: #86198f; border: 1px solid #f5d0fe;">โมดูลที่ 5</span>
-          <span>KM คลังความรู้ (Knowledge Management)</span>
-        </h3>
-        <p>ศูนย์รวมองค์ความรู้ นวัตกรรมเครื่องมือสร้างสรรค์ AI Weekly Creative Trends บทความเทคนิค และแนวทางการยกระดับทักษะของทีม CC:</p>
-        <div class="browser-mockup">
-          <div class="browser-chrome">
-            <div class="browser-dots">
-              <span class="browser-dot dot-red"></span>
-              <span class="browser-dot dot-yellow"></span>
-              <span class="browser-dot dot-green"></span>
-            </div>
-            <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=km</div>
-          </div>
-          <img src="/manual_assets/shot_boh_km.png" alt="หน้า KM คลังความรู้และนวัตกรรม" loading="lazy" decoding="async">
-        </div>
-        <div class="img-caption">ภาพที่ 7.6: หน้า KM คลังความรู้ แสดงบทความการประยุกต์ใช้ AI, เทคนิคงานสื่อสาร และไฟล์แบ่งปันความรู้</div>
-        <div class="callout callout-info" style="margin-top: 12px;">
-          <div class="callout-title">💡 วิธีใช้งาน KM คลังความรู้</div>
-          <ol style="margin-left: 18px; margin-top: 6px; font-size: 13.5px; line-height: 1.6;">
-            <li>คลิกเลือก <strong>KM คลังความรู้</strong> จากหน้า Back of House</li>
-            <li>เลือกหมวดหมู่ที่สนใจ เช่น AI Prompts, การตัดต่อวิดีโอ, การออกแบบอัตลักษณ์</li>
-            <li>อ่านสาระสำคัญและคลิกดาวน์โหลดเอกสารหรือเทมเพลตประกอบ</li>
-            <li>สมาชิกทีมสามารถร่วมเขียนบทความหรืออัปเดตเทรนด์ใหม่ๆ เข้าระบบได้ตลอดเวลา</li>
-          </ol>
-        </div>
-      </div>
-
-      <!-- 7.6 Team Action Plan (TAP) -->
-      <div style="margin-top: 36px;">
-        <h3 class="module-heading">
-          <span class="module-badge" style="background: #ffedd5; color: #c2410c; border: 1px solid #fed7aa;">โมดูลที่ 6</span>
-          <span>แผนดำเนินงานของทีม (Team Action Plan - TAP)</span>
-        </h3>
-        <p>แผนการดำเนินงานประจำปี ติดตาม Timeline และผู้รับผิดชอบ สอดรับกับตัวชี้วัด OKRs และเป้าหมายยุทธศาสตร์ระดับองค์กรของอุทยานฯ:</p>
-        <div class="browser-mockup">
-          <div class="browser-chrome">
-            <div class="browser-dots">
-              <span class="browser-dot dot-red"></span>
-              <span class="browser-dot dot-yellow"></span>
-              <span class="browser-dot dot-green"></span>
-            </div>
-            <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=action-plan</div>
-          </div>
-          <img src="/manual_assets/shot_boh_tap.png" alt="หน้ารายงานแผนดำเนินงาน Team Action Plan" loading="lazy" decoding="async">
-        </div>
-        <div class="img-caption">ภาพที่ 7.7: หน้า Team Action Plan ติดตามความคืบหน้ากิจกรรมรายไตรมาส (Q1 - Q4) และผู้รับผิดชอบ</div>
-        <div class="callout callout-info" style="margin-top: 12px;">
-          <div class="callout-title">💡 วิธีใช้งาน Team Action Plan</div>
-          <ol style="margin-left: 18px; margin-top: 6px; font-size: 13.5px; line-height: 1.6;">
-            <li>คลิกเลือก <strong>แผนดำเนินงานของทีม</strong> จากหน้า Back of House</li>
-            <li>ติดตามสถานะโครงการตามแถบไทม์ไลน์รายเดือนและรายไตรมาส</li>
-            <li>ตรวจสอบตัวชี้วัดความสำเร็จ (Milestones) ของแต่ละโครงการ</li>
-            <li>กดแก้ไขเพื่ออัปเดตเปอร์เซ็นต์ความคืบหน้า หรือเพิ่มกิจกรรมใหม่ในแผนงาน</li>
-          </ol>
-        </div>
-      </div>
-
-      <!-- 7.7 Work Links -->
-      <div style="margin-top: 36px;">
-        <h3 class="module-heading">
-          <span class="module-badge" style="background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;">โมดูลที่ 7</span>
-          <span>Work Links (ศูนย์รวมลิงก์ระบบงานภายนอก)</span>
-        </h3>
-        <p>ศูนย์รวมลิงก์เครื่องมือและไฟล์ทำงานส่วนกลาง คลาวด์ไดรฟ์ แหล่งรวมฟอนต์ โลโก้องค์กร และแบบฟอร์มทางการ ช่วยให้เข้าถึงทรัพยากรได้อย่างรวดเร็ว:</p>
-        <div class="browser-mockup">
-          <div class="browser-chrome">
-            <div class="browser-dots">
-              <span class="browser-dot dot-red"></span>
-              <span class="browser-dot dot-yellow"></span>
-              <span class="browser-dot dot-green"></span>
-            </div>
-            <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=work-links</div>
-          </div>
-          <img src="/manual_assets/shot_boh_links.png" alt="หน้าศูนย์รวมลิ้งค์อื่นๆ ที่เกี่ยวข้อง Work Links" loading="lazy" decoding="async">
-        </div>
-        <div class="img-caption">ภาพที่ 7.8: หน้า Work Links รวมลิงก์ Google Drive ส่วนกลาง, แฟ้มโลโก้, เทมเพลต และฟอร์มทางการ</div>
-        <div class="callout callout-info" style="margin-top: 12px;">
-          <div class="callout-title">💡 วิธีใช้งาน Work Links</div>
-          <ol style="margin-left: 18px; margin-top: 6px; font-size: 13.5px; line-height: 1.6;">
-            <li>คลิกเลือก <strong>ลิ้งค์อื่นๆ ที่เกี่ยวข้อง</strong> จากหน้า Back of House</li>
-            <li>คลิกที่การ์ดลิงก์ที่ต้องการเพื่อเปิดระบบปลายทางในแท็บใหม่ทันที</li>
-            <li>ใช้ช่องค้นหาเพื่อค้นหาเครื่องมือหรือไดรฟ์ที่ต้องการอย่างรวดเร็ว</li>
-            <li>แอดมินสามารถกดปุ่ม <strong>+ เพิ่มลิงก์ใหม่</strong> เพื่อแชร์ทรัพยากรให้คนในทีมได้ทันที</li>
-          </ol>
-        </div>
-      </div>
-
-      <!-- 7.8 Activity Log -->
-      <div style="margin-top: 36px;">
-        <h3 class="module-heading">
-          <span class="module-badge" style="background: #fce7f3; color: #be185d; border: 1px solid #fbcfe8;">โมดูลที่ 8</span>
-          <span>Activity Log (บันทึกกิจกรรมและภารกิจประจำวัน)</span>
-        </h3>
-        <p>บันทึกประวัติกิจกรรมการทำงาน การเข้าใช้งานระบบ การจ่ายงาน และการอัปเดตสถานะงาน เพื่อความโปร่งใสและสามารถตรวจสอบย้อนหลังได้ทุกขั้นตอน:</p>
-        <div class="browser-mockup">
-          <div class="browser-chrome">
-            <div class="browser-dots">
-              <span class="browser-dot dot-red"></span>
-              <span class="browser-dot dot-yellow"></span>
-              <span class="browser-dot dot-green"></span>
-            </div>
-            <div class="browser-address">https://ccteam.vercel.app/dashboard?view=data-reports&report=activity</div>
-          </div>
-          <img src="/manual_assets/shot_boh_activity.png" alt="หน้าบันทึกกิจกรรม Activity Log" loading="lazy" decoding="async">
-        </div>
-        <div class="img-caption">ภาพที่ 7.9: หน้า Activity Log แสดงประวัติการดำเนินการ การส่งมอบงาน และความเคลื่อนไหวในระบบ</div>
-        <div class="callout callout-info" style="margin-top: 12px;">
-          <div class="callout-title">💡 วิธีใช้งาน Activity Log</div>
-          <ol style="margin-left: 18px; margin-top: 6px; font-size: 13.5px; line-height: 1.6;">
-            <li>คลิกเลือก <strong>Activity Log</strong> จากหน้า Back of House</li>
-            <li>ตรวจสอบฟีดกิจกรรมตามลำดับเวลาล่าสุด (Timeline Stream)</li>
-            <li>กรองดูกิจกรรมแยกตามชื่อสมาชิกทีม หรือประเภทการทำงาน</li>
-            <li>ใช้เป็นบันทึกยืนยันความโปร่งใสในการดำเนินงานตามมาตรฐานสากล</li>
-          </ol>
-        </div>
-      </div>
+      <div class="mockup-caption">ภาพที่ 13: บทวิเคราะห์ภาพรวมผลการดำเนินงานสำหรับฝ่ายบริหารและหัวหน้าทีม</div>
     </section>
 
-    <!-- SECTION 8: ศูนย์วิเคราะห์ผลงาน INSIGHTS (ครบทั้ง 5 แท็บ) -->
-    <section id="sec-insights" class="section-card page-break">
+    <!-- SECTION 8: การแจ้งเตือน LINE Bot อัจฉริยะ -->
+    <section id="sec-linebot" class="section-card">
       <div class="section-header">
         <div class="section-icon">8</div>
         <div>
-          <h2 class="section-title">ศูนย์วิเคราะห์ผลงาน Insights (ครบทั้ง 5 แท็บ)</h2>
-          <div class="section-desc">การวิเคราะห์ผลงานเชิงลึก มูลค่าความคุ้มค่า (Save Cost & Profit) สถิติ OKRs และประสิทธิภาพการทำงานรายบุคคล</div>
+          <h2 class="section-title">การแจ้งเตือน LINE Bot อัจฉริยะ (@ALL &amp; ตารางงานประจำวัน)</h2>
+          <div class="section-desc">การรายงานสรุปงานเช้า 09:00 น. ตารางงานครบทุกชิ้น และการเตือนความเสี่ยง</div>
         </div>
       </div>
 
       <p>
-        หน้า <strong>Insights</strong> ของ CC TEAM ได้รับการออกแบบให้เป็นศูนย์รวมการวิเคราะห์ข้อมูลอัจฉริยะ (Business Intelligence) เพื่อให้หัวหน้าทีมและผู้บริหารมองเห็นภาพรวมการดำเนินงาน ผลสัมฤทธิ์ทางการเงิน และความสุขในการทำงานของสมาชิกในทีม โดยแบ่งออกเป็น <strong>5 แท็บหลัก</strong> ครบถ้วน:
+        ระบบเชื่อมต่อกับ <strong>LINE Messaging API</strong> ส่งรายงานเข้ากลุ่ม <strong>Creative step (NOTY)</strong> อัตโนมัติทุกเช้าวันทำงาน โดยได้รับการปรับปรุงตามมาตรฐานใหม่ล่าสุด:
       </p>
 
-      <!-- Tab 1: Workloads & Save Cost -->
-      <h3 class="module-heading">
-        <span class="tab-badge" style="background: #f5f3ff; color: #6d28d9; border-color: #ddd6fe;">แท็บที่ 1</span>
-        <span>จำนวนงาน / มูลค่า (Workloads & Save Cost)</span>
-      </h3>
-      <p>แสดงสถิติมูลค่าการประหยัดงบประมาณ (Save Cost) สะสมจากการผลิตสื่อเองภายในทีม, กำไรสุทธิจากโครงการที่รับบริหารจัดการ (PM Projects), จำนวนงานทั้งหมดพร้อมสถานะ, และสถิติงานเกื้อกูล (Assist Cross-Skilling):</p>
-      
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
-          </div>
-          <div class="browser-address">https://ccteam.vercel.app/dashboard?view=dashboards (Tab: จำนวนงาน / มูลค่า)</div>
+      <div class="step-grid">
+        <div class="step-card">
+          <div class="step-number">การแจ้งเตือนกลุ่ม</div>
+          <div class="step-title">ใช้ @ALL แทนแท็กหลอก</div>
+          <div class="step-text">ใช้ <code>@ALL</code> ที่หัวข้อข้อความเพื่อแจ้งเตือนทุกคนในกลุ่มอย่างถูกต้อง และเรียกชื่อสมาชิกด้วยชื่อจริงที่สุภาพ เช่น <code>พี่วา</code>, <code>พี่จ๊อบ</code>, <code>พี่พิม</code>, <code>พี่โอ๊ต</code> (ไม่มีเครื่องหมาย @)</div>
         </div>
-        <img src="/manual_assets/shot_insight_tab1_workloads.png" alt="หน้า Insights แท็บที่ 1: จำนวนงานและมูลค่าความคุ้มค่า" loading="lazy" decoding="async">
-      </div>
-      <div class="img-caption">ภาพที่ 8.1: แท็บที่ 1 จำนวนงาน/มูลค่า แสดงยอด Save Cost ฿2,004,750, กำไร PM ฿2,119,750 และภาระงาน 52 ชิ้นงาน</div>
-
-      <!-- Tab 2: Goals & OKRs -->
-      <h3 class="module-heading">
-        <span class="tab-badge" style="background: #ecfdf5; color: #047857; border-color: #a7f3d0;">แท็บที่ 2</span>
-        <span>ตัวชี้วัดความสำเร็จ 🎯 KR/R , KPI/TIP ทีม CC</span>
-      </h3>
-      <p>ประมวลผลความคืบหน้าของตัวชี้วัดระดับผลลัพธ์ (Key Results & Result Objectives), ตัวชี้วัด TIP ยุทธศาสตร์และนวัตกรรม, ผลประเมินความพึงพอใจ 5 มิติจากผู้รับบริการ (Satisfaction Score) และสัดส่วนกำไร PM แยกตามภาครัฐและเอกชน:</p>
-
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
-          </div>
-          <div class="browser-address">https://ccteam.vercel.app/dashboard?view=dashboards (Tab: KR/R , KPI/TIP)</div>
+        <div class="step-card">
+          <div class="step-number">ตารางงาน Unassigned</div>
+          <div class="step-title">ตารางงานรอ Assign ทั้งหมด</div>
+          <div class="step-text">แสดงงานที่ยังไม่มีผู้รับผิดชอบ <strong>ครบทุกชิ้น 100%</strong> พร้อมระบุยูนิต รหัสงาน ชื่องาน กำหนดส่ง และชื่อผู้ขอ</div>
         </div>
-        <img src="/manual_assets/shot_insight_tab2_goals.png" alt="หน้า Insights แท็บที่ 2: ตัวชี้วัดความสำเร็จ KR/R และ KPI/TIP" loading="lazy" decoding="async">
-      </div>
-      <div class="img-caption">ภาพที่ 8.2: แท็บที่ 2 ตัวชี้วัดความสำเร็จ KR/R และ KPI/TIP แสดงเปอร์เซ็นต์ความสำเร็จ KR (26%), TIP (77%) และความพึงพอใจเฉลี่ย 90.8%</div>
-
-      <!-- Tab 3: Time & Efficiency -->
-      <h3 class="module-heading">
-        <span class="tab-badge" style="background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe;">แท็บที่ 3</span>
-        <span>เวลา / สถานะงาน (Time & Efficiency)</span>
-      </h3>
-      <p>วิเคราะห์ความเร็วในการผลิตงานเฉลี่ย (Turnaround Days per Task), อัตราการส่งมอบตรงเวลา (On-Time Delivery Rate 100%), ดัชนีประสิทธิภาพ Save Cost เฉลี่ยต่อ 1 งานที่ปิดสำเร็จ (฿62,648), พร้อมแดชบอร์ดประเมินความเร็วและความเสี่ยงแยกตามรายยูนิต (Sub-Unit Velocity & Risk):</p>
-
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
-          </div>
-          <div class="browser-address">https://ccteam.vercel.app/dashboard?view=dashboards (Tab: เวลา / สถานะงาน)</div>
+        <div class="step-card">
+          <div class="step-number">ตารางงาน To-Do</div>
+          <div class="step-title">ตารางงาน To-Do List ทั้งหมด</div>
+          <div class="step-text">จัดกลุ่มตาม <strong>ผู้รับผิดชอบเป็นรายบุคคล</strong> แสดงชัดเจนว่าใครรับผิดชอบงานอะไร ยูนิตไหน และต้องส่งวันใด ดูง่ายบนมือถือ</div>
         </div>
-        <img src="/manual_assets/shot_insight_tab3_time.png" alt="หน้า Insights แท็บที่ 3: เวลาและประสิทธิภาพการส่งมอบงาน" loading="lazy" decoding="async">
-      </div>
-      <div class="img-caption">ภาพที่ 8.3: แท็บที่ 3 เวลา/สถานะงาน แสดงความเร็วเฉลี่ย 3.5 วัน/งาน อัตราตรงเวลา 100% และระดับความเสี่ยงของแต่ละยูนิต</div>
-
-      <!-- Tab 4: Individual 360 Report -->
-      <h3 class="module-heading">
-        <span class="tab-badge" style="background: #fffbeb; color: #b45309; border-color: #fde68a;">แท็บที่ 4</span>
-        <span>รายงานรายบุคคล 360 (Individual Performance & Profile) 🌟 ไฮไลท์สำคัญ</span>
-      </h3>
-      <p>
-        รายงานสรุปผลงานเชิงลึกรายบุคคล 360 องศา ออกแบบเพื่อประเมินศักยภาพ ความคุ้มค่า และการพัฒนาทักษะของบุคลากรในทีม CC เป็นรายบุคคล (ครบทั้ง 12 สมาชิก) 
-        โดยภาพตัวอย่างแสดงโปรไฟล์ของ <strong>คุณจ๊อบ AA (นายอัจชนะพงษ์ อัจชนะวราทา)</strong> ผู้สร้างมูลค่า <strong>Save Cost สูงสุดอันดับ 1 ของทีม ถึง ฿881,500</strong> จาก 52 โครงการที่เกี่ยวข้อง:
-      </p>
-
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
-          </div>
-          <div class="browser-address">https://ccteam.vercel.app/dashboard?view=dashboards (Tab: รายงานรายบุคคล — โปรไฟล์: จ๊อบ AA)</div>
+        <div class="step-card">
+          <div class="step-number">พาดหัวเตือนความเสี่ยง</div>
+          <div class="step-title">กล่องเตือนงานด่วน &amp; Overdue</div>
+          <div class="step-text">หากมีงาน Design รอมอบหมายค้าง หรือมีงานเกินกำหนดส่ง (Overdue) ระบบจะขึ้น <strong>กล่องพาดหัวเตือนสีแดงเด่นชัด</strong> ด้านบนสุดทันที</div>
         </div>
-        <img src="/manual_assets/shot_insight_tab4_individual.png" alt="หน้า Insights แท็บที่ 4: รายงานสรุปผลงานรายบุคคล 360 องศา โปรไฟล์ จ๊อบ AA ยอด Save Cost สูงสุด ฿881,500" loading="lazy" decoding="async">
-      </div>
-      <div class="img-caption">ภาพที่ 8.4: แท็บที่ 4 รายงานรายบุคคล 360 แสดงผลงานคุณจ๊อบ AA ยอด Save Cost สะสม ฿881,500, สัดส่วนงานหลัก/งานช่วย, Velocity กราฟ และปุ่ม Save PDF ออกรายงานทางการ</div>
-
-      <div class="callout callout-success" style="margin-top: 14px;">
-        <div class="callout-title">🏆 องค์ประกอบสำคัญในรายงานรายบุคคล 360</div>
-        <ul style="margin-left: 18px; margin-top: 6px; font-size: 13.5px; line-height: 1.6;">
-          <li><strong>ยอด Save Cost สะสมและโครงการที่เกี่ยวข้อง:</strong> ชูมูลค่าความคุ้มค่าทางการเงินที่พนักงานประหยัดงบประมาณให้แก่อุทยานฯ (ตัวอย่างเช่น คุณจ๊อบ AA สร้างมูลค่าสูงถึง ฿881,500)</li>
-          <li><strong>สัดส่วนงานหลัก vs งานช่วย (81% : 19%):</strong> สะท้อนวัฒนธรรมการช่วยเหลือเพื่อนร่วมงานข้ามสายงาน (Cross-Skilling Collaboration)</li>
-          <li><strong>ดัชนีความเร็วและความสม่ำเสมอ (Velocity):</strong> แผนภูมิแท่งวิเคราะห์จำนวนงานและมูลค่าที่ปิดสำเร็จย้อนหลัง 8 สัปดาห์ และ 6 เดือน</li>
-          <li><strong>Donut Chart วิเคราะห์ประเภทงานและหน่วยงานผู้ขอรับบริการ:</strong> แสดงความเชี่ยวชาญเฉพาะทาง (Specialization) และความเชื่อมโยงกับฝ่ายต่างๆ</li>
-          <li><strong>ปุ่ม Save PDF ทางการ:</strong> กดเพื่อพิมพ์รายงานสรุปผลงานจัดหน้าสวยงามตามแบบฟอร์มทางการเพื่อใช้ประเมินผลงานเลื่อนขั้นหรือรายงานต่อผู้บริหาร</li>
-        </ul>
       </div>
 
-      <!-- Tab 5: Executive Team Overview -->
-      <h3 class="module-heading">
-        <span class="tab-badge" style="background: #f8fafc; color: #334155; border-color: #cbd5e1;">แท็บที่ 5</span>
-        <span>รายงานรวมทีม / ผู้บริหาร (Executive Team Overview)</span>
-      </h3>
-      <p>รายงานสรุปภาพรวมระดับผู้บริหาร แสดงดัชนีชี้วัด 4 ด้านสำคัญ: วัฒนธรรมความร่วมมือในทีม (สัดส่วนงานช่วย 25% ไม่ทิ้งใครโดดเดี่ยว), มูลค่าความคุ้มค่าและผลประโยชน์ทางการเงินสุทธิ (Save Cost & Net Profit), สถิติการส่งมอบงานตรงเวลา 100%, และความสอดคล้องกับทิศทางเป้าหมายองค์กร:</p>
-
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
-          </div>
-          <div class="browser-address">https://ccteam.vercel.app/dashboard?view=dashboards (Tab: รายงานรวมทีม)</div>
-        </div>
-        <img src="/manual_assets/shot_insight_tab5_executive.png" alt="หน้า Insights แท็บที่ 5: รายงานภาพรวมทีมและผู้บริหาร" loading="lazy" decoding="async">
-      </div>
-      <div class="img-caption">ภาพที่ 8.5: แท็บที่ 5 รายงานภาพรวมทีม/ผู้บริหาร รวม 4 ดัชนีหลักสำหรับนำเสนอในที่ประชุมกรรมการบริหาร</div>
-    </section>
-
-    <!-- SECTION 9: LINE BOT & AI -->
-    <section id="sec-linebot" class="section-card page-break">
-      <div class="section-header">
-        <div class="section-icon">9</div>
+      <div class="callout callout-warning">
         <div>
-          <h2 class="section-title">การใช้งาน LINE Bot และผู้ช่วย AI อัจฉริยะ "น้อง CC" (LINE Bot & AI Assistant)</h2>
-          <div class="section-desc">ระบบแจ้งเตือนงานอัตโนมัติ คำสั่งโต้ตอบอัจฉริยะ และตัวอย่างบทสนทนาหลากหลายบริบทการทำงานจริง</div>
+          <strong>🤖 ตัวอย่างรูปแบบข้อความ LINE Morning Brief:</strong><br><br>
+          <pre style="font-family: monospace; font-size: 11.5px; line-height: 1.4; color: #334155; white-space: pre-wrap;">
+@ALL ☀️ [Morning Brief ประจำวัน • วันจันทร์ที่ 5 ตุลาคม 2569]
+สวัสดีตอนเช้าพี่ๆ ทีมสร้างสรรค์และการสื่อสาร (CC) ครับ! 🌸✨
+
+━━━━━━━━━━━━━━━━━━━━
+📋 ตารางงานรอ ASSIGN ทั้งหมด (0 งาน):
+━━━━━━━━━━━━━━━━━━━━
+✨ ขณะนี้ไม่มีงานค้างรอจัดสรร — มอบหมายครบถ้วนทุกงานแล้วครับ 👍
+
+━━━━━━━━━━━━━━━━━━━━
+📝 ตารางงาน TO-DO LIST ทั้งหมด (9 งาน):
+━━━━━━━━━━━━━━━━━━━━
+
+👤 พี่พิม (Unit Design • 2 งาน):
+ • [Unit Design] DS70-7 : จัดทำสไลด์ Defend 4P- 70
+   └ ⏰ กำหนดส่ง: 9 ต.ค. 69
+ • [Unit Design] DS70-2 : ปก โครงการบริการนวัตกรรมแบบองค์รวม...
+   └ ⏰ กำหนดส่ง: 16 ต.ค. 69
+
+👤 พี่โอ๊ต (Unit PR • 4 งาน):
+ • [Unit PR] PR70-5 : คณะอุตสาหกรรมเกษตร
+   └ ⏰ กำหนดส่ง: 6 ต.ค. 69
+ • [Unit PR] PR70-6 : วิทยาลัยเทคโนโลยีสารสาสน์ เขตการปกครองที่ 11
+   └ ⏰ กำหนดส่ง: 9 ต.ค. 69
+...
+          </pre>
         </div>
       </div>
 
-      <p>
-        <strong>"น้อง CC"</strong> คือผู้ช่วย AI ประจำทีมสร้างสรรค์และการสื่อสาร (CC TEAM) พัฒนาขึ้นด้วยโมเดล <strong>Gemini 2.0 Flash</strong> ร่วมกับฐานข้อมูลสด (Live Context Engine) ของระบบ เพื่อทำหน้าที่แจ้งเตือนและตอบคำถามเกี่ยวกับภาระงาน ผู้รับผิดชอบ เดดไลน์ และข้อมูลความคุ้มค่า โดยได้รับการออกแบบตามแนวทาง <em>Non-Intrusive Smart Assistant</em> เพื่อไม่ให้รบกวนบรรยากาศการสนทนาในกลุ่ม
-      </p>
-
-      <!-- 9.1 Broadcast Notifications -->
-      <h3>1. ระบบแจ้งเตือนอัตโนมัติ (Automated Broadcast Notifications)</h3>
-      <div class="flow-grid">
-        <div class="flow-step">
-          <div class="flow-step-num">1</div>
-          <div class="flow-step-title">แจ้งเตือนใบงานใหม่ (New Task Alert)</div>
-          <div class="flow-step-desc">ส่งแจ้งเตือนเข้ากลุ่มทันทีเมื่อมีผู้ส่งงานใหม่ ระบุรหัสงาน, ชื่องาน, ยูนิต, ผู้ประสานงาน และกำหนดส่งมอบงาน</div>
-        </div>
-        <div class="flow-step">
-          <div class="flow-step-num">2</div>
-          <div class="flow-step-title">Morning Brief (09:00 น.)</div>
-          <div class="flow-step-desc">ส่งสรุปงานทุกวันจันทร์–ศุกร์ เวลา 09:00 น. แจ้งงานด่วน 48 ชม., งานที่ต้องส่งวันนี้ และสถิติงานกำลังดำเนินการ</div>
-        </div>
-        <div class="flow-step">
-          <div class="flow-step-num">3</div>
-          <div class="flow-step-title">Monthly Summary (สิ้นเดือน)</div>
-          <div class="flow-step-desc">ส่งรายงานสรุปผลงานสิ้นเดือน วันทำการสุดท้าย เวลา 09:00 น. สรุปจำนวนงานที่ปิดสำเร็จและยอด Save Cost ประจำเดือน</div>
-        </div>
-      </div>
-
-      <!-- 9.2 AI Manners & Clean Chat Principles -->
-      <h3>2. กฎเหล็กมารยาทห้องแชทและความฉลาดของน้อง CC (Clean & Smart AI Principles)</h3>
-      <div class="callout callout-info" style="margin: 16px 0;">
-        <div class="callout-title">💡 มาตรฐานการตอบคำถามเพื่อความสงบเรียบร้อยของกลุ่มแชท</div>
-        <ul style="margin-left: 18px; margin-top: 8px; font-size: 13.5px; line-height: 1.65;">
-          <li><strong>ตอบสั้น กระชับ ตรงประเด็น (2-3 บรรทัด จบในตัว):</strong> ให้ข้อมูลแม่นยำ ไม่เวิ่นเว้อ และไม่พิมพ์หลายข้อความต่อเนื่องเพื่อไม่ให้ดันแชทของคนอื่นตกฟีด</li>
-          <li><strong>ความเงียบในกลุ่มแชท (Strict Silence):</strong> น้อง CC จะไม่สอดแทรกบทสนทนาระหว่างสมาชิกเด็ดขาด จะตอบเฉพาะเมื่อพิมพ์เรียกชื่อ <code>น้อง CC</code> หรือ <code>@mention</code> เท่านั้น</li>
-          <li><strong>หยุดคุยทันทีเมื่อรับทราบ (Smart Receipt):</strong> หากผู้ใช้พิมพ์คำสั้นๆ เช่น <em>"โอเค", "รับทราบ", "ขอบคุณ", "555", "thx"</em> น้อง CC จะหยุดตอบเพื่อปล่อยให้ห้องแชทพักผ่อน</li>
-          <li><strong>คำสั่งควบคุมความเงียบ (Mute / Stop):</strong> หากผู้ใช้พิมพ์ว่า <em>"หยุด", "เงียบ", "พอแล้ว", "พักก่อน"</em> น้อง CC จะตัดการตอบกลับทันที 100%</li>
-          <li><strong>ไม่มีการสแปมเรื่องสุขภาพ:</strong> ตัดข้อความเตือนเรื่องจิบน้ำหรือพักสายตาอัตโนมัติ จะตอบคำแนะนำสุขภาพเฉพาะเมื่อมีคนเอ่ยถามโดยตรงเท่านั้น</li>
-        </ul>
-      </div>
-
-      <!-- 9.3 Command Reference Matrix -->
-      <h3>3. ตารางสรุปคำสั่งและคีย์เวิร์ดคุยกับน้อง CC (Command Matrix)</h3>
-      <div class="table-container">
-        <table class="manual-table">
-          <thead>
-            <tr>
-              <th style="width: 22%;">หมวดหมู่คำสั่ง</th>
-              <th style="width: 28%;">คีย์เวิร์ดที่ใช้งานได้</th>
-              <th style="width: 50%;">ผลลัพธ์และการทำงานของน้อง CC</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>1. ส่งงาน & เช็คสถานะ</strong></td>
-              <td><code>ขอบรีฟ</code>, <code>ขอฟอร์ม</code>, <code>ส่งงาน</code>, <code>ติดตามงาน</code>, <code>track</code></td>
-              <td>ส่งลิงก์แบบฟอร์มส่งบรีฟทั้ง 3 ยูนิต และลิงก์หน้า Track Status เพื่อติดตามงาน</td>
-            </tr>
-            <tr>
-              <td><strong>2. งานด่วน & เดดไลน์</strong></td>
-              <td><code>งานด่วน</code>, <code>urgent</code>, <code>งานวันนี้</code>, <code>เดดไลน์</code></td>
-              <td>สแกนงานที่มีกำหนดส่งมอบภายใน 48 ชั่วโมง หรืองานที่ครบกำหนดวันนี้ พร้อมชื่อผู้รับผิดชอบ</td>
-            </tr>
-            <tr>
-              <td><strong>3. ภาระงาน & ตรวจระบบ</strong></td>
-              <td><code>งานค้าง</code>, <code>สถานะ</code>, <code>ความผิดปกติ</code>, <code>ความเสี่ยง</code>, <code>overdue</code></td>
-              <td>สรุปจำนวนงาน Pending / In Progress / Completed และตรวจจับงานที่ยังไม่มีผู้รับผิดชอบหรืองานเกินกำหนด</td>
-            </tr>
-            <tr>
-              <td><strong>4. ผลงาน & Save Cost</strong></td>
-              <td><code>สรุปงาน</code>, <code>ภาพรวม</code>, <code>save cost</code>, <code>ผลงาน</code></td>
-              <td>สรุปสถิติจำนวนงานที่ส่งมอบแล้วและยอดมูลค่าประหยัดงบประมาณสะสมของทีม</td>
-            </tr>
-            <tr>
-              <td><strong>5. ข้อมูลทีมงาน</strong></td>
-              <td><code>เบอร์โทรพี่...</code>, <code>ใครดูแลงาน...</code>, <code>ติดต่อ...</code></td>
-              <td>ค้นหาข้อมูลชื่อ ตำแหน่ง เบอร์โทรศัพท์ และอีเมลของสมาชิกทีม CC แบบเรียลไทม์</td>
-            </tr>
-            <tr>
-              <td><strong>6. ครีเอทีฟ & สุขภาพ</strong></td>
-              <td><code>ขอไอเดีย</code>, <code>เทรนด์วันนี้</code>, <code>สุขภาพ</code>, <code>เมื่อย</code></td>
-              <td>แนะนำลิงก์แหล่งศึกษาเทรนด์สากล หรือส่งท่ายืดกล้ามเนื้อออฟฟิศซินโดรมจากแพทย์ มช. (เฉพาะเมื่อถาม)</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- 9.4 Realistic Simulation Dialogues across 6 Contexts -->
-      <h3>4. ตัวอย่างบทสนทนาจริง 6 บริบท (Realistic Simulation Dialogues)</h3>
-      <p>ตัวอย่างการโต้ตอบจริงของน้อง CC เมื่อถูกเรียกใช้งานในกลุ่มแชทหรือแชทเดี่ยวในสถานการณ์ต่างๆ:</p>
-
-      <!-- Context 1: Urgent & Deadline -->
-      <div style="margin-top: 18px;">
-        <h4 style="font-size: 14px; font-weight: 700; color: #ea580c; margin-bottom: 8px;">
-          บริบทที่ 1: ตรวจสอบคิวงานด่วนและงานที่ต้องส่งวันนี้ (Daily Urgent & Deadline Check)
-        </h4>
-        <div class="line-chat-box">
-          <div class="chat-bubble bubble-user">
-            น้อง CC วันนี้มีงานอะไรต้องส่งมอบบ้างครับ
-          </div>
-          <div class="chat-bubble bubble-bot">
-            <div class="chat-sender">🤖 น้อง CC</div>
-            🎯 <strong>[งานที่มีกำหนดส่งมอบวันนี้]</strong><br>
-            1. <strong>โปสเตอร์ FoodFab 2026</strong> (Creative) — ผู้ดูแล: พี่จ๊อบ AA<br>
-            2. <strong>คลิปสั้น TikTok ข้าวเหนียว</strong> (Content) — ผู้ดูแล: พี่ลูกอิน STK<br>
-            3. <strong>ข่าวประชาสัมพันธ์ MOU กษ.</strong> (PR) — ผู้ดูแล: พี่ต้า TTY<br>
-            ✨ มีทั้งหมด 3 ชิ้นงาน ติดตามไฟล์ได้ทาง Task Board ค่า
-          </div>
-        </div>
-      </div>
-
-      <!-- Context 2: Brief Request -->
-      <div style="margin-top: 20px;">
-        <h4 style="font-size: 14px; font-weight: 700; color: #8b5cf6; margin-bottom: 8px;">
-          บริบทที่ 2: ขอลิงก์ส่งบรีฟงานใหม่สำหรับเพื่อนร่วมงานต่างฝ่าย (New Brief Request Link)
-        </h4>
-        <div class="line-chat-box">
-          <div class="chat-bubble bubble-user">
-            น้อง CC ขอลิงก์ฟอร์มส่งบรีฟงานออกแบบหน่อยครับ
-          </div>
-          <div class="chat-bubble bubble-bot">
-            <div class="chat-sender">🤖 น้อง CC</div>
-            📝 <strong>[แบบฟอร์มส่งบรีฟงาน - ทีม CC]</strong> ✨<br>
-            🔗 <strong>ยื่นงานใหม่:</strong> https://ccteam.vercel.app/request<br>
-            🔍 <strong>ติดตามสถานะงาน:</strong> https://ccteam.vercel.app/track<br>
-            กรอกข้อมูลครบถ้วน ทีมงานจะเริ่มดำเนินการทันทีค่า
-          </div>
-        </div>
-      </div>
-
-      <!-- Context 3: Risk & Anomaly Audit -->
-      <div style="margin-top: 20px;">
-        <h4 style="font-size: 14px; font-weight: 700; color: #dc2626; margin-bottom: 8px;">
-          บริบทที่ 3: สแกนความผิดปกติของระบบและงานเกินกำหนด (Risk & Anomaly Audit)
-        </h4>
-        <div class="line-chat-box">
-          <div class="chat-bubble bubble-user">
-            น้อง CC เช็คความผิดปกติหรือจุดเสี่ยงในระบบให้หน่อย
-          </div>
-          <div class="chat-bubble bubble-bot">
-            <div class="chat-sender">🤖 น้อง CC</div>
-            ⚠️ <strong>[สแกนจุดเฝ้าระวังของระบบ]</strong><br>
-            • งานที่ยังไม่มีผู้รับผิดชอบ: <strong>0 งาน</strong> ✅ ครบถ้วนทุกใบงาน<br>
-            • งานเกินกำหนดส่ง (Overdue): <strong>1 งาน</strong> 👉 รหัส <code>CC-2026-0019</code> แบนเนอร์ TECH UP (สถานะ: รอลูกค้าตรวจพรูฟ) ✨
-          </div>
-        </div>
-      </div>
-
-      <!-- Context 4: Assignee & Contact Lookup -->
-      <div style="margin-top: 20px;">
-        <h4 style="font-size: 14px; font-weight: 700; color: #0284c7; margin-bottom: 8px;">
-          บริบทที่ 4: ค้นหาผู้รับผิดชอบงานและช่องทางติดต่อเร่งด่วน (Task Assignee & Contact Lookup)
-        </h4>
-        <div class="line-chat-box">
-          <div class="chat-bubble bubble-user">
-            น้อง CC ใครดูแลงานถ่ายวิดีโอ RSP นวัตกรรม ขอเบอร์ติดต่อด้วยครับ
-          </div>
-          <div class="chat-bubble bubble-bot">
-            <div class="chat-sender">🤖 น้อง CC</div>
-            👤 <strong>[ผู้รับผิดชอบโครงการ]</strong><br>
-            • <strong>ผู้ดูแล:</strong> นางสาวสุดารัตน์ คำแสน (ลูกอิน STK) — พนักงานผลิตสื่อวิดีโอสร้างสรรค์<br>
-            • <strong>เบอร์โทร:</strong> 084-2228965<br>
-            • <strong>อีเมล:</strong> sudarat.k@cmu.ac.th ✨
-          </div>
-        </div>
-      </div>
-
-      <!-- Context 5: Save Cost & Performance Milestone -->
-      <div style="margin-top: 20px;">
-        <h4 style="font-size: 14px; font-weight: 700; color: #16a34a; margin-bottom: 8px;">
-          บริบทที่ 5: สรุปภาพรวมมูลค่าประหยัดงบประมาณ (Save Cost & Performance Milestone)
-        </h4>
-        <div class="line-chat-box">
-          <div class="chat-bubble bubble-user">
-            น้อง CC ขอสรุปยอด Save Cost ของทีม CC ล่าสุดหน่อยครับ
-          </div>
-          <div class="chat-bubble bubble-bot">
-            <div class="chat-sender">🤖 น้อง CC</div>
-            📈 <strong>[สรุปภาพรวมผลงานทีม CC]</strong> 🏆<br>
-            • มูลค่า Save Cost รวม: <strong>฿2,004,750</strong> (จาก 52 ชิ้นงาน)<br>
-            • กำไรสุทธิโครงการ PM: <strong>฿2,119,750</strong><br>
-            • ส่งมอบตรงเวลา: <strong>100%</strong> (ดูรายละเอียดได้ที่ Insights Portal ค่า) ✨
-          </div>
-        </div>
-      </div>
-
-      <!-- Context 6: Creative & Trend Brainstorming -->
-      <div style="margin-top: 20px;">
-        <h4 style="font-size: 14px; font-weight: 700; color: #d97706; margin-bottom: 8px;">
-          บริบทที่ 6: ขอไอเดียและแนวคิดสำหรับงานสร้างสรรค์ (On-Demand Creative Brainstorming)
-        </h4>
-        <div class="line-chat-box">
-          <div class="chat-bubble bubble-user">
-            น้อง CC ขอไอเดียทำคอนเทนต์เปิดตัวผลิตภัณฑ์เกษตรแปรรูปให้ดูทันสมัยหน่อย
-          </div>
-          <div class="chat-bubble bubble-bot">
-            <div class="chat-sender">🤖 น้อง CC</div>
-            💡 <strong>[Creative Idea Sparks 🎨]</strong><br>
-            1. <strong>Short-form "Farm to Fork" POV:</strong> ถ่ายวิดีโอแบบมุมมองบุคคลที่หนึ่ง เล่าสตอรี่จากไร่สู่แล็บวิจัย STeP ดนตรี Lo-fi สบายตา<br>
-            2. <strong>Deconstruct Graphic:</strong> แยกองค์ประกอบสารอาหารด้วยภาพ 3D สไตล์ Modern Minimalist ให้ความรู้สึกเป็นวิทยาศาสตร์ที่จับต้องได้<br>
-            🔗 ดูเคสอ้างอิงเพิ่มเติมได้ที่ KM คลังความรู้ในระบบหลังบ้านค่า ✨
-          </div>
-        </div>
-      </div>
-
-    </section>
-
-    <!-- SECTION 10: การจัดการหลังบ้าน ADMIN SETUP -->
-    <section id="sec-admin-setup" class="section-card page-break">
-      <div class="section-header">
-        <div class="section-icon">10</div>
-        <div>
-          <h2 class="section-title">การตั้งค่าระบบหลังบ้าน (Admin Setup & Maintenance)</h2>
-          <div class="section-desc">สงวนสิทธิ์เฉพาะผู้มีสิทธิ์ Admin (คลิกปุ่มรูปฟันเฟือง ⚙️ บนหน้า Dashboard) แสดงตัวอย่างภาพจริงครบทุกแท็บ</div>
-        </div>
-      </div>
-
-      <!-- Tab 1: Manage Team -->
-      <h3 class="module-heading">
-        <span class="tab-badge" style="background: #f1f5f9; color: #0f172a; border-color: #cbd5e1;">แท็บที่ 1</span>
-        <span>Manage Team (จัดการรายชื่อ สิทธิ์ และบทบาททีมงาน)</span>
-      </h3>
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
-          </div>
-          <div class="browser-address">https://ccteam.vercel.app/dashboard (Setup: Manage Team)</div>
-        </div>
-        <img src="/manual_assets/shot_setup_team.png" alt="หน้าต่างตั้งค่า Manage Team สำหรับ Admin" loading="lazy" decoding="async">
-      </div>
-      <div class="img-caption">ภาพที่ 10.1: แท็บ Manage Team สำหรับเพิ่ม/แก้ไขรายชื่อทีมงาน กำหนดบทบาท Admin / Assignee / Executive</div>
-
-      <!-- Tab 2: Service Pricing -->
-      <h3 class="module-heading">
-        <span class="tab-badge" style="background: #fff7ed; color: #c2410c; border-color: #ffedd5;">แท็บที่ 2</span>
-        <span>Service Pricing (ตั้งค่าราคากลางอ้างอิงแต่ละยูนิต)</span>
-      </h3>
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
-          </div>
-          <div class="browser-address">https://ccteam.vercel.app/dashboard (Setup: Service Pricing)</div>
-        </div>
-        <img src="/manual_assets/shot_setup_pricing.png" alt="หน้าต่างตั้งค่า Service Pricing สำหรับ Admin" loading="lazy" decoding="async">
-      </div>
-      <div class="img-caption">ภาพที่ 10.2: แท็บ Service Pricing สำหรับปรับเปลี่ยนรายการบริการ และราคากลางอ้างอิงของแต่ละยูนิต</div>
-
-      <!-- Tab 3: OKR Targets -->
-      <h3 class="module-heading">
-        <span class="tab-badge" style="background: #ecfdf5; color: #047857; border-color: #a7f3d0;">แท็บที่ 3</span>
-        <span>OKR Targets (กำหนดเป้าหมายเชิงผลลัพธ์ประจำปี)</span>
-      </h3>
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
-          </div>
-          <div class="browser-address">https://ccteam.vercel.app/dashboard (Setup: OKR Targets)</div>
-        </div>
-        <img src="/manual_assets/shot_setup_okr.png" alt="หน้าต่างตั้งค่า OKR Targets สำหรับ Admin" loading="lazy" decoding="async">
-      </div>
-      <div class="img-caption">ภาพที่ 10.3: แท็บ OKR Targets สำหรับกำหนดเป้าหมายเชิงผลลัพธ์ (R & KR) ประจำปีเพื่อใช้คำนวณในรายงาน TAP</div>
-
-      <!-- Tab 4: Storage Quota -->
-      <h3 class="module-heading">
-        <span class="tab-badge" style="background: #f5f3ff; color: #7c3aed; border-color: #ede9fe;">แท็บที่ 4</span>
-        <span>Storage Quota & Auto Purge (ตรวจสอบพื้นที่และล้างไฟล์เก่า)</span>
-      </h3>
-      <div class="browser-mockup">
-        <div class="browser-chrome">
-          <div class="browser-dots">
-            <span class="browser-dot dot-red"></span>
-            <span class="browser-dot dot-yellow"></span>
-            <span class="browser-dot dot-green"></span>
-          </div>
-          <div class="browser-address">https://ccteam.vercel.app/dashboard (Setup: Storage Quota)</div>
-        </div>
-        <img src="/manual_assets/shot_setup_storage.png" alt="หน้าต่างตั้งค่า Storage Quota & Auto Purge สำหรับ Admin" loading="lazy" decoding="async">
-      </div>
-      <div class="img-caption">ภาพที่ 10.4: แท็บ Storage & Auto Purge ตรวจสอบพื้นที่ฐานข้อมูลและกดปุ่มล้างไฟล์แนบงานเก่าเพื่อคืนพื้นที่ฟรี 100%</div>
-    </section>
-
-    <!-- SECTION 11: FAQ & TROUBLESHOOTING -->
-    <section id="sec-faq" class="section-card page-break">
-      <div class="section-header">
-        <div class="section-icon">11</div>
-        <div>
-          <h2 class="section-title">คำถามที่พบบ่อยและวิธีแก้ปัญหา (FAQ & Troubleshooting)</h2>
-          <div class="section-desc">วิธีแก้ไขปัญหาการใช้งานทั่วไปที่พบบ่อย</div>
-        </div>
-      </div>
-
-      <h3>Q1: ผู้ขอรับบริการทั่วไปจำเป็นต้องลงทะเบียนหรือล็อกอินก่อนส่งงานหรือไม่?</h3>
-      <p><strong>ตอบ:</strong> <strong>ไม่ต้องลงทะเบียนหรือล็อกอินใดๆ ทั้งสิ้น</strong> หน้าส่งงานทุกยูนิตเปิดเป็นสาธารณะเพื่อให้บุคลากรทุกท่านส่งงานได้อย่างสะดวก รวดเร็ว 100%</p>
-
-      <h3>Q2: เข้าสู่ระบบหน้า Dashboard แล้วขึ้นข้อความ "Access Denied" เกิดจากอะไร?</h3>
-      <p><strong>ตอบ:</strong> เกิดจากอีเมลที่ท่านใช้ยังไม่ได้ถูกลงทะเบียนในตาราง <strong>Manage Team</strong> ของระบบ (แม้จะเป็นอีเมล @step.cmu.ac.th ก็ตาม) วิธีแก้ไข: ให้แจ้งหัวหน้าทีม (Admin) เพื่อเข้าหน้าตั้งค่า ⚙️ แล้วกดเพิ่มชื่อและอีเมลของท่านเข้าสู่ระบบ</p>
-
-      <h3>Q3: หากไฟล์แนบงานมีขนาดใหญ่มากเกินกว่าจะอัปโหลด ต้องทำอย่างไร?</h3>
-      <p><strong>ตอบ:</strong> แนะนำให้อัปโหลดไฟล์ขึ้น <strong>Google Drive / CMU Drive</strong> ของท่าน แล้วตั้งค่าแชร์เป็น <em>"ทุกคนที่มีลิงก์สามารถดูได้"</em> จากนั้นคัดลอกลิงก์มาวางในช่อง <em>"แนบลิงก์ Google Drive"</em> บนแบบฟอร์มส่งงาน ซึ่งสะดวกและไม่จำกัดขนาดไฟล์</p>
-
-      <h3>Q4: ลืมรหัส Tracking Code สามารถค้นหางานได้อย่างไร?</h3>
-      <p><strong>ตอบ:</strong> สามารถเปิดหน้า <strong><a href="https://ccteam.vercel.app/track" target="_blank">Track Status</a></strong> แล้วพิมพ์ <strong>อีเมลของท่าน</strong> ที่เคยใช้ส่งงานในช่องค้นหา ระบบจะแสดงรายการงานทั้งหมดที่ท่านเคยส่งขึ้นมาให้เลือกทันที</p>
-
-      <h3>Q5: หากมีข้อสงสัยหรือต้องการความช่วยเหลือเพิ่มเติม ติดต่อได้ที่ไหน?</h3>
-      <p>
-        <strong>ทีมสร้างสรรค์และการสื่อสาร (CC TEAM)</strong><br>
-        อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (STeP)<br>
-        อีเมล: <a href="mailto:adchanapong@step.cmu.ac.th">adchanapong@step.cmu.ac.th</a>
+      <p style="font-size: 13px; color: var(--slate-600); margin-top: 14px;">
+        💡 <strong>การพูดคุยกับ AI น้อง CC:</strong> พี่ๆ สามารถพิมพ์ถามในกลุ่ม เช่น <em>"น้อง CC วันนี้มีงานของใครบ้าง"</em> หรือทักแชทส่วนตัวกับน้อง CC เพื่อเช็กคิวงานและสอบถามข้อมูลได้ตลอด 24 ชั่วโมงครับ
       </p>
     </section>
 
-    <!-- Footer -->
-    <footer style="text-align: center; padding-top: 30px; border-top: 1px solid var(--border); color: var(--slate-500); font-size: 13px;">
-      <p>© 2026 - 2027 CC TEAM • Chiang Mai University Science and Technology Park (STeP)</p>
-      <p style="font-size: 11px; margin-top: 4px;">CC TEAM : Briefing & Management System • Designed with Dieter Rams Principles</p>
+    <!-- Document Footer -->
+    <footer style="text-align: center; padding: 40px 0 20px; border-top: 1px solid var(--slate-200); color: var(--slate-500); font-size: 12.5px;">
+      <p><strong>ทีมสร้างสรรค์และการสื่อสาร (Creative and Communication - CC)</strong></p>
+      <p>อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (STeP)</p>
+      <p style="margin-top: 8px; font-size: 11.5px;">© 2569-2570 CC TEAM : Briefing &amp; Management System • All Rights Reserved</p>
     </footer>
 
   </div>
+
+  <!-- Floating Back to Top Button -->
+  <a href="#" class="back-to-top" title="กลับขึ้นด้านบน">↑</a>
+
+  <!-- Lightbox Modal for Fullscreen Image Zoom -->
+  <div id="lightboxModal" class="lightbox-modal" onclick="closeLightbox(event)">
+    <div class="lightbox-content" onclick="event.stopPropagation()">
+      <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+      <img id="lightboxImg" src="" alt="ภาพขยายขนาดเต็ม">
+      <div id="lightboxCap" class="lightbox-caption"></div>
+    </div>
+  </div>
+
+  <script>
+    // Lightbox Modal Functions
+    function openLightbox(src, caption) {
+      const modal = document.getElementById('lightboxModal');
+      const img = document.getElementById('lightboxImg');
+      const cap = document.getElementById('lightboxCap');
+      img.src = src;
+      cap.textContent = caption || '';
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox(e) {
+      const modal = document.getElementById('lightboxModal');
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    // Escape Key Listener to close lightbox
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeLightbox();
+      }
+    });
+  </script>
 
 </body>
 </html>

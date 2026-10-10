@@ -9,7 +9,7 @@ import {
   Calculator, History, Calendar, BarChart3, PlusCircle, ArrowUpRight, ArrowDownRight, Minus,
   AlertTriangle, Link2, ExternalLink,
   Database, HardDrive, ShieldAlert, Archive, RefreshCw, Download, FileSpreadsheet,
-  Lock, Unlock, ShieldCheck
+  Lock, Unlock, ShieldCheck, Eye
 } from "lucide-react";
 import GoogleSheetsSyncHub from "./GoogleSheetsSyncHub";
 import AuditLogsAndBackupHub from "./AuditLogsAndBackupHub";
@@ -39,7 +39,7 @@ import {
   calculateQuarterGrowth
 } from "@/utils/okrSettings";
 import { createClient } from "@/utils/supabase/client";
-import { fetchPricingFromCloud, savePricingToCloud } from "@/utils/pricing";
+import { fetchPricingFromCloud, savePricingToCloud, DEFAULT_STEP_PRICING, getStandardLeadTimeForService } from "@/utils/pricing";
 import { 
   MemberProfile, 
   AssigneeRole, 
@@ -47,6 +47,53 @@ import {
   encodeMemberUnit 
 } from "@/utils/memberProfile";
 import { getMemberSurveyUrl } from "@/utils/surveyTokens";
+import CustomSelect, { Option } from "./CustomSelect";
+
+const ASSIGNEE_UNIT_OPTIONS: Option[] = [
+  { value: "creative", label: "🎨 DESIGN (Creative)" },
+  { value: "content", label: "📝 CONTENT (Content)" },
+  { value: "pr", label: "📢 PR (Public Relations)" },
+  { value: "internal", label: "💼 INTERNAL (งานภายในทีม CC)" },
+  { value: "management", label: "👔 Management (Executive)" },
+];
+
+const ASSIGNEE_ROLE_OPTIONS: Option[] = [
+  { value: "assignee", label: "👤 Assignee (ผู้ปฏิบัติงาน)" },
+  { value: "admin", label: "🛡️ Admin (ผู้ดูแลระบบ)" },
+  { value: "executive", label: "👔 Executive (สำหรับส่ง/รับอีเมล ไม่ใช่งานปฏิบัติการ)" },
+  { value: "viewer", label: "👁️ Viewer (ผู้เข้าชม - เข้าดูได้ทุกฟังก์ชัน แก้ไขไม่ได้)" },
+];
+
+const OKR_QUARTER_OPTIONS: Option[] = [
+  { value: "Q1", label: "Q1 (ต.ค. - ธ.ค.)" },
+  { value: "Q2", label: "Q2 (ม.ค. - มี.ค.)" },
+  { value: "Q3", label: "Q3 (เม.ย. - มิ.ย.)" },
+  { value: "Q4", label: "Q4 (ก.ค. - ก.ย.)" },
+];
+
+const PRICING_UNIT_OPTIONS: Option[] = [
+  { value: "creative", label: "🎨 DESIGN (Creative Designer)" },
+  { value: "content", label: "📝 CONTENT (Content Creator)" },
+  { value: "pr", label: "📢 PR (Public Relations)" },
+  { value: "internal", label: "💼 INTERNAL (งานภายในทีม CC)" },
+];
+
+const PRICING_UNIT_UPPER_OPTIONS: Option[] = [
+  { value: "creative", label: "DESIGN (CREATIVE)" },
+  { value: "content", label: "CONTENT" },
+  { value: "pr", label: "PR" },
+  { value: "internal", label: "INTERNAL" },
+];
+
+const KR_CURRENCY_OPTIONS: Option[] = [
+  { value: "no", label: "ไม่ใช่ (นับเป็นจำนวน)" },
+  { value: "yes", label: "ใช่ (เป็นยอดเงินบาท)" },
+];
+
+const R_COMPUTE_OPTIONS: Option[] = [
+  { value: "auto", label: "⚡ คำนวณอัตโนมัติจากงาน" },
+  { value: "manual", label: "✍️ กรอกสะสมเอง" },
+];
 
 type Assignee = MemberProfile;
 
@@ -64,89 +111,21 @@ type ServicePricing = {
   unit: string;
   service_name: string;
   standard_price: number;
+  lead_time_days?: number;
   description?: string;
   is_active: boolean;
 };
 
-// Default pricing fallback
-const DEFAULT_PRICING: Omit<ServicePricing, 'id'>[] = [
-  // --- Creative Designer ---
-  { unit: 'creative', service_name: 'Logo Design', standard_price: 2500, description: 'ออกแบบตราสัญลักษณ์แบรนด์ พร้อมกำหนดสีและฟอนต์หลัก', is_active: true },
-  { unit: 'creative', service_name: 'Key Visual (KV)', standard_price: 3500, description: 'ออกแบบภาพสื่อสารหลัก (Mood & Tone) เพื่อใช้เป็นต้นแบบในการทำสื่ออื่นๆ ในแคมเปญ', is_active: true },
-  { unit: 'creative', service_name: 'Print Poster / Flyer', standard_price: 750, description: 'ออกแบบใบปลิวหรือโปสเตอร์ 1 หน้า', is_active: true },
-  { unit: 'creative', service_name: 'Brochure / Leaflet', standard_price: 1200, description: 'ออกแบบแผ่นพับ 2-3 พับ (4-6 หน้า) จัดวางเนื้อหาและรูปภาพ', is_active: true },
-  { unit: 'creative', service_name: 'Backdrop (ฉากหลัง)', standard_price: 2500, description: 'ออกแบบภาพกราฟิกขนาดใหญ่สำหรับฉากหลังถ่ายรูปในอีเวนต์', is_active: true },
-  { unit: 'creative', service_name: 'Book Layout (≤10 หน้า)', standard_price: 2500, description: 'วางโครงสร้างหน้าและจัดอาร์ตเวิร์กเนื้อหาจำนวนไม่เกิน 10 หน้า', is_active: true },
-  { unit: 'creative', service_name: 'Book Layout (≥10 หน้า)', standard_price: 5500, description: 'วางโครงสร้างหน้าและจัดอาร์ตเวิร์กเนื้อหาจำนวนมากกว่า 10 หน้า', is_active: true },
-  { unit: 'creative', service_name: 'Packaging (ครบวงจร)', standard_price: 10000, description: 'ออกแบบโครงสร้างกล่อง/บรรจุภัณฑ์เชิงซ้อน พร้อมกราฟิกทุกด้าน', is_active: true },
-  { unit: 'creative', service_name: 'Website Full Design', standard_price: 15000, description: 'ออกแบบหน้าตาเว็บไซต์ (UI/UX) ทุกหน้า (ไม่รวมการเขียนโปรแกรม)', is_active: true },
-  { unit: 'creative', service_name: 'Exhibition Design (Small)', standard_price: 4500, description: 'ออกแบบบูธหรือนิทรรศการขนาดเล็ก (พื้นที่ ≥10 ตร.ม.)', is_active: true },
-  { unit: 'creative', service_name: '3D Render Visualization', standard_price: 2500, description: 'ปั้นโมเดลและเรนเดอร์ภาพเสมือนจริง 3 มิติ (ราคาต่อภาพ)', is_active: true },
-  { unit: 'creative', service_name: 'Signage Design (Small/Big)', standard_price: 1000, description: 'ออกแบบป้ายบอกทางหรือป้ายโฆษณา (ขนาดเล็ก/ขนาดใหญ่)', is_active: true },
-  { unit: 'creative', service_name: 'ถ่ายภาพผลิตภัณฑ์ (Product Photography)', standard_price: 3500, description: 'ถ่ายภาพสินค้าในสตูดิโอ จัดแสง จัดองค์ประกอบ (Styling) และรีทัชภาพเพื่อใช้ในสื่อโฆษณา', is_active: true },
-  { unit: 'creative', service_name: 'ถ่ายภาพบุคคล (Portrait Photography)', standard_price: 3000, description: 'ถ่ายภาพผู้บริหารหรือพนักงานในสตูดิโอ เพื่อใช้ในงาน PR หรือ Profile องค์กร พร้อมบริการรีทัชผิวและแสง', is_active: true },
-  { unit: 'creative', service_name: 'Product Design', standard_price: 20000, description: 'ออกแบบผลิตภัณฑ์เชิงสร้างสรรค์', is_active: true },
-  { unit: 'creative', service_name: 'อื่นๆ (Others)', standard_price: 1500, description: 'งานออกแบบหรือบริการอื่นๆ นอกเหนือจากที่ระบุไว้', is_active: true },
+// Default pricing fallback loaded dynamically from DEFAULT_STEP_PRICING (65 deliverables with lead times)
+const DEFAULT_PRICING: Omit<ServicePricing, 'id'>[] = DEFAULT_STEP_PRICING.map(item => ({
+  ...item,
+  is_active: true
+}));
 
-  // --- PR (Public Relations & Event Coverage) ---
-  { unit: 'pr', service_name: 'ข่าวประชาสัมพันธ์บริการ (RSP)', standard_price: 1500, description: 'ข่าวเครือข่าย RSP ภาคเหนือ', is_active: true },
-  { unit: 'pr', service_name: 'ข่าวการประชาสัมพันธ์กิจกรรม/โครงการ (Pre PR)', standard_price: 1500, description: 'การโปรโมทก่อนเริ่มงานหรือโครงการ', is_active: true },
-  { unit: 'pr', service_name: 'ข่าวการจัดกิจกรรม/โครงการ', standard_price: 1500, description: 'ข่าวรายงานผลการจัดกิจกรรมหรือโครงการ', is_active: true },
-  { unit: 'pr', service_name: 'ข่าวการจัดประชุม/อบรม/สัมมนา', standard_price: 1500, description: 'ข่าวงานประชุม การอบรม หรือสัมมนา', is_active: true },
-  { unit: 'pr', service_name: 'ข่าวเกี่ยวกับผู้บริหาร', standard_price: 1500, description: 'ข่าวภารกิจหรือการแถลงของผู้บริหาร', is_active: true },
-  { unit: 'pr', service_name: 'ข่าวการรับรางวัล', standard_price: 1500, description: 'ข่าวความสำเร็จหรือการรับรางวัลต่างๆ', is_active: true },
-  { unit: 'pr', service_name: 'ข่าวศึกษาดูงาน', standard_price: 1500, description: 'ข่าวการต้อนรับคณะศึกษาดูงาน', is_active: true },
-  { unit: 'pr', service_name: 'Press Release (ข่าวแจกสื่อมวลชน)', standard_price: 1500, description: 'เขียนข่าวประชาสัมพันธ์ภาษาไทยเพื่อส่งสื่อ', is_active: true },
-  { unit: 'pr', service_name: 'Media Management (ดูแลสื่อมวลชน)', standard_price: 15000, description: 'เชิญสื่อ, ดูแลหน้างาน, จัดการค่าเดินทาง/เบี้ยเลี้ยงสื่อ', is_active: true },
-  { unit: 'pr', service_name: 'Stage Management (จัดการเวที)', standard_price: 3500, description: 'จัดคิวเวที, ลำดับผู้กล่าว, ดูแลความเรียบร้อยพิธีการ', is_active: true },
-  { unit: 'pr', service_name: 'MOU / Event Coverage', standard_price: 2500, description: 'ถ่ายภาพ + เขียนข่าวสั้น + โพสต์โซเชียล', is_active: true },
-  { unit: 'pr', service_name: 'สนับสนุนการจัดกิจกรรม (Support Event)', standard_price: 2500, description: 'งานสนับสนุนและบริการสื่อสารอื่นๆ', is_active: true },
-  { unit: 'pr', service_name: 'อื่นๆ (โปรดระบุ)', standard_price: 1500, description: 'งานประชาสัมพันธ์อื่นๆ นอกเหนือจากที่ระบุ', is_active: true },
-
-  // --- Content Creator ---
-  { unit: 'content', service_name: 'Creative Content Idea', standard_price: 5000, description: 'คิดธีม/ไอเดีย/ Event & Campaign', is_active: true },
-  { unit: 'content', service_name: 'บทความสั้น + ภาพประกอบ', standard_price: 800, description: 'ความยาว 300 - 500 คำ (โพสต์โซเชียล)', is_active: true },
-  { unit: 'content', service_name: 'บทความยาว + ภาพประกอบ', standard_price: 2500, description: 'ความยาว 800 - 1,200 คำ (บทความ SEO/Blog)', is_active: true },
-  { unit: 'content', service_name: 'ตัดต่อคลิปสั้น (Short-form)', standard_price: 1500, description: 'ความยาว 15 - 60 วินาที (TikTok/Reels)', is_active: true },
-  { unit: 'content', service_name: 'ถ่ายทำวิดีโอสั้น โปรโมตการบริการ', standard_price: 2500, description: 'ถ่ายทำคลิปวิดีโอเพื่อนำเสนอหรือแนะนำบริการ', is_active: true },
-  { unit: 'content', service_name: 'ถ่ายทำวิดีโอสั้น มีการสัมภาษณ์', standard_price: 3500, description: 'ถ่ายทำคลิปวิดีโอในรูปแบบการสัมภาษณ์บุคคล', is_active: true },
-  { unit: 'content', service_name: 'ถ่ายทำวิดีโอสั้น Talk Spective', standard_price: 3500, description: 'ถ่ายทำคลิปพูดคุยหรือแชร์มุมมองในประเด็นต่างๆ', is_active: true },
-  { unit: 'content', service_name: 'Copywriting / Storytelling', standard_price: 1500, description: 'การเขียนคำโฆษณาหรือการเล่าเรื่องเพื่อดึงดูดความสนใจ', is_active: true },
-  { unit: 'content', service_name: 'Boost Post เพื่อประชาสัมพันธ์', standard_price: 1000, description: 'การโปรโมตโพสต์เพื่อเพิ่มการเข้าถึงกลุ่มเป้าหมาย', is_active: true },
-  { unit: 'content', service_name: 'อื่นๆ (โปรดระบุ)', standard_price: 1000, description: 'งานบริการคอนเทนต์อื่นๆ นอกเหนือจากที่ระบุไว้', is_active: true },
-
-  // --- Internal ---
-  { unit: 'internal', service_name: 'งานเอกสาร/การเงินโครงการ', standard_price: 1500, description: 'ทำงานเอกสาร/การเงินโครงการที่เกี่ยวข้องกับการจัดซื้อจัดจ้าง', is_active: true },
-  { unit: 'internal', service_name: 'งานขึ้นรูป Proposal / TOR', standard_price: 5000, description: 'ทำงานเอกสาร กราฟิก ภาพประกอบ ทีเดียอื่นๆ เพื่อประกอบการ...', is_active: true },
-  { unit: 'internal', service_name: 'งาน Admin / STeP + RSP', standard_price: 1000, description: 'งาน Admin จัดการข้อมูลหลังบ้าน Social Media ของ STeP แ...', is_active: true },
-  { unit: 'internal', service_name: 'งาน Admin / Talk Spective', standard_price: 1000, description: 'งาน Admin หลังบ้าน Social Media ของ Talk Spective', is_active: true },
-  { unit: 'internal', service_name: 'เตรียมงาน VDO / STeP + RSP', standard_price: 1000, description: 'เตรียมงาน สถานที่ ทำคอนเทนต์ VDO / STeP + RSP', is_active: true },
-  { unit: 'internal', service_name: 'เตรียมงาน VDO / Talk Spective', standard_price: 1000, description: 'เตรียมงาน สถานที่ ทำคอนเทนต์ VDO / Talk Spective', is_active: true },
-  { unit: 'internal', service_name: 'บทความ / ภาพประกอบ ของ STeP + RSP', standard_price: 1500, description: 'บทความ / ภาพประกอบ คอนเทนต์ PR ของ STeP + RSP', is_active: true },
-  { unit: 'internal', service_name: 'บทความ / ภาพประกอบ ของ Talk Spective', standard_price: 1500, description: 'บทความ / ภาพประกอบ คอนเทนต์ PR ของ Talk Spective', is_active: true },
-  { unit: 'internal', service_name: 'งานให้คำปรึกษาเชิงสร้างสรรค์', standard_price: 1500, description: 'งานให้คำปรึกษาที่เกี่ยวข้องกับงานสร้างสรรค์ ออกแบบ คอนเทน...', is_active: true },
-  { unit: 'internal', service_name: 'งานจัดทำ / แก้ไข Presentation', standard_price: 5000, description: 'งานจัดทำ / แก้ไข สไลด์ Presentation', is_active: true },
-  { unit: 'internal', service_name: 'งานวิทยากร', standard_price: 5000, description: 'เป็นวิทยากรให้กับหน่วยงาน โครงการ กิจกรรมต่างๆ', is_active: true },
-  { unit: 'internal', service_name: 'ดูแล / ประสานงานนักข่าว', standard_price: 3000, description: 'ดูแลประสานงานนักข่าว เพื่อมาทำข่าวให้กับโครงการ กิจกรรม', is_active: true },
-  { unit: 'internal', service_name: 'ประสานงานโครงการ', standard_price: 1500, description: 'ช่วยประสานงานโครงการของคนภายในทีมและองค์กร นอกเหนือ...', is_active: true },
-  { unit: 'internal', service_name: 'เขียนข่าว ( นอกเหนือจาก Task งาน )', standard_price: 1500, description: 'เขียนข่าว ที่ได้รับมอบหมายนอกเหนือจาก Task งานที่มีอยู่เดิม', is_active: true },
-  { unit: 'internal', service_name: 'เขียน Press Release ( นอกเหนือจาก Task งาน )', standard_price: 1500, description: 'เขียน Press Release ที่ได้รับมอบหมายนอกเหนือจาก Task งา...', is_active: true },
-  { unit: 'internal', service_name: 'ทำงานลงพื้นที่ / นอกสถานที่ ( นอกเหนือจาก Task งาน )', standard_price: 5000, description: 'ทำงานลงพื้นที่ ที่นอกเหนือจาก Task งาน เช่น ถ่ายภาพนอกสถา...', is_active: true },
-  { unit: 'internal', service_name: 'ดูแล / ประสานงาน KOL INFLU', standard_price: 1500, description: 'ดูแลประสานงาน KOL INFLU เพื่อมาทำข่าวให้กับโครงการ กิจก...', is_active: true },
-  { unit: 'internal', service_name: 'ช่วยงาน Event', standard_price: 3000, description: 'ช่วยงาน Event ในพื้นที่ / นอกพื้นที่ ของทีมและองค์กร', is_active: true },
-  { unit: 'internal', service_name: 'เตรียมงานที่ Whoop Studio', standard_price: 1500, description: 'เตรียมงาน ถ่ายภาพ คอนเทนต์ PR ที่ Whoop Studio', is_active: true },
-  { unit: 'internal', service_name: 'ถ่ายภาพ ทำข่าว / ถ่ายวีดีโอ ( นอกเหนือจาก Task งาน )', standard_price: 1500, description: 'ถ่ายภาพ ทำข่าว / ถ่ายวีดีโอ ที่อยู่นอกเหนือจาก Task งาน', is_active: true },
-  { unit: 'internal', service_name: 'ติดตามผู้บริหาร ตามภารกิจขององค์กร ( นอกเหนือจาก Task งาน )', standard_price: 1500, description: 'งานติดตามผู้บริหาร ตามภารกิจขององค์กร เช่น PR คอนเทนต์ ...', is_active: true },
-  { unit: 'internal', service_name: 'ตัดต่องาน VDO / Talk Spective', standard_price: 3000, description: 'ตัดต่องาน ทำคอนเทนต์ VDO / Talk Spective', is_active: true },
-  { unit: 'internal', service_name: 'ตัดต่องาน VDO / STeP + RSP', standard_price: 3000, description: 'ตัดต่องาน ทำคอนเทนต์ VDO / STeP + RSP', is_active: true },
-  { unit: 'internal', service_name: 'ได้รับมอบหมายให้ทำงานในวันหยุด เสาร์ - อาทิตย์ ชดเชย', standard_price: 3000, description: 'ได้รับมอบหมายจากผู้บังคับบัญชาให้ทำงานในวันหยุด เสาร์ - อาทิตย์ ชดเชย', is_active: true },
-  { unit: 'internal', service_name: 'ให้คำปรึกษา / รับโจทย์ ผู้ประกอบการ', standard_price: 1000, description: 'ให้คำปรึกษา / รับโจทย์ ผู้ประกอบการ ทั้งงาน ออกแบบ คอนเทนต์ PR', is_active: true },
-  { unit: 'internal', service_name: 'PM โครงการของ CC', standard_price: 50000, description: 'PM โครงการของ CC (รายรับ ต้นทุน กำไร พร้อมระบุ DESIGN / CONTENT / PR)', is_active: true }
-];
-
-export default function SetupModal({ onClose }: { onClose: () => void }) {
+export default function SetupModal({ onClose, isReadOnly = false }: { onClose: () => void; isReadOnly?: boolean }) {
   const [activeTab, setActiveTab] = useState<"team" | "okr" | "pricing" | "storage" | "sheets-sync" | "ai-control">("team");
   const [assignees, setAssignees] = useState<Assignee[]>([]);
+  const [activeBriefs, setActiveBriefs] = useState<any[]>([]);
   const [okrs, setOkrs] = useState<OKR[]>([]);
   const [pricingList, setPricingList] = useState<ServicePricing[]>([]);
   const [okrSubTab, setOkrSubTab] = useState<"krs" | "tips" | "responsibility">("krs");
@@ -165,7 +144,8 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
     unit: string;
     description: string;
     standard_price: number;
-  }>({ service_name: "", unit: "creative", description: "", standard_price: 0 });
+    lead_time_days: number;
+  }>({ service_name: "", unit: "creative", description: "", standard_price: 0, lead_time_days: 3 });
 
   // Storage Quota State
   const [quotaStats, setQuotaStats] = useState<StorageQuotaStats | null>(null);
@@ -293,8 +273,44 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
     unit: "creative",
     service_name: "",
     standard_price: "",
+    lead_time_days: "3",
     description: ""
   });
+
+  const handleSaveAllOKRSettings = async (overrideState?: OKRSettingsState) => {
+    const stateToSave: OKRSettingsState = {
+      ...(overrideState || okrState),
+      manualMetrics: {
+        r5Reach: parseFloat(manualR5Input.replace(/,/g, '')) || 0,
+        r6Engagement: parseFloat(manualR6Input.replace(/,/g, '')) || 0
+      },
+      lastUpdated: new Date().toISOString()
+    };
+
+    setOkrState(stateToSave);
+    saveStoredOKRSettings(stateToSave);
+
+    setIsSavingOKR(true);
+    try {
+      const res = await saveOKRSettingsToSupabase(stateToSave);
+      if (res.success) {
+        setIsResponsibilityLocked(true);
+        setCloudSyncTime(stateToSave.lastUpdated || new Date().toISOString());
+        setSaveOKRSuccess("✅ บันทึกเป้าหมาย KR/R และ TIP เรียบร้อยแล้ว (จำค่าถาวร)");
+        setTimeout(() => setSaveOKRSuccess(null), 3500);
+      } else {
+        setSaveOKRSuccess("✅ บันทึกลงเครื่องเรียบร้อยแล้ว");
+        setTimeout(() => setSaveOKRSuccess(null), 3000);
+      }
+    } catch (e: any) {
+      console.error("Save error:", e);
+      saveStoredOKRSettings(stateToSave);
+      setSaveOKRSuccess("✅ บันทึกลงเครื่องเรียบร้อยแล้ว");
+      setTimeout(() => setSaveOKRSuccess(null), 3000);
+    } finally {
+      setIsSavingOKR(false);
+    }
+  };
 
   useEffect(() => {
     setIsMounted(true);
@@ -335,13 +351,16 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
       console.warn('Error fetching pricing from cloud:', err);
     }
 
-    // 4. Fetch Brief Satisfaction Stats
+    // 4. Fetch Brief Satisfaction Stats & Active Briefs for Google Sheet Sync
     try {
-      const { data: bData } = await supabase.from('briefs').select('assignee_id, details, status');
+      const { data: bData } = await supabase.from('briefs').select('*').neq('status', 'purged');
       if (bData) {
+        const validBriefs = bData.filter((b: any) => b.status !== 'purged' && !b.details?.is_permanently_deleted);
+        setActiveBriefs(validBriefs);
+
         const statsMap: Record<string, { avg: number; count: number }> = {};
         const tempSums: Record<string, { sum: number; count: number }> = {};
-        bData.forEach((b: any) => {
+        validBriefs.forEach((b: any) => {
           if (b.details?.is_deleted) return;
           const score = b.details?.satisfaction_scores?.averagePercent;
           if (typeof score === 'number' && score > 0) {
@@ -370,6 +389,10 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
   // --- TEAM ACTIONS ---
   const handleAddAssignee = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isReadOnly) {
+      alert("โหมดผู้เข้าชม (Viewer Mode): ไม่สามารถเพิ่มสมาชิกใหม่ได้");
+      return;
+    }
     if (!newAssignee.name.trim()) return;
 
     const encodedUnit = encodeMemberUnit(newAssignee.unit, newAssignee.role, {
@@ -400,15 +423,18 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
   };
 
   const handleToggleAssigneeStatus = async (id: string, currentStatus: boolean) => {
+    if (isReadOnly) return;
     await supabase.from('assignees').update({ is_active: !currentStatus }).eq('id', id);
     fetchData();
   };
 
   const handleToggleAssigneeRole = async (assignee: Assignee) => {
+    if (isReadOnly) return;
     const cycle: Record<AssigneeRole, AssigneeRole> = {
       assignee: 'admin',
       admin: 'executive',
-      executive: 'assignee'
+      executive: 'viewer',
+      viewer: 'assignee'
     };
     const nextRole = cycle[assignee.role] || 'assignee';
     const encodedUnit = encodeMemberUnit(assignee.unit, nextRole, {
@@ -423,6 +449,7 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
 
   const handleSaveEditMember = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isReadOnly) return;
     if (!editingMember) return;
 
     const encodedUnit = encodeMemberUnit(editingMember.unit, editingMember.role, {
@@ -443,6 +470,7 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
   };
 
   const handleDeleteAssignee = async (id: string, name: string) => {
+    if (isReadOnly) return;
     if (confirm(`คุณต้องการลบรายชื่อ "${name}" ออกจากทีมใช่หรือไม่?`)) {
       await supabase.from('assignees').delete().eq('id', id);
       fetchData();
@@ -485,10 +513,12 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
     if (!newPricing.service_name || !newPricing.standard_price) return;
 
     const priceNum = parseFloat(newPricing.standard_price.replace(/,/g, '')) || 0;
+    const leadTimeNum = parseInt(newPricing.lead_time_days || '3', 10) || 3;
     const newEntry = {
       unit: newPricing.unit,
       service_name: newPricing.service_name,
       standard_price: priceNum,
+      lead_time_days: leadTimeNum,
       description: newPricing.description,
       is_active: true
     };
@@ -501,7 +531,7 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
     setPricingList(updated);
     await savePricingToCloud(updated as any);
 
-    setNewPricing({ unit: "creative", service_name: "", standard_price: "", description: "" });
+    setNewPricing({ unit: "creative", service_name: "", standard_price: "", lead_time_days: "3", description: "" });
   };
 
   const handleStartEditRow = (p: ServicePricing) => {
@@ -510,7 +540,8 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
       service_name: p.service_name,
       unit: p.unit,
       description: p.description || "",
-      standard_price: Number(p.standard_price) || 0
+      standard_price: Number(p.standard_price) || 0,
+      lead_time_days: p.lead_time_days || 3
     });
   };
 
@@ -527,7 +558,8 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
       service_name: editFormData.service_name.trim(),
       unit: editFormData.unit,
       description: editFormData.description.trim(),
-      standard_price: Number(editFormData.standard_price) || 0
+      standard_price: Number(editFormData.standard_price) || 0,
+      lead_time_days: Number(editFormData.lead_time_days) || 3
     };
 
     const updated = pricingList.map(p => p.id === id ? { ...p, ...updatePayload } : p);
@@ -541,6 +573,21 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
       const updated = pricingList.filter(p => p.id !== id);
       setPricingList(updated);
       await savePricingToCloud(updated as any);
+    }
+  };
+
+  const handleResetStandardLeadTimes = async () => {
+    if (confirm("ต้องการอัปเดตระยะเวลาเฉลี่ย (Lead Time) ทุกรายการให้เป็นไปตามจริงมาตรฐานทั่วไปของแต่ละงานใช่หรือไม่?")) {
+      const updated = pricingList.map(p => ({
+        ...p,
+        lead_time_days: getStandardLeadTimeForService(p.service_name)
+      }));
+      setPricingList(updated);
+      await savePricingToCloud(updated as any);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('cc_service_pricing', JSON.stringify(updated));
+      }
+      alert("อัปเดตระยะเวลาเฉลี่ยมาตรฐานจริงทุกรายการเรียบร้อยแล้วครับ");
     }
   };
 
@@ -575,6 +622,19 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
             <X size={20} />
           </button>
         </div>
+
+        {/* Read-Only Viewer Mode Notice Banner */}
+        {isReadOnly && (
+          <div className="bg-cyan-50 border-b border-cyan-200 px-6 py-2.5 flex items-center justify-between text-cyan-900 text-xs font-semibold">
+            <div className="flex items-center gap-2">
+              <Eye size={16} className="text-cyan-600 shrink-0" />
+              <span>โหมดผู้เข้าชม (Viewer Mode) • ดูการตั้งค่าระบบได้ทุกส่วนแบบอ่านอย่างเดียว (Read-Only) ไม่สามารถแก้ไข บันทึก หรือลบข้อมูลได้</span>
+            </div>
+            <span className="bg-cyan-100 text-cyan-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider border border-cyan-300">
+              Read Only
+            </span>
+          </div>
+        )}
 
         {/* Navigation Tabs */}
         <div className="flex px-6 pt-3 border-b border-slate-100 gap-8 bg-white">
@@ -645,7 +705,7 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                   <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                     <Plus size={16} className="text-primary" /> เพิ่มสมาชิกใหม่ในทีม (Add Team Member / Executive)
                   </h3>
-                  <span className="text-xs text-slate-500">กำหนดบทบาท Assignee, Admin หรือ Executive (ผู้บริหาร)</span>
+                  <span className="text-xs text-slate-500">กำหนดบทบาท Assignee, Admin หรือ Executive</span>
                 </div>
 
                 <form onSubmit={handleAddAssignee} className="space-y-4">
@@ -724,31 +784,25 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                     {/* สายงาน (Unit) */}
                     <div className="sm:col-span-4">
                       <label className="block text-xs font-semibold text-slate-600 mb-1">สายงาน (Unit)</label>
-                      <select 
-                        value={newAssignee.unit} 
-                        onChange={e => setNewAssignee({...newAssignee, unit: e.target.value})} 
-                        className="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-1 focus:ring-primary focus:border-primary"
-                      >
-                        <option value="creative">🎨 DESIGN (Creative)</option>
-                        <option value="content">📝 CONTENT (Content)</option>
-                        <option value="pr">📢 PR (Public Relations)</option>
-                        <option value="internal">💼 INTERNAL (งานภายในทีม CC)</option>
-                        <option value="management">👔 Management (ฝ่ายบริหาร)</option>
-                      </select>
+                      <CustomSelect
+                        value={newAssignee.unit}
+                        onChange={(val) => setNewAssignee({ ...newAssignee, unit: val })}
+                        options={ASSIGNEE_UNIT_OPTIONS}
+                        triggerClassName="w-full text-left text-sm border border-slate-300 rounded-lg px-3 py-2 bg-white hover:border-slate-400 transition-colors shadow-2xs font-medium"
+                        dropdownClassName="w-full shadow-xl border-slate-200 z-[100]"
+                      />
                     </div>
 
                     {/* สิทธิ์ใช้งาน (Role) */}
                     <div className="sm:col-span-4">
                       <label className="block text-xs font-semibold text-slate-600 mb-1">สิทธิ์ใช้งาน (Role)</label>
-                      <select 
-                        value={newAssignee.role} 
-                        onChange={e => setNewAssignee({...newAssignee, role: e.target.value as AssigneeRole})} 
-                        className="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-1 focus:ring-primary focus:border-primary font-medium"
-                      >
-                        <option value="assignee">👤 Assignee (ผู้ปฏิบัติงาน)</option>
-                        <option value="admin">🛡️ Admin (ผู้ดูแลระบบ)</option>
-                        <option value="executive">👔 Executive (ผู้บริหาร - สำหรับส่ง/รับอีเมล ไม่ใช่งานปฏิบัติการ)</option>
-                      </select>
+                      <CustomSelect
+                        value={newAssignee.role}
+                        onChange={(val) => setNewAssignee({ ...newAssignee, role: val as AssigneeRole })}
+                        options={ASSIGNEE_ROLE_OPTIONS}
+                        triggerClassName="w-full text-left text-sm border border-slate-300 rounded-lg px-3 py-2 bg-white hover:border-slate-400 transition-colors shadow-2xs font-medium"
+                        dropdownClassName="w-full shadow-xl border-slate-200 z-[100]"
+                      />
                     </div>
                   </div>
 
@@ -767,7 +821,7 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="px-5 py-3.5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                   <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    รายชื่อสมาชิกและผู้บริหารทั้งหมด ({assignees.length} คน)
+                    รายชื่อสมาชิกและ Executive ทั้งหมด ({assignees.length} คน)
                   </span>
                   <span className="text-[11px] text-slate-500">
                     *คลิกที่ป้ายบทบาทเพื่อสลับสิทธิ์ หรือกดไอคอนดินสอเพื่อแก้ไขข้อมูลทางการ
@@ -815,14 +869,17 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                           <td className="px-3 py-2.5 text-center whitespace-nowrap">
                             <button
                               onClick={() => handleToggleAssigneeRole(a)}
-                              className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold transition-all hover:scale-105 border ${
+                              disabled={isReadOnly}
+                              className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold transition-all border ${
                                 a.role === 'admin'
-                                    ? "bg-slate-900 text-amber-300 border-slate-700 shadow-sm"
-                                    : a.role === 'executive'
-                                    ? "bg-indigo-50 text-indigo-800 border-indigo-200 shadow-2xs font-bold"
-                                    : "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200"
-                              }`}
-                              title="คลิกเพื่อสลับบทบาท (Assignee -> Admin -> Executive)"
+                                  ? "bg-slate-900 text-amber-300 border-slate-700 shadow-sm"
+                                  : a.role === 'executive'
+                                  ? "bg-indigo-50 text-indigo-800 border-indigo-200 shadow-2xs font-bold"
+                                  : a.role === 'viewer'
+                                  ? "bg-cyan-50 text-cyan-800 border-cyan-200 shadow-2xs font-bold"
+                                  : "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200"
+                              } ${!isReadOnly ? "hover:scale-105 cursor-pointer" : "opacity-90 cursor-default"}`}
+                              title={isReadOnly ? "โหมดผู้เข้าชม (Read-Only)" : "คลิกเพื่อสลับบทบาท (Assignee -> Admin -> Executive -> Viewer)"}
                             >
                               {a.role === 'admin' ? (
                                 <>
@@ -830,7 +887,11 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                                 </>
                               ) : a.role === 'executive' ? (
                                 <>
-                                  <Briefcase size={12} className="text-indigo-600" /> ผู้บริหาร
+                                  <Briefcase size={12} className="text-indigo-600" /> Executive
+                                </>
+                              ) : a.role === 'viewer' ? (
+                                <>
+                                  <Eye size={12} className="text-cyan-600" /> Viewer
                                 </>
                               ) : (
                                 <>
@@ -972,34 +1033,7 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                     <button
                       type="button"
                       disabled={isSavingOKR}
-                      onClick={async () => {
-                        setIsSavingOKR(true);
-                        try {
-                          const updatedState: OKRSettingsState = {
-                            ...okrState,
-                            manualMetrics: {
-                              r5Reach: parseFloat(manualR5Input.replace(/,/g, '')) || 0,
-                              r6Engagement: parseFloat(manualR6Input.replace(/,/g, '')) || 0
-                            },
-                            lastUpdated: new Date().toISOString()
-                          };
-                          setOkrState(updatedState);
-                          const res = await saveOKRSettingsToSupabase(updatedState);
-                          if (res.success) {
-                            setIsResponsibilityLocked(true);
-                            setCloudSyncTime(updatedState.lastUpdated || null);
-                            setSaveOKRSuccess("☁️ บันทึกลงฐานข้อมูล Supabase และล็อกค่าเรียบร้อยแล้ว");
-                            setTimeout(() => setSaveOKRSuccess(null), 3500);
-                          } else {
-                            alert("เกิดข้อผิดพลาดในการบันทึก: " + res.error);
-                          }
-                        } catch (e: any) {
-                          console.error("Save error:", e);
-                          alert("เกิดข้อผิดพลาดในการบันทึก: " + (e?.message || "ไม่สามารถเชื่อมต่อฐานข้อมูล"));
-                        } finally {
-                          setIsSavingOKR(false);
-                        }
-                      }}
+                      onClick={() => handleSaveAllOKRSettings()}
                       className="text-xs font-bold px-4 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-1.5 shadow-xs transition-all hover:scale-[1.02]"
                     >
                       {isSavingOKR ? <RefreshCw size={14} className="animate-spin text-amber-400" /> : <Save size={14} className="text-amber-400" />}
@@ -1112,16 +1146,13 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
 
                         <div>
                           <label className="block text-[11px] font-semibold text-slate-500 mb-1">ไตรมาส</label>
-                          <select
+                          <CustomSelect
                             value={recordQuarter}
-                            onChange={(e) => setRecordQuarter(e.target.value as "Q1" | "Q2" | "Q3" | "Q4")}
-                            className="w-full text-xs font-bold text-slate-800 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white focus:border-purple-500 focus:outline-none"
-                          >
-                            <option value="Q1">Q1 (ต.ค. - ธ.ค.)</option>
-                            <option value="Q2">Q2 (ม.ค. - มี.ค.)</option>
-                            <option value="Q3">Q3 (เม.ย. - มิ.ย.)</option>
-                            <option value="Q4">Q4 (ก.ค. - ก.ย.)</option>
-                          </select>
+                            onChange={(val) => setRecordQuarter(val as "Q1" | "Q2" | "Q3" | "Q4")}
+                            options={OKR_QUARTER_OPTIONS}
+                            triggerClassName="w-full text-left text-xs font-bold text-slate-800 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white shadow-2xs hover:border-slate-300 transition-colors"
+                            dropdownClassName="w-48 shadow-xl border-slate-200 z-[100]"
+                          />
                         </div>
 
                         <div>
@@ -1342,26 +1373,38 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                   </div>
 
                   {/* Add KR Action Bar */}
-                  <div className="flex items-center justify-between gap-3 pt-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
                     <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
                       <Target size={15} className="text-primary" />
                       รายการเป้าหมาย KR และ R-Metrics ทั้งหมด ({okrState.krs.length} KRs)
                     </h3>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setNewKRForm({
-                          code: `KR${okrState.krs.length + 1}`,
-                          name: "",
-                          unit: "งาน",
-                          isCurrency: false
-                        });
-                        setShowAddKRModal(true);
-                      }}
-                      className="text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-1.5 shadow-xs transition-all"
-                    >
-                      <Plus size={13} /> เพิ่ม KR ใหม่
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={isSavingOKR}
+                        onClick={() => handleSaveAllOKRSettings()}
+                        className="text-xs font-bold px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 shadow-sm transition-all hover:scale-[1.02] disabled:opacity-50 cursor-pointer"
+                        title="บันทึกค่าเป้าหมาย KR และ R ทั้งหมดลงระบบถาวร"
+                      >
+                        {isSavingOKR ? <RefreshCw size={13} className="animate-spin" /> : <Save size={13} />}
+                        <span>{isSavingOKR ? "กำลังบันทึก..." : "💾 บันทึกเป้าหมาย KR & R"}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewKRForm({
+                            code: `KR${okrState.krs.length + 1}`,
+                            name: "",
+                            unit: "งาน",
+                            isCurrency: false
+                          });
+                          setShowAddKRModal(true);
+                        }}
+                        className="text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-1.5 shadow-xs transition-all"
+                      >
+                        <Plus size={13} /> เพิ่ม KR ใหม่
+                      </button>
+                    </div>
                   </div>
 
                   {/* KR Cards */}
@@ -1386,7 +1429,9 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                                   onChange={(e) => {
                                     const updated = [...okrState.krs];
                                     updated[krIndex].name = e.target.value;
-                                    setOkrState({ ...okrState, krs: updated });
+                                    const updatedState = { ...okrState, krs: updated };
+                                    setOkrState(updatedState);
+                                    saveStoredOKRSettings(updatedState);
                                   }}
                                   className="text-xs sm:text-sm font-bold text-slate-800 bg-transparent border-0 border-b border-transparent hover:border-slate-300 focus:border-primary px-1 py-0.5 rounded focus:bg-white focus:outline-none"
                                 />
@@ -1435,7 +1480,9 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                                 onClick={() => {
                                   if (confirm(`คุณต้องการลบเป้าหมาย ${kr.code} และ R ย่อยทั้งหมดใช่หรือไม่?`)) {
                                     const updated = okrState.krs.filter((_, i) => i !== krIndex);
-                                    setOkrState({ ...okrState, krs: updated });
+                                    const updatedState = { ...okrState, krs: updated };
+                                    setOkrState(updatedState);
+                                    saveStoredOKRSettings(updatedState);
                                   }
                                 }}
                                 className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors"
@@ -1473,7 +1520,9 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                                         onChange={(e) => {
                                           const updated = [...okrState.krs];
                                           updated[krIndex].rMetrics[rIndex].name = e.target.value;
-                                          setOkrState({ ...okrState, krs: updated });
+                                          const updatedState = { ...okrState, krs: updated };
+                                          setOkrState(updatedState);
+                                          saveStoredOKRSettings(updatedState);
                                         }}
                                         className="w-full bg-transparent border-0 border-b border-transparent hover:border-slate-200 focus:border-primary px-1 py-0.5 font-medium text-slate-800 focus:bg-white focus:outline-none rounded"
                                       />
@@ -1488,7 +1537,9 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                                             const val = parseFloat(e.target.value) || 0;
                                             const updated = [...okrState.krs];
                                             updated[krIndex].rMetrics[rIndex].targetValue = val;
-                                            setOkrState({ ...okrState, krs: updated });
+                                            const updatedState = { ...okrState, krs: updated };
+                                            setOkrState(updatedState);
+                                            saveStoredOKRSettings(updatedState);
                                           }}
                                           className="w-28 px-2 py-1 text-xs font-mono font-bold text-slate-800 border border-slate-200 rounded-lg text-right focus:outline-none focus:border-primary"
                                         />
@@ -1540,7 +1591,9 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                                           if (confirm(`คุณต้องการลบตัวชี้วัด ${r.code} ใช่หรือไม่?`)) {
                                             const updated = [...okrState.krs];
                                             updated[krIndex].rMetrics = updated[krIndex].rMetrics.filter((_, i) => i !== rIndex);
-                                            setOkrState({ ...okrState, krs: updated });
+                                            const updatedState = { ...okrState, krs: updated };
+                                            setOkrState(updatedState);
+                                            saveStoredOKRSettings(updatedState);
                                           }
                                         }}
                                         className="text-slate-400 hover:text-rose-600 p-1 rounded hover:bg-rose-50 transition-colors"
@@ -1578,11 +1631,22 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                   </div>
 
                   {/* Add TIP Button */}
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wide">
                       รายการตัวชี้วัดเชิงยุทธศาสตร์ ({okrState.tips.length} TIPs)
                     </h4>
-                    <button
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={isSavingOKR}
+                        onClick={() => handleSaveAllOKRSettings()}
+                        className="text-xs font-bold px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 shadow-sm transition-all hover:scale-[1.02] disabled:opacity-50 cursor-pointer"
+                        title="บันทึกค่าเป้าหมาย TIP ทั้งหมดลงระบบถาวร"
+                      >
+                        {isSavingOKR ? <RefreshCw size={13} className="animate-spin" /> : <Save size={13} />}
+                        <span>{isSavingOKR ? "กำลังบันทึก..." : "💾 บันทึกเป้าหมาย TIP"}</span>
+                      </button>
+                      <button
                       type="button"
                       onClick={() => {
                         setNewTIPForm({
@@ -1600,6 +1664,7 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                     >
                       <Plus size={13} /> เพิ่ม KPI/TIP ใหม่
                     </button>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1617,7 +1682,9 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                             onClick={() => {
                               if (confirm(`คุณต้องการลบตัวชี้วัด ${tip.code} ใช่หรือไม่?`)) {
                                 const updated = okrState.tips.filter((_, i) => i !== idx);
-                                setOkrState({ ...okrState, tips: updated });
+                                const updatedState = { ...okrState, tips: updated };
+                                setOkrState(updatedState);
+                                saveStoredOKRSettings(updatedState);
                               }
                             }}
                             className="text-slate-300 hover:text-rose-600 p-1 rounded hover:bg-rose-50 transition-colors"
@@ -1634,7 +1701,9 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                             onChange={(e) => {
                               const updated = [...okrState.tips];
                               updated[idx].name = e.target.value;
-                              setOkrState({ ...okrState, tips: updated });
+                              const updatedState = { ...okrState, tips: updated };
+                              setOkrState(updatedState);
+                              saveStoredOKRSettings(updatedState);
                             }}
                             className="text-sm font-bold text-slate-800 w-full bg-transparent border-0 border-b border-transparent hover:border-slate-200 focus:border-amber-500 px-1 py-0.5 rounded focus:bg-white focus:outline-none"
                           />
@@ -1643,7 +1712,9 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                             onChange={(e) => {
                               const updated = [...okrState.tips];
                               updated[idx].description = e.target.value;
-                              setOkrState({ ...okrState, tips: updated });
+                              const updatedState = { ...okrState, tips: updated };
+                              setOkrState(updatedState);
+                              saveStoredOKRSettings(updatedState);
                             }}
                             rows={2}
                             className="text-xs text-slate-500 mt-1 leading-relaxed w-full bg-transparent border-0 border-b border-transparent hover:border-slate-200 focus:border-amber-500 px-1 py-0.5 rounded focus:bg-white focus:outline-none resize-none"
@@ -1663,7 +1734,9 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                                 const val = parseFloat(e.target.value) || 0;
                                 const updated = [...okrState.tips];
                                 updated[idx].baseTarget = val;
-                                setOkrState({ ...okrState, tips: updated });
+                                const updatedState = { ...okrState, tips: updated };
+                                setOkrState(updatedState);
+                                saveStoredOKRSettings(updatedState);
                               }}
                               className="w-32 px-3 py-1.5 text-xs font-mono font-bold text-slate-900 border border-slate-200 rounded-xl text-right focus:outline-none focus:border-amber-500"
                             />
@@ -2208,29 +2281,43 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                 </div>
 
                 <form onSubmit={handleAddPricing} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-                  <div className="sm:col-span-3">
+                  <div className="sm:col-span-2">
                     <label className="block text-xs font-semibold text-slate-600 mb-1">สายงาน (Unit)</label>
-                    <select 
-                      value={newPricing.unit} 
-                      onChange={e => setNewPricing({...newPricing, unit: e.target.value})} 
-                      className="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 bg-white font-medium"
-                    >
-                      <option value="creative">🎨 DESIGN (Creative Designer)</option>
-                      <option value="content">📝 CONTENT (Content Creator)</option>
-                      <option value="pr">📢 PR (Public Relations)</option>
-                      <option value="internal">💼 INTERNAL (งานภายในทีม CC)</option>
-                    </select>
+                    <CustomSelect
+                      value={newPricing.unit}
+                      onChange={(val) => setNewPricing({ ...newPricing, unit: val })}
+                      options={PRICING_UNIT_OPTIONS}
+                      triggerClassName="w-full text-left text-sm border border-slate-300 rounded-lg px-3 py-2 bg-white hover:border-slate-400 transition-colors shadow-2xs font-medium"
+                      dropdownClassName="w-full shadow-xl border-slate-200 z-[100]"
+                    />
                   </div>
 
-                  <div className="sm:col-span-4">
-                    <label className="block text-xs font-semibold text-slate-600 mb-1">ชื่องาน / รายการบริการ (Service Name)</label>
+                  <div className="sm:col-span-3">
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">ชื่องาน / บริการ (Service Name)</label>
                     <input 
                       type="text" 
                       required 
                       value={newPricing.service_name} 
                       onChange={e => setNewPricing({...newPricing, service_name: e.target.value})} 
                       className="w-full text-sm border border-slate-300 rounded-lg px-3 py-2" 
-                      placeholder="เช่น Key Visual, Short Video" 
+                      placeholder="เช่น Key Visual, Print Poster" 
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold text-slate-600 mb-1 flex items-center justify-between">
+                      <span>ระยะเวลาเฉลี่ย (วัน)</span>
+                      <span className="text-[10px] text-amber-600 font-bold">ระยะเวลามาตรฐาน</span>
+                    </label>
+                    <input 
+                      type="number" 
+                      required 
+                      min="1"
+                      max="90"
+                      value={newPricing.lead_time_days} 
+                      onChange={e => setNewPricing({...newPricing, lead_time_days: e.target.value})} 
+                      className="w-full text-sm border border-amber-300 rounded-lg px-3 py-2 font-mono font-bold text-amber-800 bg-amber-50/40" 
+                      placeholder="เช่น 5" 
                     />
                   </div>
 
@@ -2243,7 +2330,7 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                       value={newPricing.standard_price} 
                       onChange={e => setNewPricing({...newPricing, standard_price: e.target.value})} 
                       className="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 font-mono font-bold text-slate-800" 
-                      placeholder="15000" 
+                      placeholder="1500" 
                     />
                   </div>
 
@@ -2298,17 +2385,26 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                   </div>
                   <div className="flex items-center gap-3">
                     <button
-                      onClick={() => {
+                      type="button"
+                      onClick={handleResetStandardLeadTimes}
+                      className="px-2.5 py-1 text-xs font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-md transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
+                      title="อัปเดตระยะเวลาเฉลี่ยให้เป็นไปตามจริงมาตรฐานทั่วไปของแต่ละงาน"
+                    >
+                      ⏱️ รีเซ็ตระยะเวลาเฉลี่ยมาตรฐานจริง
+                    </button>
+                    <button
+                      onClick={async () => {
                         if (confirm('คุณต้องการรีเซ็ตราคางานทั้งหมดเป็นค่าเริ่มต้นเฉลี่ยต่ำสุดของ STeP (Fastwork) ใช่หรือไม่?')) {
                           const initList: ServicePricing[] = DEFAULT_PRICING.map((item, idx) => ({
                             ...item,
                             id: 'init-' + idx + '-' + Date.now()
                           }));
                           setPricingList(initList);
+                          await savePricingToCloud(initList as any);
                           localStorage.setItem('cc_service_pricing', JSON.stringify(initList));
                         }
                       }}
-                      className="text-xs text-primary hover:underline font-semibold flex items-center gap-1"
+                      className="text-xs text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer"
                     >
                       ↺ รีเซ็ตเป็นราคามาตรฐาน STeP
                     </button>
@@ -2324,6 +2420,7 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                       <th className="px-4 py-3">ชื่องาน / รายการ (Deliverable)</th>
                       <th className="px-4 py-3">Unit</th>
                       <th className="px-4 py-3">คำอธิบาย</th>
+                      <th className="px-3 py-3 text-center whitespace-nowrap">ระยะเวลาเฉลี่ย (วัน)</th>
                       <th className="px-4 py-3 text-right">ราคามาตรฐาน (THB)</th>
                       <th className="px-4 py-3 text-right">จัดการ</th>
                     </tr>
@@ -2352,16 +2449,13 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                           {/* 2. Unit */}
                           <td className="px-4 py-3">
                             {isEditing ? (
-                              <select
-                                className="text-xs font-bold uppercase px-2 py-1.5 border border-slate-300 rounded-md focus:border-primary focus:outline-none bg-white shadow-xs"
+                              <CustomSelect
                                 value={editFormData.unit}
-                                onChange={e => setEditFormData({ ...editFormData, unit: e.target.value })}
-                              >
-                                <option value="creative">DESIGN (CREATIVE)</option>
-                                <option value="content">CONTENT</option>
-                                <option value="pr">PR</option>
-                                <option value="internal">INTERNAL</option>
-                              </select>
+                                onChange={(val) => setEditFormData({ ...editFormData, unit: val })}
+                                options={PRICING_UNIT_UPPER_OPTIONS}
+                                triggerClassName="text-left text-xs font-bold uppercase px-2.5 py-1.5 border border-slate-300 rounded-md bg-white shadow-xs hover:border-slate-400 transition-colors"
+                                dropdownClassName="w-48 shadow-xl border-slate-200 z-[100]"
+                              />
                             ) : (
                               <span className={`uppercase text-[10px] font-bold px-2.5 py-1 rounded-md border ${getUnitColor(p.unit)}`}>
                                 {p.unit?.toLowerCase() === 'creative' ? 'DESIGN' : p.unit?.toLowerCase() === 'content' ? 'CONTENT' : p.unit?.toLowerCase() === 'pr' ? 'PR' : p.unit}
@@ -2386,7 +2480,28 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                             )}
                           </td>
 
-                          {/* 4. Price */}
+                          {/* 4. Lead Time (ระยะเวลาเฉลี่ย วัน) */}
+                          <td className="px-3 py-3 text-center whitespace-nowrap">
+                            {isEditing ? (
+                              <div className="flex items-center justify-center gap-1">
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max="90"
+                                  className="w-16 text-center px-1.5 py-1.5 text-xs font-mono font-bold border border-amber-300 rounded-md focus:border-amber-500 focus:outline-none bg-amber-50/50 shadow-xs"
+                                  value={editFormData.lead_time_days}
+                                  onChange={e => setEditFormData({ ...editFormData, lead_time_days: parseInt(e.target.value, 10) || 1 })}
+                                />
+                                <span className="text-slate-500 text-xs font-medium">วัน</span>
+                              </div>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                ⏱️ {p.lead_time_days ?? getStandardLeadTimeForService(p.service_name)} วัน
+                              </span>
+                            )}
+                          </td>
+
+                          {/* 5. Price */}
                           <td className="px-4 py-3 text-right">
                             {isEditing ? (
                               <div className="flex items-center justify-end">
@@ -2676,7 +2791,7 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
           {/* TAB 5: GOOGLE SHEET SYNC */}
           {activeTab === "sheets-sync" && (
             <div className="space-y-6 animate-in fade-in duration-200">
-              <GoogleSheetsSyncHub assignees={assignees} />
+              <GoogleSheetsSyncHub tasks={activeBriefs} assignees={assignees} />
             </div>
           )}
 
@@ -2694,12 +2809,25 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
             <AlertCircle size={14} className="text-slate-400" />
             <span>การเปลี่ยนแปลงจะมีผลต่อการคำนวณในระบบทันที</span>
           </div>
-          <button
-            onClick={onClose}
-            className="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-lg transition-colors"
-          >
-            ปิดหน้าต่าง (Close)
-          </button>
+          <div className="flex items-center gap-2">
+            {activeTab === "okr" && (
+              <button
+                type="button"
+                disabled={isSavingOKR}
+                onClick={() => handleSaveAllOKRSettings()}
+                className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition-all flex items-center gap-1.5 shadow-sm hover:scale-[1.02] disabled:opacity-50 cursor-pointer"
+              >
+                {isSavingOKR ? <RefreshCw size={13} className="animate-spin" /> : <Save size={13} />}
+                <span>{isSavingOKR ? "กำลังบันทึก..." : "💾 บันทึกเป้าหมาย (Save All)"}</span>
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-lg transition-colors"
+            >
+              ปิดหน้าต่าง (Close)
+            </button>
+          </div>
         </div>
 
       </div>
@@ -2844,29 +2972,23 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1">สายงาน (Unit)</label>
-                  <select
+                  <CustomSelect
                     value={editingMember.unit}
-                    onChange={(e) => setEditingMember({ ...editingMember, unit: e.target.value })}
-                    className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-1 focus:ring-primary"
-                  >
-                    <option value="creative">🎨 DESIGN (Creative)</option>
-                    <option value="content">📝 CONTENT (Content)</option>
-                    <option value="pr">📢 PR (Public Relations)</option>
-                    <option value="internal">💼 INTERNAL (งานภายในทีม CC)</option>
-                    <option value="management">👔 Management (ฝ่ายบริหาร)</option>
-                  </select>
+                    onChange={(val) => setEditingMember({ ...editingMember, unit: val })}
+                    options={ASSIGNEE_UNIT_OPTIONS}
+                    triggerClassName="w-full text-left text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white hover:border-slate-400 transition-colors shadow-2xs font-medium"
+                    dropdownClassName="w-full shadow-xl border-slate-200 z-[100]"
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1">บทบาท (Role)</label>
-                  <select
+                  <CustomSelect
                     value={editingMember.role}
-                    onChange={(e) => setEditingMember({ ...editingMember, role: e.target.value as AssigneeRole })}
-                    className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white font-bold focus:ring-1 focus:ring-primary"
-                  >
-                    <option value="assignee">👤 Assignee (ผู้ปฏิบัติงาน)</option>
-                    <option value="admin">🛡️ Admin (ผู้ดูแลระบบ)</option>
-                    <option value="executive">👔 Executive (ผู้บริหาร - สำหรับส่งอีเมล)</option>
-                  </select>
+                    onChange={(val) => setEditingMember({ ...editingMember, role: val as AssigneeRole })}
+                    options={ASSIGNEE_ROLE_OPTIONS}
+                    triggerClassName="w-full text-left text-xs font-bold border border-slate-300 rounded-lg px-3 py-2 bg-white hover:border-slate-400 transition-colors shadow-2xs"
+                    dropdownClassName="w-full shadow-xl border-slate-200 z-[100]"
+                  />
                 </div>
               </div>
 
@@ -2943,14 +3065,13 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1">เป็นมูลค่าเงิน (บาท)?</label>
-                  <select
+                  <CustomSelect
                     value={newKRForm.isCurrency ? "yes" : "no"}
-                    onChange={(e) => setNewKRForm({ ...newKRForm, isCurrency: e.target.value === "yes" })}
-                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white"
-                  >
-                    <option value="no">ไม่ใช่ (นับเป็นจำนวน)</option>
-                    <option value="yes">ใช่ (เป็นยอดเงินบาท)</option>
-                  </select>
+                    onChange={(val) => setNewKRForm({ ...newKRForm, isCurrency: val === "yes" })}
+                    options={KR_CURRENCY_OPTIONS}
+                    triggerClassName="w-full text-left text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white hover:border-slate-400 transition-colors shadow-2xs font-medium"
+                    dropdownClassName="w-full shadow-xl border-slate-200 z-[100]"
+                  />
                 </div>
               </div>
 
@@ -3062,14 +3183,13 @@ export default function SetupModal({ onClose }: { onClose: () => void }) {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1">ประเภทการประมวลผล</label>
-                  <select
+                  <CustomSelect
                     value={newRForm.manualInput ? "manual" : "auto"}
-                    onChange={(e) => setNewRForm({ ...newRForm, manualInput: e.target.value === "manual" })}
-                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white"
-                  >
-                    <option value="auto">⚡ คำนวณอัตโนมัติจากงาน</option>
-                    <option value="manual">✍️ กรอกสะสมเอง</option>
-                  </select>
+                    onChange={(val) => setNewRForm({ ...newRForm, manualInput: val === "manual" })}
+                    options={R_COMPUTE_OPTIONS}
+                    triggerClassName="w-full text-left text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white hover:border-slate-400 transition-colors shadow-2xs font-medium"
+                    dropdownClassName="w-full shadow-xl border-slate-200 z-[100]"
+                  />
                 </div>
               </div>
             </div>

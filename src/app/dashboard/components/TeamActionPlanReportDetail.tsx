@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   CalendarDays,
   ExternalLink,
@@ -21,7 +21,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Briefcase,
-  Sparkles
+  Sparkles,
+  Eye
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import ModernDatePicker from "@/components/ModernDatePicker";
@@ -59,188 +60,9 @@ export interface InternalPmProject {
   progress: number;
 }
 
-export const DEFAULT_INTERNAL_PM_PROJECTS: InternalPmProject[] = [
-  {
-    id: "pm-int-01",
-    code: "PM-CC-01",
-    title: "โครงการพัฒนาอัตลักษณ์และระบบบรรจุภัณฑ์สินค้าเกษตรนวัตกรรม (Northern Agro-Packaging PM)",
-    unit: "งานออกแบบ",
-    pmName: "นายอัจชนะพงษ์ อัจชนะวราทา",
-    pmCode: "จ๊อบ AA",
-    budget: "฿150,000",
-    kpi: "ส่งมอบงานออกแบบตราสินค้า บรรจุภัณฑ์ และคู่มือ CI ครบ 100%",
-    deadline: "2027-06-30",
-    status: "in_progress",
-    progress: 70
-  },
-  {
-    id: "pm-int-02",
-    code: "PM-CC-02",
-    title: "โครงการขับเคลื่อนแคมเปญสื่อสารภาพลักษณ์นวัตกรรมอุทยานฯ RSP North Expo 2027",
-    unit: "สื่อสารองค์กร",
-    pmName: "นางสาวสุทธิอาภา คุ้มครอง",
-    pmCode: "ลูกอิน STK",
-    budget: "฿85,000",
-    kpi: "เผยแพร่สื่อมวลชนระดับประเทศ ≥ 50 ชิ้น และจัดแถลงข่าว 2 ครั้ง",
-    deadline: "2027-08-31",
-    status: "in_progress",
-    progress: 80
-  },
-  {
-    id: "pm-int-03",
-    code: "PM-CC-03",
-    title: "โครงการผลิตสื่อสร้างสรรค์และมัลติมีเดีย Virtual Lab STeP 360 Interactive",
-    unit: "ผลิตสื่อสร้างสรรค์",
-    pmName: "นางสาวศิริลักษณ์ กันจะนะ",
-    pmCode: "เอ็นจอย SLR",
-    budget: "฿120,000",
-    kpi: "ระบบ Virtual Tour 360 และวิดีโอแนะนำแล็บเสร็จสมบูรณ์พร้อมใช้งาน",
-    deadline: "2027-09-30",
-    status: "in_progress",
-    progress: 65
-  },
-  {
-    id: "pm-int-04",
-    code: "PM-CC-04",
-    title: "โครงการบริหารคุณภาพและระบบควบคุมมาตรฐานการบริการ ISO 9001:2015 CC Hub",
-    unit: "บริหารทีม",
-    pmName: "นางสาวศิวพร พงศ์ประยูร",
-    pmCode: "วา WK",
-    budget: "฿50,000",
-    kpi: "ผ่านการ Audit มาตรฐาน ISO 9001:2015 ผล CAR = 0",
-    deadline: "2027-09-30",
-    status: "in_progress",
-    progress: 90
-  },
-  {
-    id: "pm-int-05",
-    code: "PM-CC-05",
-    title: "โครงการ Creative Design Showcase & นิทรรศการผลงานนวัตกรรมสร้างสรรค์",
-    unit: "งานออกแบบ",
-    pmName: "นางสาวอัจฉราภรณ์ ศักดาวงศ์เสรี",
-    pmCode: "พิม AC",
-    budget: "฿95,000",
-    kpi: "จัดนิทรรศการและส่งผลงานประกวดระดับประเทศ 2 ชิ้นงาน",
-    deadline: "2027-05-31",
-    status: "in_progress",
-    progress: 75
-  }
-];
+export const DEFAULT_INTERNAL_PM_PROJECTS: InternalPmProject[] = [];
 
-const DEFAULT_ACTION_PLANS: ActionPlanItem[] = [
-  {
-    id: "ap-1",
-    code: "CC-ACT-01",
-    title: "จัดทำ Brand CI Guidelines & Template Hub อุทยานฯ ฉบับสมบูรณ์ 2027",
-    unit: "งานออกแบบ",
-    assignee: "นางสาวรติพร กัลปพฤกษ์",
-    assigneeCode: "จอย RL",
-    startDate: "2026-10-01",
-    endDate: "2026-12-31",
-    kpi: "คู่มือ CI 1 เล่ม + เทมเพลต 20 ชุดพร้อมใช้",
-    budget: "฿30,000",
-    status: "completed",
-    progress: 100
-  },
-  {
-    id: "ap-2",
-    code: "CC-ACT-02",
-    title: "ยกระดับการผลิต Key Visual & งานออกแบบนวัตกรรมเพื่อรางวัล Good Design Award",
-    unit: "งานออกแบบ",
-    assignee: "นางสาวอัจฉราภรณ์ ศักดาวงศ์เสรี",
-    assigneeCode: "พิม AC",
-    startDate: "2027-01-01",
-    endDate: "2027-03-31",
-    kpi: "ส่งผลงานประกวด 2 ผลงาน / ได้รับรางวัล 1 รางวัล",
-    budget: "฿50,000",
-    status: "completed",
-    progress: 100
-  },
-  {
-    id: "ap-3",
-    code: "CC-ACT-03",
-    title: "พัฒนาระบบ Creative Trend Radar & สรุปบทวิเคราะห์สื่อดิจิทัลทุกไตรมาส",
-    unit: "งานออกแบบ",
-    assignee: "นางสาวมัทนิน ยงค์ไสว",
-    assigneeCode: "นิน MTN",
-    startDate: "2026-10-01",
-    endDate: "2027-09-30",
-    kpi: "รายงาน Trend Radar ครบ 4 ไตรมาส",
-    budget: "฿15,000",
-    status: "in_progress",
-    progress: 75
-  },
-  {
-    id: "ap-4",
-    code: "CC-ACT-04",
-    title: "จัดทำแคมเปญข่าวประชาสัมพันธ์ RSP Innovation Stories เผยแพร่สื่อมวลชน 50 ชิ้น",
-    unit: "สื่อสารองค์กร",
-    assignee: "นางสาวสุทธิอาภา คุ้มครอง",
-    assigneeCode: "ลูกอิน STK",
-    startDate: "2026-10-01",
-    endDate: "2027-09-30",
-    kpi: "ข่าวเผยแพร่ผ่านสื่อระดับประเทศ ≥ 50 ชิ้น",
-    budget: "฿60,000",
-    status: "in_progress",
-    progress: 85
-  },
-  {
-    id: "ap-5",
-    code: "CC-ACT-05",
-    title: "โครงการ Press Tour สื่อมวลชนสัญจรชมสตาร์ทอัพและแล็บนวัตกรรม มช.",
-    unit: "สื่อสารองค์กร",
-    assignee: "นางสาวชนนิกานต์ บุญแก้ว",
-    assigneeCode: "โอ๊ต CNB",
-    startDate: "2027-04-01",
-    endDate: "2027-06-30",
-    kpi: "สื่อมวลชนเข้าร่วม ≥ 15 สำนักข่าว",
-    budget: "฿80,000",
-    status: "completed",
-    progress: 100
-  },
-  {
-    id: "ap-6",
-    code: "CC-ACT-06",
-    title: "ซีรีส์วิดีโอสั้น 'วิทย์ฯ นอกกรอบ' (Short-form Video Reels & TikTok) 36 ตอน",
-    unit: "ผลิตสื่อสร้างสรรค์",
-    assignee: "นางสาวศิริลักษณ์ กันจะนะ",
-    assigneeCode: "เอ็นจอย SLR",
-    startDate: "2026-10-01",
-    endDate: "2027-09-30",
-    kpi: "ผลิตคลิปครบ 36 ตอน ยอดรับชมสะสม ≥ 500,000 วิว",
-    budget: "฿45,000",
-    status: "in_progress",
-    progress: 80
-  },
-  {
-    id: "ap-7",
-    code: "CC-ACT-07",
-    title: "ผลิตสื่อมัลติมีเดีย Virtual Tour แนะนำอุทยานวิทยาศาสตร์ฯ ระบบ Interactive 360",
-    unit: "ผลิตสื่อสร้างสรรค์",
-    assignee: "นางสาวกัลยกร อภิวงศ์",
-    assigneeCode: "แก้ว KYK",
-    startDate: "2027-07-01",
-    endDate: "2027-09-30",
-    kpi: "ระบบ Virtual Tour พร้อมใช้งานบนเว็บไซต์",
-    budget: "฿70,000",
-    status: "in_progress",
-    progress: 60
-  },
-  {
-    id: "ap-8",
-    code: "CC-ACT-08",
-    title: "ระบบบริหารคุณภาพ ISO 9001:2015 และติดตาม WI-CC-001 ถึง 005 แบบเรียลไทม์",
-    unit: "บริหารทีม",
-    assignee: "นายอัจชนะพงษ์ อัจชนะวราทา",
-    assigneeCode: "จ๊อบ AA",
-    startDate: "2026-10-01",
-    endDate: "2027-09-30",
-    kpi: "ผ่านการ Audit ISO 9001 ผลประเมิน CAR = 0",
-    budget: "฿25,000",
-    status: "in_progress",
-    progress: 92
-  }
-];
+const DEFAULT_ACTION_PLANS: ActionPlanItem[] = [];
 
 export function getFiscalYearConfig(thaiFiscalYear: number) {
   const christianEndYear = thaiFiscalYear - 543;
@@ -342,10 +164,19 @@ const migratePlansToFY2570 = (items: ActionPlanItem[]): ActionPlanItem[] => {
 };
 
 export default function TeamActionPlanReportDetail() {
+  const isCloudLoadedRef = useRef(false);
+  const [currentUserRole] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("cc_user_role") || "admin";
+    }
+    return "admin";
+  });
+  const isViewer = currentUserRole === "viewer";
+
   const [plans, setPlans] = useState<ActionPlanItem[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const saved = localStorage.getItem("cc_team_action_plan_v1");
+        const saved = localStorage.getItem("cc_team_action_plan_v2_fy70") || localStorage.getItem("cc_team_action_plan_v1");
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -356,15 +187,17 @@ export default function TeamActionPlanReportDetail() {
         console.error(e);
       }
     }
-    return DEFAULT_ACTION_PLANS;
+    return [];
   });
 
   // Save plans to Supabase Cloud + LocalStorage
   useEffect(() => {
-    if (plans && plans.length > 0) {
-      setCloudJson(CLOUD_KEYS.TEAM_ACTION_PLAN, plans, "cc_team_action_plan_v1");
+    if (!isCloudLoadedRef.current) return;
+    if (isViewer) return;
+    if (plans) {
+      setCloudJson(CLOUD_KEYS.TEAM_ACTION_PLAN, plans, "cc_team_action_plan_v2_fy70");
     }
-  }, [plans]);
+  }, [plans, isViewer]);
 
   const [viewMode, setViewMode] = useState<"timeline" | "table">("timeline");
   const [unitFilter, setUnitFilter] = useState("ALL");
@@ -380,8 +213,8 @@ export default function TeamActionPlanReportDetail() {
 
   // Import PM Project State
   const [showPmImportModal, setShowPmImportModal] = useState(false);
-  const [availablePmProjects, setAvailablePmProjects] = useState<InternalPmProject[]>(DEFAULT_INTERNAL_PM_PROJECTS);
-  const [selectedPmProjectId, setSelectedPmProjectId] = useState<string>(DEFAULT_INTERNAL_PM_PROJECTS[0].id);
+  const [availablePmProjects, setAvailablePmProjects] = useState<InternalPmProject[]>([]);
+  const [selectedPmProjectId, setSelectedPmProjectId] = useState<string>("");
   const [pmStartDate, setPmStartDate] = useState(`${fiscalConfig.christianStartYear}-10-01`);
   const [pmEndDate, setPmEndDate] = useState(`${fiscalConfig.christianEndYear}-09-30`);
 
@@ -403,15 +236,21 @@ export default function TeamActionPlanReportDetail() {
       try {
         const cloudData = await getCloudJson<ActionPlanItem[]>(
           CLOUD_KEYS.TEAM_ACTION_PLAN,
-          "cc_team_action_plan_v1",
-          DEFAULT_ACTION_PLANS
+          "cc_team_action_plan_v2_fy70",
+          []
         );
-        if (cloudData && cloudData.length > 0) {
+        if (cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
           const migrated = migratePlansToFY2570(cloudData);
-          setPlans(migrated);
+          setPlans(prev => {
+            const prevStr = JSON.stringify(prev);
+            const nextStr = JSON.stringify(migrated);
+            return prevStr === nextStr ? prev : migrated;
+          });
         }
       } catch (e) {
         console.error("Error loading action plans from cloud:", e);
+      } finally {
+        isCloudLoadedRef.current = true;
       }
     }
     loadCloudPlans();
@@ -424,9 +263,7 @@ export default function TeamActionPlanReportDetail() {
         const supabase = createClient();
         const [briefsRes, assigneesRes] = await Promise.all([
           supabase
-            .from("briefs")
-            .select("id, project_name, unit, status, priority, deadline, created_at, assignee_id, coordinator_nickname, details")
-            .order("created_at", { ascending: false }),
+            .from("briefs").select("id, project_name, unit, status, priority, deadline, created_at, assignee_id, coordinator_nickname, details").neq("status", "purged").order("created_at", { ascending: false }),
           supabase
             .from("assignees")
             .select("id, name, unit")
@@ -477,7 +314,7 @@ export default function TeamActionPlanReportDetail() {
               };
             });
 
-            const combined = [...mapped, ...DEFAULT_INTERNAL_PM_PROJECTS.filter(d => !mapped.some(m => m.code === d.code))];
+            const combined = mapped;
             setAvailablePmProjects(combined);
             if (combined.length > 0) {
               setSelectedPmProjectId(combined[0].id);
@@ -546,7 +383,7 @@ export default function TeamActionPlanReportDetail() {
 
   const handleResetToDefault = () => {
     if (confirm("ต้องการรีเซ็ตกลับเป็นข้อมูลตัวอย่างเริ่มต้นใช่หรือไม่?")) {
-      saveToStorage(DEFAULT_ACTION_PLANS);
+      saveToStorage([]);
     }
   };
 
@@ -682,23 +519,33 @@ export default function TeamActionPlanReportDetail() {
               buttonText="Export Data"
             />
 
-            {/* Button to import from Internal PM Project */}
-            <button
-              onClick={() => setShowPmImportModal(true)}
-              className="px-4 py-2 text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-full inline-flex items-center gap-1.5 shadow-2xs cursor-pointer active:scale-95 transition-all"
-              title="ดึงโครงการที่มี CC เป็น PM ใน Internal มาลงแผนงาน"
-            >
-              <Briefcase size={14} className="text-amber-700" />
-              <span>+ เพิ่มจากโครงการ PM (Internal)</span>
-            </button>
+            {/* If viewer, show read-only badge, otherwise show import and add buttons */}
+            {isViewer ? (
+              <div className="px-3.5 py-2 text-xs font-semibold text-cyan-800 bg-cyan-50 border border-cyan-200 rounded-full inline-flex items-center gap-1.5 shadow-2xs">
+                <Eye size={13} className="text-cyan-600" />
+                <span>โหมดผู้เข้าชม (Read-Only)</span>
+              </div>
+            ) : (
+              <>
+                {/* Button to import from Internal PM Project */}
+                <button
+                  onClick={() => setShowPmImportModal(true)}
+                  className="px-4 py-2 text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-full inline-flex items-center gap-1.5 shadow-2xs cursor-pointer active:scale-95 transition-all"
+                  title="ดึงโครงการที่มี CC เป็น PM ใน Internal มาลงแผนงาน"
+                >
+                  <Briefcase size={14} className="text-amber-700" />
+                  <span>+ เพิ่มจากโครงการ PM (Internal)</span>
+                </button>
 
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="px-4 py-2 text-xs font-bold text-white bg-[#E03131] hover:bg-[#c92a2a] rounded-full inline-flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95 transition-all"
-            >
-              <Plus size={14} />
-              <span>เพิ่มโครงการใหม่</span>
-            </button>
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className="px-4 py-2 text-xs font-bold text-white bg-[#E03131] hover:bg-[#c92a2a] rounded-full inline-flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95 transition-all"
+                >
+                  <Plus size={14} />
+                  <span>เพิ่มโครงการใหม่</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -1253,22 +1100,26 @@ export default function TeamActionPlanReportDetail() {
                         </div>
                       </td>
                       <td className="py-3 px-3 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => handleStartEdit(item)}
-                            title="แก้ไขรายการนี้"
-                            className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-all cursor-pointer"
-                          >
-                            <Edit2 size={13} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(item.id)}
-                            title="ลบรายการ"
-                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
+                        {!isViewer ? (
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => handleStartEdit(item)}
+                              title="แก้ไขรายการนี้"
+                              className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-all cursor-pointer"
+                            >
+                              <Edit2 size={13} />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(item.id)}
+                              title="ลบรายการ"
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-slate-400 font-medium italic">Read-only</span>
+                        )}
                       </td>
                     </tr>
                   );

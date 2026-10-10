@@ -289,202 +289,122 @@ export interface PressReleaseItem {
   reporterName: string;
   reporterContact: string;
   details: string;
+  attachmentName?: string;
+  notes?: string;
   status: "published" | "pending_review" | "draft";
   clippingList?: Array<{ name: string; url: string; date: string }>;
 }
 
 // Initial realistic dataset across Northern universities
-const INITIAL_PRESS_RELEASES: PressReleaseItem[] = [
-  {
-    id: "pr-001",
-    code: "RSP-PR-2026-001",
-    universityId: "cmu",
-    title: "อุทยานวิทยาศาสตร์ภาคเหนือ (RSP) โชว์ศักยภาพผลงานวิจัยและนวัตกรรมสู่เชิงพาณิชย์ ในงาน Lanna Innovation Expo",
-    date: "2026-09-12",
-    targetAudience: "ข่าวการจัดกิจกรรม/โครงการ",
-    mediaTypes: ["online", "print", "tv"],
-    clippingsCount: 14,
-    prValue: 420000,
-    newsUrl: "https://www.bangkokbiznews.com/tech/rsp-cmu-2026",
-    reporterName: "คุณวิภาวรรณ สุขประเสริฐ",
-    reporterContact: "081-445-1234 (wipawan@step.cmu.ac.th)",
-    details: "แถลงข่าวผลการดำเนินงานการขับเคลื่อนเทคโนโลยี Deep Tech และการเชื่อมโยงผู้ประกอบการภาคเหนือสู่ตลาดระดับประเทศ",
-    status: "published",
-    clippingList: [
-      { name: "กรุงเทพธุรกิจ ออนไลน์", url: "https://bangkokbiznews.com", date: "2026-09-12" },
-      { name: "ไทยรัฐ ฉบับพิมพ์", url: "#", date: "2026-09-13" },
-      { name: "Thai PBS รายการจับตาสถานการณ์", url: "#", date: "2026-09-12" }
-    ]
-  },
-  {
-    id: "pr-002",
-    code: "RSP-PR-2026-002",
-    universityId: "mju",
-    title: "มหาวิทยาลัยแม่โจ้ หนุนสตาร์ตอัปเกษตรอัจฉริยะ คว้ารางวัลชนะเลิศระดับชาติ โครงการ IRTC 2026",
-    date: "2026-09-08",
-    targetAudience: "ข่าว Success case",
-    mediaTypes: ["online", "print"],
-    clippingsCount: 10,
-    prValue: 280000,
-    newsUrl: "https://www.thairath.co.th/news/mju-irtc-winner",
-    reporterName: "อ.ดร.ปรเมศวร์ มั่นคง",
-    reporterContact: "089-756-3321",
-    details: "ผลงานทีมวิจัยและนักศึกษาแม่โจ้ในการใช้ชีวภัณฑ์ลดการใช้สารเคมีในแปลงผักอินทรีย์",
-    status: "published"
-  },
-  {
-    id: "pr-003",
-    code: "RSP-PR-2026-003",
-    universityId: "nu",
-    title: "อุทยานวิทยาศาสตร์ ม.นเรศวร จับมือภาคเอกชน เปิดตัวสารสกัดสมุนไพรลดริ้วรอยจากใบมะม่วงมหาชนก",
-    date: "2026-09-02",
-    targetAudience: "ข่าวประชาสัมพันธ์บริการ",
-    mediaTypes: ["online", "tv"],
-    clippingsCount: 12,
-    prValue: 350000,
-    newsUrl: "https://mgronline.com/local/nu-herb-cosmetics",
-    reporterName: "คุณชานนท์ สว่างอารมณ์",
-    reporterContact: "084-332-9090",
-    details: "ถ่ายทอดเทคโนโลยีสู่ภาคอุตสาหกรรมเครื่องสำอางไทย พร้อมจำหน่ายตลาดเอเชีย",
-    status: "published"
-  },
-  {
-    id: "pr-004",
-    code: "RSP-PR-2026-004",
-    universityId: "mfu",
-    title: "ม.แม่ฟ้าหลวง ผลักดันผู้ประกอบการชาอัสสัมเชียงราย สู่ผลิตภัณฑ์ Well-being ระดับพรีเมียม",
-    date: "2026-08-28",
-    targetAudience: "ข่าว Success case",
-    mediaTypes: ["online", "print"],
-    clippingsCount: 8,
-    prValue: 210000,
-    newsUrl: "https://www.chiangmaicitylife.com/mfu-assam-tea",
-    reporterName: "คุณลลิตา ธนาพงศ์",
-    reporterContact: "086-901-2244",
-    details: "โครงการพัฒนาชาพื้นถิ่นภาคเหนือสู่ผลิตภัณฑ์ชะลอวัยด้วยวิทยาศาสตร์อาหาร",
-    status: "published"
-  },
-  {
-    id: "pr-005",
-    code: "RSP-PR-2026-005",
-    universityId: "up",
-    title: "ม.พะเยา ขับเคลื่อนเศรษฐกิจฐานราก ถ่ายทอดองค์ความรู้การเพาะเลี้ยงแมลงโปรตีนทางเลือก (BSF) สู่ชุมชน",
-    date: "2026-08-22",
-    targetAudience: "ข่าวประชาสัมพันธ์บริการ",
-    mediaTypes: ["online"],
-    clippingsCount: 7,
-    prValue: 160000,
-    newsUrl: "https://www.posttoday.com/up-bsf-protein",
-    reporterName: "คุณกฤษณะ แก้วคำ",
-    reporterContact: "081-889-4455",
-    details: "การบริหารจัดการขยะอินทรีย์และการสร้างรายได้เสริมให้กลุ่มเกษตรกรจังหวัดพะเยา",
-    status: "published"
-  },
-  {
-    id: "pr-006",
-    code: "RSP-PR-2026-006",
-    universityId: "rmutl",
-    title: "มทร.ล้านนา ประกาศความสำเร็จนวัตกรรมเครื่องขึ้นรูปเซรามิกประหยัดพลังงาน ช่วยผู้ประกอบการลำปางลดต้นทุน 40%",
-    date: "2026-08-15",
-    targetAudience: "ข่าว Success case",
-    mediaTypes: ["online", "print", "tv"],
-    clippingsCount: 15,
-    prValue: 460000,
-    newsUrl: "https://www.thansettakij.com/rmutl-ceramic-tech",
-    reporterName: "ดร.วิโรจน์ แสนสมบูรณ์",
-    reporterContact: "083-221-8877",
-    details: "เครื่องขึ้นรูประบบกึ่งอัตโนมัติที่พัฒนาโดยอาจารย์และนักศึกษาสาขาวิศวกรรมศาสตร์",
-    status: "published"
-  },
-  {
-    id: "pr-007",
-    code: "RSP-PR-2026-007",
-    universityId: "cmru",
-    title: "มรภ.เชียงใหม่ ปลุกกระแสผ้าทอย้อมสีธรรมชาติล้านนาประยุกต์ ชนะเลิศประกวดนวัตกรรมสร้างสรรค์ R2M ระดับภาคเหนือ",
-    date: "2026-08-08",
-    targetAudience: "ข่าวประชาสัมพันธ์ (โครงการที่รับสมัครจะต้องไม่เป็นโครงการที่ทำเหมือนกันทุกมหาวิทยาลัย)",
-    mediaTypes: ["online"],
-    clippingsCount: 9,
-    prValue: 190000,
-    newsUrl: "https://www.khaosod.co.th/cmru-r2m-weaving",
-    reporterName: "คุณปิยะพร คำมูล",
-    reporterContact: "087-654-3210",
-    details: "การนำสูตรสีธรรมชาติจากใบสักและดอกทองกวาวมาย้อมเส้นใยไหมประยุกต์",
-    status: "published"
-  },
-  {
-    id: "pr-008",
-    code: "RSP-PR-2026-008",
-    universityId: "crru",
-    title: "มรภ.เชียงราย เปิดศูนย์บ่มเพาะวิสาหกิจชุมชนชายแดน ผลักดันผลไม้แปรรูปข้ามพรมแดนสู่ยูนนาน",
-    date: "2026-07-29",
-    targetAudience: "ข่าวผู้บริหารกระทรวง อว. ลงพื้นที่ติดตามงาน หรือประชุม ที่เกี่ยวข้องกับเครือข่ายมหาวิทยาลัยฯ",
-    mediaTypes: ["online", "print"],
-    clippingsCount: 11,
-    prValue: 270000,
-    newsUrl: "https://www.matichon.co.th/crru-cross-border-biz",
-    reporterName: "คุณสมพร อินต๊ะ",
-    reporterContact: "089-112-4433",
-    details: "การจับคู่เจรจาธุรกิจออนไลน์กับกลุ่มทุนการค้าปลีกมณฑลยูนนาน ประเทศจีน",
-    status: "published"
-  },
-  {
-    id: "pr-009",
-    code: "RSP-PR-2026-009",
-    universityId: "psru",
-    title: "มรภ.พิบูลสงคราม พัฒนาชุดตรวจคัดกรองเชื้อโรคในกล้วยตากบางกระทุ่ม สร้างมาตรฐานส่งออกสู่ยุโรป",
-    date: "2026-07-18",
-    targetAudience: "ข่าวผู้บริหารเข้าร่วมกิจกรรมของกระทรวง อว.",
-    mediaTypes: ["online", "print"],
-    clippingsCount: 8,
-    prValue: 200000,
-    newsUrl: "https://www.dailynews.co.th/psru-dried-banana",
-    reporterName: "คุณชัยยุทธ ทองดี",
-    reporterContact: "082-334-5566",
-    details: "นวัตกรรมเซ็นเซอร์ชีวภาพตรวจจับความชื้นและจุลินทรีย์แบบแม่นยำสูง",
-    status: "published"
-  },
-  {
-    id: "pr-010",
-    code: "RSP-PR-2026-010",
-    universityId: "uru",
-    title: "มรภ.อุตรดิตถ์ ต่อยอดงานวิจัยเปลือกทุเรียนหลิน-หลงลับแล ผลิตสารเคลือบยืดอายุผลไม้สด ลดการสูญเสีย",
-    date: "2026-07-05",
-    targetAudience: "ข่าวการจัดกิจกรรม/โครงการ",
-    mediaTypes: ["online", "tv"],
-    clippingsCount: 13,
-    prValue: 390000,
-    newsUrl: "https://www.tnnthailand.com/uru-durian-coating",
-    reporterName: "คุณณิชา มณีรัตน์",
-    reporterContact: "085-667-8899",
-    details: "การแปรรูปเปลือกทุเรียนเหลือทิ้งเป็นไบโอพอลิเมอร์ปลอดภัยเกรดอาหาร",
-    status: "published"
-  }
-];
+const INITIAL_PRESS_RELEASES: PressReleaseItem[] = [];
 
 export default function RspPressReport() {
   const [activeTab, setActiveTab] = useState<"records" | "form" | "dashboard">("records");
-  const [records, setRecords] = useState<PressReleaseItem[]>(INITIAL_PRESS_RELEASES);
+  const [records, setRecords] = useState<PressReleaseItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterUniversity, setFilterUniversity] = useState<string>("all");
   const [filterAudience, setFilterAudience] = useState<string>("all");
   const [selectedPreview, setSelectedPreview] = useState<PressReleaseItem | null>(null);
+  const [selectedDetailItem, setSelectedDetailItem] = useState<PressReleaseItem | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
 
   const supabase = createClient();
 
-  // Load persisted records from Supabase cloud with fallback to LocalStorage
+  // Load persisted records from Supabase cloud with fallback to LocalStorage & briefs table
   useEffect(() => {
     async function loadCloudRsp() {
       try {
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("cc_rsp_press_records_v1");
+        }
+
         const cloudData = await getCloudJson<PressReleaseItem[]>(
           CLOUD_KEYS.RSP_PRESS_RECORDS,
-          "cc_rsp_press_records_v1"
+          "cc_rsp_press_records_v2_fy70"
         );
-        if (cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
-          setRecords(cloudData);
-        } else {
-          setRecords(INITIAL_PRESS_RELEASES);
+        let items: PressReleaseItem[] = Array.isArray(cloudData) ? [...cloudData] : [];
+
+        // Direct query to briefs table to merge any RSP tasks from forms or boards
+        const { data: briefRows } = await supabase
+          .from("briefs")
+          .select("id, project_name, details, deadline, coordinator_nickname, requester_email, decision_maker, status")
+          .or("unit.eq.internal,project_name.ilike.%[RSP]%");
+
+        if (briefRows && briefRows.length > 0) {
+          const rspBriefs = briefRows.filter((b: any) => {
+            // Strictly exclude any purged or deleted task
+            if (b.status === "purged" || b.status === "cancelled" || b.details?.is_deleted || b.details?.is_permanently_deleted) {
+              return false;
+            }
+            const d = b.details || {};
+            return (
+              d.source === "rsp_press_form" ||
+              d.work_organization === "RSP" ||
+              (b.project_name && b.project_name.includes("[RSP]")) ||
+              (d.task_code && d.task_code.startsWith("RSP"))
+            );
+          });
+
+          for (const b of rspBriefs) {
+            const d = b.details || {};
+            const code = d.task_code || d.rsp_code || `RSP-${b.id.slice(0, 4)}`;
+            const rawTitle = d.title || b.project_name?.replace(/^\[RSP\]\s*ข่าวประชาสัมพันธ์:\s*/, "").replace(/\s*\([^)]*\)$/, "") || b.project_name;
+            const uniId = d.university_id || RSP_UNIVERSITIES.find(u => u.name === b.decision_maker)?.id || "cmu";
+            const newsUrl = d.news_url || "";
+            const briefItem: PressReleaseItem = {
+              id: b.id,
+              code: code,
+              universityId: uniId,
+              title: rawTitle,
+              date: d.publish_date || b.deadline || new Date().toISOString().split("T")[0],
+              targetAudience: d.target_audience || d.pm_work_category || "ข่าวการจัดกิจกรรม/โครงการ",
+              mediaTypes: d.media_types || ["online"],
+              clippingsCount: Number(d.clippings_count) || 1,
+              newsUrl: newsUrl,
+              reporterName: d.reporter_name || b.coordinator_nickname || "ไม่ระบุ",
+              reporterContact: d.reporter_contact || b.requester_email || "",
+              details: d.description || d.details || "",
+              attachmentName: d.attachment_name || "",
+              notes: d.notes || "",
+              status: "published",
+              clippingList: newsUrl ? [{ name: "ข่าวออนไลน์", url: newsUrl, date: d.publish_date || b.deadline || "" }] : []
+            };
+
+            const existingIdx = items.findIndex(
+              it => it.code === code || it.id === b.id || (it.title && it.title.trim() === rawTitle.trim())
+            );
+
+            if (existingIdx >= 0) {
+              items[existingIdx] = {
+                ...briefItem,
+                ...items[existingIdx],
+                attachmentName: items[existingIdx].attachmentName || briefItem.attachmentName,
+                notes: items[existingIdx].notes || briefItem.notes,
+                newsUrl: items[existingIdx].newsUrl || newsUrl,
+                clippingList: (items[existingIdx].clippingList && items[existingIdx].clippingList.length > 0)
+                  ? items[existingIdx].clippingList
+                  : briefItem.clippingList
+              };
+            } else {
+              items.push(briefItem);
+            }
+          }
+        }
+
+        // Clean out ALL legacy records so count is strictly 0 (Requirement: ข่าวเดิมต้องลบออกให้หมดให้เหลือ 0)
+        items = items.filter(it => {
+          if (!it.code) return false;
+          if (it.code.startsWith("RSP-PR-")) return false;
+          if (it.code.startsWith("IT70-")) return false;
+          if (it.title?.includes("กิจกรรมระดมความคิดเห็น")) return false;
+          if (it.title === "dsfdfdf") return false;
+          return true;
+        });
+
+        setRecords(items);
+        await setCloudJson(CLOUD_KEYS.RSP_PRESS_RECORDS, items, "cc_rsp_press_records_v2_fy70");
+        if (typeof window !== "undefined") {
+          localStorage.setItem("cc_rsp_press_records_v2_fy70", JSON.stringify(items));
         }
       } catch (e) {
         console.warn("Failed to load RSP records from cloud:", e);
@@ -492,6 +412,53 @@ export default function RspPressReport() {
     }
     loadCloudRsp();
   }, []);
+
+  const handleClearAllRecords = async () => {
+    if (!confirm("คุณต้องการลบข่าวประชาสัมพันธ์ทั้งหมดออกให้เหลือ 0 และเริ่มรันใหม่ที่ RSP70-1 ใช่หรือไม่?")) {
+      return;
+    }
+    try {
+      setRecords([]);
+      await setCloudJson(CLOUD_KEYS.RSP_PRESS_RECORDS, [], "cc_rsp_press_records_v2_fy70");
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("cc_rsp_press_records_v1");
+        localStorage.setItem("cc_rsp_press_records_v2_fy70", "[]");
+      }
+      const { data: briefRows } = await supabase
+        .from("briefs")
+        .select("id, project_name, details")
+        .or("unit.eq.internal,project_name.ilike.%[RSP]%");
+      if (briefRows && briefRows.length > 0) {
+        for (const b of briefRows) {
+          const d = b.details || {};
+          if (
+            d.source === "rsp_press_form" ||
+            d.work_organization === "RSP" ||
+            (b.project_name && b.project_name.includes("[RSP]")) ||
+            (d.task_code && d.task_code.startsWith("RSP"))
+          ) {
+            await supabase.from("briefs").update({
+              status: "purged",
+              details: { ...(b.details || {}), is_deleted: true, is_permanently_deleted: true }
+            }).eq("id", b.id);
+          }
+        }
+      }
+      const { data: seqRow } = await supabase
+        .from("okr_settings")
+        .select("id, target_value")
+        .eq("description", "CONFIG_TASK_SEQUENCES_JSON")
+        .maybeSingle();
+      if (seqRow && seqRow.target_value) {
+        const parsed = JSON.parse(seqRow.target_value);
+        parsed.RSP = 0;
+        await supabase.from("okr_settings").update({ target_value: JSON.stringify(parsed) }).eq("id", seqRow.id);
+      }
+      alert("ล้างข่าวทั้งหมดเรียบร้อยแล้ว ข้อมูลในระบบเหลือ 0 ข่าว และพร้อมรันรหัส RSP70-1");
+    } catch (err) {
+      console.error("Clear all error:", err);
+    }
+  };
 
   // Copy share form URL handler
   const handleCopyShareLink = () => {
@@ -624,7 +591,7 @@ export default function RspPressReport() {
     setRecords(updatedRecords);
 
     // 1. Sync ทางแรก: บันทึกข้อมูลขึ้น Supabase Cloud + LocalStorage
-    setCloudJson(CLOUD_KEYS.RSP_PRESS_RECORDS, updatedRecords, "cc_rsp_press_records_v1");
+    setCloudJson(CLOUD_KEYS.RSP_PRESS_RECORDS, updatedRecords, "cc_rsp_press_records_v2_fy70");
 
     // 2. Sync ทางที่สอง: ซิงค์ไปหน้าบอร์ดรวม (Task Board / AssignmentsView)
     // งาน internal โอ๊ตเป็นคนทำ (โอ๊ต CNB) ประเภทงาน: เขียนข่าว ( นอกเหนือจาก Task งาน ) ภาระงานของ RSP มูลค่าประหยัด 1,500 บาท
@@ -1168,6 +1135,16 @@ export default function RspPressReport() {
                 </button>
 
                 <button
+                  type="button"
+                  onClick={handleClearAllRecords}
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-600 border border-slate-200 hover:border-rose-300 rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer active:scale-95"
+                  title="ลบข่าวทั้งหมดออกให้เหลือ 0 และเริ่มรันใหม่ที่ RSP70-1"
+                >
+                  <Trash2 size={14} className="text-rose-500" />
+                  <span>ล้างข่าวเดิม (เหลือ 0)</span>
+                </button>
+
+                <button
                   onClick={() => setActiveTab("form")}
                   className="flex items-center gap-1.5 px-3.5 py-2 bg-[#E03131] hover:bg-[#c92a2a] text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer active:scale-95"
                 >
@@ -1226,9 +1203,33 @@ export default function RspPressReport() {
 
             <div className="divide-y divide-slate-100">
               {filteredRecords.length === 0 ? (
-                <div className="p-12 text-center text-slate-400 text-xs">
-                  ไม่พบข้อมูลข่าวประชาสัมพันธ์ตามเงื่อนไขที่ค้นหา
-                </div>
+                records.length === 0 ? (
+                  <div className="p-10 sm:p-12 text-center space-y-3">
+                    <div className="w-12 h-12 mx-auto rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200">
+                      <CheckCircle2 size={24} />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-bold text-slate-900">
+                        พร้อมเริ่มต้นปีงบประมาณ 2570 — ฐานข้อมูลข่าว RSP สะอาดเรียบร้อย
+                      </h4>
+                      <p className="text-xs text-slate-500 max-w-md mx-auto">
+                        ลบข่าวเดิมออกทั้งหมดแล้ว และรหัสข่าวถัดไปจะเริ่มรันที่ <strong className="text-slate-700 font-mono">RSP70-1</strong> ทันทีเมื่อมีการส่งข้อมูล
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("form")}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#E03131] hover:bg-[#c92a2a] text-white rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                    >
+                      <Plus size={14} />
+                      <span>ส่งข่าวประชาสัมพันธ์ใหม่ (RSP70-1)</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-12 text-center text-slate-400 text-xs">
+                    ไม่พบข้อมูลข่าวประชาสัมพันธ์ตามเงื่อนไขที่ค้นหา
+                  </div>
+                )
               ) : (
                 filteredRecords.map(item => {
                   const uni = RSP_UNIVERSITIES.find(u => u.id === item.universityId);
@@ -1284,7 +1285,16 @@ export default function RspPressReport() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDetailItem(item)}
+                          className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-full text-xs font-semibold shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <FileText size={13} className="text-[#E03131]" />
+                          <span>ดูรายละเอียด</span>
+                        </button>
+
                         {item.newsUrl && (
                           <a
                             href={item.newsUrl}
@@ -1298,6 +1308,7 @@ export default function RspPressReport() {
                         )}
 
                         <button
+                          type="button"
                           onClick={() => setSelectedPreview(item)}
                           className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-full text-xs font-semibold shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
                         >
@@ -1348,21 +1359,24 @@ export default function RspPressReport() {
                 </button>
               </div>
 
-              {/* Requirement 1: Form title separated into two lines with English subtitle underneath & Dieter Rams Orange Banner */}
-              <div className="p-6 sm:p-8 rounded-2xl bg-[#E8590C] text-white space-y-3 mt-2">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/20 text-white text-xs font-bold backdrop-blur-xs">
+              {/* Requirement 1: Form title separated into two lines with English subtitle underneath & Dieter Rams Light Gray/Orange Banner */}
+              <div className="p-6 sm:p-8 rounded-2xl bg-[#f1f3f5] dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-[#d9480f] dark:text-[#f97316] space-y-3 mt-2 relative overflow-hidden shadow-xs">
+                <div className="absolute top-0 left-0 w-full h-[3px] bg-[#E8590C]" />
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white dark:bg-zinc-800 border border-slate-200/90 dark:border-zinc-700 text-[#d9480f] dark:text-[#f97316] text-xs font-bold shadow-2xs">
                   <Building2 size={14} />
                   <span>เครือข่ายอุทยานวิทยาศาสตร์ภูมิภาค ภาคเหนือ 14 สถาบัน</span>
                 </div>
-                <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight text-white">
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight text-[#d9480f] dark:text-[#f97316]">
                   <div>แบบฟอร์มงานประชาสัมพันธ์</div>
-                  <div className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white/95 mt-2.5">
+                  <div className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#d9480f] dark:text-[#f97316] mt-2.5">
                     เครือข่ายอุทยานวิทยาศาสตร์ภูมิภาค ภาคเหนือ
                   </div>
                 </h2>
-                <p className="text-sm sm:text-base font-semibold text-white/90 pt-1">
-                  (Regional Science Park Northern Network PR Form : RSP NORTH)
-                </p>
+                <div className="pt-1">
+                  <p className="text-xs sm:text-sm font-semibold text-[#d9480f]/70 dark:text-[#f97316]/70">
+                    (Regional Science Park Northern Network PR Form : RSP NORTH)
+                  </p>
+                </div>
               </div>
               <div className="mt-3 text-xs sm:text-sm text-slate-600 leading-relaxed space-y-2">
                 <p>
@@ -1923,6 +1937,209 @@ export default function RspPressReport() {
             <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
               <button
                 onClick={() => setSelectedPreview(null)}
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
+              >
+                ปิดหน้าต่าง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* FULL PRESS RELEASE DETAILS MODAL (ดูรายละเอียดข้อมูลทั้งหมดที่กรอกมา)      */}
+      {/* ========================================================================= */}
+      {selectedDetailItem && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95">
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="p-2 rounded-xl bg-orange-100 text-orange-700 shrink-0">
+                  <FileText size={18} />
+                </span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-md bg-zinc-900 text-white">
+                      {selectedDetailItem.code}
+                    </span>
+                    {(() => {
+                      const uni = RSP_UNIVERSITIES.find(u => u.id === selectedDetailItem.universityId);
+                      return (
+                        <span
+                          className="text-xs font-bold px-2.5 py-0.5 rounded-md text-white shadow-2xs"
+                          style={{ backgroundColor: uni?.color || "#3b82f6" }}
+                        >
+                          {uni?.name || "ไม่ระบุสถาบัน"}
+                        </span>
+                      );
+                    })()}
+                  </div>
+                  <h4 className="text-sm sm:text-base font-bold text-slate-900 truncate mt-1">
+                    รายละเอียดข่าวประชาสัมพันธ์ทั้งหมด
+                  </h4>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedDetailItem(null)}
+                className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-4 sm:p-6 overflow-y-auto space-y-4 text-xs divide-y divide-slate-100">
+              {/* 1. ชื่อข่าว/โครงการ */}
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  ชื่อข่าว / กิจกรรม / โครงการ
+                </span>
+                <h3 className="text-sm sm:text-base font-bold text-slate-900 leading-snug">
+                  {selectedDetailItem.title}
+                </h3>
+              </div>
+
+              {/* 2. สรุปประเภทและวันที่ */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1">
+                  <span className="text-[11px] font-medium text-slate-500">ประเภทข่าวที่เผยแพร่:</span>
+                  <div>
+                    {(() => {
+                      const cat = PRESS_CATEGORIES.find(c => c.name === selectedDetailItem.targetAudience);
+                      return (
+                        <span
+                          className="inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-md text-white"
+                          style={{ backgroundColor: cat ? cat.color : "#64748b" }}
+                        >
+                          {selectedDetailItem.targetAudience || "ข่าวการจัดกิจกรรม/โครงการ"}
+                        </span>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1">
+                  <span className="text-[11px] font-medium text-slate-500">วันที่ประชาสัมพันธ์ / เผยแพร่:</span>
+                  <div className="flex items-center gap-1.5 font-bold text-slate-900 text-xs">
+                    <Calendar size={13} className="text-sky-600" />
+                    <span>{selectedDetailItem.date || "-"}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. ข้อมูลผู้ประสานงาน */}
+              <div className="pt-3 space-y-2">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  ผู้ประสานงาน / ผู้รายงานข่าว
+                </span>
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Users size={14} className="text-amber-600" />
+                    <span className="font-bold text-slate-900">
+                      {selectedDetailItem.reporterName || "ไม่ระบุชื่อ"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-slate-600 font-mono text-[11px]">
+                    <Send size={12} className="text-slate-400" />
+                    <span>{selectedDetailItem.reporterContact || "-"}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. รายละเอียดข่าวฉบับเต็ม */}
+              <div className="pt-3 space-y-1.5">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  รายละเอียดเนื้อหาข่าวฉบับเต็ม (ใคร ทำอะไร ที่ไหน เมื่อไหร่ ผลลัพธ์)
+                </span>
+                <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200 text-slate-700 leading-relaxed whitespace-pre-wrap max-h-52 overflow-y-auto">
+                  {selectedDetailItem.details || <span className="text-slate-400 italic">ไม่มีรายละเอียดเพิ่มเติม</span>}
+                </div>
+              </div>
+
+              {/* 5. ลิงก์ข่าวที่เผยแพร่ */}
+              <div className="pt-3 space-y-1.5">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  ลิงก์ข่าวออนไลน์ที่เผยแพร่แล้ว (News URL)
+                </span>
+                {selectedDetailItem.newsUrl ? (
+                  <div className="flex items-center gap-2 p-2.5 bg-blue-50/60 rounded-xl border border-blue-200">
+                    <Globe size={14} className="text-blue-600 shrink-0" />
+                    <a
+                      href={selectedDetailItem.newsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-700 hover:text-blue-900 underline truncate font-mono text-xs flex-1"
+                    >
+                      {selectedDetailItem.newsUrl}
+                    </a>
+                    <a
+                      href={selectedDetailItem.newsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1 shrink-0"
+                    >
+                      <ExternalLink size={12} />
+                      <span>เปิดลิงก์</span>
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(selectedDetailItem.newsUrl);
+                        alert("คัดลอกลิงก์ข่าวแล้ว!");
+                      }}
+                      className="p-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-lg border border-slate-200 shrink-0 cursor-pointer"
+                      title="คัดลอกลิงก์"
+                    >
+                      <Copy size={13} />
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-slate-400 italic text-xs p-2 bg-slate-50 rounded-xl">
+                    ยังไม่มีลิงก์ข่าวที่เผยแพร่
+                  </p>
+                )}
+              </div>
+
+              {/* 6. รูปภาพ/ไฟล์แนบ */}
+              {selectedDetailItem.attachmentName && (
+                <div className="pt-3 space-y-1.5">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    รูปภาพ / ไฟล์แนบที่ส่งมา
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedDetailItem.attachmentName.split(",").map((f, i) => (
+                      <span
+                        key={i}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg border border-slate-200 font-mono text-[11px]"
+                      >
+                        <Paperclip size={11} className="text-slate-400" />
+                        <span>{f.trim()}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 7. หมายเหตุเพิ่มเติม */}
+              {selectedDetailItem.notes && (
+                <div className="pt-3 space-y-1">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    หมายเหตุเพิ่มเติม
+                  </span>
+                  <p className="text-xs text-slate-600 italic bg-amber-50/50 p-2.5 rounded-xl border border-amber-200/60">
+                    {selectedDetailItem.notes}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setSelectedDetailItem(null)}
                 className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
               >
                 ปิดหน้าต่าง

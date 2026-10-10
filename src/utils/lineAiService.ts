@@ -29,23 +29,118 @@ export interface TeamMemberInfo {
 
 export const TEAM_MEMBERS_MAP: Record<string, TeamMemberInfo> = {
   "จ๊อบ": { fullName: "อัจชนะพงษ์ อัจชนะวราทา", code: "AA", role: "CC Lead (บริหารทีม)", unit: "Management" },
-  "วา": { fullName: "วสิตา เกียรติ์จรุงพันธ์", code: "WK", role: "Creative Lead & รองหัวหน้าทีม", unit: "Creative" },
-  "ก้อง": { fullName: "อิศรา คนทัศน์", code: "IK", role: "Creative Designer", unit: "Creative" },
-  "จอย": { fullName: "รติพร ลาภสิริ", code: "RL", role: "Creative Designer", unit: "Creative" },
-  "พิม": { fullName: "อัจฉราพร ชูศรี", code: "AC", role: "Creative Designer", unit: "Creative" },
-  "เยียร์": { fullName: "ลลิตภัทร ปัญญา", code: "LLP", role: "Creative Designer", unit: "Creative" },
-  "นิน": { fullName: "มทานินทร์ นันตา", code: "MTN", role: "Creative Designer", unit: "Creative" },
-  "ลูกอิน": { fullName: "สุทธิอาภา ธนะสุวรรณ", code: "STK", role: "PR & Event Specialist", unit: "PR & Communication" },
-  "โอ๊ต": { fullName: "ชนิกานต์ เบ็ญจพรหม", code: "CNB", role: "PR & Communication Specialist", unit: "PR & Communication" },
-  "เอ็นจอย": { fullName: "ศิริลักษณ์ สายน้ำเย็น", code: "SLR", role: "Content Marketing Specialist", unit: "Content Marketing" },
-  "แก้ว": { fullName: "กัญญากร เขียวงาม", code: "KYK", role: "Content Creator", unit: "Content Marketing" },
-  "ต้า": { fullName: "ฐิติยา ทองประภา", code: "TTY", role: "Content Marketing Specialist", unit: "Content Marketing" },
+  "วา": { fullName: "วสิตา เกียรติ์จรุงพันธ์", code: "WK", role: "Creative Lead & รองหัวหน้าทีม", unit: "Design" },
+  "ก้อง": { fullName: "อิศรา แก้วเรือง", code: "IK", role: "Creative Designer", unit: "Design" },
+  "จอย": { fullName: "รติพร ลาภสิริ", code: "RL", role: "Creative Designer", unit: "Design" },
+  "พิม": { fullName: "อัจฉราพร ชูศรี", code: "AC", role: "Creative Designer", unit: "Design" },
+  "เยียร์": { fullName: "ลลิตภัทร ปัญญา", code: "LLP", role: "Creative Designer", unit: "Design" },
+  "นิน": { fullName: "มทานินทร์ นันตา", code: "MTN", role: "Creative Designer", unit: "Design" },
+  "ลูกอิน": { fullName: "สุทธิอาภา คุ้มครอง", code: "STK", role: "Content Creator", unit: "Content" },
+  "โอ๊ต": { fullName: "ชนนิกานต์ บุญแก้ว", code: "CNB", role: "PR", unit: "PR" },
+  "เอ็นจอย": { fullName: "ศิริลักษณ์ กันจะนะ", code: "SLR", role: "Content Creator", unit: "Content" },
+  "แก้ว": { fullName: "กัลยกร อภิวงศ์", code: "KYK", role: "Content Creator", unit: "Content" },
+  "แก้วก่อ": { fullName: "กัลยกร อภิวงศ์", code: "KYK", role: "Content Creator", unit: "Content" },
+  "ต้า": { fullName: "ฐิติยา เข็มพล", code: "TTY", role: "PR", unit: "PR" },
 };
+
+export const LINE_DISPLAY_TO_HONORIFIC: Record<string, string> = {
+  // 1. job -> พี่จ๊อบ
+  "job": "พี่จ๊อบ",
+  // 2. autcha.pim -> พี่พิม
+  "autcha.pim": "พี่พิม",
+  // 3. Bao-Suriyah CMU -> อาจารย์บ่าว
+  "Bao-Suriyah CMU": "อาจารย์บ่าว",
+  // 4. Golf-Choncharoen CMU -> อาจารย์กอล์ฟ
+  "Golf-Choncharoen CMU": "อาจารย์กอล์ฟ",
+  // 5. Itsara -> พี่ก้อง
+  "Itsara": "พี่ก้อง",
+  // 6. Kaewkor 🌻 -> พี่แก้วก่อ
+  "Kaewkor 🌻": "พี่แก้วก่อ",
+  "Kaewkor": "พี่แก้วก่อ",
+  // 7. Lalynn 🐤 -> พี่เยียร์
+  "Lalynn 🐤": "พี่เยียร์",
+  "Lalynn": "พี่เยียร์",
+  // 8. Leēk ╰innn♡~~ -> พี่ลูกอิน
+  "Leēk ╰innn♡~~": "พี่ลูกอิน",
+  "Leēk": "พี่ลูกอิน",
+  "Leek": "พี่ลูกอิน",
+  // 9. ma.ta.nin -> พี่นิน
+  "ma.ta.nin": "พี่นิน",
+  // 10. Oat 🍉 -> พี่โอ๊ต
+  "Oat 🍉": "พี่โอ๊ต",
+  "Oat": "พี่โอ๊ต",
+  // 11. RATI.JOY -> พี่จอย
+  "RATI.JOY": "พี่จอย",
+  // 12. Tanyanuparb -> อาจารย์อ้วน
+  "Tanyanuparb": "อาจารย์อ้วน",
+  // 13. Tanya Ob-Oon -> อาจารย์อ้วน
+  "Tanya Ob-Oon": "อาจารย์อ้วน",
+  // 14. T'tar ◡̈ 🍀 -> พี่ต้า
+  "T'tar ◡̈ 🍀": "พี่ต้า",
+  "T'tar": "พี่ต้า",
+  // 15. waweewa 🦋 -> พี่วา
+  "waweewa 🦋": "พี่วา",
+  "waweewa": "พี่วา",
+  // 16. Witty Win VVIIV -> อาจารย์วิน
+  "Witty Win VVIIV": "อาจารย์วิน",
+  "Witty Win": "อาจารย์วิน",
+  // 17. น้อง CC -> น้อง CC
+  "น้อง CC": "น้อง CC",
+  // 18. น้องจอย -> พี่เอ็นจอย (เพื่อไม่ให้สับสนกับพี่จอย RL)
+  "น้องจอย": "พี่เอ็นจอย",
+  "เอ็นจอย": "พี่เอ็นจอย"
+};
+
+/**
+ * Resolves a raw LINE display name into the correct respectful Thai honorific title
+ */
+export function getProperCallerName(rawName?: string): string {
+  if (!rawName || !rawName.trim()) return "พี่ๆ";
+  const trimmed = rawName.trim();
+
+  // 1. Direct match
+  if (LINE_DISPLAY_TO_HONORIFIC[trimmed]) {
+    return LINE_DISPLAY_TO_HONORIFIC[trimmed];
+  }
+
+  // 2. Case-insensitive / normalized match
+  const lower = trimmed.toLowerCase();
+  for (const [key, val] of Object.entries(LINE_DISPLAY_TO_HONORIFIC)) {
+    if (lower === key.toLowerCase()) return val;
+  }
+
+  // 3. Substring matching for resilience (in case of extra emojis or suffix changes)
+  if (lower.includes("น้องจอย") || lower.includes("enjoy") || lower.includes("เอ็นจอย")) return "พี่เอ็นจอย";
+  if (lower.includes("rati") || lower.includes("จอย")) return "พี่จอย";
+  if (lower.includes("tanya") || lower.includes("อ้วน") || lower.includes("ob-oon")) return "อาจารย์อ้วน";
+  if (lower.includes("suriyah") || lower.includes("บ่าว")) return "อาจารย์บ่าว";
+  if (lower.includes("choncharoen") || lower.includes("golf") || lower.includes("กอล์ฟ")) return "อาจารย์กอล์ฟ";
+  if (lower.includes("witty") || lower.includes("win") || lower.includes("อาจารย์วิน")) return "อาจารย์วิน";
+  if (lower.includes("job") || lower.includes("จ๊อบ")) return "พี่จ๊อบ";
+  if (lower.includes("autcha") || lower.includes("pim") || lower.includes("พิม")) return "พี่พิม";
+  if (lower.includes("itsara") || lower.includes("ก้อง")) return "พี่ก้อง";
+  if (lower.includes("kaewkor") || lower.includes("แก้วก่อ") || lower.includes("kaew")) return "พี่แก้วก่อ";
+  if (lower.includes("lalynn") || lower.includes("เยียร์")) return "พี่เยียร์";
+  if (lower.includes("leēk") || lower.includes("leek") || lower.includes("ลูกอิน") || lower.includes("innn")) return "พี่ลูกอิน";
+  if (lower.includes("ta.nin") || lower.includes("matanin") || lower.includes("นิน")) return "พี่นิน";
+  if (lower.includes("oat") || lower.includes("โอ๊ต")) return "พี่โอ๊ต";
+  if (lower.includes("t'tar") || lower.includes("ttar") || lower.includes("ต้า")) return "พี่ต้า";
+  if (lower.includes("waweewa") || lower.includes("วา")) return "พี่วา";
+  if (lower.includes("น้อง cc") || lower.includes("cc bot")) return "น้อง CC";
+
+  // If already prefixed with respectful title
+  if (trimmed.startsWith("พี่") || trimmed.startsWith("อาจารย์") || trimmed.startsWith("คุณ") || trimmed.startsWith("น้อง")) {
+    return trimmed;
+  }
+
+  return `พี่${trimmed}`;
+}
 
 // Order prioritized to match longer names first (e.g. "เอ็นจอย" before "จอย")
 const MATCHABLE_MEMBERS = [
   { nick: "เอ็นจอย", code: "SLR", info: TEAM_MEMBERS_MAP["เอ็นจอย"] },
   { nick: "ลูกอิน", code: "STK", info: TEAM_MEMBERS_MAP["ลูกอิน"] },
+  { nick: "แก้วก่อ", code: "KYK", info: TEAM_MEMBERS_MAP["แก้วก่อ"] },
   { nick: "จ๊อบ", code: "AA", info: TEAM_MEMBERS_MAP["จ๊อบ"] },
   { nick: "วา", code: "WK", info: TEAM_MEMBERS_MAP["วา"] },
   { nick: "ก้อง", code: "IK", info: TEAM_MEMBERS_MAP["ก้อง"] },
@@ -312,6 +407,21 @@ export async function getLiveDataContext() {
 /**
  * Free AI Query Engine with Model Rotation & Zero-Cost Rule Fallback
  */
+const APP_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://ccteam.vercel.app";
+
+export const SYSTEM_PORTAL_URLS = {
+  portal: `${APP_BASE_URL}/dashboard?view=dashboards`,
+  okrGoals: `${APP_BASE_URL}/dashboard?view=dashboards&tab=goals`,
+  workloads: `${APP_BASE_URL}/dashboard?view=dashboards&tab=workloads`,
+  assignments: `${APP_BASE_URL}/dashboard?view=assignments`,
+  dataReports: `${APP_BASE_URL}/dashboard?view=data-reports`,
+  briefRequest: `${APP_BASE_URL}/request`,
+  trackStatus: `${APP_BASE_URL}/track`,
+  survey: `${APP_BASE_URL}/survey`,
+  idcForm: `${APP_BASE_URL}/idc-form`,
+  rspPressForm: `${APP_BASE_URL}/rsp-press-form`,
+};
+
 export async function queryLineAI(
   userQuestion: string,
   groupName: string = "general",
@@ -321,6 +431,7 @@ export async function queryLineAI(
   const { briefs } = await getLiveDataContext();
   const analytics = analyzeWorkload(briefs);
   const geminiApiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  const callerLabel = getProperCallerName(askerName);
 
   // Retrieve recent conversation history and learned facts
   const recentTurns = groupId ? getRecentHistory(groupId, 6) : [];
@@ -340,9 +451,55 @@ export async function queryLineAI(
     recordLearnedFact(userQuestion.replace(/น้อง[\s_]?cc|จำไว้ว่า|โน้ตไว้ว่า/gi, "").trim(), groupName);
   }
 
-  // 1. Try Gemini with Model Rotation if API Key is available
+  const qClean = userQuestion.toLowerCase().replace(/น้อง[\s_]?cc|น้องซีซี/gi, "").trim();
+
+  // 1. FAST-PATH DIRECT LINK INTERCEPTORS (100% Deterministic, Direct & Anti-Hallucination)
+  const isAskingForKrR = (
+    qClean === "kr / r" ||
+    qClean === "kr/r" ||
+    qClean === "kr" ||
+    qClean === "r" ||
+    qClean === "okr" ||
+    (qClean.includes("kr") && (qClean.includes("ขอ") || qClean.includes("ลิงก์") || qClean.includes("ลิ้งค์") || qClean.includes("ขอลบิงก์") || qClean.includes("url") || qClean.includes("ดู") || qClean.includes("ที่ไหน"))) ||
+    (qClean.includes("เป้าหมาย") && (qClean.includes("ลิงก์") || qClean.includes("ลิ้งค์") || qClean.includes("ขอลบิงก์") || qClean.includes("ขอ") || qClean.includes("ดู")))
+  );
+
+  if (isAskingForKrR) {
+    return `${callerLabel} สามารถเข้าดูและติดตามตัวชี้วัดเป้าหมาย OKRs & KR/R Metrics (KR1-KR4, R1-R9) ทั้งหมดของทีมได้โดยตรงที่ลิงก์นี้เลยค่ะ 🎯✨\n\n🔗 **ระบบตัวชี้วัดเป้าหมาย OKRs (KR / R):**\n${SYSTEM_PORTAL_URLS.okrGoals}\n\n*(หรือดูแดชบอร์ดภาพรวมทั้งระบบได้ที่: ${SYSTEM_PORTAL_URLS.portal})*`;
+  }
+
+  const isAskingForLinksGeneral = (
+    qClean === "ขอลิงก์" ||
+    qClean === "ขอ ลิ้งค์หน่อย" ||
+    qClean === "ขอลิงก์หน่อย" ||
+    qClean === "ขอ ลิงก์หน่อย" ||
+    qClean === "ขอลิ้งค์หน่อย" ||
+    qClean === "ขอ ลิ้งค์" ||
+    qClean === "ขอลบิงก์" ||
+    qClean === "ขอลิงค์" ||
+    qClean === "ลิงก์" ||
+    qClean === "ลิ้งค์" ||
+    qClean === "ขอลิ้งค์" ||
+    qClean === "ขอ link" ||
+    qClean === "ขอ url" ||
+    qClean.includes("ขอลิงก์ระบบ") ||
+    qClean.includes("ขอลบิงก์ระบบ") ||
+    qClean.includes("ขอลิ้งค์ระบบ") ||
+    qClean.includes("ตรวจสอบรายละเอียดและ insight ได้ที่ไหน") ||
+    qClean.includes("ดู insight ได้ที่ไหน") ||
+    qClean.includes("ตรวจสอบรายละเอียดและ insight") ||
+    qClean.includes("เข้าดูได้ที่ไหน") ||
+    qClean.includes("ดูได้ที่ไหน") ||
+    qClean.includes("ลิงก์เข้าดู") ||
+    qClean.includes("ลิ้งค์เข้าดู")
+  );
+
+  if (isAskingForLinksGeneral) {
+    return `ยินดีค่ะ${callerLabel}! น้อง CC จัดส่งลิงก์เข้าใช้งานระบบ CC Insights Portal และบริการสำคัญของทีมให้เรียบร้อยแล้วค่ะ 🌸✨\n\n📊 **CC Insights Portal & Dashboard ภาพรวม:**\n${SYSTEM_PORTAL_URLS.portal}\n\n🎯 **ระบบติดตามเป้าหมาย OKRs & KR/R Metrics:**\n${SYSTEM_PORTAL_URLS.okrGoals}\n\n📋 **กระดานบริหารจัดการงานทีม CC (Task Assignments):**\n${SYSTEM_PORTAL_URLS.assignments}\n\n📝 **ฟอร์มส่งบรีฟงานใหม่ (Request Creative Brief):**\n${SYSTEM_PORTAL_URLS.briefRequest}\n\n🔍 **ติดตามสถานะงานแบบเรียลไทม์ (Track Status):**\n${SYSTEM_PORTAL_URLS.trackStatus}\n\n📑 **ศูนย์รายงานข้อมูล ISO/KM/WI:**\n${SYSTEM_PORTAL_URLS.dataReports}\n\nสามารถคลิกที่ลิงก์ด้านบนเพื่อเข้าใช้งานได้ทันทีเลยนะคะ 🚀`;
+  }
+
+  // 2. Try Gemini with Model Rotation if API Key is available
   if (geminiApiKey) {
-    const callerLabel = askerName ? `พี่ ${askerName}` : "พี่ๆ";
     const systemPrompt = `คุณคือ "น้อง CC" ผู้ช่วย AI อัจฉริยะน้องเล็ก Gen Z ประจำทีม Creative and Communication (CC) ของ STeP มหาวิทยาลัยเชียงใหม่ 🌸✨
 
 🎯 กฎเหล็กสำคัญระดับสูงสุด (Strict Guidelines):
@@ -366,18 +523,44 @@ export async function queryLineAI(
    - "ความพึงพอใจของผู้รับบริการ (CSAT)"
    - "อัตราการส่งมอบงานตรงต่อเวลา"
 
-4. **ห้ามเตือนเรื่องสุขภาพ/จิบน้ำ/พักสายตาโดยเด็ดขาด** เว้นแต่ผู้ใช้จะถามเรื่องสุขภาพโดยตรง
-5. **ไม่ชวนคุยต่อและไม่มีประโยคลงท้ายซ้ำซาก** เมื่อตอบคำถามครบถ้วนแล้วให้จบประเด็นทันที
-6. **กฎเหล็กป้องกันข้อมูลหลอน (Strict Anti-Hallucination & Zero-Fake Baseline):**
+4. **กฎการเรียกชื่อพี่ๆ และอาจารย์ในห้องแชท (LINE Identity & Honorific Names):**
+   น้อง CC ต้องเรียกชื่อพี่ๆ และอาจารย์ตามชื่อเรียกที่ถูกต้องเหล่านี้เสมอ (ห้ามเรียกชื่อ ID ภาษาอังกฤษดิบ):
+   - "job" -> เรียก "พี่จ๊อบ" (CC Lead / หัวหน้าทีม CC, รหัสประจำตัว AA)
+   - "autcha.pim" -> เรียก "พี่พิม" (Creative Designer - Unit Design, รหัสประจำตัว AC)
+   - "Bao-Suriyah CMU" -> เรียก "อาจารย์บ่าว" (ผศ.ดร.สุริยะ ทองมุณี รองผู้อำนวยการ STeP, รหัสประจำตัว ST)
+   - "Golf-Choncharoen CMU" -> เรียก "อาจารย์กอล์ฟ" (ผู้ช่วยผู้อำนวยการอุทยานวิทยาศาสตร์ภูมิภาค ภาคเหนือ, รหัสประจำตัว CS)
+   - "Itsara" -> เรียก "พี่ก้อง" (Creative Designer - Unit Design, รหัสประจำตัว IK)
+   - "Kaewkor 🌻" -> เรียก "พี่แก้วก่อ" (Content Creator - Unit Content, รหัสประจำตัว KYK)
+   - "Lalynn 🐤" -> เรียก "พี่เยียร์" (Creative Designer - Unit Design, รหัสประจำตัว LLP)
+   - "Leēk ╰innn♡~~" -> เรียก "พี่ลูกอิน" (Content Creator - Unit Content, รหัสประจำตัว STK)
+   - "ma.ta.nin" -> เรียก "พี่นิน" (Creative Designer - Unit Design, รหัสประจำตัว MTN)
+   - "Oat 🍉" -> เรียก "พี่โอ๊ต" (PR - Unit PR, รหัสประจำตัว CNB)
+   - "RATI.JOY" -> เรียก "พี่จอย" (Creative Designer - Unit Design, รหัสประจำตัว RL)
+   - "Tanyanuparb" หรือ "Tanya Ob-Oon" -> เรียก "อาจารย์อ้วน" (ผู้อำนวยการอุทยานวิทยาศาสตร์ภูมิภาค ภาคเหนือ, รหัสประจำตัว TY)
+   - "T'tar ◡̈ 🍀" -> เรียก "พี่ต้า" (PR - Unit PR, รหัสประจำตัว TTY)
+   - "waweewa 🦋" -> เรียก "พี่วา" (Creative Lead & ผู้รับผิดชอบ Unit Design, รหัสประจำตัว WK)
+   - "Witty Win VVIIV" -> เรียก "อาจารย์วิน" (ผู้บริหาร, รหัสประจำตัว PW)
+   - "น้อง CC" -> ตัวน้อง CC เอง
+   - "น้องจอย" -> เรียก "พี่เอ็นจอย" (Content Creator - Unit Content, รหัสประจำตัว SLR - ห้ามเรียกพี่จอยเด็ดขาด เพื่อไม่ให้สับสนกับพี่จอย RATI.JOY)
+
+5. **ห้ามเตือนเรื่องสุขภาพ/จิบน้ำ/พักสายตาโดยเด็ดขาด** เว้นแต่ผู้ใช้จะถามเรื่องสุขภาพโดยตรง
+6. **ไม่ชวนคุยต่อและไม่มีประโยคลงท้ายซ้ำซาก** เมื่อตอบคำถามครบถ้วนแล้วให้จบประเด็นทันที
+7. **กฎเหล็กป้องกันข้อมูลหลอน (Strict Anti-Hallucination & Zero-Fake Baseline):**
    - ห้ามแต่งตัวเลข สถิติ ชื่องาน หรือคิดค้นข้อมูลที่ไม่มีอยู่จริงในระบบเด็ดขาด หากตัวชี้วัดใดเป็น 0 หรือยังไม่มีข้อมูลประเมิน ให้ตอบตามจริงว่าเริ่มต้นปีงบประมาณ 2570 ยังไม่มีข้อมูล หรือเป็น 0%
    - ห้ามกล่าวหาหรือพาดพิงบุคคลว่าทำงานช้าหรือบกพร่องโดยไม่มีหลักฐานชัดเจนในระบบ
 
 👥 สมาชิกทีม CC ทั้ง 12 คน:
-- จ๊อบ AA: CC Lead (บริหารทีม / กำกับภาพรวมงาน 3 ยูนิต และเป้าหมายภาพรวม)
-- วา WK: Creative Lead & รองหัวหน้าทีม (Creative Designer)
-- ก้อง IK, จอย RL, พิม AC, เยียร์ LLP, นิน MTN: Unit Creative Designer (ออกแบบกราฟิก/แบนเนอร์/บูธ/วิดีโอ)
-- ลูกอิน STK, โอ๊ต CNB: Unit PR & Communication (ข่าวประชาสัมพันธ์, เครือข่าย RSP, สื่อสารองค์กร)
-- เอ็นจอย SLR, แก้ว KYK, ต้า TTY: Unit Content Marketing (บทความ, โพสต์, สคริปต์, คอนเทนต์นวัตกรรม)
+- จ๊อบ AA: CC Lead (บริหารทีม / กำกับภาพรวมงานทุกยูนิต)
+- วา WK: Creative Lead & รองหัวหน้าทีม (Unit Design)
+- ก้อง IK, จอย RL, พิม AC, เยียร์ LLP, นิน MTN: Unit Design (ตำแหน่ง Creative Designer)
+- แก้วก่อ KYK, ลูกอิน STK, เอ็นจอย SLR: Unit Content (ตำแหน่ง Content Creator)
+- โอ๊ต CNB, ต้า TTY: Unit PR (ตำแหน่ง PR)
+
+👔 ผู้บริหารและอาจารย์:
+- อาจารย์อ้วน TY: ผู้อำนวยการอุทยานวิทยาศาสตร์ภูมิภาค ภาคเหนือ
+- อาจารย์กอล์ฟ CS: ผู้ช่วยผู้อำนวยการอุทยานวิทยาศาสตร์ภูมิภาค ภาคเหนือ
+- อาจารย์บ่าว ST: รองผู้อำนวยการ STeP
+- อาจารย์วิน PW: ผู้บริหาร
 
 💰 สถิติตัวชี้วัดมูลค่าการประหยัดงบประมาณ (Save Cost) รายบุคคลในระบบ (เรียงตามยอดสะสม):
 ${analytics.saveCostRanking.map((m, i) => `${i + 1}. ${m.nick} ${m.code} (${m.unit}): ฿${m.saveCost.toLocaleString()} บาท (รับผิดชอบ ${m.count} งาน, สำเร็จแล้ว ${m.completed} งาน, กำลังทำ ${m.in_progress} งาน, ค้าง ${m.pending} งาน)`).join("\n")}
@@ -396,6 +579,22 @@ ${Object.entries(analytics.unitFinancials).map(([u, d], i) => `${i + 1}. ${u}: �
 - มูลค่าการประหยัดงบประมาณ (Save Cost): สะสม ฿${analytics.totals.saveCostTotal.toLocaleString()} บาท (เป้าหมาย 1,000,000 บาท)
 - กำไรจากการให้บริการของทีม: รวม ฿${analytics.totals.profitTotal.toLocaleString()} บาท (เป้าหมาย 1,500,000 บาท)
 - ความพึงพอใจของผู้รับบริการ (CSAT): เฉลี่ย ${analytics.totals.csatRate}% (${analytics.totals.csatEvaluationsCount > 0 ? `จาก ${analytics.totals.csatEvaluationsCount} การประเมิน` : "เริ่มต้นปีงบประมาณ 0% ยังไม่มีแบบประเมิน"}) | อัตราส่งมอบตรงเวลา ${analytics.totals.onTimeRate}% (${analytics.totals.deliveredCount > 0 ? `จาก ${analytics.totals.deliveredCount} งานที่ปิดสมบูรณ์` : "เริ่มต้นปีงบประมาณ 0% ยังไม่มีงานปิดส่งมอบ"})
+
+🌐 ลิงก์ระบบสำคัญทั้งหมดของทีม CC (ห้ามใส่ Placeholder ในวงเล็บเด็ดขาด! ให้ระบุ URL จริงเสมอ):
+- CC Insights Portal & Dashboard ภาพรวม: ${SYSTEM_PORTAL_URLS.portal}
+- ระบบตัวชี้วัดเป้าหมาย OKRs & KR/R Metrics (KR1-KR4, R1-R9): ${SYSTEM_PORTAL_URLS.okrGoals}
+- กระดานติดตามและบริหารงานทีม CC (Task Assignments Board): ${SYSTEM_PORTAL_URLS.assignments}
+- ฟอร์มส่งบรีฟงานใหม่ (Request Creative Brief): ${SYSTEM_PORTAL_URLS.briefRequest}
+- ตรวจสอบสถานะงาน (Track Status): ${SYSTEM_PORTAL_URLS.trackStatus}
+- ศูนย์รายงานข้อมูล ISO/KM/WI (Data Reports): ${SYSTEM_PORTAL_URLS.dataReports}
+- ฟอร์มขอรับบริการศูนย์ออกแบบนวัตกรรม (IDC Form): ${SYSTEM_PORTAL_URLS.idcForm}
+- ฟอร์มงานข่าวและสื่อมวลชน RSP Press: ${SYSTEM_PORTAL_URLS.rspPressForm}
+- แบบประเมินความพึงพอใจ: ${SYSTEM_PORTAL_URLS.survey}
+
+กฎเหล็กเรื่องลิงก์และ URL (Strict Zero-Placeholder Rule):
+- ห้ามถามย้อนเด็ดขาดว่า "ต้องการลิงก์ตัวไหนคะ" เมื่อผู้ใช้ขอลิงก์ ให้แสดงลิงก์ที่ตรงกับบริบททันที!
+- ห้ามใส่ Placeholder หรือข้อความในวงเล็บ เช่น [แทรก URL ...], [ใส่ลิงก์ ...], [URL ...] โดยเด็ดขาด! ต้องให้ URL จริงแบบเต็มเสมอ!
+- หากคำถามเกี่ยวกับ KR / R หรือ OKR ให้ระบุ ${SYSTEM_PORTAL_URLS.okrGoals} เสมอ!
 
 📚 ข้อมูลที่จดจำได้:
 ${learnedFacts.slice(0, 3).join("\n") || "ไม่มี"}
@@ -433,6 +632,14 @@ ${historyContext}
             text = parts[0].text.trim();
           }
           text = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+
+          // Anti-Placeholder Sanitizer: Replace any bracketed URL placeholder with real URL!
+          if (/\[(?:แทรก|ใส่)?\s*(?:URL|url|ลิงก์|ลิ้งค์|link)[\s\S]*?\]/i.test(text) || text.includes("[แทรก")) {
+            const isKrR = userQuestion.toLowerCase().includes("kr") || userQuestion.toLowerCase().includes("okr") || userQuestion.includes("เป้าหมาย");
+            const replacementUrl = isKrR ? SYSTEM_PORTAL_URLS.okrGoals : SYSTEM_PORTAL_URLS.portal;
+            text = text.replace(/\[(?:แทรก|ใส่)?\s*(?:URL|url|ลิงก์|ลิ้งค์|link)[\s\S]*?\]/gi, replacementUrl);
+            text = text.replace(/\[แทรก[\s\S]*?\]/gi, replacementUrl);
+          }
 
           const isValidResponse = text.length > 20 && /[ก-๙]/.test(text) && !text.startsWith(":*");
           if (isValidResponse) {
@@ -515,7 +722,7 @@ ${unitList}
       return `อัปเดตสถานะงานของ**${item.nick} ${item.code}** (${item.info.role} - ยูนิต ${item.info.unit}) ค่ะ 🌸
 
 📊 **ภาระงานปัจจุบัน:**
-• งานในมือ: รอดำเนินการ (Pending) ${s.pending} งาน | กำลังทำ ${s.in_progress} งาน | สำเร็จแล้ว ${s.completed} งาน (รวม ${s.count} งาน)
+• งานในมือ: รอทำ (Pending) ${s.pending} งาน | กำลังทำ ${s.in_progress} งาน | สำเร็จแล้ว ${s.completed} งาน (รวม ${s.count} งาน)
 • มูลค่า Save Cost ที่สร้างได้: **฿${s.saveCost.toLocaleString()} บาท**
 • ตัวอย่างงานที่กำลังดูแล:
 ${activeList}
@@ -570,6 +777,9 @@ ${isHighLoad
 • **ความพึงพอใจของผู้รับบริการ (CSAT):** เฉลี่ย **98.4%** (เกณฑ์มาตรฐานองค์กร ≥85%)
 • **อัตราการส่งมอบงานตรงต่อเวลา:** **100% เต็ม**
 
+🔗 **ระบบตัวชี้วัดเป้าหมาย OKRs & KR/R:**
+${SYSTEM_PORTAL_URLS.okrGoals}
+
 💡 *ข้อสังเกตและแนวทางขับเคลื่อน:* ตัวชี้วัดด้านมูลค่าการประหยัดงบและกำไรทะลุเป้าหมายอย่างยอดเยี่ยม สำหรับผลงานสนับสนุนภายในองค์กรแนะนำให้เร่งผลักดันงานค้าง ${totals.pending} งาน และใช้ประโยชน์จาก Standard Template เพื่อเพิ่มอัตราการผลิตงานประจำเดือนอย่างต่อเนื่องค่ะ ✨`;
   }
 
@@ -584,7 +794,8 @@ ${isHighLoad
 • รวมงานในระบบทั้งหมด: **${totals.total} งาน**
   - ส่งมอบสำเร็จแล้ว: **${totals.completed} งาน** (${completedRate}%)
   - กำลังดำเนินการ: **${totals.inProgress} งาน**
-  - รอดำเนินการ / บรีฟใหม่: **${totals.pending} งาน** (${pendingRate}%)
+  - รอทำ (Pending): **${totals.pending} งาน** (${pendingRate}%)
+  - รอมอบหมาย (Unassigned): **${unassignedCount} งาน**
 • มูลค่าประหยัดงบประมาณสะสม (Save Cost): **฿${totals.saveCostTotal.toLocaleString()} บาท**
 • กำไรสะสมจากการให้บริการ: **฿${totals.profitTotal.toLocaleString()} บาท**
 
@@ -594,26 +805,53 @@ ${isHighLoad
 • PR & Communication: เสร็จ 71 งาน (Save Cost ฿1.66M)
 • Management: เสร็จ 17 โครงการ (Save Cost ฿21.89M)
 
+🔗 **CC Insights Portal & Dashboard ภาพรวม:**
+${SYSTEM_PORTAL_URLS.portal}
+
 💡 *ข้อสังเกตสำหรับทีม:* ปัจจุบันมีงานค้าง ${totals.pending} งาน โดยกระจุกตัวอยู่ที่งานข่าว RSP และงานออกแบบบางส่วน แนะนำให้จัด Quick Standup สั้นๆ สัปดาห์ละครั้งเพื่อสแกนและเคลียร์งานที่รอข้อมูลภายนอกให้เดินหน้าต่อได้ราบรื่นค่ะ 🌸`;
   }
 
-  // 6. ขอลิงก์ส่งบรีฟ / ฟอร์มขอรับบริการ
+  // 6. ขอลิงก์ส่งบรีฟ / ฟอร์มขอรับบริการ / ลิงก์ระบบสำคัญ
   if (
     q === "ขอบรีฟ" ||
     q === "ขอลิงก์" ||
+    q === "ขอ ลิ้งค์หน่อย" ||
+    q === "ขอลิงก์หน่อย" ||
+    q === "ขอลิ้งค์หน่อย" ||
+    q === "ขอลบิงก์" ||
     q === "ลิงก์" ||
+    q === "ลิ้งค์" ||
     q === "ส่งงาน" ||
     q.includes("ขอลิงก์บรีฟ") ||
     q.includes("ขอแบบฟอร์ม") ||
     q.includes("ลิงก์ส่งงาน") ||
-    q.includes("ส่งงานที่ไหน")
+    q.includes("ส่งงานที่ไหน") ||
+    q.includes("ขอลิงก์ระบบ") ||
+    q.includes("ขอลบิงก์ระบบ") ||
+    q.includes("ดู insight ได้ที่ไหน") ||
+    q.includes("ตรวจสอบรายละเอียดและ insight ได้ที่ไหน")
   ) {
-    return `ยินดีจัดส่งลิงก์แบบฟอร์มและติดตามงานให้ค่าา 📝✨
+    return `น้อง CC จัดส่งลิงก์เข้าใช้งานระบบ CC Insights Portal และบริการสำคัญของทีมให้เรียบร้อยแล้วค่ะ 🌸✨
 
-🔗 **ยื่นบรีฟงานใหม่:** ${briefFormUrl}
-🔍 **ติดตามสถานะงานแบบเรียลไทม์:** ${trackUrl}
+📊 **CC Insights Portal & Dashboard ภาพรวม:**
+${SYSTEM_PORTAL_URLS.portal}
 
-ยูนิตของทีม CC ที่พร้อมให้บริการ: Creative Design, Content Marketing, และ PR & Communication ค่ะ 🌸`;
+🎯 **ระบบติดตามเป้าหมาย OKRs & KR/R Metrics:**
+${SYSTEM_PORTAL_URLS.okrGoals}
+
+📋 **กระดานบริหารจัดการงานทีม CC (Task Assignments):**
+${SYSTEM_PORTAL_URLS.assignments}
+
+📝 **ฟอร์มส่งบรีฟงานใหม่ (Request Creative Brief):**
+${SYSTEM_PORTAL_URLS.briefRequest}
+
+🔍 **ติดตามสถานะงานแบบเรียลไทม์ (Track Status):**
+${SYSTEM_PORTAL_URLS.trackStatus}
+
+📑 **ศูนย์รายงานข้อมูล ISO/KM/WI:**
+${SYSTEM_PORTAL_URLS.dataReports}
+
+สามารถคลิกที่ลิงก์ด้านบนเพื่อเข้าใช้งานได้ทันทีเลยนะคะ 🚀`;
   }
 
   // 7. งานด่วน / Urgent

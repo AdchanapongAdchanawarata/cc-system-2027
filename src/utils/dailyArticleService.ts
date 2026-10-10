@@ -80,7 +80,7 @@ async function callGeminiJson(prompt: string): Promise<any | null> {
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
   if (!apiKey) return null;
 
-  const models = ['gemini-2.5-flash', 'gemini-3-flash-preview'];
+  const models = ['gemini-flash-lite-latest', 'gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3-flash-preview'];
   for (const model of models) {
     try {
       const controller = new AbortController();

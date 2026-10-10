@@ -59,6 +59,7 @@ interface MemberActivitySummary {
 export default function ActivityLogReportDetail() {
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [briefs, setBriefs] = useState<any[]>([]);
+  const [assigneesList, setAssigneesList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [memberFilter, setMemberFilter] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
@@ -74,13 +75,18 @@ export default function ActivityLogReportDetail() {
       }
 
       const supabase = createClient();
-      const [auditData, briefsRes] = await Promise.all([
+      const [auditData, briefsRes, assigneesRes] = await Promise.all([
         getAuditLogs(200),
-        supabase.from("briefs").select("*").order("created_at", { ascending: false })
+        supabase.from("briefs").select("*").neq("status", "purged").order("created_at", { ascending: false }),
+        supabase.from("assignees").select("id, name, unit, is_active")
       ]);
 
       setLogs(auditData || []);
-      setBriefs(briefsRes.data || []);
+      const activeBriefs = (briefsRes.data || []).filter(
+        b => b && b.status !== "purged" && !b.details?.is_permanently_deleted
+      );
+      setBriefs(activeBriefs);
+      setAssigneesList(assigneesRes.data || []);
     } catch (err) {
       console.warn("Error loading activity log data:", err);
     } finally {
@@ -92,26 +98,61 @@ export default function ActivityLogReportDetail() {
     loadRealData();
   }, []);
 
-  // Compute 13 members' real-world activity based strictly on database records
+  // Compute 12 operational members' real-world activity based strictly on database records (excluding executives)
   const teamMembers = useMemo<MemberActivitySummary[]>(() => {
     const list: MemberActivitySummary[] = [];
 
     Object.entries(DEFAULT_MEMBER_METADATA).forEach(([displayKey, meta]) => {
+      // Exclude executive leadership from operational workload matrix (ผู้บริหาร ไม่รวมในภาระงานปฏิบัติการ)
+      if (
+        meta.isExecutive || 
+        displayKey.includes("อ.บ่าว") || 
+        meta.position.includes("รองผู้อำนวยการ") || 
+        meta.position.includes("ผู้บริหาร")
+      ) {
+        return;
+      }
+
       // Split displayKey: e.g. "จ๊อบ AA" -> nickname: "จ๊อบ", code: "AA"
       const parts = displayKey.split(" ");
       const nickname = parts[0] || displayKey;
       const code = parts[1] || "";
 
-      // Find real briefs involving this member
+      // Find matched assignee in assignees table
+      const matchedAssignee = assigneesList.find(a => 
+        a.name === displayKey || 
+        (a.name && (a.name.includes(nickname) || (code && a.name.includes(code))))
+      );
+      const assigneeId = matchedAssignee?.id;
+
+      // Find real briefs involving this member as direct assignee or assistant
       const memberBriefs = briefs.filter(b => {
-        const assignees = Array.isArray(b.assignees) ? b.assignees : [];
-        const isAssigned = assignees.some((a: any) => 
-          (typeof a === "string" && (a.includes(nickname) || a.includes(code))) ||
-          (a && typeof a === "object" && (a.name?.includes(nickname) || a.name?.includes(code)))
-        );
-        const isLead = b.lead_designer && (b.lead_designer.includes(nickname) || b.lead_designer.includes(code));
-        const isCoordinator = b.coordinator_nickname && b.coordinator_nickname.includes(nickname);
-        return isAssigned || isLead || isCoordinator;
+        // 1. Direct assignee_id match
+        if (assigneeId && b.assignee_id === assigneeId) return true;
+
+        // 2. Assignee name / nickname match
+        if (b.assignee_name && (b.assignee_name.includes(nickname) || (code && b.assignee_name.includes(code)))) return true;
+
+        // 3. Array of assignees
+        if (Array.isArray(b.assignees) && b.assignees.some((a: any) => 
+          (typeof a === "string" && (a.includes(nickname) || (code && a.includes(code)))) ||
+          (a && typeof a === "object" && (a.id === assigneeId || a.name?.includes(nickname) || (code && a.name?.includes(code))))
+        )) return true;
+
+        // 4. Assistants array in details
+        if (Array.isArray(b.details?.assistants) && b.details.assistants.some((ast: any) =>
+          (assigneeId && ast.assignee_id === assigneeId) ||
+          (typeof ast === "string" && (ast.includes(nickname) || (code && ast.includes(code)))) ||
+          (ast && typeof ast === "object" && (ast.id === assigneeId || ast.name?.includes(nickname) || (code && ast.name?.includes(code))))
+        )) return true;
+
+        // 5. Assistant designer field
+        if (b.assistant_designer && (b.assistant_designer.includes(nickname) || (code && b.assistant_designer.includes(code)))) return true;
+
+        // 6. Lead designer
+        if (b.lead_designer && (b.lead_designer.includes(nickname) || (code && b.lead_designer.includes(code)))) return true;
+
+        return false;
       });
 
       const assignedTasksCount = memberBriefs.length;
@@ -171,7 +212,7 @@ export default function ActivityLogReportDetail() {
         name: meta.fullName,
         nickname,
         unit: meta.position.includes("รองผู้อำนวยการ") || meta.position.includes("หัวหน้าทีม")
-          ? "บริหารและยุทธศาสตร์"
+          ? "บริหารทีม"
           : meta.position.includes("ออกแบบ")
           ? "ยูนิตงานออกแบบ"
           : meta.position.includes("สื่อสารองค์กร")
@@ -189,7 +230,7 @@ export default function ActivityLogReportDetail() {
     });
 
     return list;
-  }, [logs, briefs]);
+  }, [logs, briefs, assigneesList]);
 
   // Filtered Logs for Tab 2
   const filteredLogs = useMemo(() => {
@@ -298,7 +339,7 @@ export default function ActivityLogReportDetail() {
               บันทึกกิจกรรมและความเคลื่อนไหวของทีม (Activity Log)
             </h1>
             <p className="text-xs sm:text-sm text-slate-500">
-              ติดตามการเข้าใช้งานระบบ การจัดการชิ้นงาน และประวัติกิจกรรมของสมาชิกทั้ง 13 ท่าน ตามมาตรฐาน ISO 9001:2015 ข้อกำหนด 8.5.2 (Traceability) ด้วยข้อมูลจริงจากระบบ
+              ติดตามการเข้าใช้งานระบบ การจัดการชิ้นงาน และประวัติกิจกรรมของสมาชิกทั้ง 12 ท่าน ตามมาตรฐาน ISO 9001:2015 ข้อกำหนด 8.5.2 (Traceability) ด้วยข้อมูลจริงจากระบบ
             </p>
           </div>
 
@@ -362,43 +403,45 @@ export default function ActivityLogReportDetail() {
           </div>
         </div>
 
-        {/* 3 Nav Tabs */}
-        <div className="grid grid-cols-3 border-b border-slate-200 pt-2 overflow-hidden">
-          <button
-            onClick={() => setActiveTab("scoreboard")}
-            className={`px-2 sm:px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 truncate ${
-              activeTab === "scoreboard"
-                ? "border-[#E03131] text-[#E03131]"
-                : "border-transparent text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <UserCheck size={16} className="shrink-0" />
-            <span className="truncate">1. ความแอคทีฟรายบุคคล</span>
-          </button>
+        {/* 3 Nav Tabs - Capsule Red Pill Design (Per Reference) */}
+        <div className="bg-white p-1.5 sm:p-2 rounded-2xl border border-slate-200 shadow-2xs">
+          <div className="grid grid-cols-1 sm:grid-cols-3 bg-slate-100 p-1 rounded-xl sm:rounded-2xl border border-slate-200 gap-1">
+            <button
+              onClick={() => setActiveTab("scoreboard")}
+              className={`px-3 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 text-center ${
+                activeTab === "scoreboard"
+                  ? "bg-[#E03131] text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
+              }`}
+            >
+              <UserCheck size={16} className="shrink-0" />
+              <span className="truncate">1. ความแอคทีฟรายบุคคล</span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab("logs")}
-            className={`px-2 sm:px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 truncate ${
-              activeTab === "logs"
-                ? "border-[#E03131] text-[#E03131]"
-                : "border-transparent text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <Clock size={16} className="shrink-0" />
-            <span className="truncate">2. ไทม์ไลน์กิจกรรมจริง (Audit Trail)</span>
-          </button>
+            <button
+              onClick={() => setActiveTab("logs")}
+              className={`px-3 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 text-center ${
+                activeTab === "logs"
+                  ? "bg-[#E03131] text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
+              }`}
+            >
+              <Clock size={16} className="shrink-0" />
+              <span className="truncate">2. ไทม์ไลน์กิจกรรมจริง (Audit Trail)</span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab("insights")}
-            className={`px-2 sm:px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 truncate ${
-              activeTab === "insights"
-                ? "border-[#E03131] text-[#E03131]"
-                : "border-transparent text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <Sparkles size={16} className={`shrink-0 ${activeTab === "insights" ? "text-[#E03131]" : "text-amber-500"}`} />
-            <span className="truncate">3. บทวิเคราะห์เชิงบริหาร</span>
-          </button>
+            <button
+              onClick={() => setActiveTab("insights")}
+              className={`px-3 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 text-center ${
+                activeTab === "insights"
+                  ? "bg-[#E03131] text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
+              }`}
+            >
+              <Sparkles size={16} className={`shrink-0 ${activeTab === "insights" ? "text-white" : "text-amber-500"}`} />
+              <span className="truncate">3. บทวิเคราะห์เชิงบริหาร</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -659,7 +702,7 @@ export default function ActivityLogReportDetail() {
 
                         <div className="flex items-center gap-3 text-[10.5px] text-slate-400 pt-0.5">
                           <span className="flex items-center gap-1">
-                            <User size={11} /> {log.actor_name} ({log.actor_role})
+                            <User size={11} /> {log.actor_name} ({(log.actor_name?.includes("วา") || log.actor_email?.includes("wasita")) && log.actor_role === "admin" ? "assignee" : log.actor_role})
                           </span>
                           <span>•</span>
                           <span>{dateDisplay}</span>
@@ -679,26 +722,26 @@ export default function ActivityLogReportDetail() {
       {/* ===================================================================== */}
       {activeTab === "insights" && (
         <div className="space-y-6">
-          {/* Header Banner */}
-          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-6 sm:p-7 text-white shadow-md border border-slate-700/60">
+          {/* Header Banner - Graphite Gradient Background */}
+          <div className="bg-gradient-to-b from-zinc-900 via-zinc-900 to-zinc-950 rounded-3xl p-6 sm:p-7 text-white shadow-xl border border-zinc-800">
             <div className="space-y-4">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-700/80">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-zinc-800/80">
                 <div className="flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-orange-500/20 to-amber-500/30 border border-orange-500/30 flex items-center justify-center text-orange-400 shrink-0">
+                  <div className="w-12 h-12 rounded-2xl bg-zinc-800/90 border border-zinc-700/80 flex items-center justify-center text-orange-400 shrink-0 shadow-inner">
                     <Sparkles size={24} />
                   </div>
                   <div>
                     <h3 className="text-lg sm:text-xl font-black tracking-tight text-white">
                       บทวิเคราะห์พฤติกรรมการทำงานและความพร้อมเชิงบริหาร (Executive Insights)
                     </h3>
-                    <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
+                    <p className="text-xs sm:text-sm text-zinc-200 mt-0.5 leading-relaxed">
                       ประมวลผลจากข้อมูลงานจริงในระบบปีงบประมาณ 2570 เพื่อสนับสนุนการตัดสินใจตามมาตรฐาน ISO 9001:2015
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono">
                     <CheckCircle2 size={13} /> ข้อมูลจริงในระบบ: {briefs.length} งาน
                   </span>
                 </div>
@@ -706,43 +749,43 @@ export default function ActivityLogReportDetail() {
 
               {/* 4 Executive KPI Quick Stats */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700/60">
-                  <span className="text-[10.5px] font-mono text-slate-400 uppercase tracking-wider block">งานกำลังผลิต (In Progress)</span>
+                <div className="p-4 rounded-2xl bg-zinc-950/70 border border-zinc-800/90 shadow-inner">
+                  <span className="text-[11px] font-mono text-zinc-300 uppercase tracking-wider block font-semibold">งานกำลังผลิต (In Progress)</span>
                   <div className="mt-1 flex items-baseline gap-2">
                     <span className="text-2xl font-black text-white font-mono">{insights.activeTasksCount}</span>
-                    <span className="text-[11px] font-bold text-blue-400">งาน</span>
+                    <span className="text-xs font-bold text-blue-400">งาน</span>
                   </div>
-                  <p className="text-[10px] text-slate-400 mt-1">กระจายใน 4 ยูนิตสร้างสรรค์</p>
+                  <p className="text-[11px] text-zinc-400 mt-1">กระจายใน 4 ยูนิตสร้างสรรค์</p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700/60">
-                  <span className="text-[10.5px] font-mono text-slate-400 uppercase tracking-wider block">งานเสร็จสมบูรณ์ (Completed)</span>
+                <div className="p-4 rounded-2xl bg-zinc-950/70 border border-zinc-800/90 shadow-inner">
+                  <span className="text-[11px] font-mono text-zinc-300 uppercase tracking-wider block font-semibold">งานเสร็จสมบูรณ์ (Completed)</span>
                   <div className="mt-1 flex items-baseline gap-2">
                     <span className="text-2xl font-black text-emerald-400 font-mono">{insights.completedTasksCount}</span>
-                    <span className="text-[11px] font-bold text-emerald-300">งาน</span>
+                    <span className="text-xs font-bold text-emerald-300">งาน</span>
                   </div>
-                  <p className="text-[10px] text-slate-400 mt-1">ส่งมอบตามเกณฑ์คุณภาพ</p>
+                  <p className="text-[11px] text-zinc-400 mt-1">ส่งมอบตามเกณฑ์คุณภาพ</p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700/60">
-                  <span className="text-[10.5px] font-mono text-slate-400 uppercase tracking-wider block">งานช่วยร่วมยูนิต (Collaboration)</span>
+                <div className="p-4 rounded-2xl bg-zinc-950/70 border border-zinc-800/90 shadow-inner">
+                  <span className="text-[11px] font-mono text-zinc-300 uppercase tracking-wider block font-semibold">งานช่วยร่วมยูนิต (Collaboration)</span>
                   <div className="mt-1 flex items-baseline gap-2">
                     <span className="text-2xl font-black text-purple-400 font-mono">{insights.assistantTasksCount}</span>
-                    <span className="text-[11px] font-bold text-purple-300">งานช่วย</span>
+                    <span className="text-xs font-bold text-purple-300">งานช่วย</span>
                   </div>
-                  <p className="text-[10px] text-slate-400 mt-1">เกลี่ยภาระงานข้ามสายงาน</p>
+                  <p className="text-[11px] text-zinc-400 mt-1">เกลี่ยภาระงานข้ามสายงาน</p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700/60">
-                  <span className="text-[10.5px] font-mono text-slate-400 uppercase tracking-wider block">งานเกินกำหนดส่ง (Overdue)</span>
+                <div className="p-4 rounded-2xl bg-zinc-950/70 border border-zinc-800/90 shadow-inner">
+                  <span className="text-[11px] font-mono text-zinc-300 uppercase tracking-wider block font-semibold">งานเกินกำหนดส่ง (Overdue)</span>
                   <div className="mt-1 flex items-baseline gap-2">
                     <span className={`text-2xl font-black font-mono ${insights.overdueTasksCount > 0 ? "text-rose-400" : "text-emerald-400"}`}>
                       {insights.overdueTasksCount}
                     </span>
-                    <span className="text-[11px] font-bold text-slate-400">งาน</span>
+                    <span className="text-xs font-bold text-zinc-300">งาน</span>
                   </div>
-                  <p className="text-[10px] text-slate-400 mt-1">
-                    {insights.overdueTasksCount === 0 ? "ควบคุมตามเกณฑ์ SLA" : "ควรเร่งติดตาม"}
+                  <p className="text-[11px] text-zinc-400 mt-1">
+                    {insights.overdueTasksCount === 0 ? "ตรงตามกำหนดเวลา" : "ควรเร่งติดตาม"}
                   </p>
                 </div>
               </div>
@@ -763,7 +806,7 @@ export default function ActivityLogReportDetail() {
                 <span className="text-[10.5px] font-bold text-slate-500 block">สรุปข้อมูลจริง:</span>
                 <p className="text-slate-700">
                   {briefs.length === 0
-                    ? "เริ่มต้นปีงบประมาณ 2570 ยังไม่มีบรีฟค้างในระบบ ทีมงานทั้ง 13 ท่านพร้อมรับงานใหม่อย่างเต็มกำลัง"
+                    ? "เริ่มต้นปีงบประมาณ 2570 ยังไม่มีบรีฟค้างในระบบ ทีมงานทั้ง 12 ท่านพร้อมรับงานใหม่อย่างเต็มกำลัง"
                     : `มีงานทั้งหมดในระบบ ${briefs.length} รายการ (กำลังทำ ${insights.activeTasksCount} งาน, รอมอบหมาย ${insights.pendingTasksCount} งาน)`}
                 </p>
               </div>
@@ -772,7 +815,7 @@ export default function ActivityLogReportDetail() {
             {/* Pillar 2 */}
             <div className="bg-white rounded-3xl border border-slate-200 p-5 shadow-2xs space-y-3">
               <span className="px-2.5 py-1 rounded-xl text-xs font-bold uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200 inline-flex items-center gap-1.5">
-                <AlertTriangle size={13} /> มิติที่ 2 • การติดตามสถานะ &amp; กำหนดส่ง (SLA &amp; Lead Time)
+                <AlertTriangle size={13} /> มิติที่ 2 • การติดตามสถานะ &amp; กำหนดส่ง (Lead Time &amp; กำหนดส่งมอบ)
               </span>
               <h5 className="text-sm font-black text-slate-900">
                 การควบคุมความล่าช้าและงานค้างรอบ
@@ -824,19 +867,19 @@ export default function ActivityLogReportDetail() {
             </div>
           </div>
 
-          {/* 13 Personnel Matrix Table */}
+          {/* 12 Personnel Operational Matrix Table */}
           <div className="bg-white rounded-3xl border border-slate-200 shadow-2xs p-6 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
                 <h4 className="text-sm font-black text-slate-900 tracking-tight">
-                  ตารางสรุปภาระงานและสถานะบุคลากร (13 Personnel Operational Matrix)
+                  ตารางสรุปภาระงานและสถานะบุคลากร (12 Personnel Operational Matrix)
                 </h4>
                 <p className="text-xs text-slate-500">
                   รายงานจำนวนงานจริงที่ได้รับมอบหมายและสถานะความพร้อมของแต่ละท่าน
                 </p>
               </div>
               <span className="text-xs font-mono font-bold text-slate-400">
-                13 สมาชิก • 4 ยูนิต
+                {teamMembers.length} สมาชิก • 3 ยูนิตปฏิบัติการ
               </span>
             </div>
 

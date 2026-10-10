@@ -17,6 +17,8 @@ export interface BriefTaskLike {
   unit: string;
   status: string;
   assignee_id: string | null;
+  task_code?: string;
+  assignee_name?: string;
   created_at?: string;
   in_progress_at?: string;
   completed_at?: string;
@@ -33,6 +35,7 @@ export interface BriefTaskLike {
     assistants?: AssistantAllocation[];
     [key: string]: any;
   };
+  [key: string]: any;
 }
 
 export interface PersonShare {
@@ -44,10 +47,10 @@ export interface PersonShare {
 }
 
 export function getBriefSaveCost(brief: BriefTaskLike): number {
-  const isPM = (brief.details?.category || (brief as any).category) === "PM โครงการของ CC";
+  const isPM = isCcPmProject(brief);
   if (isPM) {
     const profit = Number(brief.details?.profit !== undefined ? brief.details.profit : ((Number(brief.details?.revenue) || 0) - (Number(brief.details?.cost) || 0)));
-    if (profit > 0) return profit;
+    if (!isNaN(profit) && profit >= 0) return profit;
   }
   if (brief.details?.save_cost !== undefined && brief.details?.save_cost !== null) {
     return Number(brief.details.save_cost) || 0;
@@ -64,6 +67,22 @@ export function getBriefSaveCost(brief: BriefTaskLike): number {
     return Number(brief.details.project_value) || 0;
   }
   return 0;
+}
+
+export function isCcPmProject(brief: any): boolean {
+  if (!brief) return false;
+  const details = brief.details || {};
+  const cat = (details.category || brief.category || "").toString();
+  const srv = (details.service || brief.service || details.type || "").toString();
+  const pName = (brief.project_name || "").toString();
+  return (
+    details.is_pm_project === true ||
+    cat.trim() === "PM โครงการของ CC" ||
+    cat.includes("PM โครงการ") ||
+    srv.includes("PM โครงการ") ||
+    pName.includes("PM โครงการ") ||
+    pName.startsWith("[PM]")
+  );
 }
 
 export function getTaskFinancialDistribution(brief: BriefTaskLike): {
@@ -160,8 +179,9 @@ export interface MemberStats {
   saveCostPerDay: number; // totalSaveCost / Math.max(1, totalTurnaroundDays)
   speedCategory: 'fast' | 'balanced' | 'deep' | 'at_risk';
   
-  // Individual SWOT & Actionable Recommendations
+  // Individual Growth & Strengths Analysis (เชิงบวก สร้างสรรค์ เสริมพลังใจ)
   strengths: string[];
+  improvements: string[];
   weaknesses: string[];
   actionSteps: string[];
   riskImpacts: string[];
@@ -172,6 +192,8 @@ export interface UnitRiskAlert {
   unitLabel: string;
   leadName: string;
   totalTasks: number;
+  unassignedCount: number;
+  todoCount: number;
   completedCount: number;
   pendingCount: number;
   stalledPendingCount: number;
@@ -232,13 +254,14 @@ export function aggregateMemberWorkloadAndFinancials(
       slowestDays: null,
       onTimeCompletedCount: 0,
       lateCompletedCount: 0,
-      onTimeRate: 100,
+      onTimeRate: 0,
       overdueTasksCount: 0,
       stalledPendingCount: 0,
       stalledProgressCount: 0,
       saveCostPerDay: 0,
       speedCategory: 'balanced',
       strengths: [],
+      improvements: [],
       weaknesses: [],
       actionSteps: [],
       riskImpacts: [],
@@ -294,14 +317,13 @@ export function aggregateMemberWorkloadAndFinancials(
 
     // Profit resolution for PM Projects
     const isInternal = (brief.unit || '').toLowerCase() === 'internal';
-    const isPM = (brief.details?.category || (brief as any).category) === "PM โครงการของ CC" ||
-                 Boolean(brief.details?.project_code && (brief.details?.revenue !== undefined || brief.details?.cost !== undefined));
+    const isPM = isCcPmProject(brief);
     const revNum = Number(brief.details?.revenue) || 0;
     const costNum = Number(brief.details?.cost) || 0;
     const taskProfit = brief.details?.profit !== undefined && brief.details?.profit !== null
       ? Number(brief.details?.profit)
       : (revNum - costNum);
-    const hasProfit = (isPM || taskProfit > 0) && !isCancelled;
+    const hasProfit = isPM && !isCancelled;
 
     // Apply to owner
     if (ownerShare && statsMap[ownerShare.assignee_id]) {
@@ -396,7 +418,7 @@ export function aggregateMemberWorkloadAndFinancials(
     if (ratedTasks > 0) {
       stat.onTimeRate = Math.round((stat.onTimeCompletedCount / ratedTasks) * 100);
     } else {
-      stat.onTimeRate = 100;
+      stat.onTimeRate = 0;
     }
 
     // Save Cost per active day
@@ -408,22 +430,53 @@ export function aggregateMemberWorkloadAndFinancials(
 
     // Back of House & Citizenship Score (0 - 100)
     const totalTasks = stat.totalTasksInvolved || (stat.ownerTaskCount + stat.assistantTaskCount);
-    const assistRatio = totalTasks > 0 ? Math.round((stat.assistantTaskCount / totalTasks) * 100) : 0;
-    const peerScore = Math.min(25, Math.round(
-      (stat.assistantTaskCount / maxAssistTasks) * 18 + 
-      (assistRatio >= 30 ? 7 : (assistRatio / 30) * 7)
-    ));
-    const internalScore = Math.min(25, Math.round((stat.internalTasksCount / maxInternalTasks) * 25));
-    const stalledCount = stat.stalledPendingCount + stat.stalledProgressCount + stat.overdueTasksCount;
-    const disciplineScore = Math.min(25, Math.max(5, Math.round(
-      (stat.onTimeRate / 100) * 15 + (stalledCount === 0 ? 10 : Math.max(0, 10 - stalledCount * 2.5))
-    )));
-    const completionRate = totalTasks > 0 ? (stat.completedTasks / totalTasks) * 100 : 100;
-    const qualityScore = Math.min(25, Math.max(5, Math.round(
-      (completionRate / 100) * 15 + (stat.avgTurnaroundDays > 0 && stat.avgTurnaroundDays <= 3 ? 10 : 7)
-    )));
+    let totalCitizenship = 0;
+    let peerScore = 0;
+    let internalScore = 0;
+    let disciplineScore = 0;
+    let qualityScore = 0;
 
-    const totalCitizenship = Math.min(100, Math.max(10, peerScore + internalScore + disciplineScore + qualityScore));
+    if (totalTasks === 0) {
+      totalCitizenship = 0;
+      peerScore = 0;
+      internalScore = 0;
+      disciplineScore = 0;
+      qualityScore = 0;
+      stat.citizenshipTier = 'core';
+      stat.citizenshipTitle = 'ยังไม่มีภาระงานในรอบนี้';
+    } else {
+      const assistRatio = Math.round((stat.assistantTaskCount / totalTasks) * 100);
+      peerScore = Math.min(25, Math.round(
+        (stat.assistantTaskCount / maxAssistTasks) * 18 + 
+        (assistRatio >= 30 ? 7 : (assistRatio / 30) * 7)
+      ));
+      internalScore = Math.min(25, Math.round((stat.internalTasksCount / maxInternalTasks) * 25));
+      const stalledCount = stat.stalledPendingCount + stat.stalledProgressCount + stat.overdueTasksCount;
+      disciplineScore = Math.min(25, Math.max(5, Math.round(
+        (stat.onTimeRate / 100) * 15 + (stalledCount === 0 ? 10 : Math.max(0, 10 - stalledCount * 2.5))
+      )));
+      const completionRate = (stat.completedTasks / totalTasks) * 100;
+      qualityScore = Math.min(25, Math.max(5, Math.round(
+        (completionRate / 100) * 15 + (stat.avgTurnaroundDays > 0 && stat.avgTurnaroundDays <= 3 ? 10 : 7)
+      )));
+
+      totalCitizenship = Math.min(100, Math.max(10, peerScore + internalScore + disciplineScore + qualityScore));
+
+      if (totalCitizenship >= 85) {
+        stat.citizenshipTier = 'champion';
+        stat.citizenshipTitle = 'เสาหลักช่วยงานทีมรอบด้าน (Team Champion)';
+      } else if (totalCitizenship >= 70) {
+        stat.citizenshipTier = 'anchor';
+        stat.citizenshipTitle = 'เพื่อนร่วมงานที่พึ่งพาได้เสมอ (Team Anchor)';
+      } else if (totalCitizenship >= 55) {
+        stat.citizenshipTier = 'contributor';
+        stat.citizenshipTitle = 'รักษามาตรฐานและวินัยงานดี (Active Contributor)';
+      } else {
+        stat.citizenshipTier = 'core';
+        stat.citizenshipTitle = 'เน้นลุยงานหลักของตนเอง (Core Task Focus)';
+      }
+    }
+
     stat.citizenshipScore = totalCitizenship;
     stat.citizenshipPillars = {
       peerSupport: peerScore,
@@ -432,22 +485,10 @@ export function aggregateMemberWorkloadAndFinancials(
       qualityClosure: qualityScore,
     };
 
-    if (totalCitizenship >= 85) {
-      stat.citizenshipTier = 'champion';
-      stat.citizenshipTitle = 'เสาหลักหลังบ้าน (Back-of-House Champion)';
-    } else if (totalCitizenship >= 70) {
-      stat.citizenshipTier = 'anchor';
-      stat.citizenshipTitle = 'ผู้ส่งเสริมความร่วมมือ (Collaboration Anchor)';
-    } else if (totalCitizenship >= 55) {
-      stat.citizenshipTier = 'contributor';
-      stat.citizenshipTitle = 'ผู้สนับสนุนมาตรฐาน (Active Contributor)';
-    } else {
-      stat.citizenshipTier = 'core';
-      stat.citizenshipTitle = 'ผู้ปฏิบัติการเน้นงานหลัก (Core Task Specialist)';
-    }
-
     // Speed Category
-    if ((stat.overdueTasksCount > 0 || stat.stalledProgressCount > 0) && stat.onTimeRate < 75) {
+    if (totalTasks === 0) {
+      stat.speedCategory = 'balanced';
+    } else if ((stat.overdueTasksCount > 0 || stat.stalledProgressCount > 0) && stat.onTimeRate < 75) {
       stat.speedCategory = 'at_risk';
     } else if (stat.avgTurnaroundDays > 0 && stat.avgTurnaroundDays <= 2.5) {
       stat.speedCategory = 'fast';
@@ -457,75 +498,94 @@ export function aggregateMemberWorkloadAndFinancials(
       stat.speedCategory = 'balanced';
     }
 
-    // --- SWOT Analysis ---
-    // 1. Strengths
+    // --- Positive Growth & Development Analysis (วิเคราะห์เชิงบวก เสริมพลังใจ) ---
+    // 1. จุดเด่นและสิ่งที่ทำได้ดีเยี่ยม (Strengths & Highlights)
     const strengths: string[] = [];
-    if (stat.totalProfit > 0) {
-      strengths.push(`สร้างกำไรโครงการ (Project Profit) รวม ฿${stat.totalProfit.toLocaleString()} บาท จาก ${stat.pmProjectsCount} โครงการ`);
-    }
-    if (stat.citizenshipScore >= 80) {
-      strengths.push(`คะแนนการมีส่วนร่วมหลังบ้านระดับสูง (${stat.citizenshipScore}/100 - ${stat.citizenshipTitle}) เป็นที่พึ่งพาสำคัญของทีม`);
-    }
-    if (stat.onTimeRate >= 90 && stat.completedTasks > 0) {
-      strengths.push(`ส่งมอบงานตรงตามกำหนดสูงถึง ${stat.onTimeRate}% (วินัยส่งมอบยอดเยี่ยม)`);
-    }
-    if (stat.avgTurnaroundDays > 0 && stat.avgTurnaroundDays <= 3) {
-      strengths.push(`ปิดงานได้รวดเร็ว คล่องตัวสูง เฉลี่ยเพียง ${stat.avgTurnaroundDays} วัน/งาน`);
-    }
-    if (stat.assistantTaskCount >= 2) {
-      strengths.push(`มีจิตบริการและ Team Collaboration สูง ช่วยเหลือเพื่อนร่วมทีมถึง ${stat.assistantTaskCount} งาน`);
-    }
-    if (stat.totalSaveCost >= 10000) {
-      strengths.push(`ช่วยองค์กรประหยัดต้นทุน (Save Cost) รวม ฿${stat.totalSaveCost.toLocaleString()} บาท`);
-    }
-    if (strengths.length === 0) {
-      strengths.push('มีความรับผิดชอบต่อภาระงานที่ได้รับมอบหมาย');
+    if (totalTasks === 0) {
+      strengths.push('มีความพร้อมในการรับมอบหมายงานและโครงการใหม่ในรอบเวลา');
+    } else {
+      if (stat.totalProfit > 0) {
+        strengths.push(`สร้างกำไรโครงการ (Project Profit) รวม ฿${stat.totalProfit.toLocaleString()} บาท จาก ${stat.pmProjectsCount} โครงการ`);
+      }
+      if (stat.citizenshipScore >= 80) {
+        strengths.push(`คะแนนการมีส่วนร่วมหลังบ้านระดับสูง (${stat.citizenshipScore}/100 - ${stat.citizenshipTitle}) เป็นที่พึ่งพาสำคัญของทีม`);
+      }
+      if (stat.onTimeRate >= 90 && stat.completedTasks > 0) {
+        strengths.push(`ส่งมอบงานตรงตามกำหนดสูงถึง ${stat.onTimeRate}% (วินัยส่งมอบยอดเยี่ยม)`);
+      }
+      if (stat.avgTurnaroundDays > 0 && stat.avgTurnaroundDays <= 3) {
+        strengths.push(`ปิดงานได้รวดเร็ว คล่องตัวสูง เฉลี่ยเพียง ${stat.avgTurnaroundDays} วัน/งาน`);
+      }
+      if (stat.assistantTaskCount >= 2) {
+        strengths.push(`มีจิตบริการและ Team Collaboration สูง ช่วยเหลือเพื่อนร่วมทีมถึง ${stat.assistantTaskCount} งาน`);
+      }
+      if (stat.totalSaveCost >= 10000) {
+        strengths.push(`ช่วยองค์กรประหยัดต้นทุน (Save Cost) รวม ฿${stat.totalSaveCost.toLocaleString()} บาท`);
+      }
+      if (strengths.length === 0) {
+        strengths.push('มีความรับผิดชอบต่อภาระงานที่ได้รับมอบหมาย และพร้อมเรียนรู้สิ่งใหม่');
+      }
     }
     stat.strengths = strengths;
 
-    // 2. Weaknesses & Bottlenecks
-    const weaknesses: string[] = [];
-    if (stat.stalledPendingCount > 0) {
-      weaknesses.push(`มีงานค้างในสถานะ Pending นานเกิน 3 วัน จำนวน ${stat.stalledPendingCount} งาน (ยังไม่เริ่มผลิต)`);
+    // 2. สิ่งที่ต้องพัฒนาเพิ่มเติม (Growth & Improvement Opportunities) - เชิงบวก เสริมกำลังใจ
+    const improvements: string[] = [];
+    if (totalTasks === 0) {
+      improvements.push('โอกาสในการเปิดรับภาระงานใหม่: สามารถตรวจสอบงานในระบบเพื่อเริ่มรับมอบหมายงานและสร้างผลงานเด่น');
+      improvements.push('โอกาสในการร่วมมือ: เสนอตัวสนับสนุนเพื่อนร่วมทีมในชิ้นงานขนาดใหญ่เพื่อแลกเปลี่ยนทักษะ');
+    } else {
+      if (stat.stalledPendingCount > 0) {
+        improvements.push(`โอกาสในการวางแผนเริ่มงาน: มีงานในคิวรอเริ่ม ${stat.stalledPendingCount} งาน สามารถจัดลำดับความสำคัญและประสานงานข้อมูลเพิ่มเติมเพื่อเริ่มผลิตได้อย่างต่อเนื่อง`);
+      }
+      if (stat.stalledProgressCount > 0) {
+        improvements.push(`โอกาสในการซอยย่อยชิ้นงาน (Milestones): มีงานกำลังทำ ${stat.stalledProgressCount} งานที่สามารถส่งดราฟต์ตรวจความคืบหน้าล่วงหน้า หรือดึงเพื่อนร่วมทีมมาช่วยสนับสนุน`);
+      }
+      if (stat.overdueTasksCount > 0) {
+        improvements.push(`โอกาสในการบริหารไทม์ไลน์เชิงรุก: มีงานที่ควรประสานงานปรับขยายกำหนดส่งมอบ ${stat.overdueTasksCount} งาน เพื่อความสอดคล้องกับผู้ขอบรีฟ`);
+      }
+      if (stat.assistantTaskCount === 0 && stat.ownerTaskCount >= 4) {
+        improvements.push('โอกาสในการสร้างพลังร่วม (Collaboration): สามารถกระจายสัดส่วนงานหรือดึงเพื่อนร่วมทีมมาร่วมเป็นผู้ช่วย เพื่อลดภาระงานเดี่ยวและเพิ่มความคล่องตัว');
+      }
+      if (improvements.length === 0) {
+        improvements.push('รักษามาตรฐานการทำงานที่ยอดเยี่ยม และสามารถต่อยอดทักษะเฉพาะทางเพื่อรับโจทย์งานระดับสูงขึ้น');
+      }
     }
-    if (stat.stalledProgressCount > 0) {
-      weaknesses.push(`มีงานค้างในสถานะ In Progress นานเกิน 5 วัน จำนวน ${stat.stalledProgressCount} งาน (อาจติดคอขวด)`);
-    }
-    if (stat.overdueTasksCount > 0) {
-      weaknesses.push(`มีงานที่เลยกำหนด Deadline แล้ว ${stat.overdueTasksCount} งาน`);
-    }
-    if (stat.assistantTaskCount === 0 && stat.ownerTaskCount >= 4) {
-      weaknesses.push('รับผิดชอบงานเดี่ยวเป็นหลัก ยังขาดการดึงผู้ช่วยมาช่วยลดภาระ');
-    }
-    if (weaknesses.length === 0) {
-      weaknesses.push('ควบคุมสถานะงานได้ตามเกณฑ์มาตรฐาน ไม่พบคอขวดรุนแรง');
-    }
-    stat.weaknesses = weaknesses;
+    stat.improvements = improvements;
+    stat.weaknesses = improvements;
 
     // 3. Actionable Remediation Steps (แนวทางแก้ไข 1, 2, 3)
     const actionSteps: string[] = [];
-    if (stat.stalledPendingCount > 0) {
-      actionSteps.push('1. ตรวจสอบบรีฟด่วน: ติดต่อผู้ขอบรีฟเพื่อคอนเฟิร์มข้อมูลที่ขาดหาย และปรับสถานะเป็น In Progress ทันที');
+    if (totalTasks === 0) {
+      actionSteps.push('1. ตรวจสอบคิวงานใหม่จาก One-Stop Brief Portal หรือแจ้งหัวหน้าทีมเมื่อพร้อมรับงาน');
+      actionSteps.push('2. เตรียมพร้อมเครื่องมือและทักษะที่เกี่ยวข้องกับสายงานเพื่อรองรับงานโครงการ');
+      actionSteps.push('3. สนับสนุนเพื่อนร่วมทีมในฐานะผู้ช่วย (Assistant) ในชิ้นงานที่มีขนาดใหญ่');
     } else {
-      actionSteps.push('1. จัดลำดับความสำคัญ (Prioritization): โฟกัสงานที่มี Deadline ใกล้ที่สุด 2 ชิ้นแรกก่อน');
-    }
+      if (stat.stalledPendingCount > 0) {
+        actionSteps.push('1. ตรวจสอบบรีฟด่วน: ติดต่อผู้ขอบรีฟเพื่อคอนเฟิร์มข้อมูลที่ขาดหาย และปรับสถานะเป็น In Progress ทันที');
+      } else {
+        actionSteps.push('1. จัดลำดับความสำคัญ (Prioritization): โฟกัสงานที่มี Deadline ใกล้ที่สุด 2 ชิ้นแรกก่อน');
+      }
 
-    if (stat.stalledProgressCount > 0 || stat.inProgressTasks >= 3) {
-      actionSteps.push('2. มอบหมายผู้ช่วย (Assign Assistant): แบ่งเปอร์เซ็นต์ Save Cost 30-50% ให้เพื่อนร่วมทีมเข้ามาช่วยตัดต่อ/ขึ้นอาร์ตเวิร์ก');
-    } else {
-      actionSteps.push('2. สื่อสารสถานะเชิงรุก: อัปเดตความคืบหน้าให้ผู้ประสานงานทราบทุกสัปดาห์เพื่อความโปร่งใส');
-    }
+      if (stat.stalledProgressCount > 0 || stat.inProgressTasks >= 3) {
+        actionSteps.push('2. มอบหมายผู้ช่วย (Assign Assistant): แบ่งเปอร์เซ็นต์ Save Cost 30-50% ให้เพื่อนร่วมทีมเข้ามาช่วยตัดต่อ/ขึ้นอาร์ตเวิร์ก');
+      } else {
+        actionSteps.push('2. สื่อสารสถานะเชิงรุก: อัปเดตความคืบหน้าให้ผู้ประสานงานทราบทุกสัปดาห์เพื่อความโปร่งใส');
+      }
 
-    if (stat.overdueTasksCount > 0 || stat.stalledProgressCount > 0) {
-      actionSteps.push('3. ซอยย่อยชิ้นงาน (Milestone Delivery): ส่งมอบดราฟต์แรกให้ผู้ขอตรวจก่อน ไม่รอส่งมอบจนสมบูรณ์ 100%');
-    } else {
-      actionSteps.push('3. บันทึกผลการ Save Cost และถอดบทเรียนทักษะ เพื่อยกระดับความเร็วในงานประเภทเดียวกัน');
+      if (stat.overdueTasksCount > 0 || stat.stalledProgressCount > 0) {
+        actionSteps.push('3. ซอยย่อยชิ้นงาน (Milestone Delivery): ส่งมอบดราฟต์แรกให้ผู้ขอตรวจก่อน ไม่รอส่งมอบจนสมบูรณ์ 100%');
+      } else {
+        actionSteps.push('3. บันทึกผลการ Save Cost และถอดบทเรียนทักษะ เพื่อยกระดับความเร็วในงานประเภทเดียวกัน');
+      }
     }
     stat.actionSteps = actionSteps;
 
     // 4. Risk Impacts (ความเสี่ยง 1, 2, 3)
     const riskImpacts: string[] = [];
-    if (stat.overdueTasksCount > 0 || stat.stalledPendingCount > 0 || stat.stalledProgressCount > 0) {
+    if (totalTasks === 0) {
+      riskImpacts.push('1. ความเสี่ยงด้านการจัดสรรทรัพยากรบุคคล (Resource Underutilization) หากไม่มีการกระจายงานอย่างทั่วถึง');
+      riskImpacts.push('2. ควรติดตามและกระจายคำขอบรีฟใหม่ให้ครอบคลุมทุกสมาชิกเพื่อความสมดุลของทีม');
+    } else if (stat.overdueTasksCount > 0 || stat.stalledPendingCount > 0 || stat.stalledProgressCount > 0) {
       riskImpacts.push('1. ความเสี่ยงงานล่าช้ากระทบต่อกำหนดการจัดกิจกรรมหรือแคมเปญของผู้ขอบรีฟ (Timeline Cascade)');
       riskImpacts.push('2. ความเสี่ยงต่อความเหนื่อยล้าสะสมของผู้ปฏิบัติงาน (Burnout Risk) จากงานที่คั่งค้าง');
       riskImpacts.push('3. เสียโอกาสในการบันทึกมูลค่า Save Cost เข้าสู่ระบบตามรอบประเมินประจำไตรมาส');
@@ -589,8 +649,14 @@ export function generateTeamExecutiveAnalysis(
   let totalProfit = 0;
   let totalCitizenshipScore = 0;
 
+  // Direct calculation of totalSaveCost from all active briefs so unassigned briefs are included
+  briefs.forEach((b) => {
+    if (b.status !== 'cancelled' && b.status !== 'purged') {
+      totalSaveCost += getBriefSaveCost(b);
+    }
+  });
+
   members.forEach((m) => {
-    totalSaveCost += m.totalSaveCost;
     ownerSaveCost += m.ownerSaveCost;
     assistantSaveCost += m.assistantSaveCost;
     totalProfit += m.totalProfit;
@@ -617,7 +683,7 @@ export function generateTeamExecutiveAnalysis(
   // Calculate team on-time delivery rate
   const totalOnTime = members.reduce((sum, m) => sum + m.onTimeCompletedCount, 0);
   const totalLate = members.reduce((sum, m) => sum + m.lateCompletedCount, 0);
-  const teamOnTimeRate = totalOnTime + totalLate > 0 ? Math.round((totalOnTime / (totalOnTime + totalLate)) * 100) : 100;
+  const teamOnTimeRate = totalOnTime + totalLate > 0 ? Math.round((totalOnTime / (totalOnTime + totalLate)) * 100) : (completedTasks > 0 ? 100 : 0);
 
   const overdueTasksCount = members.reduce((sum, m) => sum + m.overdueTasksCount, 0);
   const stalledPendingTotal = members.reduce((sum, m) => sum + m.stalledPendingCount, 0);
@@ -651,10 +717,12 @@ export function generateTeamExecutiveAnalysis(
     
     // คำนวณงานที่สังกัด Unit นี้
     const unitBriefs = briefs.filter((b) => (b.unit?.toLowerCase() || '') === u);
-    const uPending = unitBriefs.filter((b) => b.status === 'pending').length;
+    const uUnassigned = unitBriefs.filter((b) => (!b.assignee_id || b.assignee_id === '') && b.status === 'pending').length;
+    const uPending = unitBriefs.filter((b) => Boolean(b.assignee_id && b.assignee_id !== '') && b.status === 'pending').length;
     const uInProgress = unitBriefs.filter((b) => b.status === 'in_progress').length;
     const uCompletedBriefs = unitBriefs.filter((b) => b.status === 'completed');
     const uCompleted = uCompletedBriefs.length;
+    const uCancelled = unitBriefs.filter((b) => b.status === 'cancelled').length;
     const uTotal = unitBriefs.length;
     
     // ตรวจจับงานค้างและคำนวณเวลาส่งมอบ
@@ -700,58 +768,76 @@ export function generateTeamExecutiveAnalysis(
     });
 
     const avgTurnaroundDays = uCompletedWithTime > 0 ? Number((uTotalDuration / uCompletedWithTime).toFixed(1)) : 0;
-    const onTimeRate = uOnTimeCount + uLateCount > 0 ? Math.round((uOnTimeCount / (uOnTimeCount + uLateCount)) * 100) : 100;
+    const onTimeRate = uOnTimeCount + uLateCount > 0 ? Math.round((uOnTimeCount / (uOnTimeCount + uLateCount)) * 100) : (uCompleted > 0 ? 100 : 0);
 
     const info = unitDisplay[u] || { label: u.toUpperCase(), defaultLead: 'จ๊อบ AA' };
     const lead = u === 'creative' ? 'วา WK' : 'จ๊อบ AA';
 
     let severity: 'normal' | 'warning' | 'critical' = 'normal';
-    if (uOverdue > 0 || uStalledProgress >= 2 || uStalledPending >= 3) {
+    if (u === 'creative' && uUnassigned > 0) {
       severity = 'critical';
-    } else if (uStalledProgress > 0 || uStalledPending > 0 || uPending >= 3) {
+    } else if (uOverdue >= 3 || (uUnassigned >= 3)) {
+      severity = 'critical';
+    } else if (uOverdue > 0 || uStalledProgress > 0 || uStalledPending > 0 || uUnassigned > 0) {
       severity = 'warning';
     }
 
-    const title = severity === 'critical'
-      ? `🚨 แจ้งเตือนวิกฤต: ${info.label} Unit พบคอขวดสะสมเกินเกณฑ์มาตรฐาน`
-      : severity === 'warning'
-      ? `⚠️ แจ้งเตือนเฝ้าระวัง: ${info.label} Unit มีงานที่ค้างในระบบเกิน 3-5 วัน`
-      : `✅ ${info.label} Unit สภาพคล่องดี ดำเนินการได้ตามกำหนดเวลา`;
+    let title = `${info.label} Unit: ดำเนินงานตามกำหนดเวลา`;
+    let situation = `มีงานในมือ ${uTotal} งาน (เสร็จสิ้น ${uCompleted} งาน, กำลังทำ ${uInProgress} งาน, รอทำ (Pending) ${uPending} งาน, รอมอบหมาย (Unassigned) ${uUnassigned} งาน)`;
+    let actionSteps: string[] = [];
+    let riskImpacts: string[] = [];
 
-    const situation = severity === 'normal'
-      ? `${info.label} Unit มีสภาพคล่องดี ไม่พบงานค้างสะสมเกินเกณฑ์ ส่งมอบตรงเวลา ${onTimeRate}% (งานในมือ ${uTotal} งาน)`
-      : isInternal
-      ? `งานภายในทีม CC (ทุกคนเป็นสมาชิกร่วมกรอกงาน) พบงาน Pending > 3 วัน ${uStalledPending} งาน, Progress > 5 วัน ${uStalledProgress} งาน, เกินกำหนด ${uOverdue} งาน (รวม ${uTotal} งาน)`
-      : `พบงานค้างที่ Pending > 3 วัน จำนวน ${uStalledPending} งาน, งานที่ In Progress > 5 วัน จำนวน ${uStalledProgress} งาน, และงานเกินกำหนด ${uOverdue} งาน (จากงานในมือทั้งหมด ${uTotal} งาน)`;
-
-    const actionSteps = severity === 'normal'
-      ? [
-          `1. ให้ ${lead} รักษามาตรฐานความเร็ว (Best Practices) และจัดลำดับความสำคัญของงานอย่างต่อเนื่อง`,
-          `2. ตรวจสอบตารางงานล่วงหน้าใน Pipeline เพื่อเตรียมพร้อมรับบรีฟใหม่ที่จะเข้ามาในงวดถัดไป`,
-          `3. พิจารณาปล่อยกำลังคน (Cross-functional Help) ไปช่วยเพื่อนร่วมทีมใน Unit ที่มีงานหนาแน่น`,
-        ]
-      : [
-          `1. ให้ ${lead} จัดประชุมเคลียร์คอขวดด่วน (15-Min Sync) กับผู้รับผิดชอบงานใน Unit ที่ค้างใน Pending/Progress เพื่อสรุปจุดติดขัด`,
-          `2. ใช้ระบบผู้ช่วย (Assign Assistants): มอบหมายสมาชิกใน Unit หรือดึงเพื่อนร่วมทีมมาช่วยแบ่งเบา พร้อมกระจาย Save Cost 30-50%`,
-          `3. เจรจาขยายกรอบเวลาหรือซอยย่อยชิ้นงาน (Deliver Drafts): ส่งมอบงานส่วนแรกให้ผู้ขอก่อน ไม่ดองงานไว้รอสมบูรณ์ 100%`,
-        ];
-
-    const riskImpacts = severity === 'normal'
-      ? [
-          `1. ความเสี่ยงอยู่ในระดับต่ำมาก: ระบบงานคล่องตัว ไม่ส่งผลกระทบต่อโปรเจกต์ต้นทาง`,
-          `2. ทีมงานมี Workload ที่สมดุล ไม่เกิดภาวะหมดไฟ (Low Burnout Risk)`,
-        ]
-      : [
-          `1. ความเสี่ยงส่งผลกระทบต่อ Deadline ของโปรเจกต์ต้นทาง ทำให้การจัดกิจกรรม/แคมเปญสะดุด (Timeline Cascade)`,
-          `2. ความเสี่ยงต่อความเหนื่อยล้าของทีมงานใน Unit (Burnout Risk) จากการรับภาระงานสะสมโดยไม่กระจายงาน`,
-          `3. สูญเสียโอกาสในการปิดยอด Save Cost ตามรอบประเมินประจำงวดขององค์กร`,
-        ];
+    if (uTotal === 0) {
+      title = `${info.label} Unit: ยังไม่มีภาระงานในระบบ`;
+      situation = `ยังไม่มีรายการงานที่สังกัด ${info.label} Unit ในระบบปัจจุบัน`;
+      actionSteps = [`ปัจจุบันไม่มีงานที่ต้องดำเนินการในยูนิตนี้`];
+      riskImpacts = [`ไม่มีความเสี่ยงด้านภาระงานในรอบนี้`];
+    } else if (u === 'creative' && uUnassigned > 0) {
+      title = `Creative Unit: งาน Design ค้าง UNASSIGNED ${uUnassigned} งาน (ความเสี่ยงสูง)`;
+      situation = `พบงาน Design ค้างอยู่ที่ UNASSIGNED (รอมอบหมาย) ยังไม่ได้กำหนดผู้รับผิดชอบถึง ${uUnassigned} งาน (รอทำ ${uPending} งาน, กำลังทำ ${uInProgress} งาน) แนะนำให้ วา WK เร่งจัดสรรผู้รับผิดชอบ เพื่อให้เริ่มรันคิวงานได้ตามแผนและส่งมอบงานได้ตรงเวลาครับ`;
+      actionSteps = [
+        `1. แนะนำ วา WK (ผู้รับผิดชอบ Unit Design) โดยตรง ในการเร่งดำเนินการมอบหมายงานแก่นักออกแบบในระบบทันที`,
+        `2. วา ในฐานะผู้กำกับดูแล ควรเข้ามาตรวจตรา ควบคุม และแจกแจงงานอย่างสม่ำเสมอ เพื่อไม่ให้งานตกค้าง`,
+        `3. กำหนดวันส่งมอบและแจ้งนักออกแบบล่วงหน้า เพื่อให้มีเวลาเตรียมตัว ไม่ต้องเร่งงานกระชั้นชิด`
+      ];
+      riskImpacts = [
+        `1. งานค้างอยู่จำนวนมาก (${uUnassigned} ชิ้น) และมีงานที่ใกล้ถึงเดดไลน์ หากไม่รีบมอบหมายจะส่งผลให้นักออกแบบต้องเร่งทำงานนี้โดยไม่ทันตั้งตัวล่วงหน้า ทำให้ประสิทธิภาพและความประณีตของงานลดลง`,
+        `2. ความเสี่ยงสูงต่องาน Overdue และส่งผลกระทบต่อการประเมินการทำงานของ PM และภาพรวมของทีม`,
+        `3. การสะสมของงานที่ยังไม่เริ่มผลิตจะกระทบต่อรอบเวลาเฉลี่ย (Turnaround Time) ของยูนิต`
+      ];
+    } else if (uUnassigned > 0) {
+      title = `${info.label} Unit: มีงานค้างที่ UNASSIGNED ${uUnassigned} ชิ้น`;
+      situation = `มีงานค้างอยู่ที่ UNASSIGNED ${uUnassigned} ชิ้น ยังไม่ได้มอบหมายผู้รับผิดชอบ`;
+      actionSteps = [
+        `1. จ๊อบ AA (หัวหน้าทีม) เร่งตรวจสอบและมอบหมายผู้รับผิดชอบในระบบทันที`,
+        `2. ตรวจสอบความพร้อมของสมาชิกและกระจายงานให้สมดุล`
+      ];
+      riskImpacts = [
+        `1. ความเสี่ยงงานเริ่มล่าช้ากระทบต่อกำหนดการส่งมอบ`,
+        `2. ผู้ขอบรีฟอาจมองว่าทีมตอบสนองช้า`
+      ];
+    } else if (uOverdue > 0) {
+      title = `${info.label} Unit: มีงานเกินกำหนดส่ง ${uOverdue} งาน`;
+      situation = `มีงานในมือ ${uTotal} งาน (เสร็จสิ้น ${uCompleted} งาน, กำลังดำเนินงาน ${uInProgress} งาน, รอทำ ${uPending} งาน) • มีงานเกินกำหนดส่ง ${uOverdue} งาน`;
+      actionSteps = [
+        `ติดตามและเร่งรัดงานที่เกินกำหนดส่งมอบให้แล้วเสร็จโดยเร็ว`,
+        `ประสานงานกับผู้สั่งงานเพื่อยืนยันหรือปรับกรอบเวลาส่งมอบตามความจำเป็น`
+      ];
+      riskImpacts = [
+        `มีงานเกินกำหนดส่ง ${uOverdue} งาน ซึ่งอาจส่งผลต่อกำหนดการของผู้สั่งงาน`
+      ];
+    } else {
+      actionSteps = [`ติดตามความคืบหน้าของงานตามกำหนดเวลาของแต่ละบรีฟอย่างต่อเนื่อง`];
+      riskImpacts = [`ไม่มีงานค้างเกินกำหนดส่ง`];
+    }
 
     return {
       unit: u,
       unitLabel: info.label,
       leadName: lead,
       totalTasks: uTotal,
+      unassignedCount: uUnassigned,
+      todoCount: uPending,
       completedCount: uCompleted,
       pendingCount: uPending,
       stalledPendingCount: uStalledPending,
@@ -786,11 +872,17 @@ export function generateTeamExecutiveAnalysis(
   };
 
   // Commentary
-  const whatWentWell: string[] = [
-    `ทีมช่วยประหยัดงบประมาณองค์กร (In-House Save Cost) ได้รวม ฿${totalSaveCost.toLocaleString()} บาท จากการผลิตผลงานเองโดยไม่ต้องพึ่งพา Outsource`,
-    `อัตราการส่งมอบงานตรงตามกำหนด (On-Time Delivery Rate) อยู่ที่ ${teamOnTimeRate}% สะท้อนวินัยในการส่งมอบงานที่วางใจได้`,
-    `มีความร่วมมือแบบ Cross-functional Collaboration โดยมีการแบ่งงานผู้ช่วยรวม ฿${assistantSaveCost.toLocaleString()} บาท คิดเป็น ${totalSaveCost > 0 ? Math.round((assistantSaveCost / totalSaveCost) * 100) : 0}% ของมูลค่าทั้งหมด`,
-  ];
+  const whatWentWell: string[] = completedTasks === 0
+    ? [
+        "เริ่มต้นปีงบประมาณ 2570 ระบบเตรียมพร้อมรองรับงานใหม่และการส่งมอบอย่างเต็มประสิทธิภาพ",
+        "ระบบตรวจสอบความตรงต่อเวลาและความเสี่ยงแบบเรียลไทม์ พร้อมแจ้งเตือนทันทีเมื่อมีบรีฟเข้าสู่ระบบ",
+        "โครงสร้างทีม 3 ยูนิตหลัก (Creative, Content, PR) และงานภายในพร้อมดำเนินงานตามเป้าหมาย OKR"
+      ]
+    : [
+        `ทีมช่วยประหยัดงบประมาณองค์กร (In-House Save Cost) ได้รวม ฿${totalSaveCost.toLocaleString()} บาท จากการผลิตผลงานเองโดยไม่ต้องพึ่งพา Outsource`,
+        `อัตราการส่งมอบงานตรงตามกำหนด (On-Time Delivery Rate) อยู่ที่ ${teamOnTimeRate}% สะท้อนวินัยในการส่งมอบงานที่วางใจได้`,
+        `มีความร่วมมือแบบ Cross-functional Collaboration โดยมีการแบ่งงานผู้ช่วยรวม ฿${assistantSaveCost.toLocaleString()} บาท คิดเป็น ${totalSaveCost > 0 ? Math.round((assistantSaveCost / totalSaveCost) * 100) : 0}% ของมูลค่าทั้งหมด`,
+      ];
 
   if (speedChampions.length > 0) {
     whatWentWell.push(

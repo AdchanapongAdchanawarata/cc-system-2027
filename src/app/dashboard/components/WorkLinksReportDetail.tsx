@@ -29,7 +29,8 @@ import {
   FileSpreadsheet,
   Upload,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  Eye
 } from "lucide-react";
 import CustomSelect, { Option } from "./CustomSelect";
 import ExportDataDropdown from "./ExportDataDropdown";
@@ -49,7 +50,20 @@ export type { WorkLinkItem };
 export { WORK_LINK_CATEGORIES, DEFAULT_SUBCATEGORIES_BY_CAT };
 
 export default function WorkLinksReportDetail() {
-  const [links, setLinks] = useState<WorkLinkItem[]>(DEFAULT_WORK_LINKS);
+  const [currentUserRole] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("cc_user_role") || "admin";
+    }
+    return "admin";
+  });
+  const isViewer = currentUserRole === "viewer";
+
+  const [links, setLinks] = useState<WorkLinkItem[]>(() => {
+    if (typeof window !== "undefined") {
+      return getLocalCachedWorkLinks();
+    }
+    return DEFAULT_WORK_LINKS;
+  });
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [selectedSubCategory, setSelectedSubCategory] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
@@ -91,7 +105,11 @@ export default function WorkLinksReportDetail() {
     try {
       const { links: cloudLinks, source } = await fetchWorkLinksFromSupabase();
       if (cloudLinks && cloudLinks.length > 0) {
-        setLinks(cloudLinks);
+        setLinks(prev => {
+          const prevStr = JSON.stringify(prev);
+          const nextStr = JSON.stringify(cloudLinks);
+          return prevStr === nextStr ? prev : cloudLinks;
+        });
       }
       setCloudSyncStatus("synced");
       if (source === "cloud") {
@@ -410,41 +428,51 @@ export default function WorkLinksReportDetail() {
               <ExternalLink size={12} />
             </a>
 
-            {/* Smart Import Button */}
-            <button
-              onClick={() => {
-                setImportText("");
-                setParsedImportItems([]);
-                setShowImportModal(true);
-              }}
-              className="px-3.5 py-2 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-full inline-flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer active:scale-95"
-              title="คัดลอกจาก Google Sheet มาวางเพื่อเพิ่มหลายรายการพร้อมกัน"
-            >
-              <FileSpreadsheet size={13} className="text-emerald-600" />
-              <span>นำเข้าจาก Sheet / CSV</span>
-            </button>
+            {/* If viewer, show read-only badge, otherwise show import and add buttons */}
+            {isViewer ? (
+              <div className="px-3.5 py-2 text-xs font-semibold text-cyan-800 bg-cyan-50 border border-cyan-200 rounded-full inline-flex items-center gap-1.5 shadow-2xs">
+                <Eye size={13} className="text-cyan-600" />
+                <span>โหมดผู้เข้าชม (Read-Only)</span>
+              </div>
+            ) : (
+              <>
+                {/* Smart Import Button */}
+                <button
+                  onClick={() => {
+                    setImportText("");
+                    setParsedImportItems([]);
+                    setShowImportModal(true);
+                  }}
+                  className="px-3.5 py-2 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-full inline-flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer active:scale-95"
+                  title="คัดลอกจาก Google Sheet มาวางเพื่อเพิ่มหลายรายการพร้อมกัน"
+                >
+                  <FileSpreadsheet size={13} className="text-emerald-600" />
+                  <span>นำเข้าจาก Sheet / CSV</span>
+                </button>
 
-            {/* Export Dropdown */}
-            <ExportDataDropdown
-              reportId="work-links"
-              reportTitle="ทำเนียบลิงก์งาน (Work Links)"
-              buttonText="Export Data"
-            />
+                {/* Export Dropdown */}
+                <ExportDataDropdown
+                  reportId="work-links"
+                  reportTitle="ทำเนียบลิงก์งาน (Work Links)"
+                  buttonText="Export Data"
+                />
 
-            {/* Manual Add Button */}
-            <button
-              onClick={() => {
-                setShowAddModal(true);
-                setIsCustomSubCategory(false);
-                setCustomSubCategoryInput("");
-                const presets = DEFAULT_SUBCATEGORIES_BY_CAT[newCategory] || [];
-                if (presets.length > 0) setNewSubCategory(presets[0]);
-              }}
-              className="px-4 py-2 text-xs font-bold text-white bg-[#E03131] hover:bg-[#c92a2a] rounded-full inline-flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95 transition-all"
-            >
-              <Plus size={14} />
-              <span>เพิ่มลิ้งค์ใหม่</span>
-            </button>
+                {/* Manual Add Button */}
+                <button
+                  onClick={() => {
+                    setShowAddModal(true);
+                    setIsCustomSubCategory(false);
+                    setCustomSubCategoryInput("");
+                    const presets = DEFAULT_SUBCATEGORIES_BY_CAT[newCategory] || [];
+                    if (presets.length > 0) setNewSubCategory(presets[0]);
+                  }}
+                  className="px-4 py-2 text-xs font-bold text-white bg-[#E03131] hover:bg-[#c92a2a] rounded-full inline-flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95 transition-all"
+                >
+                  <Plus size={14} />
+                  <span>เพิ่มลิ้งค์ใหม่</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -752,33 +780,37 @@ export default function WorkLinksReportDetail() {
                       )}
                     </button>
 
-                    <button
-                      onClick={() => handleTogglePin(item.id)}
-                      className={`p-2 rounded-full transition-all cursor-pointer ${
-                        item.isPinned
-                          ? "bg-orange-100 text-orange-700 hover:bg-orange-200"
-                          : "bg-slate-100 text-slate-400 hover:text-slate-700 hover:bg-slate-200"
-                      }`}
-                      title={item.isPinned ? "ถอนหมุด" : "ปักหมุดให้อยู่ด้านบน"}
-                    >
-                      <Pin size={14} className={item.isPinned ? "fill-orange-600" : ""} />
-                    </button>
+                    {!isViewer && (
+                      <>
+                        <button
+                          onClick={() => handleTogglePin(item.id)}
+                          className={`p-2 rounded-full transition-all cursor-pointer ${
+                            item.isPinned
+                              ? "bg-orange-100 text-orange-700 hover:bg-orange-200"
+                              : "bg-slate-100 text-slate-400 hover:text-slate-700 hover:bg-slate-200"
+                          }`}
+                          title={item.isPinned ? "ถอนหมุด" : "ปักหมุดให้อยู่ด้านบน"}
+                        >
+                          <Pin size={14} className={item.isPinned ? "fill-orange-600" : ""} />
+                        </button>
 
-                    <button
-                      onClick={() => handleStartEdit(item)}
-                      className="p-2 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-all cursor-pointer"
-                      title="แก้ไขข้อมูล"
-                    >
-                      <Edit2 size={14} />
-                    </button>
+                        <button
+                          onClick={() => handleStartEdit(item)}
+                          className="p-2 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-all cursor-pointer"
+                          title="แก้ไขข้อมูล"
+                        >
+                          <Edit2 size={14} />
+                        </button>
 
-                    <button
-                      onClick={() => handleDelete(item.id)}
-                      className="p-2 rounded-full bg-slate-100 text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all cursor-pointer"
-                      title="ลบรายการนี้"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="p-2 rounded-full bg-slate-100 text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all cursor-pointer"
+                          title="ลบรายการนี้"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </>
+                    )}
 
                     <a
                       href={item.url}

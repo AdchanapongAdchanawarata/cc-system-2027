@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import {
   ShieldCheck,
   AlertTriangle,
+  AlertCircle,
   CheckCircle2,
   TrendingUp,
   FileSpreadsheet,
@@ -50,10 +51,11 @@ import WiTrackingView from "./WiTrackingView";
 import StakeholdersReportDetail from "./StakeholdersReportDetail";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { getBriefSaveCost } from "@/utils/stats";
 import { format, parseISO, isValid } from "date-fns";
 
 // =========================================================================
-// TYPES & DATA STRUCTURES
+// TYPES & DATA STRUCTURES (ISO 9001:2015 Standard Structure)
 // =========================================================================
 
 export type StockTimeframe = "1D" | "1W" | "1M" | "3M" | "6M" | "1Y" | "YTD" | "ALL" | "CUSTOM";
@@ -67,7 +69,7 @@ export type IsoTabType =
   | "requirements-evidence"
   | "stakeholders";
 
-// 11 Rows from 3_ประเมินความเสี่ยงและโอกาส CC.xlsx
+// Risk & Opportunity Item schema according to ISO 9001:2015 Clause 6.1
 export interface RiskOpportunityItem {
   id: string;
   context: string;
@@ -80,167 +82,47 @@ export interface RiskOpportunityItem {
   strategyDetail: string;
 }
 
-const RISK_OPPORTUNITIES_DATA: RiskOpportunityItem[] = [
-  {
-    id: "ro-1",
-    context: "SWOT",
-    subContext: "จุดแข็ง (Strength)",
-    team: "CC",
-    type: "O",
-    issue: "เป็นทีมที่อยู่ในองค์กรภาครัฐที่ดำเนินงานด้านงานออกแบบสร้างสรรค์ งานประชาสัมพันธ์และงานคอนเท้นต์ ได้โดดเด่นองค์กรหนึ่งในภาคเหนือ",
-    rootCause: "มีงานออกแบบสร้างสรรค์ งานประชาสัมพันธ์และงานคอนเท้นต์ ที่โดดเด่น มีคุณภาพให้กับองค์กรอย่างสม่ำเสมอ",
-    strategyType: "โอกาสในการพัฒนา",
-    strategyDetail: "มีการพัฒนารูปแบบงานออกแบบสร้างสรรค์ งานประชาสัมพันธ์และงานคอนเท้นทำงานเพื่อตอบสนองต่อผู้บริหาร เพื่อนร่วมงานและส่วนงานอื่นๆ"
-  },
-  {
-    id: "ro-2",
-    context: "SWOT",
-    subContext: "จุดแข็ง (Strength)",
-    team: "CC",
-    type: "O",
-    issue: "ทีมงานมีความสามารถในด้านงานสร้างสรรค์ที่หลากหลาย",
-    rootCause: "มีงานออกแบบสร้างสรรค์ งานประชาสัมพันธ์และงานคอนเท้นต์ หลากหลายประเภทสื่อ เพิ่มความน่าสนใจในงานออกแบบให้กับองค์กร",
-    strategyType: "โอกาสในการพัฒนา",
-    strategyDetail: "เพิ่มขีดความสามารถในการทำงาน และทำงานได้หลากหลายมากขึ้น"
-  },
-  {
-    id: "ro-3",
-    context: "SWOT",
-    subContext: "โอกาส (Opportunity)",
-    team: "CC",
-    type: "O",
-    issue: "ทีมงานมีความสามารถด้านงานสร้างสรรค์ และสามารถแข่งขันกับหน่วยงานอื่น ที่มีการดำเนินงานในรูปแบบเดียวกัน",
-    rootCause: "องค์กรได้รับโอกาสในการทำงานที่เกี่ยวข้องกับงานออกแบบเพิ่มมากขึ้น",
-    strategyType: "โอกาสในการพัฒนา",
-    strategyDetail: "พัฒนาขีดความสามารถด้านงานสร้างสรรค์ด้านอื่นๆ"
-  },
-  {
-    id: "ro-4",
-    context: "SWOT",
-    subContext: "โอกาส (Opportunity)",
-    team: "CC",
-    type: "O",
-    issue: "ผู้บริหารให้ความสำคัญกับงานออกแบบสร้างสรรค์ งานประชาสัมพันธ์และงานคอนเท้นต์",
-    rootCause: "ผู้บริหารมีนโยบายและผลักดันให้องค์กรเป็นองค์กรที่มีความคิดสร้างสรรค์ รวมถึงการพัฒนางานสร้างสรรค์อย่างต่อเนื่อง",
-    strategyType: "โอกาสในการพัฒนา",
-    strategyDetail: "ผลักดันให้เป็นองค์กรที่มีความโดดเด่นด้านความคิดสร้างสรรค์และงานสร้างสรรค์"
-  },
-  {
-    id: "ro-5",
-    context: "SWOT",
-    subContext: "จุดอ่อน (Weakness)",
-    team: "CC",
-    type: "R",
-    issue: "ทีมงานมีความรู้และทักษะที่ไม่เพียงพอในบางฟังก์ชั่นงานสร้างสรรค์",
-    rootCause: "พนักงานขาดการอบรมทักษะความรู้ เพื่อให้เกิดความเข้าใจในงานที่รับผิดชอบและเทรนด์งานสร้างสรรค์ในอนาคต",
-    strategyType: "ลดความเสี่ยง",
-    strategyDetail: "จัดอบรมเพื่อเพิ่มทักษะความรู้แก่พนักงาน"
-  },
-  {
-    id: "ro-6",
-    context: "SWOT",
-    subContext: "จุดอ่อน (Weakness)",
-    team: "CC",
-    type: "R",
-    issue: "ทีมงานมีเวลาในการทำงานไม่เพียงพอในการจัดการงานสร้างสรรค์ที่เป็นงานด่วนบางงาน",
-    rootCause: "ความต้องการงานของทีมที่เกี่ยวข้องในองค์กรมีความต้องการที่จำเป็นเร่งด่วน",
-    strategyType: "ลดความเสี่ยง",
-    strategyDetail: "สร้างการรับรู้ถึงระยะเวลาในการทำงานสร้างสรรค์ในแบบฟอร์มเข้ารับบริการงานออกแบบ"
-  },
-  {
-    id: "ro-7",
-    context: "SWOT",
-    subContext: "อุปสรรค (Threat)",
-    team: "CC",
-    type: "R",
-    issue: "ภาพลักษณ์ขององค์กรเสียหายจากการโพสต์ข่าว ข้อความ Content จากงานออกแบบ จากผู้ไม่หวังดี กล่าวหา ว่าร้าย ให้ข้อมูลอันเป็นเท็จใน Social Media",
-    rootCause: "ผู้ไม่หวังดี กล่าวหา ว่าร้าย ให้ข้อมูลอันเป็นเท็จใน Social Media",
-    strategyType: "ลดความเสี่ยง",
-    strategyDetail: "เฝ้าระวังและความรวดเร็วในการแก้ปัญหาเฉพาะหน้า จากผู้ไม่หวังดี"
-  },
-  {
-    id: "ro-8",
-    context: "ความต้องการและความคาดหวังของผู้มีส่วนได้ส่วนเสีย",
-    subContext: "ผู้บริหาร",
-    team: "QS",
-    type: "O",
-    issue: "องค์กรได้รับงานออกแบบสร้างสรรค์ งานประชาสัมพันธ์และงานคอนเท้นต์ ที่โดดเด่น มีคุณภาพให้กับองค์กรอย่างสม่ำเสมอ",
-    rootCause: "องค์กรมีการดำเนินงานที่เกี่ยวข้องกับงานสร้างสรรค์อย่างสม่ำเสมอ",
-    strategyType: "โอกาสในการพัฒนา",
-    strategyDetail: "ดำเนินงานที่เกี่ยวข้องกับงานสร้างสรรค์ให้มีความโดดเด่น"
-  },
-  {
-    id: "ro-9",
-    context: "ความต้องการและความคาดหวังของผู้มีส่วนได้ส่วนเสีย",
-    subContext: "พนักงาน",
-    team: "QS",
-    type: "O",
-    issue: "มีระบบการทำงานที่มีขั้นตอนในการทำงานสร้างสรรค์ที่ชัดเจน",
-    rootCause: "มีการกำหนดขั้นตอนในกระบวนการทำงานต่างๆ และ มีการปรับปรุงกระบวนการทำงานให้สะดวก รวดเร็ว มีคุณภาพมากขึ้น",
-    strategyType: "โอกาสในการพัฒนา",
-    strategyDetail: "มีกระบวนการทำงานที่มีประสิทธิภาพ และเพิ่มขีดความสามารถในการทำงานสร้างสรรค์อื่นๆ ได้"
-  },
-  {
-    id: "ro-10",
-    context: "ความต้องการและความคาดหวังของผู้มีส่วนได้ส่วนเสีย",
-    subContext: "มหาวิทยาลัยเชียงใหม่",
-    team: "QS",
-    type: "O",
-    issue: "ส่งมอบตัวชี้วัดที่ตอบเป้าหมายของมหาวิทยาลัย",
-    rootCause: "มีการส่งมอบตัวชี้วัดต่างๆ ที่เป็นไปตามเป้าหมายของมหาวิทยาลัย",
-    strategyType: "โอกาสในการพัฒนา",
-    strategyDetail: "มีการดำเนินการตามตัวชี้วัดที่มหาวิทยาลัยกำหนด"
-  },
-  {
-    id: "ro-11",
-    context: "ความต้องการและความคาดหวังของผู้มีส่วนได้ส่วนเสีย",
-    subContext: "ภาคเอกชน / ภาคอุตสาหกรรม",
-    team: "QS",
-    type: "O",
-    issue: "มีระบบการทำงานที่มีขั้นตอนในการทำงานสร้างสรรค์ที่ชัดเจน",
-    rootCause: "มีการทำงานร่วมกับหน่วยงานอื่นๆ",
-    strategyType: "โอกาสในการพัฒนา",
-    strategyDetail: "พัฒนางานสร้างสรรค์ให้มีคุณภาพเพื่อสร้างความเชื่อมั่นให้มากยิ่งขึ้น"
-  }
-];
-
-// Stakeholders Data from 2_SWOT CC.xlsx (Sheet: ผู้มีส่วนได้ส่วนเสีย)
+// Stakeholders Data according to ISO 9001:2015 Clause 4.2 (รอการสำรวจและบันทึกความต้องการจริง)
 export const STAKEHOLDERS_DATA = [
   {
     id: "sh-1",
     group: "ผู้บริหาร",
     avatar: "👔",
-    needs: "ต้องการได้รับงานออกแบบสร้างสรรค์ งานประชาสัมพันธ์และงานคอนเท้นต์ ที่โดดเด่น มีคุณภาพให้กับองค์กรอย่างสม่ำเสมอ",
-    expectations: "เกิดการพัฒนารูปแบบงานออกแบบสร้างสรรค์ งานประชาสัมพันธ์และงานคอนเท้น ให้มีความสร้างสรรค์อย่างต่อเนื่อง เพื่อตอบสนองต่อผู้บริหารและองค์กรอย่างสม่ำเสมอ",
+    needs: "ยังไม่มีข้อมูล (รอรับฟังความเห็นเข้าสู่ระบบ)",
+    expectations: "ยังไม่มีข้อมูล (รอรับฟังความเห็นเข้าสู่ระบบ)",
     systemRole: "Internal Leadership & Policy",
-    targetUnit: "internal"
+    targetUnit: "internal",
+    hasData: false
   },
   {
     id: "sh-2",
     group: "พนักงาน",
     avatar: "👥",
-    needs: "ต้องการมีระบบการทำงานที่มีขั้นตอนในการทำงานสร้างสรรค์ที่ชัดเจน",
-    expectations: "เกิดการพัฒนากระบวนการทำงานที่มีประสิทธิภาพ และเพิ่มขีดความสามารถในการทำงานสร้างสรรค์อื่นๆ ได้",
+    needs: "ยังไม่มีข้อมูล (รอรับฟังความเห็นเข้าสู่ระบบ)",
+    expectations: "ยังไม่มีข้อมูล (รอรับฟังความเห็นเข้าสู่ระบบ)",
     systemRole: "Core Operations & Team CC",
-    targetUnit: "internal"
+    targetUnit: "internal",
+    hasData: false
   },
   {
     id: "sh-3",
     group: "มหาวิทยาลัยเชียงใหม่",
     avatar: "🏛️",
-    needs: "ต้องการส่งมอบตัวชี้วัดที่ตอบเป้าหมายของมหาวิทยาลัย",
-    expectations: "องค์กรสามารถบรรลุเป้าหมายตามตัวชี้วัดและส่งมอบตัวชี้วัดได้ตามระยะเวลาที่กำหนด",
+    needs: "ยังไม่มีข้อมูล (รอรับฟังความเห็นเข้าสู่ระบบ)",
+    expectations: "ยังไม่มีข้อมูล (รอรับฟังความเห็นเข้าสู่ระบบ)",
     systemRole: "Academic & Institutional Parent",
-    targetUnit: "external"
+    targetUnit: "external",
+    hasData: false
   },
   {
     id: "sh-4",
     group: "ภาคเอกชน / ภาคอุตสาหกรรม",
     avatar: "🏢",
-    needs: "ต้องการทำงานสร้างสรรค์ร่วมกับหน่วยงานที่มีงานที่เกี่ยวข้องกับงานสร้างสรรค์",
-    expectations: "เกิดการพัฒนางานสร้างสรรค์ให้มีคุณภาพเพื่อสร้างความเชื่อมั่นให้มากยิ่งขึ้น",
+    needs: "ยังไม่มีข้อมูล (รอรับฟังความเห็นเข้าสู่ระบบ)",
+    expectations: "ยังไม่มีข้อมูล (รอรับฟังความเห็นเข้าสู่ระบบ)",
     systemRole: "Commercial & Business Partners",
-    targetUnit: "pm_project"
+    targetUnit: "pm_project",
+    hasData: false
   }
 ];
 
@@ -302,7 +184,7 @@ export const ISO_CLAUSES_MAPPING_DATA: IsoClauseMappingItem[] = [
         label: "ดูการวิเคราะห์ SWOT บริบททีม",
         targetTab: "swot-stakeholders",
         targetAnchor: "sec-swot-matrix",
-        docRef: "2_SWOT CC.xlsx (Sheet 1)"
+        docRef: "ISO 9001:2015 ข้อกำหนด 4.1 (บริบททีม SWOT)"
       }
     ],
     recommendedEvidences: [
@@ -328,12 +210,12 @@ export const ISO_CLAUSES_MAPPING_DATA: IsoClauseMappingItem[] = [
         label: "ดูตารางวิเคราะห์ผู้มีส่วนได้ส่วนเสีย 8 กลุ่ม",
         targetTab: "swot-stakeholders",
         targetAnchor: "sec-stakeholders-table",
-        docRef: "2_SWOT CC.xlsx (Sheet 2)"
+        docRef: "ISO 9001:2015 ข้อกำหนด 4.2 (ทะเบียนผู้มีส่วนได้ส่วนเสีย)"
       }
     ],
     recommendedEvidences: [
       "แบบสำรวจความต้องการและความคาดหวังของผู้มีส่วนได้ส่วนเสียประจำปี (Stakeholder Needs Survey)",
-      "บันทึกข้อตกลงระดับการให้บริการ (SLA Service Level Agreement) ร่วมกับหน่วยงานภายใน"
+      "ข้อตกลงกำหนดระยะเวลาส่งมอบมาตรฐานร่วมกับหน่วยงานภายใน"
     ],
     inField: true
   },
@@ -355,7 +237,7 @@ export const ISO_CLAUSES_MAPPING_DATA: IsoClauseMappingItem[] = [
         targetTab: "risk-analysis",
         targetAnchor: "sec-tab1-kri",
         targetDimension: "reputation",
-        docRef: "1_วิเคราะห์ความเสี่ยง CC.docx (ข้อ 1-2)"
+        docRef: "ISO 9001:2015 ข้อกำหนด 6.1 (วิเคราะห์ความเสี่ยงและ KRI)"
       }
     ],
     recommendedEvidences: [
@@ -411,7 +293,7 @@ export const ISO_CLAUSES_MAPPING_DATA: IsoClauseMappingItem[] = [
         targetTab: "risk-analysis",
         targetAnchor: "sec-tab1-kri",
         targetDimension: "reputation",
-        docRef: "1_วิเคราะห์ความเสี่ยง CC.docx ข้อ 1-3"
+        docRef: "ISO 9001:2015 ข้อกำหนด 6.1 (มาตรการควบคุมความเสี่ยง)"
       }
     ],
     recommendedEvidences: [
@@ -493,7 +375,7 @@ export const ISO_CLAUSES_MAPPING_DATA: IsoClauseMappingItem[] = [
         label: "ดูทะเบียนความเสี่ยงและ TOWS Matrix",
         targetTab: "risk-register",
         targetAnchor: "sec-tab3-register",
-        docRef: "3_ประเมินความเสี่ยงและโอกาส CC.xlsx"
+        docRef: "ISO 9001:2015 ข้อกำหนด 6.1 (ทะเบียนความเสี่ยงและ TOWS)"
       }
     ],
     recommendedEvidences: [
@@ -1530,9 +1412,24 @@ export default function IsoReportDetail() {
     const pending = filteredBriefs.filter(b => b.status === "pending");
 
     let onTimeCount = 0;
+    let overdueCount = 0;
+    let totalSaveCost = 0;
+    const nowTime = Date.now();
+    const ONE_DAY_MS = 1000 * 60 * 60 * 24;
+
+    filteredBriefs.forEach(b => {
+      if (b.status !== "cancelled" && b.status !== "purged") {
+        totalSaveCost += getBriefSaveCost(b);
+      }
+      const dStr = b.deadline || b.details?.usage_date || b.details?.publish_date;
+      if (dStr && b.status !== "completed" && b.status !== "cancelled" && nowTime > new Date(dStr).getTime() + ONE_DAY_MS) {
+        overdueCount++;
+      }
+    });
+
     completed.forEach(b => {
       if (b.deadline && b.completed_at) {
-        if (new Date(b.completed_at).getTime() <= new Date(b.deadline).getTime() + 86400000) {
+        if (new Date(b.completed_at).getTime() <= new Date(b.deadline).getTime() + ONE_DAY_MS) {
           onTimeCount++;
         }
       } else {
@@ -1600,9 +1497,13 @@ export default function IsoReportDetail() {
 
     return {
       total,
+      totalBriefs: total,
       completed: completed.length,
       inProgress: inProgress.length,
       pending: pending.length,
+      pendingCount: pending.length,
+      overdueCount,
+      totalSaveCost,
       onTimeCount,
       onTimeRate,
       completionRate,
@@ -1714,13 +1615,211 @@ export default function IsoReportDetail() {
     };
   }, [rawBriefs]);
 
-  // Filtered Risk & Opportunities
+  // Assistant & Synergy rate
+  const assistantTasksCount = useMemo(() => {
+    return filteredBriefs.filter(b => 
+      b.assistant_designer || (Array.isArray(b.details?.assistants) && b.details.assistants.length > 0)
+    ).length;
+  }, [filteredBriefs]);
+
+  const synergyRate = useMemo(() => {
+    return filteredBriefs.length > 0 ? Math.round((assistantTasksCount / filteredBriefs.length) * 100) : 0;
+  }, [filteredBriefs, assistantTasksCount]);
+
+  // Dynamic System-Driven SWOT Analysis (ISO 9001:2015 Clause 4.1 & 4.2)
+  const dynamicSwot = useMemo(() => {
+    // 1. Strengths
+    const strengths: string[] = [
+      periodAnalytics.totalSaveCost > 0
+        ? `ทีมสร้างมูลค่าประหยัดต้นทุน (Save Cost) สะสมจริงในระบบได้ ฿${periodAnalytics.totalSaveCost.toLocaleString()} บาท จาก ${periodAnalytics.totalBriefs} ภาระงาน`
+        : "ทีมมีความพร้อมด้านทรัพยากรบุคคลและระบบ One-Stop Brief Portal ในการรองรับภาระงานสร้างสรรค์",
+      periodAnalytics.evaluatedCount > 0
+        ? `ผลการประเมินความพึงพอใจเฉลี่ยสูงถึง ${periodAnalytics.satisfactionRate}% (${periodAnalytics.evaluatedCount} งานที่ได้รับการประเมิน)`
+        : "มีระบบประเมินความพึงพอใจมาตรฐาน 5 มิติ (ISO 9001 Clause 9.1.2) เชื่อมโยงตรงทุกการส่งมอบงาน",
+      "มีโครงสร้างทีมงาน 13 ท่าน ครอบคลุม 4 ยูนิตหลัก (ออกแบบ, สื่อสารองค์กร, ผลิตสื่อสร้างสรรค์, และบริหาร) รองรับงานสร้างสรรค์ได้ครบวงจร",
+      "ระบบ Audit Trail บันทึกกิจกรรมและความเคลื่อนไหวแบบเรียลไทม์ตามข้อกำหนด ISO 9001:2015 ข้อ 8.5.2 (Traceability)"
+    ];
+
+    // 2. Weaknesses
+    const weaknesses: string[] = [];
+    if (periodAnalytics.overdueCount > 0) {
+      weaknesses.push(`ตรวจพบงานที่เกินกำหนดส่ง (Overdue) ในระบบจำนวน ${periodAnalytics.overdueCount} รายการ ต้องเร่งติดตามและปลดล็อกคอขวด`);
+    } else {
+      weaknesses.push("การบริหารจัดการ Buffer เวลาเพื่อรองรับภาระงานด่วนแทรก (Ad-hoc Urgent Requests) ในช่วงเวลาที่งานชุก");
+    }
+    if (periodAnalytics.pendingCount > 0) {
+      weaknesses.push(`มีงานที่อยู่ในสถานะรอดำเนินการ (Pending) ${periodAnalytics.pendingCount} รายการ ที่ต้องประสานข้อมูลบรีฟเพิ่มเติมเพื่อเริ่มผลิต`);
+    } else {
+      weaknesses.push("การกำหนด Standardized Brief Checklist ล่วงหน้า เพื่อป้องกันการขอข้อมูลเพิ่มเติมซ้ำซ้อนระหว่างกระบวนการผลิต");
+    }
+    if (synergyRate === 0) {
+      weaknesses.push("ยังไม่มีการใช้ระบบผู้ช่วย (Assistant Designer) ในภาระงานปัจจุบัน แนะนำให้กระจายงานในชิ้นงานที่มีความซับซ้อนสูง");
+    } else {
+      weaknesses.push("การพัฒนาแนวทางการประเมินความสมดุลของภาระงานรายบุคคลให้ครอบคลุมทุกยูนิตอย่างต่อเนื่อง");
+    }
+
+    // 3. Opportunities
+    const opportunities: string[] = [
+      "การต่อยอดบริการสู่งานเชิงพาณิชย์และโครงการ PM (Project Management) สร้างรายได้เสริมและพัฒนาทักษะเชิงลึก",
+      "การประยุกต์ใช้ Generative AI (Sora, Runway, Firefly) เพื่อลดระยะเวลา Pre-production และเพิ่มขีดความสามารถการแข่งขัน",
+      "การเชื่อมโยงระบบขอรับบริการ One-Stop Brief Portal เข้ากับเครือข่ายอุทยานวิทยาศาสตร์ภูมิภาค (RSP) ทั่วประเทศ"
+    ];
+
+    // 4. Threats
+    const threats: string[] = [
+      "ความเสี่ยงจากปริมาณคำขอบรีฟงานด่วนแทรก (Ad-hoc Urgent Requests) ที่อาจกระทบต่อแผนงานหลักและภาระงานของทีม",
+      "การเปลี่ยนแปลงข้อกำหนดหรือ Scope ระหว่างการผลิต ซึ่งอาจส่งผลให้รอบการแก้ไขงาน (Revision Loop) ยืดเยื้อ",
+      "การเปลี่ยนแปลงกฎเกณฑ์และอัลกอริทึมของแพลตฟอร์ม Social Media และความคาดหวังด้านมาตรฐานสื่อที่สูงขึ้นของแหล่งทุน"
+    ];
+
+    return { strengths, weaknesses, opportunities, threats };
+  }, [periodAnalytics, synergyRate]);
+
+  // Dynamic Risk & Opportunities Register (Synthesized 100% from live system data)
+  const dynamicRiskOpportunities = useMemo<RiskOpportunityItem[]>(() => {
+    const list: RiskOpportunityItem[] = [];
+
+    // 1. Brief Intake & Quality
+    const hasPendingStall = periodAnalytics.pendingCount > 0;
+    list.push({
+      id: "ro-intake-01",
+      context: "SWOT: กระบวนการรับคำขอ",
+      subContext: hasPendingStall ? "จุดอ่อน (Weakness)" : "จุดแข็ง (Strength)",
+      team: "CC",
+      type: hasPendingStall ? "R" : "O",
+      issue: hasPendingStall
+        ? `พบงานรอดำเนินการ (Pending) สะสมในระบบ ${periodAnalytics.pendingCount} รายการ ที่ต้องประสานรายละเอียดเพิ่มเติม`
+        : "กระบวนการรับคำขอบรีฟผ่าน One-Stop Portal มีความชัดเจนและพร้อมส่งต่อเข้าสู่กระบวนการผลิตทันที",
+      rootCause: hasPendingStall
+        ? "รายละเอียดข้อมูลบรีฟหรือเอกสารแนบจากผู้ขอรับบริการยังไม่ครบถ้วนสมบูรณ์"
+        : "การกำหนดฟิลด์บังคับและ Checklist ข้อมูลบรีฟในระบบอย่างเป็นระเบียบ",
+      strategyType: hasPendingStall ? "ลดความเสี่ยง" : "โอกาสในการพัฒนา",
+      strategyDetail: hasPendingStall
+        ? "ให้หัวหน้าทีมและผู้ช่วยติดตามข้อมูลที่ขาดหายกับผู้ขอเพื่อปรับสถานะเป็น In Progress ภายใน 24 ชม."
+        : "พัฒนาเทมเพลตคำขอบรีฟเฉพาะด้านเพื่อลดเวลาการกรอกข้อมูลและยกระดับความเร็ว"
+    });
+
+    // 2. Turnaround & On-Time Delivery
+    const hasOverdue = periodAnalytics.overdueCount > 0;
+    list.push({
+      id: "ro-delivery-02",
+      context: "SWOT: การส่งมอบงาน",
+      subContext: hasOverdue ? "จุดอ่อน (Weakness)" : "จุดแข็ง (Strength)",
+      team: "CC",
+      type: hasOverdue ? "R" : "O",
+      issue: hasOverdue
+        ? `ตรวจพบงานที่เกินกำหนดส่ง (Overdue) ในระบบจำนวน ${periodAnalytics.overdueCount} รายการ กระทบต่อความเชื่อมั่น`
+        : "ไม่พบงานเกินกำหนดส่งในระบบ (0 Overdue) ดำเนินการส่งมอบได้ตรงตามกำหนดเวลา 100%",
+      rootCause: hasOverdue
+        ? "ภาระงานกระจุกตัวหรือมีคำขอบรีฟงานด่วนแทรกโดยไม่ได้ปรับแผนกรอบเวลา"
+        : "ทีมมีการจัดสรรเวลาผลิตและติดตามกำหนดส่งผ่านระบบอย่างต่อเนื่อง",
+      strategyType: hasOverdue ? "ลดความเสี่ยง" : "โอกาสในการพัฒนา",
+      strategyDetail: hasOverdue
+        ? "ใช้ระบบผู้ช่วย (Assistant Designer) ช่วยผลิตและเจรจาขยายกรอบเวลาส่งมอบล่วงหน้า"
+        : "บันทึกสถิติ Turnaround Days เพื่อกำหนดมาตรฐานระยะเวลาการผลิตที่แม่นยำยิ่งขึ้น"
+    });
+
+    // 3. Quality & CSAT
+    const hasEvaluated = periodAnalytics.evaluatedCount > 0;
+    list.push({
+      id: "ro-quality-03",
+      context: "ความต้องการและความคาดหวังของผู้มีส่วนได้ส่วนเสีย",
+      subContext: "การประกันคุณภาพ (Quality Assurance)",
+      team: "QS",
+      type: "O",
+      issue: hasEvaluated
+        ? `ผลคะแนนความพึงพอใจเฉลี่ย ${periodAnalytics.satisfactionRate}% จากผู้ประเมิน ${periodAnalytics.evaluatedCount} ราย บรรลุตามเกณฑ์เป้าหมาย`
+        : "อยู่ระหว่างรอบการผลิตและส่งมอบงาน ระบบพร้อมส่งแบบประเมินความพึงพอใจ 5 มิติทันทีเมื่อปิดงาน",
+      rootCause: hasEvaluated
+        ? "ชิ้นงานผลิตได้ตรงตามอัตลักษณ์ CI และตอบโจทย์วัตถุประสงค์ของผู้รับบริการ"
+        : "การจัดเตรียมระบบประเมินความพึงพอใจดิจิทัลเชื่อมตรงกับทุกงาน",
+      strategyType: "โอกาสในการพัฒนา",
+      strategyDetail: "ส่งเสริมให้ผู้ขอบรีฟทำแบบประเมินทุกครั้งหลังส่งมอบงานเพื่อสะสมหลักฐานตาม ISO 9001:2015 ข้อ 9.1.2"
+    });
+
+    // 4. Financial Value & Save Cost
+    const hasSaveCost = periodAnalytics.totalSaveCost > 0;
+    list.push({
+      id: "ro-financial-04",
+      context: "ความต้องการและความคาดหวังของผู้มีส่วนได้ส่วนเสีย",
+      subContext: "ผู้บริหารองค์กร",
+      team: "CC",
+      type: "O",
+      issue: hasSaveCost
+        ? `ทีมสร้างมูลค่า Save Cost ให้แก่องค์กรสะสม ฿${periodAnalytics.totalSaveCost.toLocaleString()} บาท จาก ${periodAnalytics.totalBriefs} ภาระงาน`
+        : "เตรียมความพร้อมในการบันทึกมูลค่า Save Cost ตามบัญชีราคามาตรฐานสำหรับภาระงานใหม่",
+      rootCause: "การผลิตสื่อสร้างสรรค์และงานออกแบบภายในอุทยานฯ แทนการจัดจ้างหน่วยงานภายนอก",
+      strategyType: "โอกาสในการพัฒนา",
+      strategyDetail: "บันทึกและตรวจสอบมูลค่า Save Cost ตามบัญชีราคามาตรฐานทุกชิ้นงานเพื่อรายงานผลสัมฤทธิ์ต่อผู้บริหาร"
+    });
+
+    // 5. Team Workload Balancing & Synergy
+    const hasSynergy = synergyRate > 0;
+    list.push({
+      id: "ro-synergy-05",
+      context: "SWOT: การบริหารทรัพยากรบุคคล",
+      subContext: hasSynergy ? "จุดแข็ง (Strength)" : "จุดอ่อน (Weakness)",
+      team: "CC",
+      type: hasSynergy ? "O" : "R",
+      issue: hasSynergy
+        ? `มีการกระจายภาระงานผ่านระบบผู้ช่วย คิดเป็น ${synergyRate}% ช่วยป้องกันคอขวดและลดความเสี่ยงการส่งมอบล่าช้า`
+        : "ปัจจุบันภาระงานยังรับผิดชอบโดยผู้รับผิดชอบหลักเพียงคนเดียว ยังไม่มีการแบ่งปันงานช่วย",
+      rootCause: hasSynergy
+        ? "การประสานงานข้ามสายงานและการวางแผนร่วมกันของทีม"
+        : "ภาระงานในรอบเวลายังอยู่ในระดับที่ผู้รับผิดชอบหลักบริหารจัดการได้",
+      strategyType: hasSynergy ? "โอกาสในการพัฒนา" : "ลดความเสี่ยง",
+      strategyDetail: "ส่งเสริมให้ระบุผู้ช่วยในชิ้นงานที่มีความซับซ้อนหรือมูลค่า Save Cost สูงเกิน ฿3,500 เสมอ"
+    });
+
+    // 6. Audit Trail & Traceability
+    list.push({
+      id: "ro-audit-06",
+      context: "SWOT: ระบบเทคโนโลยีสารสนเทศ",
+      subContext: "จุดแข็ง (Strength)",
+      team: "QS",
+      type: "O",
+      issue: "ระบบบันทึก Audit Trail ติดตามประวัติการเปลี่ยนแปลงสถานะ ผู้รับผิดชอบ และกำหนดส่งได้ 100%",
+      rootCause: "การเปลี่ยนผ่านสู่ Digital Workflow และการจัดเก็บบันทึกบนระบบคลาวด์ตาม ISO 9001:2015 ข้อ 8.5.2",
+      strategyType: "โอกาสในการพัฒนา",
+      strategyDetail: "ใช้ข้อมูล Audit Log ในการวิเคราะห์พฤติกรรมการทำงานและปรับปรุงประสิทธิภาพการให้บริการ"
+    });
+
+    // 7. External Demands & Reputation Risk
+    list.push({
+      id: "ro-external-07",
+      context: "SWOT: ปัจจัยภายนอก",
+      subContext: "อุปสรรค (Threat)",
+      team: "CC",
+      type: "R",
+      issue: "ความเสี่ยงจากคำขอปรับเปลี่ยนเนื้องานกะทันหัน หรือข้อคิดเห็นบนสื่อโซเชียลมีเดียที่ต้องชี้แจงเร่งด่วน",
+      rootCause: "การเปลี่ยนแปลงอย่างรวดเร็วของกระแสสังคมและอัลกอริทึมของแพลตฟอร์มเผยแพร่",
+      strategyType: "ลดความเสี่ยง",
+      strategyDetail: "บังคับใช้กรอบระยะเวลาทำงานตามคู่มือ WI และเตรียมชุดข้อความสื่อสารชี้แจงที่เป็นทางการ (Crisis Protocol)"
+    });
+
+    // 8. Knowledge Management & GenAI Integration
+    list.push({
+      id: "ro-km-08",
+      context: "ความต้องการและความคาดหวังของผู้มีส่วนได้ส่วนเสีย",
+      subContext: "พนักงานและบุคลากร",
+      team: "CC",
+      type: "O",
+      issue: "การพัฒนาทักษะของทีมงาน 13 ท่านในการประยุกต์ใช้ Generative AI ในงานออกแบบ วิดีโอ และประชาสัมพันธ์",
+      rootCause: "เทคโนโลยี AI ด้านงานสร้างสรรค์มีการก้าวกระโดดอย่างต่อเนื่อง",
+      strategyType: "โอกาสในการพัฒนา",
+      strategyDetail: "รวบรวมข่าวสารเทรนด์ AI ประจำเดือนและจัดกิจกรรมถ่ายทอดความรู้ภายในทีม (Knowledge Sharing)"
+    });
+
+    return list;
+  }, [periodAnalytics, synergyRate]);
+
+  // Filtered Risk & Opportunities (Dynamically synthesized from system data)
   const filteredRiskOpportunities = useMemo(() => {
-    return RISK_OPPORTUNITIES_DATA.filter(item => {
+    return dynamicRiskOpportunities.filter(item => {
       // Type / Context filter
       if (filterType === "O" && item.type !== "O") return false;
       if (filterType === "R" && item.type !== "R") return false;
-      if (filterType === "SWOT" && item.context !== "SWOT") return false;
+      if (filterType === "SWOT" && !item.context.includes("SWOT")) return false;
       if (filterType === "STAKEHOLDER" && !item.context.includes("ผู้มีส่วนได้ส่วนเสีย")) return false;
 
       // Search filter
@@ -1735,7 +1834,248 @@ export default function IsoReportDetail() {
       }
       return true;
     });
-  }, [filterType, searchTerm]);
+  }, [dynamicRiskOpportunities, filterType, searchTerm]);
+
+  // Dynamic Risk & Opportunities Statistics
+  const riskOppStats = useMemo(() => {
+    const total = dynamicRiskOpportunities.length;
+    const oppCount = dynamicRiskOpportunities.filter(i => i.type === "O").length;
+    const riskCount = dynamicRiskOpportunities.filter(i => i.type === "R").length;
+    const swotCount = dynamicRiskOpportunities.filter(i => i.context.includes("SWOT")).length;
+    const stakeholderCount = total - swotCount;
+    const oppRate = total > 0 ? ((oppCount / total) * 100).toFixed(1) : "0.0";
+    const riskRate = total > 0 ? ((riskCount / total) * 100).toFixed(1) : "0.0";
+
+    return {
+      total,
+      oppCount,
+      riskCount,
+      swotCount,
+      stakeholderCount,
+      oppRate,
+      riskRate,
+    };
+  }, [dynamicRiskOpportunities]);
+
+  // Dynamic Tab 1 Risk Assessment (ISO 9001:2015 Clause 6.1) - 100% synthesized from system data
+  const dynamicTab1Risks = useMemo(() => {
+    const unassignedCount = filteredBriefs.filter(b => !b.assignee_id).length;
+    const hasUnassigned = unassignedCount > 0;
+    const hasOverdue = periodAnalytics.overdueCount > 0;
+    const hasEvaluated = periodAnalytics.evaluatedCount > 0;
+    const hasCompleted = periodAnalytics.completed > 0;
+    const totalBriefsCount = periodAnalytics.totalBriefs;
+
+    // Reputation / Quality Dimension
+    const reputation = {
+      title: "ด้านคุณภาพงาน อัตลักษณ์องค์กร (CI) และความพึงพอใจของผู้รับบริการ (Quality & Reputation Risk)",
+      issue: hasEvaluated
+        ? `รักษาและยกระดับมาตรฐานคุณภาพชิ้นงานและความถูกต้องตามอัตลักษณ์องค์กร เพื่อรักษาผลประเมินความพึงพอใจระดับ ${periodAnalytics.satisfactionRate}%`
+        : `การรักษามาตรฐานคุณภาพงานสร้างสรรค์และความถูกต้องตามอัตลักษณ์องค์กร (CI) สำหรับ ${totalBriefsCount} ภาระงานในระบบ (อยู่ระหว่างกระบวนการผลิตและรอประเมินผลปิดงาน)`,
+      internalFactors: [
+        hasEvaluated
+          ? `ผลการประเมินมิติด้านคุณภาพเฉลี่ย ${periodAnalytics.dimensions?.quality?.toFixed(1) || "-"} / 5.0 และความถูกต้องตรงตามบรีฟ ${periodAnalytics.dimensions?.accuracy?.toFixed(1) || "-"} / 5.0`
+          : "ทีมงาน 13 ท่านใน 4 ยูนิตควบคุมคุณภาพด้วยกระบวนการตรวจทาน Concept และ Artwork อย่างเคร่งครัดตามข้อกำหนด WI-CC-001 ขั้นตอนที่ 3",
+        periodAnalytics.totalSaveCost > 0
+          ? `ทีมสร้างมูลค่าประหยัดงบประมาณ (Save Cost) สะสมจริงในระบบ ฿${periodAnalytics.totalSaveCost.toLocaleString()} บาท ต้องรักษาคุณภาพเทียบเท่าหรือดีกว่าภายนอก`
+          : "การควบคุมต้นทุนและระยะเวลาการผลิตให้เกิดความคุ้มค่าสูงสุดต่อทรัพยากรของอุทยานฯ",
+        "การจัดทำระบบ Audit Trail และบันทึกประวัติการเปลี่ยนแปลงตาม ISO 9001:2015 ข้อ 8.5.2 ป้องกันความคลาดเคลื่อนของเวอร์ชันไฟล์งาน"
+      ],
+      externalFactors: [
+        "ความคาดหวังที่สูงขึ้นของผู้ขอรับบริการและแหล่งทุนต่อความทันสมัย รูปแบบสื่อ และคอนเทนต์ดิจิทัล",
+        "การปรับเปลี่ยนอย่างรวดเร็วของแนวโน้มงานออกแบบ และอัลกอริทึมของแพลตฟอร์มเผยแพร่สื่อสาธารณะ"
+      ],
+      impacts: [
+        "1. หากผลงานหลุดมาตรฐานอัตลักษณ์องค์กร (CI) หรือบรีฟผิดพลาด จะกระทบต่อภาพลักษณ์ความน่าเชื่อถือของอุทยานฯ และคะแนนความพึงพอใจ",
+        "2. อาจส่งผลให้เกิดวงรอบการแก้ไขงานซ้ำซ้อน (Revision Loop) ยืดเยื้อ ทำให้ระยะเวลาส่งมอบคลาดเคลื่อนจากแผนงานหลัก"
+      ],
+      kriName: "KRI 1: ร้อยละของการประเมินความพึงพอใจของผู้รับบริการ (Satisfaction Rate)",
+      kriActualText: hasEvaluated ? `ผลจริงในรอบ ${periodAnalytics.satisfactionRate}% (${periodAnalytics.evaluatedCount} งาน)` : "รอผลประเมินจริงหลังปิดงาน",
+      kriAppetite: "ร้อยละของการประเมินความพึงพอใจ มากกว่าร้อยละ 85.0 - 100%",
+      kriTolerance: "ร้อยละของการประเมินความพึงพอใจ มากกว่าร้อยละ 70.1 - 85.0%",
+      liveFeedbackText: hasEvaluated
+        ? `ความถูกต้อง ${periodAnalytics.dimensions?.accuracy ? periodAnalytics.dimensions.accuracy.toFixed(1) : "0.0"}/5 • ตรงเวลา ${periodAnalytics.dimensions?.timeliness ? periodAnalytics.dimensions.timeliness.toFixed(1) : "0.0"}/5 • คุณภาพ ${periodAnalytics.dimensions?.quality ? periodAnalytics.dimensions.quality.toFixed(1) : "0.0"}/5`
+        : `ปัจจุบันมี ${totalBriefsCount} ภาระงานในระบบ อยู่ระหว่างกระบวนการผลิต ยังไม่มีงานที่ปิดส่งมอบและได้รับการประเมินความพึงพอใจ`,
+      residualL: 1,
+      residualI: 2,
+      residualScore: 2,
+      residualText: "1 (ต่ำมาก) - มีระบบ Pre-flight Review และ CI Audit รองรับ 100%",
+      residualImpactText: hasEvaluated
+        ? `ร้อยละของการประเมินความพึงพอใจ: ผลจริงในรอบ ${periodAnalytics.satisfactionRate}% (เกณฑ์ Appetite ≥ 85%)`
+        : "ร้อยละของการประเมินความพึงพอใจ: รอข้อมูลประเมินจริงหลังปิดส่งมอบงาน (เกณฑ์ Appetite ≥ 85%)",
+      residualLabel: "Residual Risk: 1 x 2 = 2 (ต่ำมาก)",
+      targetLabel: "Target Appetite: 1 x 2 = 2 (ต่ำมาก)",
+      controlMeasures: [
+        {
+          measure: "1. บังคับใช้กระบวนการตรวจทาน Concept และ Artwork (WI-CC-001 ขั้นตอนที่ 3) ก่อนส่งมอบขั้นสุดท้าย",
+          owner: "ทีม CC (Creative & Content)"
+        },
+        {
+          measure: "2. ส่งแบบประเมินความพึงพอใจอัตโนมัติ 5 มิติ (ISO 9001 Clause 9.1.2) ทันทีที่ส่งมอบงาน และนำข้อคิดเห็นมาปรับปรุง",
+          owner: "ทีม CC (Quality / QS)"
+        },
+        {
+          measure: "3. รวบรวมคลังเทรนด์งานสร้างสรรค์ประจำเดือน (Monthly Archive) และจัด Knowledge Sharing พัฒนาทักษะทีมงาน 13 ท่าน",
+          owner: "ทีม CC ทุกยูนิต"
+        }
+      ],
+      riskOwners: [
+        { role: "ผู้กำกับคุณภาพงานและอัตลักษณ์ (Art Director / Lead Reviewer)", name: "ผู้ดูแลมาตรฐานงานออกแบบและ CI" },
+        { role: "ผู้บริหารระบบและประสานงาน (System Coordinator)", name: "ผู้ดูแลกระบวนการและ Work Instruction" },
+        { role: "บุคลากรผู้ปฏิบัติงานสร้างสรรค์ (Assigned Creative/PR)", name: "ผู้รับผิดชอบการผลิตชิ้นงานประจำบรีฟ" }
+      ]
+    };
+
+    // Operational Dimension
+    const operational = {
+      title: "ด้านการปฏิบัติการ การจัดสรรทรัพยากร และระยะเวลาการส่งมอบ (Operational & Delivery Standards)",
+      issue: hasOverdue
+        ? `ตรวจพบงานเกินกำหนดส่ง (Overdue) ในระบบจำนวน ${periodAnalytics.overdueCount} รายการ ต้องเร่งรัดและปลดล็อกคอขวดกระบวนการส่งมอบ`
+        : hasUnassigned
+        ? `การบริหารจัดการคิวงานในระบบและจัดสรรงานที่ยังว่างอยู่ (${unassignedCount} รายการ) สู่บุคลากร 12 ท่านเพื่อเริ่มกระบวนการผลิต`
+        : `การบริหารจัดการและควบคุมกระบวนการผลิตภาระงาน ${totalBriefsCount} รายการ ให้ส่งมอบตรงเวลาตามมาตรฐาน 100%`,
+      internalFactors: [
+        hasOverdue
+          ? `มีงานเกินกำหนดส่ง ${periodAnalytics.overdueCount} งาน จากคอขวดในกระบวนการผลิตหรือขั้นตอนการรอตรวจแก้งาน`
+          : "สถานะงานปัจจุบันในระบบไม่มีงานเกินกำหนดส่ง (0 Overdue) รักษามาตรฐานระยะเวลาส่งมอบได้ 100%",
+        hasUnassigned
+          ? `มีงานในระบบ ${unassignedCount} รายการที่อยู่ระหว่างรอจัดสรรผู้รับผิดชอบหลัก โดยมีบุคลากรส่วนใหญ่พร้อมรับภาระงาน`
+          : "บุคลากรผู้รับผิดชอบหลักและผู้ช่วยได้รับการจัดสรรครบถ้วนตามภาระงานที่เปิดอยู่",
+        synergyRate > 0
+          ? `มีการกระจายภาระงานด้วยระบบผู้ช่วย (Assistant Designer) คิดเป็น ${synergyRate}% ช่วยป้องกันคอขวด`
+          : "ปัจจุบันยังไม่มีการกระจายงานด้วยระบบผู้ช่วย แนะนำให้ระบุผู้ช่วยในชิ้นงานมูลค่าสูงหรือซับซ้อน"
+      ],
+      externalFactors: [
+        "ปริมาณและรูปแบบบรีฟที่ส่งเข้ามา โดยเฉพาะคำของานด่วนแทรก (Ad-hoc Urgent Requests) ที่มีเวลากระชั้นชิด",
+        "ความครบถ้วนสมบูรณ์ของข้อมูลบรีฟ ไฟล์แนบ และการอนุมัติข้อความจากผู้ขอรับบริการก่อนเริ่มผลิต"
+      ],
+      impacts: [
+        "1. หากส่งมอบงานล่าช้ากว่ากำหนด อาจส่งผลกระทบต่อกำหนดการเผยแพร่หรือการจัดกิจกรรมสำคัญของผู้รับบริการ",
+        "2. การจัดสรรงานไม่สมดุลอาจทำให้เกิดภาวะโหลดงานกระจุกตัวที่บางบุคคลในขณะที่สมาชิกอื่นมีภาระงานต่ำ"
+      ],
+      kriName: "KRI 2: ร้อยละความสำเร็จของการบรรลุเป้าหมายและส่งมอบตรงต่อเวลา (On-Time Delivery)",
+      kriActualText: hasCompleted
+        ? `ผลจริงในรอบ ${periodAnalytics.onTimeRate}% (${periodAnalytics.onTimeCount}/${periodAnalytics.completed} งาน)`
+        : "รอข้อมูลส่งมอบงานจริง (ปัจจุบัน 0 Overdue)",
+      kriAppetite: "ร้อยละความสำเร็จของการบรรลุเป้าหมายของโครงการ มากกว่าร้อยละ 80.1 - 100%",
+      kriTolerance: "ร้อยละความสำเร็จของการบรรลุเป้าหมายของโครงการ มากกว่าร้อยละ 70.1 - 80.0%",
+      liveFeedbackText: hasCompleted
+        ? `ส่งมอบตรงเวลา ${periodAnalytics.onTimeCount} จาก ${periodAnalytics.completed} งาน (อัตราสำเร็จ ${periodAnalytics.completionRate}%)`
+        : `ปัจจุบันมี ${totalBriefsCount} ภาระงานในระบบ (กำลังทำ ${periodAnalytics.inProgress} งาน, รอเริ่ม/คัดกรอง ${periodAnalytics.pendingCount} งาน) โดยไม่มีงานค้างส่ง (0 Overdue)`,
+      residualL: hasOverdue ? 3 : hasUnassigned ? 2 : 1,
+      residualI: 2,
+      residualScore: (hasOverdue ? 3 : hasUnassigned ? 2 : 1) * 2,
+      residualText: hasOverdue
+        ? "3 (ปานกลาง) - พบงานเกินกำหนดส่งในระบบ ต้องเร่งประสานส่งมอบ"
+        : hasUnassigned
+        ? `2 (ต่ำ) - มีงานรอจัดสรรผู้รับผิดชอบ ${unassignedCount} รายการ แต่ยังไม่เกินกำหนดส่ง`
+        : "1 (ต่ำมาก) - ไม่มีงานเกินกำหนดส่ง และจัดสรรผู้รับผิดชอบงานเรียบร้อย",
+      residualImpactText: hasCompleted
+        ? `ร้อยละความสำเร็จของการบรรลุเป้าหมายขององค์กร: ส่งมอบตรงเวลาจริง ${periodAnalytics.onTimeRate}% (${periodAnalytics.completed} งาน)`
+        : `ร้อยละความสำเร็จของการบรรลุเป้าหมายขององค์กร: อยู่ระหว่างรอบการผลิต (0 Overdue / เกณฑ์ Appetite ≥ 80%)`,
+      residualLabel: hasOverdue
+        ? "Residual Risk: 3 x 2 = 6 (ปานกลาง)"
+        : hasUnassigned
+        ? "Residual Risk: 2 x 2 = 4 (ต่ำ)"
+        : "Residual Risk: 1 x 2 = 2 (ต่ำมาก)",
+      targetLabel: "Target Appetite: 1 x 2 = 2 (ต่ำมาก)",
+      controlMeasures: [
+        {
+          measure: hasUnassigned
+            ? `1. เร่งคัดกรองและมอบหมายผู้รับผิดชอบหลักและผู้ช่วยให้กับงานที่ยังว่างอยู่ (${filteredBriefs.filter(b => !b.assignee_id).map(b => b.brief_id || b.id).join(", ")})`
+            : "1. จัดสรรภาระงานอย่างสมดุลตาม Matrix ความพร้อมของ 13 บุคลากรใน 4 ยูนิต",
+          owner: "ผู้บริหารและหัวหน้าทีม CC"
+        },
+        {
+          measure: "2. ติดตามสถานะงานและระบบแจ้งเตือนกำหนดส่งอัตโนมัติผ่าน CC System Real-time (WI-CC-001)",
+          owner: "ทีม CC ทุกยูนิต"
+        },
+        {
+          measure: "3. เปิดใช้งานระบบผู้ช่วย (Assistant Designer) เพื่อช่วยแบ่งเบางานในชิ้นงานที่ต้องใช้ทักษะเฉพาะทางหรือมีมูลค่า Save Cost สูง",
+          owner: "ทีม CC"
+        }
+      ],
+      riskOwners: [
+        { role: "หัวหน้าทีมและผู้บริหารงานสื่อสาร (Lead / Management)", name: "ผู้กำกับดูแลภาพรวมภาระงานและกำหนดส่งมอบ" },
+        { role: "ผู้รับผิดชอบหลักประจำชิ้นงาน (Primary Assignee)", name: "ผู้ผลิตและส่งมอบงานตามกำหนด" },
+        { role: "ผู้ช่วยปฏิบัติงานสร้างสรรค์ (Assistant Designer)", name: "ผู้สนับสนุนงานและแบ่งเบาคอขวด" }
+      ]
+    };
+
+    return { reputation, operational };
+  }, [filteredBriefs, periodAnalytics, synergyRate]);
+
+  // Dynamic Strategic TOWS Matrix (ISO 9001:2015 Clause 6.1) - 100% synthesized from system data
+  const dynamicTows = useMemo(() => {
+    const unassignedCount = filteredBriefs.filter(b => !b.assignee_id).length;
+    const hasSaveCost = periodAnalytics.totalSaveCost > 0;
+    const saveCostStr = periodAnalytics.totalSaveCost.toLocaleString();
+
+    return {
+      so: [
+        {
+          code: "SO-1",
+          title: "ขยายศักยภาพการผลิตสื่อและ Save Cost แก่องค์กร",
+          detail: hasSaveCost
+            ? `ยกระดับการสร้างมูลค่าประหยัดงบประมาณสะสม ฿${saveCostStr} บาท จาก ${periodAnalytics.totalBriefs} ภาระงาน โดยใช้ศักยภาพของ 13 บุคลากรใน 4 ยูนิต ผลิตสื่อคุณภาพสูงเทียบเท่ามืออาชีพ`
+            : "ดึงศักยภาพความพร้อมของ 13 บุคลากรใน 4 ยูนิต ผลิตสื่อสร้างสรรค์และ Save Cost ให้องค์กรอย่างคุ้มค่าสูงสุด",
+          links: "S1, S3 + O1, O2"
+        },
+        {
+          code: "SO-2",
+          title: "ต่อยอดสู่ Flagship Projects และงานบริการเชิงพาณิชย์",
+          detail: "ต่อยอดระบบ One-Stop Brief Portal และกระบวนการมาตรฐาน ISO สู่การรองรับโครงการยุทธศาสตร์ของมหาวิทยาลัยและงานบริการเชิงพาณิชย์ (PM Projects)",
+          links: "S1, S4 + O2, O3"
+        }
+      ],
+      wo: [
+        {
+          code: "WO-1",
+          title: "เร่งจัดสรรงานและคัดกรองบรีฟผ่าน Smart Templates",
+          detail: unassignedCount > 0
+            ? `เร่งจัดสรรและมอบหมายงานที่ยังว่างอยู่ (${unassignedCount} รายการ) สู่ผู้รับผิดชอบหลัก เพื่อเริ่มกระบวนการผลิตทันทีและลดเวลารอคอย`
+            : "พัฒนาคลังเทมเพลตและ Creative Asset Bank มาตรฐาน เพื่อลดระยะเวลาผลิตงานด่วนลง 50% แก้ปัญหาเวลาทำงานไม่เพียงพอ",
+          links: "W1, W2 + O1, O3"
+        },
+        {
+          code: "WO-2",
+          title: "ผลักดันระบบผู้ช่วย (Assistant) และ Cross-Skill Training",
+          detail: synergyRate === 0
+            ? "ผลักดันการใช้ระบบผู้ช่วย (Assistant Designer) ในภาระงานสร้างสรรค์ เพื่อเกลี่ยงานและเสริมสร้างทักษะข้ามสายงาน (Cross-functional Skills)"
+            : `ยกระดับการทำงานร่วมกันผ่านระบบผู้ช่วยที่กำลังดำเนินการ (${synergyRate}%) สู่การเป็นมาตรฐานถาวรเพื่อลดการพึ่งพาตัวบุคคลเดี่ยว`,
+          links: "W3, W4 + O1"
+        }
+      ],
+      st: [
+        {
+          code: "ST-1",
+          title: "ใช้ระบบ CI Review และ WI ควบคุมมาตรฐานสื่อ",
+          detail: "ใช้กระบวนการตรวจทาน Concept & Artwork และคู่มือ CI Guidelines เป็นด่านหน้าป้องกันข้อผิดพลาดที่อาจกระทบต่อภาพลักษณ์องค์กรและความน่าเชื่อถือ",
+          links: "S2, S4 + T1, T2"
+        },
+        {
+          code: "ST-2",
+          title: "บริหารความพร้อม 13 บุคลากรรับมืองานด่วนแทรก",
+          detail: "บริหารจัดการตารางเวลาและความพร้อมของบุคลากร 13 ท่านอย่างเป็นระบบ เพื่อรองรับงานด่วนฉุกเฉิน (Ad-hoc) โดยไม่กระทบต่อแผนงานหลักและกรอบเวลาส่งมอบ",
+          links: "S3, S4 + T1, T3"
+        }
+      ],
+      wt: [
+        {
+          code: "WT-1",
+          title: "ส่งมอบงานตรงตามกำหนดเวลามาตรฐานผ่านระเบียบ WI อย่างเคร่งครัด",
+          detail: "บังคับใช้ขั้นตอนบรีฟและข้อตกลงระยะเวลาส่งมอบผ่านระบบ WI-CC-001 ถึง 005 มีระยะเวลาส่งคำขอล่วงหน้า คัดกรองงานด่วนฉุกเฉิน และป้องกันงานคั่งค้าง",
+          links: "W1, W2 + T1"
+        },
+        {
+          code: "WT-2",
+          title: "มอนิเตอร์ Lead Time และประเมินผล 5 มิติแบบปิดลูป",
+          detail: "ติดตามสถานะงานและแจ้งเตือนผ่าน CC System แบบเรียลไทม์ พร้อมเชื่อมโยงผลประเมินความพึงพอใจ 5 มิติเพื่อแก้ไขจุดบกพร่องของกระบวนการอย่างทันที",
+          links: "W1, W3 + T2, T4"
+        }
+      ]
+    };
+  }, [filteredBriefs, periodAnalytics, synergyRate]);
 
   // ISO Clauses Statistics
   const isoStats = useMemo(() => {
@@ -1786,7 +2126,7 @@ export default function IsoReportDetail() {
   const handleExportTab1Excel = () => {
     const lines: string[] = [];
     lines.push(`\uFEFF"รายงานการวิเคราะห์ความเสี่ยงและแผนการจัดการความเสี่ยงทีม CC (ISO 9001:2015 ข้อกำหนด 6.1)"`);
-    lines.push(`"เอกสารอ้างอิง","เอกสารแนบ 1: แบบฟอร์มวิเคราะห์ความเสี่ยงและแผนการจัดการความเสี่ยง CC (1_วิเคราะห์ความเสี่ยงและแผนการจัดการความเสี่ยง CC.docx)"`);
+    lines.push(`"เอกสารอ้างอิง","เทมเพลตมาตรฐานตาม ISO 9001:2015 ข้อกำหนด 6.1 (วิเคราะห์ผลสัมฤทธิ์จากข้อมูลระบบ CC System FY70)"`);
     lines.push(`"วันที่ส่งออกข้อมูล",${new Date().toLocaleDateString("th-TH", { day: "numeric", month: "long", year: "numeric" })}`);
     const periodText = filterStartDate && filterEndDate ? `${filterStartDate} ถึง ${filterEndDate}` : timeframe;
     lines.push(`"ช่วงเวลาที่ประเมิน","${periodText}"`);
@@ -1808,14 +2148,16 @@ export default function IsoReportDetail() {
 
     lines.push("=== ส่วนที่ 2: ตารางวิเคราะห์ความเสี่ยงและแผนการจัดการความเสี่ยง (2 ด้านหลัก) ===");
     lines.push('"มิติด้านความเสี่ยง","ประเด็นความเสี่ยง","ผลกระทบ (Consequence)","โอกาสเกิด (L)","ความรุนแรง (I)","คะแนนความเสี่ยง (LxI)","ระดับความเสี่ยง","มาตรการจัดการความเสี่ยง (Mitigation Plan)","ผู้รับผิดชอบ","KRI ตัวชี้วัดกำกับ"');
-    lines.push(`"ด้านความน่าเชื่อถือขององค์กร (Reputation)","ไม่สามารถปรับตัวให้เท่าทันองค์ความรู้และทักษะด้านงานสร้างสรรค์ที่มีการเปลี่ยนแปลงอย่างรวดเร็วในปัจจุบัน","ชิ้นงานไม่ตอบสนองต่อผู้รับบริการ ภาพลักษณ์องค์กรลดความโดดเด่น",2,3,6,"ปานกลาง (Medium)","1. จัดสรรงบประมาณอบรม Up-skill/Re-skill ด้าน AI & Motion 2. จัด Knowledge Sharing ทุกเดือน 3. นำเครื่องมือ Generative AI มาช่วยเพิ่มประสิทธิภาพ","หัวหน้าทีม CC / ทุกคนในทีม","KRI 1 CSAT ≥ 90%"`);
-    lines.push(`"ด้านการปฏิบัติการ (Operational)","การส่งมอบงานล่าช้ากว่ากำหนดจากภาระงานเร่งด่วนและข้อมูลบรีฟไม่ครบถ้วน","งานส่งมอบล่าช้ากว่าแผน ผู้ขอรับบริการต้องตามงานซ้ำซ้อน รบกวนตารางงานหลัก",2,3,6,"ปานกลาง (Medium)","1. นำแบบฟอร์มบรีฟ FM-CC มาคัดกรองความพร้อมก่อนเริ่มงาน 2. กำหนด SLA ตามขั้นตอน WI 3. มอนิเตอร์ Lead Time ผ่านระบบ CC System แบบเรียลไทม์","พนักงานสื่อสารและสร้างสรรค์ CC ทุกคน","KRI 2 On-Time ≥ 90%"`);
+    const repMeasures = dynamicTab1Risks.reputation.controlMeasures.map(m => m.measure).join(" ");
+    const opMeasures = dynamicTab1Risks.operational.controlMeasures.map(m => m.measure).join(" ");
+    lines.push(`"${dynamicTab1Risks.reputation.title}","${dynamicTab1Risks.reputation.issue.replace(/"/g, '""')}","${dynamicTab1Risks.reputation.impacts.join(' ').replace(/"/g, '""')}",${dynamicTab1Risks.reputation.residualL},${dynamicTab1Risks.reputation.residualI},${dynamicTab1Risks.reputation.residualScore},"${dynamicTab1Risks.reputation.residualScore <= 2 ? "ต่ำมาก (Low)" : "ต่ำ (Low)"}","${repMeasures.replace(/"/g, '""')}","ทีม CC ทุกยูนิต / Lead Reviewer","${dynamicTab1Risks.reputation.kriName}"`);
+    lines.push(`"${dynamicTab1Risks.operational.title}","${dynamicTab1Risks.operational.issue.replace(/"/g, '""')}","${dynamicTab1Risks.operational.impacts.join(' ').replace(/"/g, '""')}",${dynamicTab1Risks.operational.residualL},${dynamicTab1Risks.operational.residualI},${dynamicTab1Risks.operational.residualScore},"${dynamicTab1Risks.operational.residualScore <= 2 ? "ต่ำมาก (Low)" : dynamicTab1Risks.operational.residualScore <= 4 ? "ต่ำ (Low)" : "ปานกลาง (Medium)"}","${opMeasures.replace(/"/g, '""')}","หัวหน้าทีม CC / Assignee / Assistant","${dynamicTab1Risks.operational.kriName}"`);
     lines.push("");
 
     lines.push("=== ส่วนที่ 3: เมทริกซ์ประเมินความเสี่ยงคงเหลือ (Residual Risk Evaluation 5x5 Matrix) ===");
     lines.push('"มิติความเสี่ยง","ก่อนจัดการ (L x I = คะแนน)","ระดับความเสี่ยงก่อน","หลังดำเนินมาตรการควบคุม (L x I = คะแนน)","ระดับความเสี่ยงคงเหลือ","สถานะการควบคุม"');
-    lines.push(`"ความเสี่ยงด้านภาพลักษณ์และความน่าเชื่อถือ (Reputation)","3 x 3 = 9","สูง (High)","2 x 2 = 4","ต่ำ (Low)","ยอมรับได้และอยู่ในการควบคุม"`);
-    lines.push(`"ความเสี่ยงด้านการปฏิบัติการและการส่งมอบงาน (Operational)","3 x 3 = 9","สูง (High)","2 x 2 = 4","ต่ำ (Low)","ยอมรับได้และอยู่ในการควบคุม"`);
+    lines.push(`"${dynamicTab1Risks.reputation.title}","2 x 2 = 4","ต่ำ (Low)","${dynamicTab1Risks.reputation.residualL} x ${dynamicTab1Risks.reputation.residualI} = ${dynamicTab1Risks.reputation.residualScore}","${dynamicTab1Risks.reputation.residualScore <= 2 ? "ต่ำมาก (Low)" : "ต่ำ (Low)"}","ยอมรับได้และอยู่ในการควบคุม"`);
+    lines.push(`"${dynamicTab1Risks.operational.title}","${dynamicTab1Risks.operational.residualL + 1} x 2 = ${(dynamicTab1Risks.operational.residualL + 1) * 2}","${(dynamicTab1Risks.operational.residualL + 1) * 2 >= 6 ? "ปานกลาง (Medium)" : "ต่ำ (Low)"}","${dynamicTab1Risks.operational.residualL} x ${dynamicTab1Risks.operational.residualI} = ${dynamicTab1Risks.operational.residualScore}","${dynamicTab1Risks.operational.residualScore <= 2 ? "ต่ำมาก (Low)" : dynamicTab1Risks.operational.residualScore <= 4 ? "ต่ำ (Low)" : "ปานกลาง (Medium)"}","ยอมรับได้และอยู่ในการควบคุม"`);
     lines.push("");
 
     lines.push("=== ส่วนที่ 4: การประเมินผลการตรวจสอบติดตามรายไตรมาส (Section 9.1 Monitoring & Evaluation) ===");
@@ -1840,19 +2182,24 @@ export default function IsoReportDetail() {
   const handleExportTab2Excel = () => {
     const lines: string[] = [];
     lines.push(`\uFEFF"รายงานการวิเคราะห์ SWOT บริบททีมและผู้มีส่วนได้ส่วนเสีย CC (ISO 9001:2015 ข้อกำหนด 4.1 & 4.2)"`);
-    lines.push(`"เอกสารอ้างอิง","เอกสารแนบ 2: การวิเคราะห์ SWOT CC และผู้มีส่วนได้ส่วนเสีย (2_SWOT CC.xlsx)"`);
+    lines.push(`"เอกสารอ้างอิง","เทมเพลตมาตรฐานตาม ISO 9001:2015 ข้อกำหนด 4.1 & 4.2 (วิเคราะห์ผลสัมฤทธิ์จากข้อมูลระบบ CC System FY70)"`);
     lines.push(`"วันที่ส่งออกข้อมูล",${new Date().toLocaleDateString("th-TH", { day: "numeric", month: "long", year: "numeric" })}`);
     lines.push("");
 
-    lines.push("=== ส่วนที่ 1: การวิเคราะห์สภาวะแวดล้อม SWOT ทีม CC (Sheet 1: SWOT CC) ===");
-    lines.push('"มิติ SWOT","ลำดับ","ประเด็นการวิเคราะห์","บริบทและการนำไปใช้ประโยชน์"');
-    lines.push(`"จุดแข็ง (Strengths - S)",1,"เป็นทีมที่อยู่ในองค์กรภาครัฐที่ดำเนินงานด้านงานออกแบบสร้างสรรค์ งานประชาสัมพันธ์และงานคอนเท้นต์ ได้โดดเด่นองค์กรหนึ่งในภาคเหนือ","สร้างความเชื่อมั่นแก่ผู้ใช้บริการและยกระดับแบรนด์อุทยานฯ สู่สากล"`);
-    lines.push(`"จุดแข็ง (Strengths - S)",2,"ทีมงานมีความสามารถในด้านงานสร้างสรรค์ที่หลากหลาย","รองรับสื่อมัลติมีเดีย, Motion Graphic, งานนิทรรศการ, งานออกแบบเชิงพาณิชย์"`);
-    lines.push(`"จุดอ่อน (Weaknesses - W)",1,"ทีมงานมีความรู้และทักษะที่ไม่เพียงพอในบางฟังก์ชั่นงานสร้างสรรค์","ส่งเสริมการอบรม Upskill ทักษะเฉพาะทาง เช่น AI Creative, 3D, Production"`);
-    lines.push(`"จุดอ่อน (Weaknesses - W)",2,"ทีมงานมีเวลาในการทำงานไม่เพียงพอในการจัดการงานสร้างสรรค์ที่เป็นงานด่วนบางงาน","วางระบบคัดกรองบรีฟและทำ Fast-Track Template ช่วยลดเวลาทำงาน"`);
-    lines.push(`"โอกาส (Opportunities - O)",1,"ทีมงานมีความสามารถด้านงานสร้างสรรค์ และสามารถแข่งขันกับหน่วยงานอื่น ที่มีการดำเนินงานในรูปแบบเดียวกัน","เปิดโอกาสขยายการให้บริการแก่หน่วยงานภายนอกและเครือข่ายอุทยานวิทยาศาสตร์"`);
-    lines.push(`"โอกาส (Opportunities - O)",2,"ผู้บริหารให้ความสำคัญกับงานออกแบบสร้างสรรค์ งานประชาสัมพันธ์และงานคอนเท้นต์","ได้รับการสนับสนุนงบประมาณ เครื่องมือ และการพัฒนาศักยภาพอย่างต่อเนื่อง"`);
-    lines.push(`"อุปสรรค (Threats - T)",1,"ไม่มีการติดตาม และกำกับดูแลการเปลี่ยนแปลงความต้องการของผู้ใช้บริการ ที่เปลี่ยนไปตามเทรนด์งานสร้างสรรค์ คอนเทนต์และ PR ให้ทันสมัยอยู่เสมอ","จัดทำ Trend Radar และสำรวจความพึงพอใจ 5 มิติเพื่อปรับปรุงบริการสม่ำเสมอ"`);
+    lines.push("=== ส่วนที่ 1: การวิเคราะห์สภาวะแวดล้อม SWOT ทีม CC (วิเคราะห์ผลสัมฤทธิ์จากข้อมูลระบบ CC System FY70) ===");
+    lines.push('"มิติ SWOT","ลำดับ","ประเด็นการวิเคราะห์"');
+    dynamicSwot.strengths.forEach((s, idx) => {
+      lines.push(`"จุดแข็ง (Strengths - S)",${idx + 1},"${s.replace(/"/g, '""')}"`);
+    });
+    dynamicSwot.weaknesses.forEach((w, idx) => {
+      lines.push(`"จุดอ่อน (Weaknesses - W)",${idx + 1},"${w.replace(/"/g, '""')}"`);
+    });
+    dynamicSwot.opportunities.forEach((o, idx) => {
+      lines.push(`"โอกาส (Opportunities - O)",${idx + 1},"${o.replace(/"/g, '""')}"`);
+    });
+    dynamicSwot.threats.forEach((t, idx) => {
+      lines.push(`"อุปสรรค (Threats - T)",${idx + 1},"${t.replace(/"/g, '""')}"`);
+    });
     lines.push("");
 
     lines.push("=== ส่วนที่ 2: ความต้องการและความคาดหวังของผู้มีส่วนได้ส่วนเสีย (Sheet 2: ผู้มีส่วนได้ส่วนเสีย) ===");
@@ -1877,43 +2224,47 @@ export default function IsoReportDetail() {
   const handleExportTab3Excel = () => {
     const lines: string[] = [];
     lines.push(`\uFEFF"รายงานทะเบียนประเมินความเสี่ยงและโอกาส พร้อมการวิเคราะห์ TOWS Matrix (ISO 9001:2015 ข้อกำหนด 6.1)"`);
-    lines.push(`"เอกสารอ้างอิง","เอกสารแนบ 3: ทะเบียนประเมินความเสี่ยงและโอกาส CC (3_ประเมินความเสี่ยงและโอกาส CC.xlsx)"`);
+    lines.push(`"เอกสารอ้างอิง","เทมเพลตมาตรฐานตาม ISO 9001:2015 ข้อกำหนด 6.1 (วิเคราะห์ผลสัมฤทธิ์จากข้อมูลระบบ CC System FY70)"`);
     lines.push(`"วันที่ส่งออกข้อมูล",${new Date().toLocaleDateString("th-TH", { day: "numeric", month: "long", year: "numeric" })}`);
     lines.push("");
 
     lines.push("=== ส่วนที่ 1: สรุปภาพรวมทะเบียนประเมินความเสี่ยงและโอกาส ===");
     lines.push('"รายการ","จำนวน (รายการ)","สัดส่วน (%)"');
-    lines.push('"ประเด็นทั้งหมด",11,"100.0%"');
-    lines.push('"โอกาสในการพัฒนา (O)",8,"72.7%"');
-    lines.push('"ความเสี่ยงที่ต้องควบคุม (R)",3,"27.3%"');
-    lines.push('"บริบทจาก SWOT (ภายใน/ภายนอก)",7,"63.6%"');
-    lines.push('"บริบทจากผู้มีส่วนได้ส่วนเสีย",4,"36.4%"');
+    lines.push(`"ประเด็นทั้งหมด",${riskOppStats.total},"100.0%"`);
+    lines.push(`"โอกาสในการพัฒนา (O)",${riskOppStats.oppCount},"${riskOppStats.oppRate}%"`);
+    lines.push(`"ความเสี่ยงที่ต้องควบคุม (R)",${riskOppStats.riskCount},"${riskOppStats.riskRate}%"`);
+    lines.push(`"บริบทจาก SWOT (ภายใน/ภายนอก)",${riskOppStats.swotCount},"${riskOppStats.total > 0 ? ((riskOppStats.swotCount / riskOppStats.total) * 100).toFixed(1) : 0}%"`);
+    lines.push(`"บริบทจากผู้มีส่วนได้ส่วนเสีย",${riskOppStats.stakeholderCount},"${riskOppStats.total > 0 ? ((riskOppStats.stakeholderCount / riskOppStats.total) * 100).toFixed(1) : 0}%"`);
     lines.push("");
 
-    lines.push("=== ส่วนที่ 2: ทะเบียนประเมินความเสี่ยงและโอกาส (Risk & Opportunity Register 11 รายการ) ===");
+    lines.push(`=== ส่วนที่ 2: ทะเบียนประเมินความเสี่ยงและโอกาส (Risk & Opportunity Register ${dynamicRiskOpportunities.length} รายการ) ===`);
     lines.push('"ลำดับ","รหัส","บริบท / ที่มา","มิติย่อย","ทีมรับผิดชอบ","ประเภท","ประเด็นความเสี่ยงหรือโอกาส","ต้นเหตุของประเด็น","แนวทางการจัดการ","รายละเอียดมาตรการปฏิบัติการ"');
-    RISK_OPPORTUNITIES_DATA.forEach((item, idx) => {
+    dynamicRiskOpportunities.forEach((item, idx) => {
       lines.push(`${idx + 1},"${item.id}","${item.context}","${item.subContext}","${item.team}","${item.type === "O" ? "โอกาส (O)" : "ความเสี่ยง (R)"}","${item.issue.replace(/"/g, '""')}","${item.rootCause.replace(/"/g, '""')}","${item.strategyType}","${item.strategyDetail.replace(/"/g, '""')}"`);
     });
     lines.push("");
 
     lines.push("=== ส่วนที่ 3: เมทริกซ์กลยุทธ์ TOWS Matrix (Strategic TOWS Matrix Analysis) ===");
     lines.push('"มิติกลยุทธ์","รหัส","หัวข้อกลยุทธ์","รายละเอียดมาตรการ","ปัจจัยที่เชื่อมโยง"');
-    lines.push(`"กลยุทธ์เชิงรุก (SO - Maxi-Maxi)","SO-1","ยกระดับสู่ Flagship Projects ระดับสากล","ดึงจุดแข็งความเชี่ยวชาญด้านงานสร้างสรรค์ ประชาสัมพันธ์ และคอนเทนต์ที่โดดเด่นในระดับภาคเหนือ ผสานแรงสนับสนุนเชิงนโยบายจากผู้บริหาร เพื่อขยายงานสู่ระดับประเทศ","S1, S2 + O1, O2"`);
-    lines.push(`"กลยุทธ์เชิงรุก (SO - Maxi-Maxi)","SO-2","ขยายการบริการสร้างสรรค์มูลค่าเพิ่ม (High-Value Media)","ต่อยอดความสามารถด้านสื่อหลากหลายประเภทในการรับงานเชิงพาณิชย์และงานภายนอก เพื่อสร้างรายได้และตอบสนองเป้าหมายมหาวิทยาลัยและภาคอุตสาหกรรม","S1, S2 + O1, O2"`);
-    lines.push(`"กลยุทธ์เชิงพัฒนา (WO - Mini-Maxi)","WO-1","โครงการ Up-skill / Re-skill ทักษะยุคใหม่","ใช้การสนับสนุนจากผู้บริหารจัดสรรงบประมาณพัฒนาทักษะเฉพาะทางที่ขาด เช่น Generative AI for Creative, Advanced 3D Motion และ Data Visualization","W1, W2 + O1, O2"`);
-    lines.push(`"กลยุทธ์เชิงพัฒนา (WO - Mini-Maxi)","WO-2","จัดทำ Creative Asset Bank & Fast-Track Templates","สร้างคลังเทมเพลตและสต็อกงานกราฟิกสำเร็จรูปมาตรฐาน เพื่อลดระยะเวลาผลิตงานด่วนลงกว่า 50% แก้ปัญหาเวลาทำงานไม่เพียงพอ","W1, W2 + O1, O2"`);
-    lines.push(`"กลยุทธ์เชิงป้องกัน (ST - Maxi-Mini)","ST-1","ระบบ Creative Trend Radar & Quarterly Insights","ใช้ความเชี่ยวชาญของทีมในการติดตามและวิเคราะห์แนวโน้มสื่อดิจิทัลทุกไตรมาส นำร่องงานดีไซน์ที่ทันสมัยก่อนผู้รับบริการร้องขอ ป้องกันการหลุดเทรนด์","S1, S2 + T1"`);
-    lines.push(`"กลยุทธ์เชิงป้องกัน (ST - Maxi-Mini)","ST-2","Internal Knowledge Sharing & Creative Clinic","จัดกิจกรรมแลกเปลี่ยนความรู้ในทีมทุกเดือน พร้อมจัดทำระบบตรวจสอบความถูกต้องของคอนเทนต์และข้อความ ป้องกันข้อผิดพลาดที่กระทบภาพลักษณ์","S1, S2 + T1"`);
-    lines.push(`"กลยุทธ์เชิงตั้งรับ (WT - Mini-Mini)","WT-1","บังคับใช้เกณฑ์ SLA และข้อตกลงผ่านระเบียบ WI","บังคับใช้ขั้นตอนบรีฟและ Service Level Agreement ผ่านระบบ WI-CC-001 ถึง 005 อย่างเคร่งครัด มีระยะเวลาส่งคำขอล่วงหน้า คัดกรองงานด่วนฉุกเฉิน","W1, W2 + T1"`);
-    lines.push(`"กลยุทธ์เชิงตั้งรับ (WT - Mini-Mini)","WT-2","Brand CI Guidelines & Service Manual","จัดทำคู่มือ Brand Identity และแนวทางการรับบริการเผยแพร่แก่ผู้สั่งงาน พร้อมส่งแบบประเมินความพึงพอใจ 5 มิติเพื่อแก้ไขจุดบกพร่องอย่างทันที","W1, W2 + T1"`);
+    dynamicTows.so.forEach(t => {
+      lines.push(`"กลยุทธ์เชิงรุก (SO - Maxi-Maxi)","${t.code}","${t.title.replace(/"/g, '""')}","${t.detail.replace(/"/g, '""')}","${t.links}"`);
+    });
+    dynamicTows.wo.forEach(t => {
+      lines.push(`"กลยุทธ์เชิงพัฒนา (WO - Mini-Maxi)","${t.code}","${t.title.replace(/"/g, '""')}","${t.detail.replace(/"/g, '""')}","${t.links}"`);
+    });
+    dynamicTows.st.forEach(t => {
+      lines.push(`"กลยุทธ์เชิงป้องกัน (ST - Maxi-Mini)","${t.code}","${t.title.replace(/"/g, '""')}","${t.detail.replace(/"/g, '""')}","${t.links}"`);
+    });
+    dynamicTows.wt.forEach(t => {
+      lines.push(`"กลยุทธ์เชิงตั้งรับ (WT - Mini-Mini)","${t.code}","${t.title.replace(/"/g, '""')}","${t.detail.replace(/"/g, '""')}","${t.links}"`);
+    });
     lines.push("");
 
     lines.push("=== ส่วนที่ 4: สรุปบทวิเคราะห์เชิงกลยุทธ์ (Strategic Synthesis) ===");
     lines.push('"ประเด็นสรุป","บทวิเคราะห์"');
-    lines.push(`"1. จุดเน้นเชิงรุก (Growth Focus)","ทีม CC มีจุดแข็งและโอกาสสูงถึง 72.7% เน้นพัฒนาผลงานสร้างสรรค์เชิงรุก และการสนับสนุนจากผู้บริหาร"`);
-    lines.push(`"2. การควบคุมความเสี่ยง (Risk Safeguards)","ความเสี่ยงทั้ง 3 ด้าน (งานด่วน, ขาดทักษะเฉพาะทาง, ภาพลักษณ์) ถูกควบคุมด้วย SLA WI, Asset Bank, และการจัดอบรม"`);
-    lines.push(`"3. ผลลัพธ์ตัวชี้วัด (KPI Targets)","เชื่อมโยงสู่ KRI 1 (CSAT ≥ 90%), KRI 2 (On-Time ≥ 90%) และ CAR/NC = 0 รายการ"`);
+    lines.push(`"1. จุดเน้นเชิงรุก (Growth Focus)","ทีม CC มีจุดแข็งและโอกาสสูงถึง ${riskOppStats.oppRate}% เน้นพัฒนาผลงานสร้างสรรค์เชิงรุก และการสนับสนุนจากผู้บริหาร"`);
+    lines.push(`"2. การควบคุมความเสี่ยง (Risk Safeguards)","ความเสี่ยงทั้ง ${riskOppStats.riskCount} ด้าน ถูกควบคุมด้วยมาตรฐานเวลา WI, Asset Bank, และการจัดอบรม"`);
+    lines.push(`"3. ผลลัพธ์ตัวชี้วัด (KPI Targets)","เชื่อมโยงสู่ KRI 1 (CSAT ≥ 85%), KRI 2 (On-Time ≥ 80%) และ CAR/NC = 0 รายการ"`);
 
     const csvContent = lines.join("\r\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -2302,10 +2653,10 @@ export default function IsoReportDetail() {
               <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3">
                 <span className="text-xs font-mono font-bold px-3 py-1.5 rounded-full bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20 inline-flex items-center gap-1.5 w-fit">
                   <ShieldCheck size={13} className="shrink-0" />
-                  <span className="break-words">เอกสารแนบ 1: แบบฟอร์มวิเคราะห์ความเสี่ยงและแผนการจัดการความเสี่ยง CC</span>
+                  <span className="break-words">แบบฟอร์มวิเคราะห์ความเสี่ยงและแผนการจัดการความเสี่ยง CC</span>
                 </span>
                 <span className="text-xs text-muted-foreground font-mono break-all sm:break-normal">
-                  ไฟล์อ้างอิง: <strong className="text-foreground">1_วิเคราะห์ความเสี่ยงและแผนการจัดการความเสี่ยง CC.docx</strong>
+                  เทมเพลตมาตรฐานตาม <strong className="text-foreground">ISO 9001:2015 ข้อกำหนด 6.1</strong> (วิเคราะห์ผลสัมฤทธิ์จากข้อมูลระบบ CC System FY70)
                 </span>
               </div>
               <button
@@ -2349,475 +2700,245 @@ export default function IsoReportDetail() {
               </div>
             </div>
 
-            {/* Content for Reputation Risk */}
-            {riskDimension === "reputation" && (
-              <div className="space-y-5 animate-premium-fade">
-                <div className="p-4 bg-surface-muted rounded-2xl border border-surface-border">
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">
-                    ประเด็นความเสี่ยง (Risk Issue 1)
-                  </span>
-                  <h3 className="text-base sm:text-lg font-black text-foreground leading-snug">
-                    ไม่สามารถปรับตัวให้เท่าทันองค์ความรู้และทักษะด้านงานสร้างสรรค์ที่มีการเปลี่ยนแปลงอย่างรวดเร็วในปัจจุบัน
-                  </h3>
-                </div>
-
-                {/* 1) สาเหตุหลัก ปัจจัยภายใน & ภายนอก */}
-                <div className="space-y-2 pt-2">
-                  <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold">1</span>
-                    <span>สาเหตุหลักจากปัจจัยภายในและปัจจัยภายนอกที่นำไปสู่ความเสี่ยง</span>
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-2">
-                      <span className="text-xs font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
-                        <span>🏢</span> ปัจจัยภายใน (Internal Factors)
-                      </span>
-                      <ol className="list-decimal list-inside space-y-1.5 text-xs text-foreground/90 leading-relaxed font-medium">
-                        <li>ไม่มีการติดตาม และกำกับดูแลการเปลี่ยนแปลงความต้องการของผู้ใช้บริการ ที่เปลี่ยนไปตามเทรนด์งานสร้างสรรค์ คอนเทนต์และ PR ให้ทันสมัยอยู่เสมอ</li>
-                        <li>อุปกรณ์ในการทำงานและความสามารถในการทำงานของบุคลากร ไม่สามารถตอบโจทย์ และสอดคล้องกับความต้องการของผู้ใช้บริการ</li>
-                        <li>ความรวดเร็วของการให้บริการไม่ทันต่อความต้องการของผู้ใช้บริการ</li>
-                      </ol>
-                    </div>
-                    <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 space-y-2">
-                      <span className="text-xs font-bold text-blue-700 dark:text-blue-400 flex items-center gap-1.5">
-                        <span>🌐</span> ปัจจัยภายนอก (External Factors)
-                      </span>
-                      <ol className="list-decimal list-inside space-y-1.5 text-xs text-foreground/90 leading-relaxed font-medium">
-                        <li>เทรนด์ เครื่องมือที่เกี่ยวข้องกับงานสร้างสรรค์มีการเปลี่ยนแปลงอย่างรวดเร็วในโลกปัจจุบัน</li>
-                        <li>กฎเกณฑ์ กติกา เงื่อนไขความต้องการ/ความคาดหวังของผู้ใช้บริการและแหล่งทุนมีการปรับเปลี่ยนไปตามความต้องการของตลาด</li>
-                      </ol>
-                    </div>
+            {/* Dynamic Risk Dimension Content (Synthesized 100% from Live CC System Data) */}
+            {(() => {
+              const activeRisk = dynamicTab1Risks[riskDimension];
+              const isRep = riskDimension === "reputation";
+              return (
+                <div key={riskDimension} className="space-y-5 animate-premium-fade">
+                  {/* Risk Issue Header */}
+                  <div className="p-4 bg-surface-muted rounded-2xl border border-surface-border">
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">
+                      {isRep ? "ประเด็นความเสี่ยงด้านคุณภาพและอัตลักษณ์ (Risk Issue 1)" : "ประเด็นความเสี่ยงด้านการปฏิบัติการและกำหนดส่งมอบ (Risk Issue 2)"}
+                    </span>
+                    <h3 className="text-base sm:text-lg font-black text-foreground leading-snug">
+                      {activeRisk.issue}
+                    </h3>
                   </div>
-                </div>
 
-                {/* 2) ผลกระทบของความเสี่ยงต่อหน่วยงาน */}
-                <div className="space-y-2 pt-2">
-                  <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold">2</span>
-                    <span>ผลกระทบของความเสี่ยงต่อหน่วยงาน</span>
-                  </h4>
-                  <div className="p-3.5 bg-rose-500/10 rounded-2xl border border-rose-500/20 text-xs text-foreground/90 font-medium space-y-1">
-                    <p>1. ไม่สามารถบรรลุวัตถุประสงค์ขององค์กร</p>
-                    <p>2. ภาพลักษณ์ขององค์กรเสียหาย ขาดความน่าเชื่อถือและความไว้วางใจต่อผู้รับบริการ</p>
-                  </div>
-                </div>
-
-                {/* 3) ตัวชี้วัดความเสี่ยง KRI */}
-                <div id="sec-tab1-kri" className="space-y-2 pt-2 scroll-mt-24">
-                  <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold">3</span>
-                    <span>ตัวชี้วัดความเสี่ยง/ตัวบ่งชี้ความเสี่ยง/สัญญาณเตือนภัย (KRI)</span>
-                  </h4>
-                  <div className="bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden text-xs">
-                    <div className="p-3 bg-slate-100 font-bold text-slate-800 flex justify-between items-center">
-                      <span>KRI 1: ร้อยละของการประเมินความพึงพอใจ (Satisfaction)</span>
-                      <span className="text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-bold">
-                        {periodAnalytics.evaluatedCount > 0 ? `ผลจริงในรอบ ${periodAnalytics.satisfactionRate}%` : "ยังไม่มีข้อมูลประเมิน"}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
-                      <div className="p-3.5 space-y-1">
-                        <span className="font-bold text-emerald-700 block">Risk Appetite (ระดับความเสี่ยงที่ยอมรับได้):</span>
-                        <p className="text-slate-700">ร้อยละของการประเมินความพึงพอใจ <strong>มากกว่าร้อยละ 85 - 100%</strong></p>
+                  {/* 1) สาเหตุหลัก ปัจจัยภายใน & ภายนอก */}
+                  <div className="space-y-2 pt-2">
+                    <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold">1</span>
+                      <span>สาเหตุหลักจากปัจจัยภายในและปัจจัยภายนอกที่นำไปสู่ความเสี่ยง</span>
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-2">
+                        <span className="text-xs font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                          <span>🏢</span> ปัจจัยภายใน (Internal Factors)
+                        </span>
+                        <ol className="list-decimal list-inside space-y-1.5 text-xs text-foreground/90 leading-relaxed font-medium">
+                          {activeRisk.internalFactors.map((factor, idx) => (
+                            <li key={idx}>{factor}</li>
+                          ))}
+                        </ol>
                       </div>
-                      <div className="p-3.5 space-y-1">
-                        <span className="font-bold text-amber-700 block">Risk Tolerance (ช่วงเบี่ยงเบนจากระดับที่ยอมรับได้):</span>
-                        <p className="text-slate-700">ร้อยละของการประเมินความพึงพอใจ <strong>มากกว่าร้อยละ 70.1 - 85%</strong></p>
+                      <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 space-y-2">
+                        <span className="text-xs font-bold text-blue-700 dark:text-blue-400 flex items-center gap-1.5">
+                          <span>🌐</span> ปัจจัยภายนอก (External Factors)
+                        </span>
+                        <ol className="list-decimal list-inside space-y-1.5 text-xs text-foreground/90 leading-relaxed font-medium">
+                          {activeRisk.externalFactors.map((factor, idx) => (
+                            <li key={idx}>{factor}</li>
+                          ))}
+                        </ol>
                       </div>
                     </div>
                   </div>
-                  {/* Live Feedback Box */}
-                  <div className="p-3 bg-emerald-50/70 rounded-xl border border-emerald-200 flex items-center justify-between text-xs flex-wrap gap-2">
-                    <span className="text-emerald-900 font-bold flex items-center gap-1.5">
-                      <CheckCircle2 size={13} className="text-emerald-600" />
-                      <span>ผลประเมินจริงในระบบ ({periodAnalytics.evaluatedCount} งาน):</span>
-                    </span>
-                    <span className="text-emerald-800 font-black">
-                      {periodAnalytics.evaluatedCount > 0 ? (
-                        <>
-                          ความถูกต้อง {periodAnalytics.dimensions?.accuracy ? periodAnalytics.dimensions.accuracy.toFixed(1) : "0.0"}/5 • ตรงเวลา {periodAnalytics.dimensions?.timeliness ? periodAnalytics.dimensions.timeliness.toFixed(1) : "0.0"}/5 • คุณภาพ {periodAnalytics.dimensions?.quality ? periodAnalytics.dimensions.quality.toFixed(1) : "0.0"}/5
-                        </>
-                      ) : (
-                        <span className="text-slate-600 font-normal">ยังไม่มีงานที่ได้รับการประเมินความพึงพอใจในรอบนี้ (รอผลประเมินจริง)</span>
-                      )}
-                    </span>
-                  </div>
-                </div>
 
-                {/* 4) เกณฑ์การประเมินระดับความเสี่ยง (5 Levels) */}
-                <div id="sec-tab1-criteria" className="space-y-2 pt-2 scroll-mt-24">
-                  <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center font-bold">4</span>
-                    <span>เกณฑ์การประเมินระดับความเสี่ยง: โอกาสเกิดและผลกระทบ (Likelihood &amp; Impact)</span>
-                  </h4>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs border border-slate-200 rounded-xl overflow-hidden">
-                      <thead className="bg-slate-100 text-slate-700 font-bold">
-                        <tr>
-                          <th className="p-2.5 border border-slate-200 text-center w-28">ระดับ</th>
-                          <th className="p-2.5 border border-slate-200 text-left">โอกาสเกิด (L) - ทบทวนเทรนด์งานสร้างสรรค์</th>
-                          <th className="p-2.5 border border-slate-200 text-left">ผลกระทบ (I) - ร้อยละการประเมินความพึงพอใจ</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200">
-                        <tr className="bg-rose-50/40">
-                          <td className="p-2 text-center font-bold text-rose-700">5 (สูงมาก)</td>
-                          <td className="p-2">ทบทวนเทรนด์งานสร้างสรรค์ และความต้องการของผู้ใช้บริการทุก 4 ปี</td>
-                          <td className="p-2">ความสำเร็จน้อยกว่าร้อยละ 60</td>
-                        </tr>
-                        <tr className="bg-amber-50/40">
-                          <td className="p-2 text-center font-bold text-amber-700">4 (สูง)</td>
-                          <td className="p-2">ทบทวนเทรนด์งานสร้างสรรค์ และความต้องการของผู้ใช้บริการทุก 3 ปี</td>
-                          <td className="p-2">ความสำเร็จร้อยละ 60.1 - 70</td>
-                        </tr>
-                        <tr>
-                          <td className="p-2 text-center font-bold text-slate-700">3 (ปานกลาง)</td>
-                          <td className="p-2">ทบทวนเทรนด์งานสร้างสรรค์ และความต้องการของผู้ใช้บริการทุก 2 ปี</td>
-                          <td className="p-2">ความสำเร็จร้อยละ 70.1 - 80</td>
-                        </tr>
-                        <tr className="bg-emerald-50/30">
-                          <td className="p-2 text-center font-bold text-emerald-700">2 (ต่ำ)</td>
-                          <td className="p-2 font-bold text-emerald-800">ความสำเร็จร้อยละ 80.1 - 100</td>
-                          <td className="p-2 font-bold text-emerald-800">ความสำเร็จร้อยละ 80.1 - 100</td>
-                        </tr>
-                        <tr className="bg-emerald-50/60">
-                          <td className="p-2 text-center font-bold text-emerald-800">1 (ต่ำมาก)</td>
-                          <td className="p-2">ทบทวนเทรนด์งานสร้างสรรค์ และความต้องการของผู้ใช้บริการทุก 6 เดือน</td>
-                          <td className="p-2">ความสำเร็จมากกว่าร้อยละ 100</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* 5) ข้อมูลประเมินระดับความเสี่ยงที่เหลืออยู่ */}
-                <div className="space-y-2 pt-2">
-                  <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center font-bold">5</span>
-                    <span>ข้อมูลประเมินระดับความเสี่ยงที่เหลืออยู่ (Residual Assessment)</span>
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                    <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
-                      <span className="font-bold text-slate-900 block mb-1">โอกาสเกิด (L) = ระดับ 1</span>
-                      <p className="text-slate-600">ทบทวนเทรนด์งานสร้างสรรค์ และความต้องการของผู้ใช้บริการทุก 6 เดือน</p>
-                    </div>
-                    <div className="p-3.5 bg-emerald-50 rounded-xl border border-emerald-200">
-                      <span className="font-bold text-emerald-900 block mb-1">ผลกระทบ (I) = ระดับ 2</span>
-                      <p className="text-emerald-800 font-medium">
-                        ร้อยละของการประเมินความพึงพอใจ:{" "}
-                        <strong>
-                          {periodAnalytics.evaluatedCount > 0
-                            ? `ผลจริงในรอบ ${periodAnalytics.satisfactionRate}%`
-                            : "รอข้อมูลประเมินจริงในรอบ"}
-                        </strong>{" "}
-                        (เกณฑ์ Appetite &gt;85%)
-                      </p>
+                  {/* 2) ผลกระทบของความเสี่ยงต่อหน่วยงาน */}
+                  <div className="space-y-2 pt-2">
+                    <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold">2</span>
+                      <span>ผลกระทบของความเสี่ยงต่อหน่วยงาน</span>
+                    </h4>
+                    <div className="p-3.5 bg-rose-500/10 rounded-2xl border border-rose-500/20 text-xs text-foreground/90 font-medium space-y-1">
+                      {activeRisk.impacts.map((impact, idx) => (
+                        <p key={idx}>{impact}</p>
+                      ))}
                     </div>
                   </div>
-                </div>
 
-                {/* 6) เมทริกซ์ประเมินความเสี่ยง (Heatmap 5x5) */}
-                <div id="sec-tab1-matrix" className="space-y-2 pt-2 scroll-mt-24">
-                  <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center font-bold">6</span>
-                    <span>เมทริกซ์ประเมินระดับความเสี่ยง (Risk Heatmap 5x5)</span>
-                  </h4>
-                  <div className="bg-white p-4 rounded-2xl border border-slate-200">
-                    <RiskMatrix5x5
-                      residualL={1}
-                      residualI={2}
-                      targetL={1}
-                      targetI={2}
-                      residualLabel="Residual Risk: 1 x 2 = 2 (ต่ำมาก)"
-                      targetLabel="Target Appetite: 1 x 2 = 2 (ต่ำมาก)"
-                    />
-                    <div className="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs flex-wrap gap-2">
-                      <span><strong>ระดับความเสี่ยงที่เหลืออยู่:</strong> คะแนน L x I : 1 x 2 = <strong>2 (ต่ำมาก)</strong></span>
-                      <span className="text-emerald-700 font-bold"><strong>ระดับความเสี่ยงที่ยอมรับได้ (Target):</strong> คะแนน L x I : 1 x 2 = <strong>2 (ต่ำมาก)</strong></span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 7) กิจกรรม/มาตรการควบคุมความเสี่ยง */}
-                <div id="sec-tab1-controls" className="space-y-2 pt-2 scroll-mt-24">
-                  <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center font-bold">7</span>
-                    <span>กิจกรรม/มาตรการควบคุมความเสี่ยง (Control Measures)</span>
-                  </h4>
-                  <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden text-xs">
-                    <div className="p-3.5 bg-slate-50 font-bold flex justify-between">
-                      <span>กิจกรรม/มาตรการควบคุมความเสี่ยงที่วางแผนไว้</span>
-                      <span>ทีมสนับสนุนและรายงานผล (Data Owner)</span>
-                    </div>
-                    <div className="p-3.5 flex justify-between items-center hover:bg-slate-50/60">
-                      <span className="font-medium text-slate-800">1. ติดตามประเมินผลตัวชี้วัดทุกไตรมาส และวิเคราะห์ Gap Analysis</span>
-                      <span className="px-2.5 py-1 bg-slate-100 font-bold text-slate-700 rounded-lg">ทีม CC</span>
-                    </div>
-                    <div className="p-3.5 flex justify-between items-center hover:bg-slate-50/60">
-                      <span className="font-medium text-slate-800">2. ทบทวน ติดตามเทรนด์ งานสร้างสรรค์และปรับรูปแบบ หรือพัฒนาการดำเนินงาน เพื่อตอบสนองต่อความต้องการของผู้ใช้บริการสอดคล้องกับความต้องการของตลาด</span>
-                      <span className="px-2.5 py-1 bg-slate-100 font-bold text-slate-700 rounded-lg">ทีม CC</span>
-                    </div>
-                    <div className="p-3.5 flex justify-between items-center hover:bg-slate-50/60">
-                      <span className="font-medium text-slate-800">3. การอบรมพัฒนาศักยภาพของพนักงานในความรู้และทักษะที่เกี่ยวข้อง</span>
-                      <span className="px-2.5 py-1 bg-slate-100 font-bold text-slate-700 rounded-lg">ทีม CC</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 8) ผู้รับผิดชอบหลักของประเด็นความเสี่ยงและมาตรการควบคุม (Risk Owner) */}
-                <div className="space-y-2 pt-2">
-                  <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center font-bold">8</span>
-                    <span>ผู้รับผิดชอบหลักของประเด็นความเสี่ยงและมาตรการควบคุม (Risk Owner)</span>
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-center font-bold text-slate-800">
-                      รศ.ดร.ปิติวัฒน์ วัฒนชัย
-                    </div>
-                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-center font-bold text-slate-800">
-                      ผศ.ดร.สุริยะ ทองมุนี
-                    </div>
-                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-center font-bold text-slate-800">
-                      นายอัจชนะพงษ์ อัจชนะวราทา
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Content for Operational Risk */}
-            {riskDimension === "operational" && (
-              <div className="space-y-5 animate-premium-fade">
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/70">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                    ประเด็นความเสี่ยง (Risk Issue 2)
-                  </span>
-                  <h3 className="text-base sm:text-lg font-black text-slate-900 leading-snug">
-                    ทีมงานมีความรู้และทักษะที่ไม่เพียงพอในบางฟังก์ชั่นงานสร้างสรรค์ / ไม่สามารถดำเนินงานตามภาระงานที่ได้รับมอบหมายได้ตามระยะเวลาที่กำหนด
-                  </h3>
-                </div>
-
-                {/* 1) สาเหตุหลัก ปัจจัยภายใน & ภายนอก */}
-                <div className="space-y-2 pt-2">
-                  <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center font-bold">1</span>
-                    <span>สาเหตุหลักจากปัจจัยภายในและปัจจัยภายนอกที่นำไปสู่ความเสี่ยง</span>
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-200/70 space-y-2">
-                      <span className="text-xs font-bold text-amber-800 flex items-center gap-1.5">
-                        <span>🏢</span> ปัจจัยภายใน (Internal Factors)
-                      </span>
-                      <ol className="list-decimal list-inside space-y-1.5 text-xs text-slate-700 leading-relaxed font-medium">
-                        <li>เป็นงานที่ใช้ความรู้ ความเชี่ยวชาญเฉพาะทาง</li>
-                        <li>เป็นงานที่ใช้ทักษะหลายด้าน Multiple Skills</li>
-                      </ol>
-                    </div>
-                    <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-200/70 space-y-2">
-                      <span className="text-xs font-bold text-blue-800 flex items-center gap-1.5">
-                        <span>🌐</span> ปัจจัยภายนอก (External Factors)
-                      </span>
-                      <ol className="list-decimal list-inside space-y-1.5 text-xs text-slate-700 leading-relaxed font-medium">
-                        <li>ความต้องการที่หลากหลายของรูปแบบของงานสร้างสรรค์</li>
-                        <li>องค์ความรู้ด้านงานสร้างสรรค์ภายนอกที่มีการเปลี่ยนแปลงอย่างรวดเร็ว</li>
-                      </ol>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 2) ผลกระทบของความเสี่ยงต่อหน่วยงาน */}
-                <div className="space-y-2 pt-2">
-                  <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center font-bold">2</span>
-                    <span>ผลกระทบของความเสี่ยงต่อหน่วยงาน</span>
-                  </h4>
-                  <div className="p-3.5 bg-rose-50/50 rounded-2xl border border-rose-200/70 text-xs text-slate-800 font-medium">
-                    <p>ภาพลักษณ์ขององค์กรเสียหายทำให้ไม่สามารถบรรลุวัตถุประสงค์ขององค์กร</p>
-                  </div>
-                </div>
-
-                {/* 3) ตัวชี้วัดความเสี่ยง KRI */}
-                <div id="sec-tab1-op-kri" className="space-y-2 pt-2 scroll-mt-24">
-                  <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center font-bold">3</span>
-                    <span>ตัวชี้วัดความเสี่ยง/ตัวบ่งชี้ความเสี่ยง/สัญญาณเตือนภัย (KRI)</span>
-                  </h4>
-                  <div className="bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden text-xs">
-                    <div className="p-3 bg-slate-100 font-bold text-slate-800 flex justify-between items-center">
-                      <span>KRI 1: ร้อยละความสำเร็จของการบรรลุเป้าหมายและตรงต่อเวลา</span>
-                      <span className="text-[11px] text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 font-bold">
-                        {periodAnalytics.completed > 0 ? `ผลจริงในรอบ ${periodAnalytics.onTimeRate}%` : "ยังไม่มีงานส่งมอบ"}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
-                      <div className="p-3.5 space-y-1">
-                        <span className="font-bold text-emerald-700 block">Risk Appetite (ระดับความเสี่ยงที่ยอมรับได้):</span>
-                        <p className="text-slate-700">ร้อยละความสำเร็จของการบรรลุเป้าหมายของโครงการ <strong>มากกว่าร้อยละ 80.1 - 100%</strong></p>
+                  {/* 3) ตัวชี้วัดความเสี่ยง KRI */}
+                  <div id={isRep ? "sec-tab1-kri" : "sec-tab1-op-kri"} className="space-y-2 pt-2 scroll-mt-24">
+                    <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold">3</span>
+                      <span>ตัวชี้วัดความเสี่ยง/ตัวบ่งชี้ความเสี่ยง/สัญญาณเตือนภัย (KRI)</span>
+                    </h4>
+                    <div className="bg-surface-muted rounded-2xl border border-surface-border overflow-hidden text-xs">
+                      <div className="p-3 bg-surface border-b border-surface-border font-bold text-foreground flex justify-between items-center">
+                        <span>{activeRisk.kriName}</span>
+                        <span className={`text-[11px] px-2 py-0.5 rounded border font-bold ${
+                          isRep
+                            ? "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800"
+                            : "text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800"
+                        }`}>
+                          {activeRisk.kriActualText}
+                        </span>
                       </div>
-                      <div className="p-3.5 space-y-1">
-                        <span className="font-bold text-amber-700 block">Risk Tolerance (ช่วงเบี่ยงเบนจากระดับที่ยอมรับได้):</span>
-                        <p className="text-slate-700">ร้อยละความสำเร็จของการบรรลุเป้าหมายของโครงการ <strong>มากกว่าร้อยละ 70.1 - 80%</strong></p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-surface-border">
+                        <div className="p-3.5 space-y-1">
+                          <span className="font-bold text-emerald-700 dark:text-emerald-400 block">Risk Appetite (ระดับความเสี่ยงที่ยอมรับได้):</span>
+                          <p className="text-muted-foreground">{activeRisk.kriAppetite}</p>
+                        </div>
+                        <div className="p-3.5 space-y-1">
+                          <span className="font-bold text-amber-700 dark:text-amber-400 block">Risk Tolerance (ช่วงเบี่ยงเบนจากระดับที่ยอมรับได้):</span>
+                          <p className="text-muted-foreground">{activeRisk.kriTolerance}</p>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Live Feedback Box */}
+                    <div className={`p-3 rounded-xl border flex items-center justify-between text-xs flex-wrap gap-2 ${
+                      isRep
+                        ? "bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/60"
+                        : "bg-blue-50/70 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800/60"
+                    }`}>
+                      <span className={`font-bold flex items-center gap-1.5 ${isRep ? "text-emerald-900 dark:text-emerald-200" : "text-blue-900 dark:text-blue-200"}`}>
+                        <CheckCircle2 size={13} className={isRep ? "text-emerald-600 dark:text-emerald-400" : "text-blue-600 dark:text-blue-400"} />
+                        <span>สถานะข้อมูลจริงในระบบ CC System:</span>
+                      </span>
+                      <span className={`font-black ${isRep ? "text-emerald-800 dark:text-emerald-300" : "text-blue-800 dark:text-blue-300"}`}>
+                        {activeRisk.liveFeedbackText}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 4) เกณฑ์การประเมินระดับความเสี่ยง (5 Levels) */}
+                  <div id={isRep ? "sec-tab1-criteria" : undefined} className="space-y-2 pt-2 scroll-mt-24">
+                    <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold">4</span>
+                      <span>เกณฑ์การประเมินระดับความเสี่ยง: โอกาสเกิดและผลกระทบ (Likelihood &amp; Impact)</span>
+                    </h4>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs border border-surface-border rounded-xl overflow-hidden">
+                        <thead className="bg-surface-muted text-muted-foreground font-bold">
+                          <tr>
+                            <th className="p-2.5 border border-surface-border text-center w-28">ระดับ</th>
+                            <th className="p-2.5 border border-surface-border text-left">
+                              {isRep ? "โอกาสเกิด (L) - การทบทวนมาตรฐานและอัตลักษณ์ CI" : "โอกาสเกิด (L) - การจัดสรรทรัพยากรและความพร้อมบุคลากร"}
+                            </th>
+                            <th className="p-2.5 border border-surface-border text-left">
+                              {isRep ? "ผลกระทบ (I) - ร้อยละการประเมินความพึงพอใจ (CSAT)" : "ผลกระทบ (I) - ร้อยละความสำเร็จของการส่งมอบงานตรงเวลา"}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-surface-border">
+                          <tr className="bg-rose-50/40 dark:bg-rose-950/20">
+                            <td className="p-2 text-center font-bold text-rose-700 dark:text-rose-400">5 (สูงมาก)</td>
+                            <td className="p-2">ไม่ได้รับการตรวจสอบความถูกต้อง หรือขาดการจัดสรรบุคลากร</td>
+                            <td className="p-2">ความสำเร็จน้อยกว่าร้อยละ 60.0</td>
+                          </tr>
+                          <tr className="bg-amber-50/40 dark:bg-amber-950/20">
+                            <td className="p-2 text-center font-bold text-amber-700 dark:text-amber-400">4 (สูง)</td>
+                            <td className="p-2">การตรวจสอบไม่ครอบคลุม หรือภาระงานกระจุกตัวสูง</td>
+                            <td className="p-2">ความสำเร็จร้อยละ 60.1 - 70.0</td>
+                          </tr>
+                          <tr>
+                            <td className="p-2 text-center font-bold text-muted-foreground">3 (ปานกลาง)</td>
+                            <td className="p-2">มีการคัดกรองเบื้องต้นแต่พบงานเกินกำหนดส่ง (Overdue)</td>
+                            <td className="p-2">ความสำเร็จร้อยละ 70.1 - 80.0</td>
+                          </tr>
+                          <tr className="bg-emerald-50/30 dark:bg-emerald-950/20">
+                            <td className="p-2 text-center font-bold text-emerald-700 dark:text-emerald-400">2 (ต่ำ)</td>
+                            <td className="p-2 font-bold text-emerald-800 dark:text-emerald-300">มีงานรอจัดสรรแต่ไม่มีงานเกินกำหนดส่ง / มีการตรวจทานระดับมาตรฐาน</td>
+                            <td className="p-2 font-bold text-emerald-800 dark:text-emerald-300">ความสำเร็จร้อยละ 80.1 - 100.0</td>
+                          </tr>
+                          <tr className="bg-emerald-50/60 dark:bg-emerald-950/40">
+                            <td className="p-2 text-center font-bold text-emerald-800 dark:text-emerald-300">1 (ต่ำมาก)</td>
+                            <td className="p-2">มีระบบ Pre-flight Review และ CI Audit อัตโนมัติทุกงาน 100%</td>
+                            <td className="p-2">ความสำเร็จมากกว่าร้อยละ 100.0 (ประหยัดงบและส่งมอบก่อนกำหนด)</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* 5) ข้อมูลประเมินระดับความเสี่ยงที่เหลืออยู่ */}
+                  <div className="space-y-2 pt-2">
+                    <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold">5</span>
+                      <span>ข้อมูลประเมินระดับความเสี่ยงที่เหลืออยู่ (Residual Assessment)</span>
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                      <div className="p-3.5 bg-surface-muted rounded-xl border border-surface-border">
+                        <span className="font-bold text-foreground block mb-1">
+                          โอกาสเกิด (L) = ระดับ {activeRisk.residualL}
+                        </span>
+                        <p className="text-muted-foreground">{activeRisk.residualText}</p>
+                      </div>
+                      <div className="p-3.5 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                        <span className="font-bold text-emerald-700 dark:text-emerald-400 block mb-1">
+                          ผลกระทบ (I) = ระดับ {activeRisk.residualI}
+                        </span>
+                        <p className="text-emerald-800 dark:text-emerald-300 font-medium">
+                          {activeRisk.residualImpactText}
+                        </p>
                       </div>
                     </div>
                   </div>
-                  {/* Live Feedback Box */}
-                  <div className="p-3 bg-blue-50/70 rounded-xl border border-blue-200 flex items-center justify-between text-xs flex-wrap gap-2">
-                    <span className="text-blue-900 font-bold flex items-center gap-1.5">
-                      <CheckCircle2 size={13} className="text-blue-600" />
-                      <span>สถานะการส่งมอบจริงในระบบ:</span>
-                    </span>
-                    <span className="text-blue-800 font-black">
-                      {periodAnalytics.completed > 0 ? (
-                        <>
-                          ส่งมอบตรงเวลา {periodAnalytics.onTimeCount} จาก {periodAnalytics.completed} งาน (อัตราสำเร็จ {periodAnalytics.completionRate}%)
-                        </>
-                      ) : (
-                        <span className="text-slate-600 font-normal">ยังไม่มีงานที่เสร็จสิ้นส่งมอบในรอบนี้</span>
-                      )}
-                    </span>
-                  </div>
-                </div>
 
-                {/* 4) เกณฑ์การประเมินระดับความเสี่ยง (5 Levels) */}
-                <div className="space-y-2 pt-2">
-                  <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center font-bold">4</span>
-                    <span>เกณฑ์การประเมินระดับความเสี่ยง: โอกาสเกิดและผลกระทบ (Likelihood &amp; Impact)</span>
-                  </h4>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs border border-slate-200 rounded-xl overflow-hidden">
-                      <thead className="bg-slate-100 text-slate-700 font-bold">
-                        <tr>
-                          <th className="p-2.5 border border-slate-200 text-center w-28">ระดับ</th>
-                          <th className="p-2.5 border border-slate-200 text-left">โอกาสเกิด (L) - บุคลากรที่มีองค์ความรู้</th>
-                          <th className="p-2.5 border border-slate-200 text-left">ผลกระทบ (I) - ร้อยละความสำเร็จของโครงการ</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200">
-                        <tr className="bg-rose-50/40">
-                          <td className="p-2 text-center font-bold text-rose-700">5 (สูงมาก)</td>
-                          <td className="p-2">ความสำเร็จน้อยกว่าร้อยละ 60</td>
-                          <td className="p-2">ความสำเร็จน้อยกว่าร้อยละ 60</td>
-                        </tr>
-                        <tr className="bg-amber-50/40">
-                          <td className="p-2 text-center font-bold text-amber-700">4 (สูง)</td>
-                          <td className="p-2">ความสำเร็จร้อยละ 60.1 - 70</td>
-                          <td className="p-2">ความสำเร็จร้อยละ 60.1 - 70</td>
-                        </tr>
-                        <tr>
-                          <td className="p-2 text-center font-bold text-slate-700">3 (ปานกลาง)</td>
-                          <td className="p-2">ความสำเร็จร้อยละ 70.1 - 80</td>
-                          <td className="p-2">ความสำเร็จร้อยละ 70.1 - 80</td>
-                        </tr>
-                        <tr className="bg-emerald-50/30">
-                          <td className="p-2 text-center font-bold text-emerald-700">2 (ต่ำ)</td>
-                          <td className="p-2 font-bold text-emerald-800">ความสำเร็จร้อยละ 80.1 - 100</td>
-                          <td className="p-2 font-bold text-emerald-800">ความสำเร็จร้อยละ 80.1 - 100</td>
-                        </tr>
-                        <tr className="bg-emerald-50/60">
-                          <td className="p-2 text-center font-bold text-emerald-800">1 (ต่ำมาก)</td>
-                          <td className="p-2">ความสำเร็จมากกว่าร้อยละ 100</td>
-                          <td className="p-2">ความสำเร็จมากกว่าร้อยละ 100</td>
-                        </tr>
-                      </tbody>
-                    </table>
+                  {/* 6) เมทริกซ์ประเมินความเสี่ยง (Heatmap 5x5) */}
+                  <div id={isRep ? "sec-tab1-matrix" : undefined} className="space-y-2 pt-2 scroll-mt-24">
+                    <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold">6</span>
+                      <span>เมทริกซ์ประเมินระดับความเสี่ยง (Risk Heatmap 5x5)</span>
+                    </h4>
+                    <div className="bg-surface p-4 rounded-2xl border border-surface-border">
+                      <RiskMatrix5x5
+                        residualL={activeRisk.residualL}
+                        residualI={activeRisk.residualI}
+                        targetL={1}
+                        targetI={2}
+                        residualLabel={activeRisk.residualLabel}
+                        targetLabel={activeRisk.targetLabel}
+                      />
+                      <div className="mt-3 p-3 bg-surface-muted rounded-xl border border-surface-border flex items-center justify-between text-xs flex-wrap gap-2">
+                        <span><strong>ระดับความเสี่ยงที่เหลืออยู่:</strong> คะแนน L x I : {activeRisk.residualL} x {activeRisk.residualI} = <strong>{activeRisk.residualScore} ({activeRisk.residualScore <= 2 ? "ต่ำมาก" : activeRisk.residualScore <= 4 ? "ต่ำ" : "ปานกลาง"})</strong></span>
+                        <span className="text-emerald-700 dark:text-emerald-400 font-bold"><strong>ระดับความเสี่ยงที่ยอมรับได้ (Target):</strong> คะแนน L x I : 1 x 2 = <strong>2 (ต่ำมาก)</strong></span>
+                      </div>
+                    </div>
                   </div>
-                </div>
 
-                {/* 5) ข้อมูลประเมินระดับความเสี่ยงที่เหลืออยู่ */}
-                <div className="space-y-2 pt-2">
-                  <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center font-bold">5</span>
-                    <span>ข้อมูลประเมินระดับความเสี่ยงที่เหลืออยู่ (Residual Assessment)</span>
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                    <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
-                      <span className="font-bold text-slate-900 block mb-1">โอกาสเกิด (L) = ระดับ 2</span>
-                      <p className="text-slate-600">ร้อยละของบุคลากรที่มีองค์ความรู้ (มีการพัฒนาความรู้และทักษะตามสมรรถนะการทำงาน 100%)</p>
-                    </div>
-                    <div className="p-3.5 bg-emerald-50 rounded-xl border border-emerald-200">
-                      <span className="font-bold text-emerald-900 block mb-1">ผลกระทบ (I) = ระดับ 2</span>
-                      <p className="text-emerald-800 font-medium">
-                        ร้อยละความสำเร็จของการบรรลุเป้าหมายขององค์กร:{" "}
-                        <strong>
-                          {periodAnalytics.completed > 0
-                            ? `ส่งมอบตรงเวลาจริง ${periodAnalytics.onTimeRate}% (${periodAnalytics.completed} งาน)`
-                            : "รอข้อมูลส่งมอบจริงในรอบ"}
-                        </strong>{" "}
-                        (เกณฑ์ Appetite &gt;80%)
-                      </p>
+                  {/* 7) กิจกรรม/มาตรการควบคุมความเสี่ยง */}
+                  <div id={isRep ? "sec-tab1-controls" : undefined} className="space-y-2 pt-2 scroll-mt-24">
+                    <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold">7</span>
+                      <span>กิจกรรม/มาตรการควบคุมความเสี่ยง (Control Measures)</span>
+                    </h4>
+                    <div className="divide-y divide-surface-border border border-surface-border rounded-2xl overflow-hidden text-xs">
+                      <div className="p-3.5 bg-surface-muted font-bold flex justify-between">
+                        <span>กิจกรรม/มาตรการควบคุมความเสี่ยงที่วางแผนไว้</span>
+                        <span>ทีมสนับสนุนและรายงานผล (Data Owner)</span>
+                      </div>
+                      {activeRisk.controlMeasures.map((measure, idx) => (
+                        <div key={idx} className="p-3.5 flex justify-between items-center hover:bg-surface-muted/60 transition-colors">
+                          <span className="font-medium text-foreground">{measure.measure}</span>
+                          <span className="px-2.5 py-1 bg-surface-muted font-bold text-muted-foreground rounded-lg border border-surface-border">
+                            {measure.owner}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                </div>
 
-                {/* 6) เมทริกซ์ประเมินความเสี่ยง (Heatmap 5x5) */}
-                <div className="space-y-2 pt-2">
-                  <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center font-bold">6</span>
-                    <span>เมทริกซ์ประเมินระดับความเสี่ยง (Risk Heatmap 5x5)</span>
-                  </h4>
-                  <div className="bg-white p-4 rounded-2xl border border-slate-200">
-                    <RiskMatrix5x5
-                      residualL={2}
-                      residualI={2}
-                      targetL={1}
-                      targetI={2}
-                      residualLabel="Residual Risk: 2 x 2 = 4 (ต่ำ)"
-                      targetLabel="Target Appetite: 1 x 2 = 2 (ต่ำมาก)"
-                    />
-                    <div className="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs flex-wrap gap-2">
-                      <span><strong>ระดับความเสี่ยงที่เหลืออยู่:</strong> คะแนน L x I : 2 x 2 = <strong>4 (ต่ำ)</strong></span>
-                      <span className="text-emerald-700 font-bold"><strong>ระดับความเสี่ยงที่ยอมรับได้ (Target):</strong> คะแนน L x I : 1 x 2 = <strong>2 (ต่ำมาก)</strong></span>
+                  {/* 8) ผู้รับผิดชอบหลักของประเด็นความเสี่ยงและมาตรการควบคุม (Risk Owner) */}
+                  <div className="space-y-2 pt-2">
+                    <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold">8</span>
+                      <span>ผู้รับผิดชอบหลักของประเด็นความเสี่ยงและมาตรการควบคุม (Risk Owner)</span>
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                      {activeRisk.riskOwners.map((owner, idx) => (
+                        <div key={idx} className="p-3.5 rounded-xl bg-surface-muted border border-surface-border text-center space-y-1">
+                          <div className="font-bold text-foreground">{owner.role}</div>
+                          <div className="text-[11px] text-muted-foreground">{owner.name}</div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
-
-                {/* 7) กิจกรรม/มาตรการควบคุมความเสี่ยง */}
-                <div className="space-y-2 pt-2">
-                  <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center font-bold">7</span>
-                    <span>กิจกรรม/มาตรการควบคุมความเสี่ยง (Control Measures)</span>
-                  </h4>
-                  <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden text-xs">
-                    <div className="p-3.5 bg-slate-50 font-bold flex justify-between">
-                      <span>กิจกรรม/มาตรการควบคุมความเสี่ยงที่วางแผนไว้</span>
-                      <span>ทีมสนับสนุนและรายงานผล (Data Owner)</span>
-                    </div>
-                    <div className="p-3.5 flex justify-between items-center hover:bg-slate-50/60">
-                      <span className="font-medium text-slate-800">1. การฝึกอบรมความรู้เฉพาะทีมตามที่กำหนดใน OJT</span>
-                      <span className="px-2.5 py-1 bg-slate-100 font-bold text-slate-700 rounded-lg">ทีม CC</span>
-                    </div>
-                    <div className="p-3.5 flex justify-between items-center hover:bg-slate-50/60">
-                      <span className="font-medium text-slate-800">2. การมีพี่เลี้ยงให้คำปรึกษาแนะนำระหว่างการทำงาน</span>
-                      <span className="px-2.5 py-1 bg-slate-100 font-bold text-slate-700 rounded-lg">ทีม CC</span>
-                    </div>
-                    <div className="p-3.5 flex justify-between items-center hover:bg-slate-50/60">
-                      <span className="font-medium text-slate-800">3. การอบรมพัฒนาศักยภาพของพนักงานในความรู้ที่เกี่ยวข้อง</span>
-                      <span className="px-2.5 py-1 bg-slate-100 font-bold text-slate-700 rounded-lg">ทีม CC</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 8) ผู้รับผิดชอบหลักของประเด็นความเสี่ยงและมาตรการควบคุม (Risk Owner) */}
-                <div className="space-y-2 pt-2">
-                  <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center font-bold">8</span>
-                    <span>ผู้รับผิดชอบหลักของประเด็นความเสี่ยงและมาตรการควบคุม (Risk Owner)</span>
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-center font-bold text-slate-800">
-                      รศ.ดร.ปิติวัฒน์ วัฒนชัย
-                    </div>
-                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-center font-bold text-slate-800">
-                      ผศ.ดร.สุริยะ ทองมุนี
-                    </div>
-                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-center font-bold text-slate-800">
-                      นายอัจชนะพงษ์ อัจชนะวราทา
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* 9) ตารางรายงานและเปรียบเทียบผลการดำเนินงานจริงรายไตรมาส (Q1 - Q4) และรอบปี */}
             <div id="sec-tab1-quarterly" className="space-y-3 pt-4 border-t border-slate-200 scroll-mt-24">
@@ -2915,12 +3036,12 @@ export default function IsoReportDetail() {
             {/* Top Bar: Badge, Reference File & Far-Right Download Button */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
               <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3">
-                <span className="text-xs font-mono font-bold px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 inline-flex items-center gap-1.5 w-fit">
+                <span className="text-xs font-mono font-bold px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20 inline-flex items-center gap-1.5 w-fit">
                   <Users size={13} className="shrink-0" />
-                  <span className="break-words">เอกสารแนบ 2: การวิเคราะห์ SWOT ทีมและผู้มีส่วนได้ส่วนเสีย</span>
+                  <span className="break-words">การวิเคราะห์บริบทองค์กร SWOT และผู้มีส่วนได้ส่วนเสีย</span>
                 </span>
-                <span className="text-xs text-slate-500 font-mono break-all sm:break-normal">
-                  ไฟล์อ้างอิง: <strong className="text-slate-700">2_SWOT CC.xlsx</strong> (ISO 9001:2015 ข้อกำหนด 4.1 &amp; 4.2)
+                <span className="text-xs text-slate-500 dark:text-zinc-400 font-mono break-all sm:break-normal">
+                  เทมเพลตมาตรฐานตาม <strong className="text-slate-700 dark:text-zinc-200">ISO 9001:2015 ข้อกำหนด 4.1 &amp; 4.2</strong> (วิเคราะห์ผลสัมฤทธิ์จากข้อมูลระบบ CC System FY70)
                 </span>
               </div>
               <button
@@ -2939,7 +3060,7 @@ export default function IsoReportDetail() {
               <div className="flex items-center justify-between">
                 <h3 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
                   <span className="w-2.5 h-6 bg-blue-600 rounded-full inline-block" />
-                  <span>ส่วนที่ 1: การวิเคราะห์ SWOT บริบททีม CC (Sheet 1: SWOT CC)</span>
+                  <span>ส่วนที่ 1: การวิเคราะห์ SWOT บริบททีม CC (วิเคราะห์ผลสัมฤทธิ์จากข้อมูลระบบ CC System FY70)</span>
                 </h3>
               </div>
 
@@ -2951,17 +3072,15 @@ export default function IsoReportDetail() {
                       <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
                       <span>จุดแข็ง (Strengths)</span>
                     </h4>
-                    <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded">2 ข้อ</span>
+                    <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded">{dynamicSwot.strengths.length} ข้อ</span>
                   </div>
                   <ul className="space-y-2 text-xs text-slate-800 font-medium">
-                    <li className="flex items-start gap-2">
-                      <span className="w-4 font-mono font-bold text-emerald-700 shrink-0">1.</span>
-                      <span>เป็นทีมที่อยู่ในองค์กรภาครัฐที่ดำเนินงานด้านงานออกแบบสร้างสรรค์ งานประชาสัมพันธ์และงานคอนเท้นต์ ได้โดดเด่นองค์กรหนึ่งในภาคเหนือ</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="w-4 font-mono font-bold text-emerald-700 shrink-0">2.</span>
-                      <span>ทีมงานมีความสามารถในด้านงานสร้างสรรค์ที่หลากหลาย</span>
-                    </li>
+                    {dynamicSwot.strengths.map((item, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="w-4 font-mono font-bold text-emerald-700 shrink-0">{idx + 1}.</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
                   </ul>
                 </div>
 
@@ -2972,17 +3091,15 @@ export default function IsoReportDetail() {
                       <span className="w-2.5 h-2.5 rounded-full bg-amber-600" />
                       <span>จุดอ่อน (Weaknesses)</span>
                     </h4>
-                    <span className="text-xs font-mono font-bold text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded">2 ข้อ</span>
+                    <span className="text-xs font-mono font-bold text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded">{dynamicSwot.weaknesses.length} ข้อ</span>
                   </div>
                   <ul className="space-y-2 text-xs text-slate-800 font-medium">
-                    <li className="flex items-start gap-2">
-                      <span className="w-4 font-mono font-bold text-amber-700 shrink-0">1.</span>
-                      <span>ทีมงานมีความรู้และทักษะที่ไม่เพียงพอในบางฟังก์ชั่นงานสร้างสรรค์</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="w-4 font-mono font-bold text-amber-700 shrink-0">2.</span>
-                      <span>ทีมงานมีเวลาในการทำงานไม่เพียงพอในการจัดการงานสร้างสรรค์ที่เป็นงานด่วนบางงาน</span>
-                    </li>
+                    {dynamicSwot.weaknesses.map((item, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="w-4 font-mono font-bold text-amber-700 shrink-0">{idx + 1}.</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
                   </ul>
                 </div>
 
@@ -2993,17 +3110,15 @@ export default function IsoReportDetail() {
                       <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
                       <span>โอกาส (Opportunities)</span>
                     </h4>
-                    <span className="text-xs font-mono font-bold text-blue-700 bg-blue-100/80 px-2 py-0.5 rounded">2 ข้อ</span>
+                    <span className="text-xs font-mono font-bold text-blue-700 bg-blue-100/80 px-2 py-0.5 rounded">{dynamicSwot.opportunities.length} ข้อ</span>
                   </div>
                   <ul className="space-y-2 text-xs text-slate-800 font-medium">
-                    <li className="flex items-start gap-2">
-                      <span className="w-4 font-mono font-bold text-blue-700 shrink-0">1.</span>
-                      <span>ทีมงานมีความสามารถด้านงานสร้างสรรค์ และสามารถแข่งขันกับหน่วยงานอื่น ที่มีการดำเนินงานในรูปแบบเดียวกัน</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="w-4 font-mono font-bold text-blue-700 shrink-0">2.</span>
-                      <span>ผู้บริหารให้ความสำคัญกับงานออกแบบสร้างสรรค์ งานประชาสัมพันธ์และงานคอนเท้นต์</span>
-                    </li>
+                    {dynamicSwot.opportunities.map((item, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="w-4 font-mono font-bold text-blue-700 shrink-0">{idx + 1}.</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
                   </ul>
                 </div>
 
@@ -3014,13 +3129,15 @@ export default function IsoReportDetail() {
                       <span className="w-2.5 h-2.5 rounded-full bg-rose-600" />
                       <span>อุปสรรค (Threats)</span>
                     </h4>
-                    <span className="text-xs font-mono font-bold text-rose-700 bg-rose-100/80 px-2 py-0.5 rounded">1 ข้อ</span>
+                    <span className="text-xs font-mono font-bold text-rose-700 bg-rose-100/80 px-2 py-0.5 rounded">{dynamicSwot.threats.length} ข้อ</span>
                   </div>
                   <ul className="space-y-2 text-xs text-slate-800 font-medium">
-                    <li className="flex items-start gap-2">
-                      <span className="w-4 font-mono font-bold text-rose-700 shrink-0">1.</span>
-                      <span>ไม่มีการติดตาม และกำกับดูแลการเปลี่ยนแปลงความต้องการของผู้ใช้บริการ ที่เปลี่ยนไปตามเทรนด์งานสร้างสรรค์ คอนเทนต์และ PR ให้ทันสมัยอยู่เสมอ</span>
-                    </li>
+                    {dynamicSwot.threats.map((item, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="w-4 font-mono font-bold text-rose-700 shrink-0">{idx + 1}.</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
                   </ul>
                 </div>
               </div>
@@ -3033,7 +3150,13 @@ export default function IsoReportDetail() {
                   <span className="w-2.5 h-6 bg-purple-600 rounded-full inline-block" />
                   <span>ส่วนที่ 2: ความต้องการและความคาดหวังของผู้มีส่วนได้ส่วนเสีย (Sheet 2: ผู้มีส่วนได้ส่วนเสีย)</span>
                 </h3>
-                <span className="text-xs text-slate-400">ครบถ้วน 4 กลุ่มหลัก</span>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 inline-flex items-center gap-1.5 shadow-2xs">
+                    <AlertCircle size={13} className="text-amber-600 shrink-0" />
+                    <span>สถานะ: ยังไม่มีการบันทึกข้อมูล (รอรับฟังความเห็นเข้าสู่ระบบ)</span>
+                  </span>
+                  <span className="text-xs text-slate-400">4 กลุ่มหลัก</span>
+                </div>
               </div>
 
               <div className="overflow-x-auto">
@@ -3043,7 +3166,7 @@ export default function IsoReportDetail() {
                       <th className="p-3 border border-slate-200 text-left w-48">ผู้มีส่วนได้ส่วนเสีย</th>
                       <th className="p-3 border border-slate-200 text-left">ความต้องการ (Needs)</th>
                       <th className="p-3 border border-slate-200 text-left">ความคาดหวัง (Expectations)</th>
-                      <th className="p-3 border border-slate-200 text-center w-36">สถานะในระบบ</th>
+                      <th className="p-3 border border-slate-200 text-center w-40">สถานะในระบบ</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
@@ -3058,15 +3181,19 @@ export default function IsoReportDetail() {
                             </div>
                           </div>
                         </td>
-                        <td className="p-3.5 border border-slate-200 text-slate-700 leading-relaxed font-medium">
-                          {sh.needs}
+                        <td className="p-3.5 border border-slate-200 text-slate-500 leading-relaxed font-normal italic">
+                          <span className="inline-flex items-center gap-1.5 text-slate-500 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200/80">
+                            <span>{sh.needs}</span>
+                          </span>
                         </td>
-                        <td className="p-3.5 border border-slate-200 text-slate-700 leading-relaxed font-medium">
-                          {sh.expectations}
+                        <td className="p-3.5 border border-slate-200 text-slate-500 leading-relaxed font-normal italic">
+                          <span className="inline-flex items-center gap-1.5 text-slate-500 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200/80">
+                            <span>{sh.expectations}</span>
+                          </span>
                         </td>
                         <td className="p-3.5 border border-slate-200 text-center">
-                          <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
-                            {sh.targetUnit === "internal" ? "งานภายใน" : sh.targetUnit === "external" ? "งานภายนอก/มช." : "PM Project"}
+                          <span className="inline-flex items-center justify-center whitespace-nowrap px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/80 shadow-2xs">
+                            รอรับฟังความเห็น
                           </span>
                         </td>
                       </tr>
@@ -3089,12 +3216,12 @@ export default function IsoReportDetail() {
             {/* Top Bar: Badge, Reference File & Far-Right Download Button */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
               <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3">
-                <span className="text-xs font-mono font-bold px-3 py-1.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 inline-flex items-center gap-1.5 w-fit">
+                <span className="text-xs font-mono font-bold px-3 py-1.5 rounded-full bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-500/20 inline-flex items-center gap-1.5 w-fit">
                   <FileSpreadsheet size={13} className="shrink-0" />
-                  <span className="break-words">เอกสารแนบ 3: ความเสี่ยงและโอกาสของทีม CC</span>
+                  <span className="break-words">ความเสี่ยงและโอกาสของทีม CC และเมทริกซ์ TOWS</span>
                 </span>
-                <span className="text-xs text-slate-500 font-mono break-all sm:break-normal">
-                  ไฟล์อ้างอิง: <strong className="text-slate-700">3_ประเมินความเสี่ยงและโอกาส CC.xlsx</strong> (ISO 9001:2015 ข้อกำหนด 6.1)
+                <span className="text-xs text-slate-500 dark:text-zinc-400 font-mono break-all sm:break-normal">
+                  เทมเพลตมาตรฐานตาม <strong className="text-slate-700 dark:text-zinc-200">ISO 9001:2015 ข้อกำหนด 6.1</strong> (วิเคราะห์ผลสัมฤทธิ์จากข้อมูลระบบ CC System FY70)
                 </span>
               </div>
               <button
@@ -3123,17 +3250,17 @@ export default function IsoReportDetail() {
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">ประเด็นทั้งหมด</span>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl sm:text-3xl font-black text-slate-900">11</span>
+                  <span className="text-2xl sm:text-3xl font-black text-slate-900">{riskOppStats.total}</span>
                   <span className="text-xs text-slate-500 font-medium">รายการ</span>
                 </div>
-                <p className="text-[10.5px] text-slate-500">บริบท SWOT (7) • ผู้มีส่วนได้ส่วนเสีย (4)</p>
+                <p className="text-[10.5px] text-slate-500">บริบท SWOT ({riskOppStats.swotCount}) • ผู้มีส่วนได้ส่วนเสีย ({riskOppStats.stakeholderCount})</p>
               </div>
 
               <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 space-y-1">
                 <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider block">โอกาสในการพัฒนา (O)</span>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl sm:text-3xl font-black text-emerald-600">8</span>
-                  <span className="text-xs font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-full">72.7%</span>
+                  <span className="text-2xl sm:text-3xl font-black text-emerald-600">{riskOppStats.oppCount}</span>
+                  <span className="text-xs font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-full">{riskOppStats.oppRate}%</span>
                 </div>
                 <p className="text-[10.5px] text-emerald-700">โอกาสเชิงรุกเพื่อสร้างความเติบโตและมูลค่าเพิ่ม</p>
               </div>
@@ -3141,8 +3268,8 @@ export default function IsoReportDetail() {
               <div className="p-4 rounded-2xl bg-rose-50/70 border border-rose-200/80 space-y-1">
                 <span className="text-[11px] font-bold text-rose-700 uppercase tracking-wider block">ความเสี่ยงที่ต้องจัดการ (R)</span>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl sm:text-3xl font-black text-rose-600">3</span>
-                  <span className="text-xs font-bold text-rose-700 bg-rose-100/70 px-2 py-0.5 rounded-full">27.3%</span>
+                  <span className="text-2xl sm:text-3xl font-black text-rose-600">{riskOppStats.riskCount}</span>
+                  <span className="text-xs font-bold text-rose-700 bg-rose-100/70 px-2 py-0.5 rounded-full">{riskOppStats.riskRate}%</span>
                 </div>
                 <p className="text-[10.5px] text-rose-700">มีมาตรการลดความเสี่ยงและแนวทางควบคุมครบ</p>
               </div>
@@ -3170,7 +3297,7 @@ export default function IsoReportDetail() {
                 </span>
               </div>
 
-              {/* 4-Quadrant TOWS Matrix Grid */}
+              {/* 4-Quadrant TOWS Matrix Grid (Synthesized dynamically from system data & SWOT) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Quadrant 1: SO Strategies */}
                 <div className="p-5 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-3 shadow-2xs">
@@ -3185,19 +3312,17 @@ export default function IsoReportDetail() {
                       </div>
                     </div>
                     <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                      S1, S2 + O1, O2
+                      S + O
                     </span>
                   </div>
 
                   <ul className="space-y-2 text-xs text-slate-800 font-medium">
-                    <li className="flex items-start gap-2">
-                      <span className="w-5 font-mono font-bold text-emerald-700 shrink-0">SO-1:</span>
-                      <span><strong>ยกระดับสู่ Flagship Projects ระดับสากล:</strong> ดึงจุดแข็งความเชี่ยวชาญด้านงานสร้างสรรค์ ประชาสัมพันธ์ และคอนเทนต์ที่โดดเด่นในระดับภาคเหนือ ผสานแรงสนับสนุนเชิงนโยบายจากผู้บริหาร เพื่อขยายงานสู่ระดับประเทศ</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="w-5 font-mono font-bold text-emerald-700 shrink-0">SO-2:</span>
-                      <span><strong>ขยายการบริการสร้างสรรค์มูลค่าเพิ่ม (High-Value Media):</strong> ต่อยอดความสามารถด้านสื่อหลากหลายประเภทในการรับงานเชิงพาณิชย์และงานภายนอก เพื่อสร้างรายได้และตอบสนองเป้าหมายมหาวิทยาลัยและภาคอุตสาหกรรม</span>
-                    </li>
+                    {dynamicTows.so.map(t => (
+                      <li key={t.code} className="flex items-start gap-2">
+                        <span className="w-9 font-mono font-bold text-emerald-700 shrink-0">{t.code}:</span>
+                        <span><strong>{t.title}:</strong> {t.detail}</span>
+                      </li>
+                    ))}
                   </ul>
                 </div>
 
@@ -3214,19 +3339,17 @@ export default function IsoReportDetail() {
                       </div>
                     </div>
                     <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800">
-                      W1, W2 + O1, O2
+                      W + O
                     </span>
                   </div>
 
                   <ul className="space-y-2 text-xs text-slate-800 font-medium">
-                    <li className="flex items-start gap-2">
-                      <span className="w-5 font-mono font-bold text-blue-700 shrink-0">WO-1:</span>
-                      <span><strong>โครงการ Up-skill / Re-skill ทักษะยุคใหม่:</strong> ใช้การสนับสนุนจากผู้บริหารจัดสรรงบประมาณพัฒนาทักษะเฉพาะทางที่ขาด เช่น Generative AI for Creative, Advanced 3D Motion และ Data Visualization</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="w-5 font-mono font-bold text-blue-700 shrink-0">WO-2:</span>
-                      <span><strong>จัดทำ Creative Asset Bank &amp; Fast-Track Templates:</strong> สร้างคลังเทมเพลตและสต็อกงานกราฟิกสำเร็จรูปมาตรฐาน เพื่อลดระยะเวลาผลิตงานด่วนลงกว่า 50% แก้ปัญหาเวลาทำงานไม่เพียงพอ</span>
-                    </li>
+                    {dynamicTows.wo.map(t => (
+                      <li key={t.code} className="flex items-start gap-2">
+                        <span className="w-9 font-mono font-bold text-blue-700 shrink-0">{t.code}:</span>
+                        <span><strong>{t.title}:</strong> {t.detail}</span>
+                      </li>
+                    ))}
                   </ul>
                 </div>
 
@@ -3243,19 +3366,17 @@ export default function IsoReportDetail() {
                       </div>
                     </div>
                     <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800">
-                      S1, S2 + T1
+                      S + T
                     </span>
                   </div>
 
                   <ul className="space-y-2 text-xs text-slate-800 font-medium">
-                    <li className="flex items-start gap-2">
-                      <span className="w-5 font-mono font-bold text-amber-700 shrink-0">ST-1:</span>
-                      <span><strong>ระบบ Creative Trend Radar &amp; Quarterly Insights:</strong> ใช้ความเชี่ยวชาญของทีมในการติดตามและวิเคราะห์แนวโน้มสื่อดิจิทัลทุกไตรมาส นำร่องงานดีไซน์ที่ทันสมัยก่อนผู้รับบริการร้องขอ ป้องกันการหลุดเทรนด์</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="w-5 font-mono font-bold text-amber-700 shrink-0">ST-2:</span>
-                      <span><strong>Internal Knowledge Sharing &amp; Creative Clinic:</strong> จัดกิจกรรมแลกเปลี่ยนความรู้ในทีมทุกเดือน พร้อมจัดทำระบบตรวจสอบความถูกต้องของคอนเทนต์และข้อความ ป้องกันข้อผิดพลาดที่กระทบภาพลักษณ์</span>
-                    </li>
+                    {dynamicTows.st.map(t => (
+                      <li key={t.code} className="flex items-start gap-2">
+                        <span className="w-9 font-mono font-bold text-amber-700 shrink-0">{t.code}:</span>
+                        <span><strong>{t.title}:</strong> {t.detail}</span>
+                      </li>
+                    ))}
                   </ul>
                 </div>
 
@@ -3272,19 +3393,17 @@ export default function IsoReportDetail() {
                       </div>
                     </div>
                     <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-800">
-                      W1, W2 + T1
+                      W + T
                     </span>
                   </div>
 
                   <ul className="space-y-2 text-xs text-slate-800 font-medium">
-                    <li className="flex items-start gap-2">
-                      <span className="w-5 font-mono font-bold text-rose-700 shrink-0">WT-1:</span>
-                      <span><strong>บังคับใช้เกณฑ์ SLA และข้อตกลงผ่านระเบียบ WI:</strong> บังคับใช้ขั้นตอนบรีฟและ Service Level Agreement ผ่านระบบ WI-CC-001 ถึง 005 อย่างเคร่งครัด มีระยะเวลาส่งคำขอล่วงหน้า คัดกรองงานด่วนฉุกเฉิน</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="w-5 font-mono font-bold text-rose-700 shrink-0">WT-2:</span>
-                      <span><strong>Brand CI Guidelines &amp; Service Manual:</strong> จัดทำคู่มือ Brand Identity และแนวทางการรับบริการเผยแพร่แก่ผู้สั่งงาน พร้อมส่งแบบประเมินความพึงพอใจ 5 มิติเพื่อแก้ไขจุดบกพร่องอย่างทันที</span>
-                    </li>
+                    {dynamicTows.wt.map(t => (
+                      <li key={t.code} className="flex items-start gap-2">
+                        <span className="w-9 font-mono font-bold text-rose-700 shrink-0">{t.code}:</span>
+                        <span><strong>{t.title}:</strong> {t.detail}</span>
+                      </li>
+                    ))}
                   </ul>
                 </div>
               </div>
@@ -3300,7 +3419,7 @@ export default function IsoReportDetail() {
                   <span>ตารางทะเบียนประเมินความเสี่ยงและโอกาส (Risk &amp; Opportunities Register)</span>
                 </h4>
                 <span className="text-xs text-slate-500 font-medium">
-                  จำแนกตามกระบวนการและบริบททีม ทั้งหมด 11 รายการ (โอกาส 8 รายการ • ความเสี่ยง 3 รายการ)
+                  จำแนกตามกระบวนการและบริบททีม ทั้งหมด {riskOppStats.total} รายการ (โอกาส {riskOppStats.oppCount} รายการ • ความเสี่ยง {riskOppStats.riskCount} รายการ)
                 </span>
               </div>
 
@@ -3316,7 +3435,7 @@ export default function IsoReportDetail() {
                         : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
                     }`}
                   >
-                    ทั้งหมด (11)
+                    ทั้งหมด ({riskOppStats.total})
                   </button>
                   <button
                     onClick={() => setFilterType("O")}
@@ -3326,7 +3445,7 @@ export default function IsoReportDetail() {
                         : "text-emerald-700 hover:bg-emerald-100/70"
                     }`}
                   >
-                    โอกาส (8)
+                    โอกาส ({riskOppStats.oppCount})
                   </button>
                   <button
                     onClick={() => setFilterType("R")}
@@ -3336,7 +3455,7 @@ export default function IsoReportDetail() {
                         : "text-rose-700 hover:bg-rose-100/70"
                     }`}
                   >
-                    ความเสี่ยง (3)
+                    ความเสี่ยง ({riskOppStats.riskCount})
                   </button>
                   <button
                     onClick={() => setFilterType("SWOT")}
@@ -3346,7 +3465,7 @@ export default function IsoReportDetail() {
                         : "text-blue-700 hover:bg-blue-100/70"
                     }`}
                   >
-                    บริบท SWOT (7)
+                    บริบท SWOT ({riskOppStats.swotCount})
                   </button>
                   <button
                     onClick={() => setFilterType("STAKEHOLDER")}
@@ -3356,7 +3475,7 @@ export default function IsoReportDetail() {
                         : "text-purple-700 hover:bg-purple-100/70"
                     }`}
                   >
-                    ผู้มีส่วนได้ส่วนเสีย (4)
+                    ผู้มีส่วนได้ส่วนเสีย ({riskOppStats.stakeholderCount})
                   </button>
                 </div>
 

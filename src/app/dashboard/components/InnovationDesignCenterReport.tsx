@@ -190,153 +190,7 @@ export interface IDCRecord {
 }
 
 // Initial Mock Records for Demonstration & Rich Baseline
-const INITIAL_RECORDS: IDCRecord[] = [
-  {
-    id: "idc-rec-1",
-    code: "IDC-2026-001",
-    date: "2026-06-25",
-    clientName: "คุณกมลรัตน์ เลิศวานิช",
-    companyName: "บริษัท ล้านนา ฟรุตส์ แอนด์ ดราย จำกัด",
-    organizationType: "private",
-    businessType: "food_processing",
-    address: "128/4 หมู่ 5 ต.สุเทพ อ.เมือง จ.เชียงใหม่ 50200",
-    taxId: "0505562001928",
-    phone: "081-952-4412",
-    email: "kamonrat@lannafruits.co.th",
-    serviceMain: "packaging_design",
-    pieceCount: 3,
-    projectBrief: "ออกแบบกล่องบรรจุภัณฑ์ลำไยอบแห้งพรีเมียมส่งออกตลาดญี่ปุ่น 3 รูปแบบ",
-    assignee: "เยียร์ LLP",
-    revenue: 45000,
-    status: "completed",
-    surveyToken: "survey-tok-001",
-    surveySent: true,
-    surveySentAt: "2026-06-28 16:30",
-    satisfactionScore: 5.0,
-    satisfactionFeedback: "งานออกแบบสวยงามทันสมัย ตรงตามโจทย์ส่งออกญี่ปุ่นมากค่ะ",
-    satisfactionEvaluatedAt: "2026-06-29 10:20"
-  },
-  {
-    id: "idc-rec-2",
-    code: "IDC-2026-002",
-    date: "2026-08-10",
-    clientName: "ดร.ณัฐพงษ์ เจริญจิตวิทยา",
-    companyName: "สถาบันวิจัยเกษตรอินทรีย์ล้านนา",
-    organizationType: "government",
-    businessType: "agriculture_biotech",
-    address: "239 ถ.ห้วยแก้ว ต.สุเทพ อ.เมือง จ.เชียงใหม่ 50200",
-    taxId: "0994000123456",
-    phone: "053-941-000",
-    email: "nattapong@agri-bio.org",
-    serviceMain: "consultation",
-    consultationSub: "branding" as any, // fallback or logo
-    consultationSubOther: "การจัดทำอัตลักษณ์สินค้าเกษตรปลอดภัย",
-    pieceCount: 1,
-    projectBrief: "ขอคำปรึกษาการวางทิศทางอัตลักษณ์และแบรนด์สินค้าชีวภาพสำหรับเกษตรกรแปลงใหญ่",
-    assignee: "จ๊อบ AA",
-    revenue: 12000,
-    status: "completed",
-    surveyToken: "survey-tok-002",
-    surveySent: true,
-    surveySentAt: "2026-08-12 11:00",
-    satisfactionScore: 4.8,
-    satisfactionFeedback: "ให้คำแนะนำเชิงลึกที่เป็นรูปธรรมและนำไปใช้งานต่อได้ทันทีครับ",
-    satisfactionEvaluatedAt: "2026-08-12 14:45"
-  },
-  {
-    id: "idc-rec-3",
-    code: "IDC-2026-003",
-    date: "2026-08-30",
-    clientName: "คุณปิยะวัฒน์ ทองประเสริฐ",
-    companyName: "ห้างหุ้นส่วนจำกัด กรีนฮิลล์ เอโค ทราเวล",
-    organizationType: "private",
-    businessType: "tourism",
-    address: "45 ถ.ช้างคลาน อ.เมือง จ.เชียงใหม่ 50100",
-    taxId: "0503558004112",
-    phone: "089-771-3329",
-    email: "piyawat@greenhillchiangmai.com",
-    serviceMain: "print_media",
-    pieceCount: 2,
-    projectBrief: "ออกแบบชุดโบรชัวร์และ Infographic คู่มือท่องเที่ยวเชิงนิเวศน์ดอยอินทนนท์ 2 ภาษา",
-    assignee: "พิม AC",
-    revenue: 28000,
-    status: "completed",
-    surveyToken: "survey-tok-003",
-    surveySent: true,
-    surveySentAt: "2026-09-02 09:15",
-    satisfactionScore: 4.9,
-    satisfactionFeedback: "กราฟิกเข้าใจง่าย สีสันเข้ากับธีมธรรมชาติยอดเยี่ยม",
-    satisfactionEvaluatedAt: "2026-09-02 16:00"
-  },
-  {
-    id: "idc-rec-4",
-    code: "IDC-2026-004",
-    date: "2026-09-12",
-    clientName: "คุณมนัสวินท์ เชษฐการ",
-    companyName: "บริษัท เชียงใหม่ โลคอล ดิจิทัล โซลูชั่นส์ จำกัด",
-    organizationType: "private",
-    businessType: "digital",
-    address: "99 หมู่ 2 ต.ป่าแดด อ.เมือง จ.เชียงใหม่ 50100",
-    taxId: "0505565008910",
-    phone: "082-445-9988",
-    email: "manaswin@local-digital.tech",
-    serviceMain: "logo_branding",
-    pieceCount: 1,
-    projectBrief: "ออกแบบตราสัญลักษณ์ (Logo CI) สำหรับแอปพลิเคชันท่องเที่ยวชุมชน Smart Lanna",
-    assignee: "เยียร์ LLP",
-    revenue: 35000,
-    status: "in_progress",
-    surveyToken: "survey-tok-004",
-    surveySent: false
-  },
-  {
-    id: "idc-rec-5",
-    code: "IDC-2026-005",
-    date: "2026-09-15",
-    clientName: "คุณศิริพร เจริญผล",
-    companyName: "กลุ่มวิสาหกิจชุมชนแปรรูปเห็ดหอมแม่แจ่ม",
-    organizationType: "private",
-    businessType: "food_processing",
-    address: "18 หมู่ 4 ต.แม่นาจร อ.แม่แจ่ม จ.เชียงใหม่ 50270",
-    taxId: "0993000552199",
-    phone: "086-112-9087",
-    email: "siriporn.maechaem@gmail.com",
-    serviceMain: "consultation",
-    consultationSub: "packaging",
-    pieceCount: 1,
-    projectBrief: "รับคำปรึกษาการยืดอายุและวัสดุบรรจุภัณฑ์ถุงซิปล็อคสูญญากาศสำหรับเห็ดอบกรอบ",
-    assignee: "วา WK",
-    revenue: 10000,
-    status: "completed",
-    surveyToken: "survey-tok-005",
-    surveySent: true,
-    surveySentAt: "2026-09-16 15:00",
-    satisfactionScore: 4.7,
-    satisfactionFeedback: "ได้คำแนะนำเรื่องมาตรฐาน อย. และการเลือกซองฟอยล์ดีมากๆ ค่ะ",
-    satisfactionEvaluatedAt: "2026-09-16 16:30"
-  },
-  {
-    id: "idc-rec-6",
-    code: "IDC-2026-006",
-    date: "2026-09-17",
-    clientName: "นายวิทวัส เกียรติสกุล",
-    companyName: "บริษัท นอร์ทเทิร์น สมาร์ท ฟาร์ม จำกัด",
-    organizationType: "private",
-    businessType: "agriculture_biotech",
-    address: "142 ต.สันผักหวาน อ.หางดง จ.เชียงใหม่ 50230",
-    taxId: "0505564003418",
-    phone: "084-556-7812",
-    email: "wittawat@smartfarm-north.com",
-    serviceMain: "product_design",
-    pieceCount: 2,
-    projectBrief: "ออกแบบโครงสร้างเซ็นเซอร์ตรวจวัดดินและกล่องควบคุม IOT แปลงเกษตรกรรม",
-    assignee: "จ๊อบ AA",
-    revenue: 52000,
-    status: "in_progress",
-    surveyToken: "survey-tok-006",
-    surveySent: false
-  }
-];
+const INITIAL_RECORDS: IDCRecord[] = [];
 
 function isIDCBrief(b: any): boolean {
   if (!b) return false;
@@ -358,7 +212,8 @@ function isIDCBrief(b: any): boolean {
 
 function convertBriefToIDCRecord(b: any, aMap: Record<string, { name: string; unit?: string }>): IDCRecord {
   const details = b.details || {};
-  const code = details.idc_code || `IDC-2026-${String(b.id).slice(0, 4).toUpperCase()}`;
+  const currentYear = new Date().getFullYear();
+  const code = details.idc_code || `IDC-${currentYear}-${String(b.id).slice(0, 4).toUpperCase()}`;
   const date = details.date || (b.created_at ? b.created_at.split("T")[0] : new Date().toISOString().split("T")[0]);
   const clientName = details.client_name || b.coordinator_nickname || "ไม่ระบุชื่อ";
   const companyName = details.company_name || "";
@@ -431,13 +286,21 @@ export default function InnovationDesignCenterReport({
   // Main Records State with LocalStorage Persistence
   const [records, setRecords] = useState<IDCRecord[]>(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("cc_idc_records_v3");
+      const saved = localStorage.getItem("cc_idc_records_v4_fy70");
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            // Map legacy pending to in_progress and fix designer initials
-            return parsed.map((item: any) => ({
+            // Strictly exclude mock/fabricated demo records
+            const clean = parsed.filter((item: any) =>
+              !item.clientName?.includes("กมลรัตน์") &&
+              !item.clientName?.includes("ณัฐพงษ์") &&
+              !item.clientName?.includes("ปิยะวัฒน์") &&
+              !item.companyName?.includes("ล้านนา ฟรุตส์") &&
+              item.code !== "IDC-2026-001"
+            );
+            localStorage.setItem("cc_idc_records_v4_fy70", JSON.stringify(clean));
+            return clean.map((item: any) => ({
               ...item,
               status: item.status === "pending" ? "in_progress" : item.status,
               assignee:
@@ -453,7 +316,7 @@ export default function InnovationDesignCenterReport({
         }
       }
     }
-    return INITIAL_RECORDS;
+    return [];
   });
 
   // Load IDC records from Supabase cloud database
@@ -462,10 +325,17 @@ export default function InnovationDesignCenterReport({
       try {
         const cloudData = await getCloudJson<IDCRecord[]>(
           CLOUD_KEYS.IDC_RECORDS,
-          "cc_idc_records_v3"
+          "cc_idc_records_v4_fy70"
         );
-        if (cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
-          setRecords(cloudData);
+        if (cloudData && Array.isArray(cloudData)) {
+          const clean = cloudData.filter(r => 
+            !r.clientName?.includes("กมลรัตน์") &&
+            !r.clientName?.includes("ณัฐพงษ์") &&
+            !r.clientName?.includes("ปิยะวัฒน์") &&
+            !r.companyName?.includes("ล้านนา ฟรุตส์") &&
+            r.code !== "IDC-2026-001"
+          );
+          setRecords(clean);
         }
       } catch (err) {
         console.warn("Failed to load IDC records from cloud:", err);
@@ -476,8 +346,8 @@ export default function InnovationDesignCenterReport({
 
   // Save IDC records to Supabase cloud + localStorage cache
   useEffect(() => {
-    if (records && records.length > 0) {
-      setCloudJson(CLOUD_KEYS.IDC_RECORDS, records, "cc_idc_records_v3");
+    if (records) {
+      setCloudJson(CLOUD_KEYS.IDC_RECORDS, records, "cc_idc_records_v4_fy70");
     }
   }, [records]);
 
@@ -611,9 +481,7 @@ export default function InnovationDesignCenterReport({
 
       // 2. Briefs
       const { data: briefsData, error } = await supabase
-        .from('briefs')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .from('briefs').select('*').neq('status', 'purged').order('created_at', { ascending: false });
 
       if (briefsData && !error) {
         setPmBriefs(briefsData);
@@ -624,6 +492,8 @@ export default function InnovationDesignCenterReport({
           const mappedRecords: IDCRecord[] = idcBriefs.map(b => convertBriefToIDCRecord(b, map));
           mappedRecords.sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
           setRecords(mappedRecords);
+        } else {
+          setRecords([]);
         }
       }
     } catch (err) {
@@ -637,37 +507,20 @@ export default function InnovationDesignCenterReport({
     fetchPMData();
   }, [fetchPMData]);
 
-  // Filter for PM Design projects
+  // Filter for genuine PM Design projects
   const designPmProjects = useMemo(() => {
     return pmBriefs.filter(b => {
-      if (b.details?.is_deleted) return false;
+      if (b.details?.is_deleted || b.details?.is_permanently_deleted || b.status === "purged") return false;
       
-      // 1. Explicitly marked as creative (Design)
-      const pmWorkType = (b.details?.pm_work_type || "").toLowerCase();
-      const isExplicitCreative = pmWorkType === "creative" || pmWorkType === "design";
+      // A project is a genuine PM project if explicitly flagged or categorized as PM project
+      const isExplicitPm = b.details?.is_pm_project === true || 
+        b.details?.brief_type === "pm_project" ||
+        (b.details?.project_code && String(b.details?.project_code).startsWith("PM-"));
       
-      // 2. Unit is creative and has PM details
-      const isCreativeUnit = b.unit === "creative" && Boolean(b.details?.project_code || b.details?.revenue !== undefined);
-      
-      // 3. PM project with design keywords or brand identity
-      const isPMProject = Boolean(b.details?.project_code);
-      const category = (b.details?.pm_work_category || b.details?.service_category || b.details?.category || "").toLowerCase();
-      const projectName = (b.project_name || "").toLowerCase();
-      
-      const hasDesignKeywords = 
-        category.includes("design") ||
-        category.includes("creative") ||
-        category.includes("ออกแบบ") ||
-        category.includes("อัตลักษณ์") ||
-        category.includes("logo") ||
-        category.includes("packaging") ||
-        category.includes("visual") ||
-        projectName.includes("อัตลักษณ์") ||
-        projectName.includes("ออกแบบ") ||
-        projectName.includes("ดีไซน์") ||
-        projectName.includes("บรรจุภัณฑ์");
+      const category = (b.details?.category || b.details?.pm_work_category || "").toString();
+      const isPmCategory = category.trim() === "PM โครงการของ CC" || category.includes("PM โครงการ");
 
-      return isExplicitCreative || isCreativeUnit || (isPMProject && !b.details?.pm_work_type && hasDesignKeywords);
+      return isExplicitPm || isPmCategory;
     });
   }, [pmBriefs]);
 
@@ -962,9 +815,7 @@ export default function InnovationDesignCenterReport({
     const avgScore =
       evaluatedRecords.length > 0
         ? (evaluatedRecords.reduce((sum, r) => sum + (r.satisfactionScore || 0), 0) / evaluatedRecords.length).toFixed(2)
-        : filteredRecords.length === 0
-        ? "0.00"
-        : "4.85";
+        : "0.00";
 
     // % ความพึงพอใจ คำนวณเป็นร้อยละจากคะแนนเต็ม 5.0 (เช่น 4.85 / 5 * 100 = 97%)
     const satisfactionPercentage = evaluatedRecords.length > 0 ? Math.round((parseFloat(avgScore) / 5) * 100) : 0;
@@ -1073,9 +924,13 @@ export default function InnovationDesignCenterReport({
       },
       {
         id: "S2",
-        title: "ความสามารถในการทำกำไรของโครงการ PM งานออกแบบแข็งแกร่ง",
-        desc: `โครงการ PM งานออกแบบมีอัตรากำไรสุทธิสูงถึง ${pmFinancialSummary.profitMarginPercent}% (กำไรสุทธิ ฿${pmProfit.toLocaleString()} จากรายรับ ฿${pmRev.toLocaleString()}) พิสูจน์ประสิทธิภาพการบริหารต้นทุนที่เป็นเลิศ`,
-        metric: `Margin ${pmFinancialSummary.profitMarginPercent}%`,
+        title: pmRev > 0 && pmProfit > 0 
+          ? "ความสามารถในการทำกำไรของโครงการ PM งานออกแบบแข็งแกร่ง"
+          : "ศักยภาพและความพร้อมรองรับโครงการ PM งานออกแบบเชิงพาณิชย์ (Pipeline Ready)",
+        desc: pmRev > 0 && pmProfit > 0
+          ? `โครงการ PM งานออกแบบมีอัตรากำไรสุทธิ ${pmFinancialSummary.profitMarginPercent}% (กำไรสุทธิ ฿${pmProfit.toLocaleString()} จากรายรับ ฿${pmRev.toLocaleString()}) พิสูจน์ประสิทธิภาพการบริหารต้นทุนที่ชัดเจน`
+          : "ระบบพร้อมรองรับการบริหารโครงการ PM งานออกแบบและพัฒนาผลิตภัณฑ์ ปัจจุบันมุ่งเน้นการให้บริการสนับสนุนงานของอุทยานฯ เพื่อเตรียมขยายผลสู่บริการเชิงพาณิชย์เต็มรูปแบบ",
+        metric: pmRev > 0 && pmProfit > 0 ? `Margin ${pmFinancialSummary.profitMarginPercent}%` : "Pipeline พร้อมเปิดรับงาน",
         source: "2. โครงการ PM งานออกแบบ",
         badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-200"
       },
@@ -1101,19 +956,37 @@ export default function InnovationDesignCenterReport({
     const weaknesses = [
       {
         id: "W1",
-        title: "อัตราการตอบกลับแบบประเมินผลยังไม่ครอบคลุม 100%",
-        desc: `ส่งแบบประเมิน ${kpiMetrics.sentCount} ราย แต่ตอบกลับ ${kpiMetrics.evaluatedCount} ราย (Response Rate: ${kpiMetrics.surveyResponseRate}%) ผู้ประกอบการบางส่วนเมื่อได้รับมอบไฟล์งานแล้วมักละเลยการประเมินผล`,
-        metric: `ตอบกลับ ${kpiMetrics.surveyResponseRate}% (${kpiMetrics.evaluatedCount}/${kpiMetrics.sentCount})`,
+        title: (kpiMetrics.sentCount > 0 && kpiMetrics.surveyResponseRate >= 100)
+          ? "การขยายมิติการประเมินผลสัมฤทธิ์ระยะยาว (Post-Service Impact Assessment)"
+          : (kpiMetrics.sentCount > 0 && kpiMetrics.surveyResponseRate < 100)
+          ? "อัตราการตอบกลับแบบประเมินผลยังไม่ครอบคลุม 100%"
+          : "การวางระบบติดตามและประเมินผลความพึงพอใจเชิงรุก",
+        desc: (kpiMetrics.sentCount > 0 && kpiMetrics.surveyResponseRate >= 100)
+          ? `แม้ว่าอัตราการตอบกลับแบบประเมินผลบริการจะบรรลุผลสำเร็จ 100% (${kpiMetrics.evaluatedCount}/${kpiMetrics.sentCount} ราย) แต่ยังสามารถต่อยอดสู่การติดตามผลลัพธ์เชิงพาณิชย์ระยะยาวหลังลูกค้านำผลงานไปใช้งานจริงในตลาด (3-6 เดือน)`
+          : (kpiMetrics.sentCount > 0 && kpiMetrics.surveyResponseRate < 100)
+          ? `ส่งแบบประเมิน ${kpiMetrics.sentCount} ราย ตอบกลับแล้ว ${kpiMetrics.evaluatedCount} ราย (คิดเป็น ${kpiMetrics.surveyResponseRate}%) ยังมีผู้รับบริการบางส่วนที่อยู่ระหว่างติดตามการประเมิน`
+          : "เตรียมความพร้อมระบบสำรวจความพึงพอใจผู้รับบริการแบบอัตโนมัติ เพื่อรองรับงานที่จะส่งมอบในรอบถัดไป",
+        metric: (kpiMetrics.sentCount > 0 && kpiMetrics.surveyResponseRate >= 100)
+          ? `ตอบกลับ 100% (${kpiMetrics.evaluatedCount}/${kpiMetrics.sentCount})`
+          : (kpiMetrics.sentCount > 0 && kpiMetrics.surveyResponseRate < 100)
+          ? `ตอบกลับ ${kpiMetrics.surveyResponseRate}% (${kpiMetrics.evaluatedCount}/${kpiMetrics.sentCount})`
+          : "พร้อมเริ่มประเมิน",
         source: "1. ชุดข้อมูล 5 KPI",
-        badgeColor: "bg-rose-50 text-rose-700 border-rose-200"
+        badgeColor: (kpiMetrics.sentCount > 0 && kpiMetrics.surveyResponseRate >= 100)
+          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+          : "bg-rose-50 text-rose-700 border-rose-200"
       },
       {
         id: "W2",
-        title: "สัดส่วนโครงการที่อยู่ระหว่างดำเนินการสะสม (Work-In-Progress)",
-        desc: `มีโครงการ PM ที่อยู่ระหว่างดำเนินการ ${pmInProgress} โครงการ (${pmProjects > 0 ? Math.round((pmInProgress / pmProjects) * 100) : 0}% ของงานทั้งหมด) สะท้อนระยะเวลาหมุนเวียนงานที่อาจเกิดคอขวดระหว่างทาง`,
-        metric: `ค้างทำ ${pmInProgress} โครงการ`,
+        title: pmInProgress > 0
+          ? "สัดส่วนโครงการที่อยู่ระหว่างดำเนินการสะสม (Work-In-Progress)"
+          : "โอกาสเพิ่มปริมาณโครงการ PM เชิงพาณิชย์ใน Pipeline",
+        desc: pmInProgress > 0
+          ? `มีโครงการ PM ที่อยู่ระหว่างดำเนินการ ${pmInProgress} โครงการ (${pmProjects > 0 ? Math.round((pmInProgress / pmProjects) * 100) : 0}% ของงานทั้งหมด) สะท้อนระยะเวลาหมุนเวียนงานที่ต้องติดตามเพื่อไม่ให้เกิดคอขวด`
+          : "ปัจจุบันไม่มีโครงการ PM ค้างท่อ (WIP = 0 โครงการ) สะท้อนความคล่องตัวในการบริหารจัดการ แต่ยังเปิดโอกาสให้ทีมขยายการรับงานออกแบบภายนอกเพื่อเพิ่ม Utilization rate ของทีม",
+        metric: pmInProgress > 0 ? `ค้างทำ ${pmInProgress} โครงการ` : "ไม่มีงานค้าง (WIP = 0)",
         source: "2. โครงการ PM งานออกแบบ",
-        badgeColor: "bg-rose-50 text-rose-700 border-rose-200"
+        badgeColor: pmInProgress > 0 ? "bg-rose-50 text-rose-700 border-rose-200" : "bg-blue-50 text-blue-700 border-blue-200"
       },
       {
         id: "W3",
@@ -1145,9 +1018,13 @@ export default function InnovationDesignCenterReport({
       },
       {
         id: "O2",
-        title: "โอกาสเชื่อมโยงงบสนับสนุนและนวัตกรรม Voucher ภาครัฐ",
-        desc: `การบูรณาการกับทุน TED Fund, บพข., กสพ. และอุทยานฯ ช่วยปลดล็อกงบว่าจ้างของ SME ปัจจุบันมีรายรับจากโครงการภาครัฐ ฿${pmFinancialSummary.govRevenue.toLocaleString()} (${pmFinancialSummary.govCount} งาน)`,
-        metric: `งบรัฐ ฿${pmFinancialSummary.govRevenue.toLocaleString()}`,
+        title: pmFinancialSummary.govRevenue > 0
+          ? "โอกาสเชื่อมโยงงบสนับสนุนและนวัตกรรม Voucher ภาครัฐ"
+          : "โอกาสเชื่อมโยงงบสนับสนุนนวัตกรรมและ Voucher ภาครัฐ",
+        desc: pmFinancialSummary.govRevenue > 0
+          ? `การบูรณาการกับทุน TED Fund, บพข., กสพ. และอุทยานฯ ช่วยปลดล็อกงบว่าจ้างของ SME ปัจจุบันมีรายรับจากโครงการภาครัฐ ฿${pmFinancialSummary.govRevenue.toLocaleString()} (${pmFinancialSummary.govCount} งาน)`
+          : "การบูรณาการกับทุน TED Fund, บพข., กสพ. และ Innovation Coupon ช่วยให้ SME เข้าถึงบริการออกแบบนวัตกรรมได้โดยลดภาระค่าใช้จ่าย เปิดโอกาสสร้างรายรับโครงการจากภาครัฐในระยะถัดไป",
+        metric: pmFinancialSummary.govRevenue > 0 ? `งบรัฐ ฿${pmFinancialSummary.govRevenue.toLocaleString()}` : "โครงการทุนนวัตกรรมภาครัฐ",
         source: "2. โครงการ PM งานออกแบบ",
         badgeColor: "bg-purple-50 text-purple-700 border-purple-200"
       },
@@ -1181,9 +1058,13 @@ export default function InnovationDesignCenterReport({
       },
       {
         id: "T2",
-        title: "ความเสี่ยงการแบกรับต้นทุนและการแก้งานซ้ำซ้อน (Scope Creep)",
-        desc: `ต้นทุนรวมโครงการ PM ปัจจุบันอยู่ที่ ฿${pmCost.toLocaleString()} หากลูกค้าไม่มี Design Brief ที่ชัดเจน การแก้ไขแบบซ้ำซ้อนจะกระทบอัตรากำไรโดยตรง`,
-        metric: `ต้นทุนรวม ฿${pmCost.toLocaleString()}`,
+        title: pmCost > 0
+          ? "ความเสี่ยงการแบกรับต้นทุนและการแก้งานซ้ำซ้อน (Scope Creep)"
+          : "ความเสี่ยงการเกิด Scope Creep และการปรับแก้งานเกินขอบเขต",
+        desc: pmCost > 0
+          ? `ต้นทุนรวมโครงการ PM ปัจจุบันอยู่ที่ ฿${pmCost.toLocaleString()} หากลูกค้าไม่มี Design Brief ที่ชัดเจน การแก้ไขแบบซ้ำซ้อนจะกระทบอัตรากำไรโดยตรง`
+          : "งานออกแบบพัฒนาผลิตภัณฑ์และบรรจุภัณฑ์มีความละเอียดอ่อน หากลูกค้าไม่มี Design Brief และเป้าหมายที่ชัดเจน อาจเกิดการปรับแก้งานหลายรอบซึ่งจะกระทบต่อต้นทุนเวลาและชั่วโมงการทำงานของดีไซเนอร์",
+        metric: pmCost > 0 ? `ต้นทุนรวม ฿${pmCost.toLocaleString()}` : "มาตรการคุม Scope งาน",
         source: "2. โครงการ PM งานออกแบบ",
         badgeColor: "bg-amber-50 text-amber-700 border-amber-200"
       },
@@ -1220,14 +1101,16 @@ export default function InnovationDesignCenterReport({
             title: `แพ็กเกจพรีเมียม "Total Brand & Packaging Solution" เจาะกลุ่ม ${topClusterName}`,
             detail: `นำผลงานจริงพร้อมคะแนนความพึงพอใจระดับสูง (${kpiMetrics.avgScore}/5.0) และตัวเลขผลกระทบทางเศรษฐกิจ 7.5 เท่า (IMPACT ฿${kpiMetrics.kpiImpact.toLocaleString()}) เป็นข้อเสนอเชิงประจักษ์ในการปิดดีลกลุ่มผู้ประกอบการแปรรูปอาหารและเกษตรนวัตกรรม`,
             impactKpi: "หนุน (30) รายได้ & (34) ความพึงพอใจ",
-            target: `ผลักดันรายได้รวมทะลุเป้าหมาย ฿${(totalCombinedRevenue * 1.25).toLocaleString()}`
+            target: `ผลักดันรายได้รวมทะลุเป้าหมาย ฿${(totalCombinedRevenue > 0 ? totalCombinedRevenue * 1.25 : 200000).toLocaleString()}`
           },
           {
             code: "SO-2",
             title: "ขยายโครงการ PM ร่วมทุนภาครัฐ-เอกชน (Co-Funding Project Scaling)",
-            detail: `ใช้จุดแข็งด้าน Margin ที่แข็งแกร่ง (${pmFinancialSummary.profitMarginPercent}%) ขยายความร่วมมือกับกองทุน TED Fund และ NIA เพื่อเพิ่มมูลค่าโครงการ PM จากเฉลี่ย ฿${pmFinancialSummary.avgRevenuePerProject.toLocaleString()} สู่โครงการนวัตกรรมขนาดใหญ่`,
+            detail: pmRev > 0 && pmProfit > 0
+              ? `ใช้จุดแข็งด้าน Margin ที่แข็งแกร่ง (${pmFinancialSummary.profitMarginPercent}%) ขยายความร่วมมือกับกองทุน TED Fund และ NIA เพื่อเพิ่มมูลค่าโครงการ PM จากเฉลี่ย ฿${pmFinancialSummary.avgRevenuePerProject.toLocaleString()} สู่โครงการนวัตกรรมขนาดใหญ่`
+              : "เตรียมความพร้อมผลักดันโครงการ PM ร่วมทุนภาครัฐ-เอกชน ร่วมกับกองทุน TED Fund และ NIA เพื่อสร้างฐานรายรับโครงการออกแบบนวัตกรรมขนาดใหญ่",
             impactKpi: "ขยาย PM Revenue & Net Profit",
-            target: `รักษา Margin ไม่ต่ำกว่า 60% ในทุกโครงการ`
+            target: pmRev > 0 ? "รักษา Margin ไม่ต่ำกว่า 60% ในทุกโครงการ" : "เปิดรับโครงการนำร่องเชิงพาณิชย์ 1-2 โครงการ"
           }
         ]
       },
@@ -1241,10 +1124,14 @@ export default function InnovationDesignCenterReport({
         tactics: [
           {
             code: "WO-1",
-            title: "ระบบ One-Click LINE Survey Link ผูกการดาวน์โหลดไฟล์ผลงานจริง",
-            detail: `แก้ปัญหาอัตราตอบแบบประเมินความพึงพอใจ (${kpiMetrics.surveyResponseRate}% ตอบ ${kpiMetrics.evaluatedCount} จาก ${kpiMetrics.sentCount} ราย) โดยผูกลิงก์ดาวน์โหลด Final Print-ready Assets เข้ากับการตอบแบบสอบถามสั้น 3 ข้อ เพิ่ม Response Rate สู่ 95%+`,
-            impactKpi: "ปิด Gap KPI 34 ความพึงพอใจ",
-            target: "อัตราตอบแบบประเมินมากกว่า 95%"
+            title: (kpiMetrics.sentCount > 0 && kpiMetrics.surveyResponseRate >= 100)
+              ? "ต่อยอดระบบ Post-Service Follow-up วัดผลยอดขายจริงในตลาด 3-6 เดือน"
+              : "ระบบ One-Click LINE Survey Link ผูกการดาวน์โหลดไฟล์ผลงานจริง",
+            detail: (kpiMetrics.sentCount > 0 && kpiMetrics.surveyResponseRate >= 100)
+              ? `รักษามาตรฐานอัตราตอบกลับ 100% (${kpiMetrics.evaluatedCount}/${kpiMetrics.sentCount} ราย) พร้อมขยายแบบสอบถามติดตามผลกระทบเชิงพาณิชย์ (Commercial Impact) หลังลูกค้านำบรรจุภัณฑ์หรือผลงานไปทำตลาดจริง`
+              : `แก้ปัญหาอัตราตอบแบบประเมินความพึงพอใจ (${kpiMetrics.surveyResponseRate}% ตอบ ${kpiMetrics.evaluatedCount} จาก ${kpiMetrics.sentCount} ราย) โดยผูกลิงก์ดาวน์โหลด Final Print-ready Assets เข้ากับการตอบแบบสอบถามสั้น 3 ข้อ เพิ่ม Response Rate สู่ 95%+`,
+            impactKpi: "ขยายผลสัมฤทธิ์ KPI 34 ความพึงพอใจ",
+            target: (kpiMetrics.sentCount > 0 && kpiMetrics.surveyResponseRate >= 100) ? "ติดตามผลประกอบการผู้รับบริการครบ 100%" : "อัตราตอบแบบประเมินมากกว่า 95%"
           },
           {
             code: "WO-2",
@@ -1273,7 +1160,9 @@ export default function InnovationDesignCenterReport({
           {
             code: "ST-2",
             title: "โครงสร้างราคาแบบ Modular Tiering รองรับ SME ทุกระดับงบประมาณ",
-            detail: `นำโครงสร้างกำไรที่แข็งแรง (${pmFinancialSummary.profitMarginPercent}%) มาจัดแพ็กเกจแบ่งระดับ (Starter / Growth / Enterprise) เพื่อให้ Micro-SME เข้าถึงได้ตามงบประมาณ โดยรักษามาตรฐานงานและไม่เกิดการตัดราคา`,
+            detail: pmMargin > 0
+              ? `นำโครงสร้างกำไรที่แข็งแรง (${pmFinancialSummary.profitMarginPercent}%) มาจัดแพ็กเกจแบ่งระดับ (Starter / Growth / Enterprise) เพื่อให้ Micro-SME เข้าถึงได้ตามงบประมาณ โดยรักษามาตรฐานงานและไม่เกิดการตัดราคา`
+              : "จัดทำโครงสร้างราคาแบบ Modular Tiering (Starter / Growth / Enterprise) เพื่อให้ Micro-SME เข้าถึงได้ตามงบประมาณ โดยรักษามาตรฐานงานและคุมต้นทุนการผลิต",
             impactKpi: "หนุน (29) จำนวนผู้รับบริการ & ป้องกัน Margin",
             target: "ขยายฐานลูกค้าเอกชนไม่ต่ำกว่า 15-20 ราย/รอบ"
           }
@@ -1290,9 +1179,11 @@ export default function InnovationDesignCenterReport({
           {
             code: "WT-1",
             title: "ระบบ Standardized Design Intake & นโยบายจำกัดรอบแก้ไขแบบ (Revision Lock)",
-            detail: `คุมต้นทุนรวมของโครงการ PM (ปัจจุบัน ฿${pmCost.toLocaleString()}) โดยกำหนดให้ผู้ประกอบการส่งเอกสารบังคับ (สเปกผลิตภัณฑ์, เลข อย., โลโก้เดิม) ก่อนเริ่มงาน และทำข้อตกลงตรวจแก้แบบร่างไม่เกิน 3 ครั้ง เพื่อเคลียร์งานค้าง In Progress (${pmInProgress} โครงการ)`,
+            detail: pmInProgress > 0
+              ? `คุมต้นทุนรวมของโครงการ PM (ปัจจุบัน ฿${pmCost.toLocaleString()}) โดยกำหนดให้ผู้ประกอบการส่งเอกสารบังคับ (สเปกผลิตภัณฑ์, เลข อย., โลโก้เดิม) ก่อนเริ่มงาน และทำข้อตกลงตรวจแก้แบบร่างไม่เกิน 3 ครั้ง เพื่อเคลียร์งานค้าง In Progress (${pmInProgress} โครงการ)`
+              : "วางระบบ Standardized Design Intake & นโยบาย Revision Lock ไม่เกิน 3 ครั้ง เพื่อป้องกันการเกิดคอขวดและควบคุมต้นทุนการดำเนินงานให้เป็นไปตามแผน 100%",
             impactKpi: "ลดต้นทุนโครงการ & เร่งปิดสถานะงาน",
-            target: `ลดงานค้าง In Progress ลง 50% ภายใน 30 วัน`
+            target: pmInProgress > 0 ? "ลดงานค้าง In Progress ลง 50% ภายใน 30 วัน" : "รักษาอัตรางานค้างคอขวดเป็น 0 โครงการ"
           },
           {
             code: "WT-2",
@@ -2378,8 +2269,20 @@ export default function InnovationDesignCenterReport({
                 <tbody className="divide-y divide-slate-100">
                   {filteredRecords.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className="py-12 text-center text-slate-400">
-                        ไม่พบข้อมูลคำขอตามเงื่อนไขการค้นหา
+                      <td colSpan={10} className="py-16 text-center text-slate-400">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <Package size={32} className="text-slate-300" />
+                          <p className="text-sm font-semibold text-slate-600">
+                            {records.length === 0 
+                              ? "ยังไม่มีข้อมูลการให้บริการของศูนย์ออกแบบและพัฒนานวัตกรรม (IDC) ในระบบ" 
+                              : "ไม่พบข้อมูลคำขอตามเงื่อนไขการค้นหา"}
+                          </p>
+                          <p className="text-xs text-slate-400">
+                            {records.length === 0 
+                              ? "เมื่อมีผู้ประกอบการกรอกแบบฟอร์ม หรือมีการบันทึกงานของศูนย์ IDC ข้อมูลจริงจะแสดงที่นี่โดยอัตโนมัติ" 
+                              : "ลองปรับตัวกรองหรือคำค้นหาใหม่อีกครั้ง"}
+                          </p>
+                        </div>
                       </td>
                     </tr>
                   ) : (
@@ -2985,8 +2888,22 @@ export default function InnovationDesignCenterReport({
             </div>
           </div>
 
-          {/* Executive Overview Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {dateFilteredRecords.length === 0 ? (
+            <div className="bg-white rounded-3xl p-12 sm:p-16 border border-slate-200 text-center space-y-4 shadow-2xs">
+              <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto shadow-2xs">
+                <BarChart3 size={32} />
+              </div>
+              <div className="max-w-md mx-auto space-y-2">
+                <h3 className="text-lg font-bold text-slate-900">ยังไม่มีข้อมูลสถิติและการวิเคราะห์เชิงกลยุทธ์</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  เนื่องจากในระบบปัจจุบันยังไม่มีข้อมูลการให้บริการจริงจากศูนย์ออกแบบและพัฒนานวัตกรรม (IDC) จึงไม่มีข้อมูลสำหรับประมวลผลสัดส่วนบริการ กลุ่มอุตสาหกรรม หรือสังเคราะห์ SWOT &amp; TOWS Matrix เชิงกลยุทธ์
+                </p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Executive Overview Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
             {/* 1. อัตราการสำเร็จของโครงการ */}
             <div className="bg-slate-900 text-white p-3.5 sm:p-4 rounded-2xl shadow-2xs flex flex-col justify-between h-[124px]">
               <span className="text-[11px] font-bold text-orange-400 uppercase tracking-wider flex items-center gap-1.5 truncate">
@@ -3668,7 +3585,7 @@ export default function InnovationDesignCenterReport({
                 <li className="flex items-start gap-2">
                   <span className="text-emerald-600 font-bold">1.</span>
                   <span>
-                    <strong>กำหนด SLA &amp; กรอบ Revision:</strong> บังคับใช้เงื่อนไขตรวจรับงานและจำกัดรอบแก้ไขแบบร่างไม่เกิน 3 ครั้ง พร้อมเซ็นรับทราบในขั้นตอน Kickoff
+                    <strong>กำหนดกรอบเวลาส่งมอบ &amp; รอบ Revision:</strong> บังคับใช้เงื่อนไขตรวจรับงานและจำกัดรอบแก้ไขแบบร่างไม่เกิน 3 ครั้ง พร้อมเซ็นรับทราบในขั้นตอน Kickoff
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
@@ -3686,6 +3603,8 @@ export default function InnovationDesignCenterReport({
               </ul>
             </div>
           </div>
+            </>
+          )}
         </div>
       )}
 

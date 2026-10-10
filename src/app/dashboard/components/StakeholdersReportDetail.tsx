@@ -53,6 +53,12 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { format, parseISO, isValid } from "date-fns";
 import { resolveTaskCode } from "@/utils/taskCodeService";
+import {
+  isInternalTask,
+  isIdcOrEntrepreneurTask,
+  isRspTask,
+  isInternalTaskRequiringEvaluation
+} from "@/utils/pricing";
 
 export type StockTimeframe = "1D" | "1W" | "1M" | "3M" | "6M" | "1Y" | "YTD" | "ALL" | "CUSTOM";
 
@@ -109,9 +115,9 @@ export const HOLISTIC_NEEDS_EXPECTATIONS: HolisticPillar[] = [
   {
     id: "HN-02",
     type: "need",
-    title: "2. ความตรงต่อเวลาและการส่งมอบตามกำหนด (SLA Punctuality)",
+    title: "2. ความตรงต่อเวลาและการส่งมอบตามกำหนด (Timeliness & Delivery)",
     subtitle: "สิ่งที่จำเป็นต้องมี: ทันรอบการประชาสัมพันธ์และวันจัดงาน",
-    description: "ส่งมอบงานดราฟต์แรกและงานไฟนอลตรงตามเวลาที่ตกลงกันไว้ (SLA) มีระยะเวลาเผื่อตรวจทาน (Buffer) ก่อนถึงวันเปิดตัวหรือวันจัดงานจริง",
+    description: "ส่งมอบงานดราฟต์แรกและงานไฟนอลตรงตามเวลาที่ตกลงกันไว้ มีระยะเวลาเผื่อตรวจทาน (Buffer) ก่อนถึงวันเปิดตัวหรือวันจัดงานจริง",
     keyDrivers: [
       "กำหนดการจัดอีเวนต์ / งานแถลงข่าว / วันเปิดรับสมัคร",
       "รอบการปล่อยข่าวสารสู่สื่อมวลชนและโซเชียลมีเดีย",
@@ -123,7 +129,7 @@ export const HOLISTIC_NEEDS_EXPECTATIONS: HolisticPillar[] = [
       "ไฟล์ Final พร้อมใช้งานล่วงหน้า 24-48 ชั่วโมง"
     ],
     impactLevel: "Critical",
-    kpiMeasure: "อัตราการส่งมอบงานตรงตามกำหนด SLA ≥ 95%"
+    kpiMeasure: "อัตราการส่งมอบงานตรงตามกำหนดเวลา ≥ 95%"
   },
   {
     id: "HN-03",
@@ -347,7 +353,7 @@ export const SEGMENTED_STAKEHOLDERS_ANALYSIS: DetailedStakeholderSegment[] = [
         urgency: "เร่งด่วนที่สุด"
       },
       {
-        title: "การส่งมอบงานตรงตามกำหนด SLA",
+        title: "การส่งมอบงานตรงตามกำหนดเวลา",
         description: "งานต้องเสร็จทันเวลาก่อนเริ่มแคมเปญโปรโมตล่วงหน้าอย่างน้อย 5-7 วัน เพื่อให้มียอดผู้สมัครเข้าร่วมตามเป้า",
         urgency: "เร่งด่วนที่สุด"
       },
@@ -673,7 +679,7 @@ export const CONCRETE_PRODUCTS_SERVICES_DEMAND: ConcreteProductServiceCategory[]
     englishTitle: "Self-Service Platform & Fast-Track Templates",
     demandPercentage: 0,
     demandTrend: "rapid",
-    demandLabel: "ระบบหนุนเสริมความพึงพอใจสูงสุด (SLA -50%)",
+    demandLabel: "ระบบหนุนเสริมความพึงพอใจสูงสุด (ประหยัดเวลา -50%)",
     primaryStakeholders: ["บุคลากรทุกฝ่ายใน STeP", "ผู้ประสานงานโครงการ (PM)"],
     deliverables: [
       {
@@ -814,6 +820,9 @@ export default function StakeholdersReportDetail() {
   const [feedbackResponses, setFeedbackResponses] = useState<StakeholderFeedbackResponse[]>([]);
   const [feedbackFilter, setFeedbackFilter] = useState<string>("all");
 
+  // Filter: ซ่อนงาน internal ทั่วไปที่ไม่ต้องประเมินออกจากลิสต์ (แสดงเฉพาะงานภายนอก และ internal กรณีพิเศษ)
+  const [showAllInternalTasks, setShowAllInternalTasks] = useState(false);
+
   // Timeframe and Date Range Filter states (Matching ISO Report Standard)
   const [timeframe, setTimeframe] = useState<StockTimeframe>("ALL");
   const [filterStartDate, setFilterStartDate] = useState<string>("");
@@ -918,39 +927,67 @@ export default function StakeholdersReportDetail() {
     if (typeof window === "undefined") return;
     try {
       const raw = localStorage.getItem("cc_stakeholder_survey_responses_v1");
-      let list: StakeholderFeedbackResponse[] = raw ? JSON.parse(raw) : [];
+      let localList: StakeholderFeedbackResponse[] = raw ? JSON.parse(raw) : [];
+      localList = localList.filter(item => Boolean(item && item.scores && item.averagePercent));
 
-      // Also merge with briefs that have satisfaction_scores stored in Supabase
+      // Build primary responses from Supabase briefs (authoritative source)
+      const list: StakeholderFeedbackResponse[] = [];
       if (briefs && briefs.length > 0) {
         briefs.forEach(b => {
           const sat = b.details?.satisfaction_scores;
-          if (sat && (sat.needs || sat.expectations || sat.suggestions || sat.comment)) {
-            const exists = list.some(item => item.briefId === b.id || item.briefId === b.details?.task_code);
-            if (!exists) {
-              list.push({
-                briefId: b.details?.task_code || b.id.slice(0, 8),
-                projectName: b.project_name || "ชิ้นงานสร้างสรรค์",
-                gender: sat.gender || "ไม่ต้องการระบุ",
-                stakeholderRole: sat.stakeholderRole || sat.stakeholder_role || "ผู้รับบริการ",
-                needs: sat.needs || "-",
-                expectations: sat.expectations || "-",
-                suggestions: sat.suggestions || sat.comment || "-",
-                scores: {
-                  accuracy: sat.accuracy || 5,
-                  timeliness: sat.timeliness || 5,
-                  quality: sat.quality || 5,
-                  attentiveness: sat.attentiveness || 5,
-                  ownership: sat.ownership || 5,
-                },
-                averagePercent: sat.average ? Math.round((sat.average / 5) * 100) : 100,
-                submittedAt: sat.evaluated_at || b.completed_at?.slice(0, 10) || "ล่าสุด"
-              });
-            }
+          const rate = b.details?.satisfaction_rate;
+          const hasScores = sat && (sat.accuracy || sat.quality || typeof sat.averagePercent === "number");
+          const hasRate = typeof rate === "number" && (rate > 0 || b.details?.survey_status === "completed");
+
+          if (hasScores || hasRate) {
+            const taskCode = getTaskCode(b);
+            const totalScores = (sat?.accuracy || 5) + (sat?.timeliness || 5) + (sat?.quality || 5) + (sat?.attentiveness || 5) + (sat?.ownership || 5);
+            const avgPct = typeof sat?.averagePercent === "number"
+              ? sat.averagePercent
+              : hasRate
+              ? Number(rate)
+              : (sat?.average ? Math.round((sat.average / 5) * 100) : Math.round((totalScores / 25) * 100));
+
+            const acc = typeof sat?.accuracy === "number" ? sat.accuracy : Math.round((avgPct / 100) * 5 * 10) / 10;
+            const time = typeof sat?.timeliness === "number" ? sat.timeliness : acc;
+            const qual = typeof sat?.quality === "number" ? sat.quality : acc;
+            const att = typeof sat?.attentiveness === "number" ? sat.attentiveness : acc;
+            const own = typeof sat?.ownership === "number" ? sat.ownership : acc;
+
+            list.push({
+              briefId: taskCode || b.id.slice(0, 8),
+              projectName: b.project_name || "ชิ้นงานสร้างสรรค์",
+              gender: sat?.gender || b.details?.gender || "ไม่ต้องการระบุ",
+              stakeholderRole: sat?.stakeholderRole || sat?.stakeholder_role || b.details?.stakeholder_role || "ผู้รับบริการ",
+              needs: sat?.needs || b.details?.needs || "-",
+              expectations: sat?.expectations || b.details?.expectations || "-",
+              suggestions: sat?.suggestions || sat?.comment || b.details?.suggestions || b.details?.satisfaction_feedback || "-",
+              scores: {
+                accuracy: acc,
+                timeliness: time,
+                quality: qual,
+                attentiveness: att,
+                ownership: own,
+              },
+              averagePercent: avgPct,
+              submittedAt: sat?.evaluated_at || sat?.evaluatedAt || b.details?.satisfaction_evaluated_at || b.completed_at?.slice(0, 10) || "ล่าสุด"
+            });
           }
         });
       }
 
-      // No fallback to demo responses
+      // Add local responses ONLY if they do not conflict with known briefs in Supabase
+      localList.forEach(localItem => {
+        const alreadyInList = list.some(item => item.briefId === localItem.briefId || (item.projectName && localItem.projectName && item.projectName === localItem.projectName));
+        if (!alreadyInList) {
+          // If this item corresponds to an existing brief in Supabase that is not yet completed/evaluated, skip stale local
+          const matchingBrief = briefs?.find(b => getTaskCode(b) === localItem.briefId || b.id === localItem.briefId || b.project_name === localItem.projectName);
+          if (!matchingBrief || matchingBrief.details?.survey_status === "completed") {
+            list.push(localItem);
+          }
+        }
+      });
+
       setFeedbackResponses(list);
     } catch (e) {
       console.error("Failed to load feedback responses:", e);
@@ -983,38 +1020,18 @@ export default function StakeholdersReportDetail() {
       const saved = localStorage.getItem("cc_stakeholder_dispatch_log_v1");
       if (saved) {
         try {
-          setDispatchRecords(JSON.parse(saved));
+          const parsed = JSON.parse(saved);
+          const clean = Array.isArray(parsed) 
+            ? parsed.filter((r: any) => r.briefId !== "DS70-1" && r.briefId !== "CT70-2" && !String(r.briefId || "").startsWith("DS70-") && !String(r.briefId || "").startsWith("CT70-"))
+            : [];
+          setDispatchRecords(clean);
+          localStorage.setItem("cc_stakeholder_dispatch_log_v1", JSON.stringify(clean));
         } catch (e) {
           console.error(e);
+          setDispatchRecords([]);
         }
       } else {
-        // Mock initial dispatches
-        const initial: DispatchRecord[] = [
-          {
-            briefId: "DS70-1",
-            projectName: "Key Visual & สื่อประชาสัมพันธ์ NSP Innovation Day 2026",
-            requesterEmail: "somchai.p@step.cmu.ac.th",
-            stakeholderGroup: "ผู้บริหารระดับสูงและผู้อำนวยการอุทยานฯ",
-            dispatchedAt: "2026-09-18 14:30",
-            dispatchedBy: "จ๊อบ AA",
-            method: "email",
-            status: "responded",
-            score: 5.0
-          },
-          {
-            briefId: "CT70-2",
-            projectName: "Packaging ฉลากกาแฟดริปอินทรีย์แม่วาง",
-            requesterEmail: "kullaphat.b@startup.cmu.ac.th",
-            stakeholderGroup: "ผู้ประกอบการ สตาร์ทอัพ และนักวิจัยนวัตกรรม",
-            dispatchedAt: "2026-09-17 11:15",
-            dispatchedBy: "วา WK",
-            method: "link",
-            status: "responded",
-            score: 4.8
-          }
-        ];
-        setDispatchRecords(initial);
-        localStorage.setItem("cc_stakeholder_dispatch_log_v1", JSON.stringify(initial));
+        setDispatchRecords([]);
       }
     }
   }, []);
@@ -1062,90 +1079,64 @@ export default function StakeholdersReportDetail() {
 
     const taskCode = getTaskCode(brief);
     
-    // 1. Check in feedbackResponses (from localStorage or submitted API)
-    const existing = feedbackResponses.find(
-      r => r.briefId === taskCode || r.briefId === brief.id || r.projectName === brief.project_name
-    );
-    if (existing && existing.needs && existing.needs !== "-") {
-      return existing;
-    }
-
-    // 2. Check if brief.details?.satisfaction_scores has data
+    // 1. Check if brief.details in Supabase has real evaluation data (Single Source of Truth)
     const sat = brief.details?.satisfaction_scores;
-    if (sat && (sat.needs || sat.expectations || sat.suggestions || sat.comment)) {
+    const hasScores = Boolean(sat && (sat.accuracy || sat.quality || typeof sat.averagePercent === "number"));
+    const hasRate = typeof brief.details?.satisfaction_rate === "number" && (brief.details.satisfaction_rate > 0 || brief.details.survey_status === "completed");
+
+    if (hasScores || hasRate) {
+      const avgPct = typeof sat?.averagePercent === "number"
+        ? sat.averagePercent
+        : hasRate
+        ? Number(brief.details.satisfaction_rate)
+        : sat?.average
+        ? Math.round((sat.average / 5) * 100)
+        : 100;
+
+      const acc = typeof sat?.accuracy === "number" ? sat.accuracy : Math.round((avgPct / 100) * 5 * 10) / 10;
+      const time = typeof sat?.timeliness === "number" ? sat.timeliness : acc;
+      const qual = typeof sat?.quality === "number" ? sat.quality : acc;
+      const att = typeof sat?.attentiveness === "number" ? sat.attentiveness : acc;
+      const own = typeof sat?.ownership === "number" ? sat.ownership : acc;
+
       return {
         briefId: taskCode,
         projectName: brief.project_name || "ชิ้นงานสร้างสรรค์",
-        gender: sat.gender || "ไม่ต้องการระบุ",
-        stakeholderRole: sat.stakeholderRole || sat.stakeholder_role || "ผู้รับบริการ",
-        needs: sat.needs || "-",
-        expectations: sat.expectations || "-",
-        suggestions: sat.suggestions || sat.comment || "-",
+        gender: sat?.gender || brief.details?.gender || "ไม่ต้องการระบุ",
+        stakeholderRole: sat?.stakeholderRole || sat?.stakeholder_role || brief.details?.stakeholder_role || "ผู้รับบริการ",
+        needs: sat?.needs || brief.details?.needs || "-",
+        expectations: sat?.expectations || brief.details?.expectations || "-",
+        suggestions: sat?.suggestions || sat?.comment || brief.details?.suggestions || brief.details?.satisfaction_feedback || "-",
         scores: {
-          accuracy: sat.accuracy || 5,
-          timeliness: sat.timeliness || 5,
-          quality: sat.quality || 5,
-          attentiveness: sat.attentiveness || 5,
-          ownership: sat.ownership || 5,
+          accuracy: acc,
+          timeliness: time,
+          quality: qual,
+          attentiveness: att,
+          ownership: own,
         },
-        averagePercent: sat.average ? Math.round((sat.average / 5) * 100) : 100,
-        submittedAt: sat.evaluated_at || brief.completed_at?.slice(0, 10) || "ล่าสุด"
+        averagePercent: avgPct,
+        submittedAt: sat?.evaluated_at || sat?.evaluatedAt || brief.details?.satisfaction_evaluated_at || brief.completed_at?.slice(0, 10) || "ล่าสุด"
       };
     }
 
-    // 3. Fallback to tailored realistic stakeholder feedback based on unit/project
-    const unit = (brief.unit || "creative").toLowerCase();
-    const name = brief.project_name || "";
-    
-    let defaultNeeds = "ต้องการสื่อประชาสัมพันธ์ที่ถูกต้อง สวยงาม ตรงตามมาตรฐาน CI และส่งมอบตามกำหนดเวลา";
-    let defaultExpectations = "การประสานงานที่รวดเร็ว ไฟล์งานพร้อมใช้งานในทุกแพลตฟอร์ม และมีคำแนะนำเชิงวิชาชีพ";
-    let defaultSuggestions = "ทีมงานให้คำปรึกษาและใส่ใจในรายละเอียดดีมาก ส่งมอบงานตรงเวลา";
-    let defaultRole = "พนักงาน";
-    let defaultGender = "ไม่ต้องการระบุ";
-
-    if (name.includes("IDC") || name.includes("บรรจุภัณฑ์") || name.includes("Packaging")) {
-      defaultRole = "ภาคเอกชน / ภาคอุตสาหกรรม";
-      defaultGender = "หญิง";
-      defaultNeeds = "ต้องการคำปรึกษาเชิงลึกด้านการออกแบบโครงสร้างบรรจุภัณฑ์และการเลือกใช้วัสดุที่เหมาะสมกับผลิตภัณฑ์";
-      defaultExpectations = "คำแนะนำเรื่องมาตรฐานฉลากสินค้า ข้อกำหนด อย. และ Mockup 3D จำลองผลิตภัณฑ์จริง";
-      defaultSuggestions = "ผู้เชี่ยวชาญให้คำแนะนำอย่างเป็นมืออาชีพ ช่วยเพิ่มมูลค่าสินค้าได้อย่างชัดเจน";
-    } else if (name.includes("Key Visual") || name.includes("Summit") || name.includes("Flagship") || name.includes("ผู้บริหาร")) {
-      defaultRole = "ผู้บริหาร";
-      defaultGender = "ชาย";
-      defaultNeeds = "ต้องการ Key Visual หลักและแบนเนอร์ประชาสัมพันธ์ระดับ Flagship ที่สื่อวิสัยทัศน์องค์กรสู่สากล";
-      defaultExpectations = "ดีไซน์ทันสมัย มีความคิดสร้างสรรค์ระดับประเทศ สามารถนำไป Adapt สื่อทุกประเภทได้ง่าย";
-      defaultSuggestions = "ผลงานสวยงามตรงใจมาก และจัดส่งได้ก่อนกำหนดเวลา SLA";
-    } else if (name.includes("คอนเทนต์") || name.includes("บทความ") || unit === "content") {
-      defaultRole = "มหาวิทยาลัยเชียงใหม่";
-      defaultGender = "หญิง";
-      defaultNeeds = "เนื้อหาบทความวิชาการที่ย่อยให้อ่านง่ายสำหรับประชาชนทั่วไป พร้อมภาพประกอบที่น่าสนใจ";
-      defaultExpectations = "การเล่าเรื่องที่ทันสมัย สื่อสารเนื้อหานวัตกรรมที่ซับซ้อนให้เข้าใจง่ายและถูกต้องตามหลักวิทย์";
-      defaultSuggestions = "ทีมคอนเทนต์เข้าใจแก่นของงานวิจัยเป็นอย่างดี เขียนได้น่าติดตามมาก";
-    } else if (unit === "pr" || name.includes("สื่อสาร") || name.includes("ประชาสัมพันธ์")) {
-      defaultRole = "ผู้เข้าร่วมโครงการ / อบรม";
-      defaultGender = "ชาย";
-      defaultNeeds = "ข้อมูลประชาสัมพันธ์กิจกรรมที่ครบถ้วน กำหนดการชัดเจน และช่องทางลงทะเบียนที่สะดวก";
-      defaultExpectations = "สื่อประชาสัมพันธ์หลายรูปแบบ ทั้งโปสเตอร์ อินโฟกราฟิก และข้อความสำหรับแชร์ลง LINE/Facebook";
-      defaultSuggestions = "ประชาสัมพันธ์ได้รวดเร็วและเข้าถึงกลุ่มเป้าหมายได้ดีมากครับ";
+    // 2. Secondary check in feedbackResponses (only if valid scores exist and matches)
+    const existing = feedbackResponses.find(
+      r => (r.briefId === taskCode || r.briefId === brief.id || (r.projectName && brief.project_name && r.projectName === brief.project_name)) && r.scores && r.averagePercent
+    );
+    if (existing && existing.scores && existing.averagePercent) {
+      return existing;
     }
 
+    // 3. Strictly truthful unevaluated empty state
     return {
       briefId: taskCode,
       projectName: brief.project_name || "ชิ้นงานสร้างสรรค์",
-      gender: defaultGender,
-      stakeholderRole: defaultRole,
-      needs: defaultNeeds,
-      expectations: defaultExpectations,
-      suggestions: defaultSuggestions,
-      scores: {
-        accuracy: 5,
-        timeliness: 5,
-        quality: 5,
-        attentiveness: 5,
-        ownership: 5
-      },
-      averagePercent: 100,
-      submittedAt: brief.completed_at ? brief.completed_at.slice(0, 10) : "ล่าสุด"
+      gender: "-",
+      stakeholderRole: "ผู้ขอรับบริการ",
+      needs: "-",
+      expectations: "-",
+      suggestions: "-",
+      submittedAt: "-"
     };
   };
 
@@ -1164,9 +1155,51 @@ export default function StakeholdersReportDetail() {
 
   const completedBriefs = useMemo(() => {
     return filteredBriefs
-      .filter(b => b.status === "completed" && !b.details?.is_deleted)
+      .filter(b => {
+        if (b.status !== "completed" || b.details?.is_deleted) return false;
+
+        // หากผู้ใช้เลือกดูทั้งหมด (รวม internal ทั่วไป) ให้แสดงทั้งหมด
+        if (showAllInternalTasks) return true;
+
+        const taskCode = getTaskCode(b);
+        const evalDetails = getBriefEvaluationDetails(b);
+        const hasRealEvaluation = Boolean(
+          (evalDetails.scores && evalDetails.averagePercent) ||
+          (b.details?.satisfaction_scores && (b.details.satisfaction_scores.averagePercent || b.details.satisfaction_scores.accuracy)) ||
+          (typeof b.details?.satisfaction_rate === "number" && (b.details.satisfaction_rate > 0 || b.details.survey_status === "completed"))
+        );
+        const hasFeedback = Boolean(
+          hasRealEvaluation ||
+          dispatchRecords.some(d => d.briefId === taskCode || d.briefId === b.id) ||
+          b.details?.survey_status === "sent" ||
+          b.details?.survey_status === "completed"
+        );
+
+        // ตรวจสอบว่าชิ้นงานเป็น Internal หรือไม่
+        const isInternal = isInternalTask(b) || taskCode.toUpperCase().startsWith("IT");
+        if (isInternal) {
+          // ตรวจสอบกรณีพิเศษ: เฉพาะรหัสงาน RSP หรือ IDC เท่านั้นตามข้อตกลง
+          // หากเป็นรหัสงาน IT ทั่วไป (เช่น IT70-10) ตัดออกจากลิสต์เด็ดขาด ไม่ต้องถูกประเมิน
+          const isSpecialCase =
+            !taskCode.toUpperCase().startsWith("IT") && (
+              taskCode.toUpperCase().startsWith("RSP") ||
+              taskCode.toUpperCase().startsWith("IDC") ||
+              Boolean(b.details?.rsp_code) ||
+              Boolean(b.details?.idc_code) ||
+              isRspTask(b) ||
+              isIdcOrEntrepreneurTask(b)
+            );
+
+          // ตัดงาน internal ประเภทที่ไม่ต้องถูกประเมินออกจากลิสต์ แต่อันไหนเป็นกรณีพิเศษ (รหัสงาน RSP / IDC) ยังคงไว้อยู่
+          if (!isSpecialCase) {
+            return false;
+          }
+        }
+
+        return true;
+      })
       .sort((a, b) => new Date(b.completed_at || b.created_at).getTime() - new Date(a.completed_at || a.created_at).getTime());
-  }, [filteredBriefs]);
+  }, [filteredBriefs, feedbackResponses, dispatchRecords, showAllInternalTasks, briefs]);
 
   const filteredCompletedBriefs = useMemo(() => {
     if (!searchQuery.trim()) return completedBriefs;
@@ -1356,7 +1389,7 @@ export default function StakeholdersReportDetail() {
 
     // Section 3: Concrete Products & Services
     lines.push(`"--- ส่วนที่ 3: การวิเคราะห์สินค้าและบริการที่ต้องการอย่างเป็นรูปธรรม (Concrete Products & Services Demand) ---"`);
-    lines.push('"รหัสหมวด","หมวดสินค้าและบริการ","สัดส่วนความต้องการ","กลุ่มผู้ใช้หลัก","ชิ้นงานส่งมอบที่เป็นรูปธรรม","มาตรฐานคุณภาพ","ระยะเวลา SLA","กลยุทธ์ทีม CC"');
+    lines.push('"รหัสหมวด","หมวดสินค้าและบริการ","สัดส่วนความต้องการ","กลุ่มผู้ใช้หลัก","ชิ้นงานส่งมอบที่เป็นรูปธรรม","มาตรฐานคุณภาพ","ระยะเวลาส่งมอบมาตรฐาน","กลยุทธ์ทีม CC"');
     CONCRETE_PRODUCTS_SERVICES_DEMAND.forEach(cat => {
       const delivSummary = cat.deliverables.map(d => `${d.title} (${d.specs})`).join(" | ");
       lines.push(`"${cat.id}","${cat.categoryName} (${cat.englishTitle})","${cat.demandPercentage}% (${cat.demandLabel})","${cat.primaryStakeholders.join(', ')}","${delivSummary.replace(/"/g, '""')}","${cat.qualityStandard.replace(/"/g, '""')}","${cat.slaDays}","${cat.strategicAction.replace(/"/g, '""')}"`);
@@ -1530,16 +1563,24 @@ export default function StakeholdersReportDetail() {
               <span className="text-2xl sm:text-3xl font-black text-blue-600">{completedBriefs.length}</span>
               <span className="text-xs text-blue-600">ชิ้นงานสำเร็จ</span>
             </div>
-            <p className="text-[10.5px] text-blue-700 mt-1">ส่งแบบประเมินอัตโนมัติ 100% ครบทุกชิ้นงาน</p>
+            <p className="text-[10.5px] text-blue-700 mt-1">
+              {completedBriefs.length > 0 ? "พร้อมส่งแบบประเมินผู้มีส่วนได้ส่วนเสีย" : "ยังไม่มีงานที่จบ Task ในช่วงเวลานี้"}
+            </p>
           </div>
 
           <div className="bg-purple-50/70 p-4 rounded-2xl border border-purple-200/80">
             <span className="text-[11px] font-bold text-purple-800 uppercase tracking-wider block">กลยุทธ์พัฒนาบริการ</span>
             <div className="mt-1 flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-black text-purple-600">100%</span>
-              <span className="text-xs font-bold text-purple-700 bg-purple-100/70 px-1.5 py-0.5 rounded">Actionable</span>
+              <span className="text-2xl sm:text-3xl font-black text-purple-600">
+                {filteredResponses.length > 0 ? filteredResponses.length : "0"}
+              </span>
+              <span className="text-xs font-bold text-purple-700 bg-purple-100/70 px-1.5 py-0.5 rounded">
+                {filteredResponses.length > 0 ? "Actionable" : "รอประเมิน"}
+              </span>
             </div>
-            <p className="text-[10.5px] text-purple-700 mt-1">แปลงข้อเสนอแนะสู่แนวทางปฏิบัติจริง</p>
+            <p className="text-[10.5px] text-purple-700 mt-1">
+              {filteredResponses.length > 0 ? "แปลงข้อเสนอแนะสู่แนวทางปฏิบัติจริง" : "รอผู้มีส่วนได้ส่วนเสียส่งข้อเสนอแนะ"}
+            </p>
           </div>
         </div>
 
@@ -1664,6 +1705,33 @@ export default function StakeholdersReportDetail() {
               </div>
             </div>
 
+            {/* Live stakeholder responses check - Truthful Empty State according to ISO 9001:2015 Clause 4.2 */}
+            {feedbackResponses.length === 0 ? (
+              <div className="py-16 px-6 text-center bg-slate-50/70 border border-dashed border-slate-200 rounded-3xl space-y-4 my-2">
+                <div className="w-16 h-16 mx-auto rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-center justify-center text-slate-400">
+                  <Users size={32} className="text-slate-400" />
+                </div>
+                <div className="space-y-1.5 max-w-lg mx-auto">
+                  <h4 className="text-base font-bold text-slate-800">
+                    ยังไม่มีการบันทึกข้อมูลความต้องการและความคาดหวังจากผู้มีส่วนได้ส่วนเสียในระบบ
+                  </h4>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    เนื่องจากในระบบปัจจุบันยังไม่มีผู้มีส่วนได้ส่วนเสียกรอกข้อมูลความต้องการ (Needs), ความคาดหวัง (Expectations) หรือส่งแบบประเมินความพึงพอใจเข้ามา จึงยังไม่มีการบันทึกรายการในส่วนนี้ (วิเคราะห์เฉพาะข้อมูลความจริงในระบบตามมาตรฐาน ISO 9001:2015 ข้อ 4.2 โดยไม่มีการสร้างข้อมูลจำลอง)
+                  </p>
+                </div>
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("feedback")}
+                    className="px-4 py-2 bg-[#E03131] hover:bg-[#c92a2a] text-white text-xs font-bold rounded-xl inline-flex items-center gap-2 shadow-xs transition-all cursor-pointer"
+                  >
+                    <Send size={14} />
+                    <span>ไปยังระบบส่งแบบฟอร์มประเมินหลังจบงาน (Task Completion Dispatcher)</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
             {/* ================================================================= */}
             {/* SUB-VIEW 1: OVERALL / HOLISTIC SYNTHESIS                          */}
             {/* ================================================================= */}
@@ -1688,7 +1756,7 @@ export default function StakeholdersReportDetail() {
                       </span>
                     </div>
                     <p className="text-xs text-slate-700 leading-relaxed">
-                      ผู้มีส่วนได้ส่วนเสียทุกกลุ่มมีความต้องการร่วมกันใน 4 ด้านสำคัญ ได้แก่ <strong>ความถูกต้องสมบูรณ์ของเนื้อหาและอัตลักษณ์ (CI)</strong>, <strong>ความตรงต่อเวลาและการส่งมอบตาม SLA</strong>, <strong>ความสะดวกในการส่งบรีฟและระบบติดตามงาน</strong>, และ <strong>ความคุ้มค่าที่สร้างผลกระทบต่อภารกิจจริง</strong>
+                      ผู้มีส่วนได้ส่วนเสียทุกกลุ่มมีความต้องการร่วมกันใน 4 ด้านสำคัญ ได้แก่ <strong>ความถูกต้องสมบูรณ์ของเนื้อหาและอัตลักษณ์ (CI)</strong>, <strong>ความตรงต่อเวลาและการส่งมอบตามกำหนด</strong>, <strong>ความสะดวกในการส่งบรีฟและระบบติดตามงาน</strong>, และ <strong>ความคุ้มค่าที่สร้างผลกระทบต่อภารกิจจริง</strong>
                     </p>
                   </div>
 
@@ -2051,7 +2119,7 @@ export default function StakeholdersReportDetail() {
                       แคตตาล็อกสินค้าและบริการสร้างสรรค์ที่ผู้มีส่วนได้ส่วนเสียต้องการอย่างเป็นรูปธรรม
                     </h4>
                     <p className="text-xs text-slate-500">
-                      จำแนก 5 หมวดหมู่ผลิตภัณฑ์หลัก พร้อมสเปกชิ้นงาน รูปแบบไฟล์ส่งมอบจริง และระยะเวลาส่งมอบ (SLA)
+                      จำแนก 5 หมวดหมู่ผลิตภัณฑ์หลัก พร้อมสเปกชิ้นงาน รูปแบบไฟล์ส่งมอบจริง และระยะเวลาส่งมอบมาตรฐาน
                     </p>
                   </div>
                   <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full self-start sm:self-auto">
@@ -2085,7 +2153,7 @@ export default function StakeholdersReportDetail() {
                         <div className="flex items-center gap-3 shrink-0">
                           <div className="text-right">
                             <span className="text-xs font-bold text-slate-800 block">{cat.demandLabel}</span>
-                            <span className="text-[10.5px] text-slate-400 font-mono">SLA: {cat.slaDays}</span>
+                            <span className="text-[10.5px] text-slate-400 font-mono">ระยะเวลา: {cat.slaDays}</span>
                           </div>
                           {cat.demandPercentage > 0 && (
                             <div className="w-16 h-2 rounded-full bg-slate-100 overflow-hidden">
@@ -2169,7 +2237,7 @@ export default function StakeholdersReportDetail() {
                         <th className="py-3 px-3.5 min-w-[200px]">ความต้องการที่จำเป็น (Needs)</th>
                         <th className="py-3 px-3.5 min-w-[200px]">ความคาดหวังเชิงคุณค่า (Expectations)</th>
                         <th className="py-3 px-3.5 min-w-[220px]">สินค้าและบริการที่ต้องการ (Concrete Deliverables)</th>
-                        <th className="py-3 px-3.5 whitespace-nowrap text-center">SLA / เป้าหมาย</th>
+                        <th className="py-3 px-3.5 whitespace-nowrap text-center">ระยะเวลา / เป้าหมาย</th>
                         <th className="py-3 px-3.5 min-w-[200px]">กลยุทธ์พัฒนาการบริการทีม CC</th>
                       </tr>
                     </thead>
@@ -2233,6 +2301,8 @@ export default function StakeholdersReportDetail() {
                 </div>
               </div>
             )}
+              </>
+            )}
           </div>
         </div>
       )}
@@ -2254,7 +2324,25 @@ export default function StakeholdersReportDetail() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setShowAllInternalTasks(!showAllInternalTasks)}
+                  className={`text-[11px] font-bold px-3 py-1.5 rounded-full border transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-2xs ${
+                    !showAllInternalTasks
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                      : "bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100"
+                  }`}
+                  title={!showAllInternalTasks ? "คลิกเพื่อแสดงงาน Internal ทั้งหมด" : "คลิกเพื่อซ่อนงาน Internal ทั่วไปที่ไม่ต้องประเมิน"}
+                >
+                  <Filter size={12} />
+                  <span>
+                    {!showAllInternalTasks
+                      ? "🛡️ ซ่อน Internal ทั่วไป (แสดงเฉพาะกรณีพิเศษ)"
+                      : "👁️ แสดงงานทั้งหมด (รวม Internal ทั่วไป)"}
+                  </span>
+                </button>
+
                 <div className="relative">
                   <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
@@ -2279,25 +2367,27 @@ export default function StakeholdersReportDetail() {
                     <th className="py-3 px-3">ผู้ขอรับบริการ</th>
                     <th className="py-3 px-3">วันที่เสร็จสิ้น</th>
                     <th className="py-3 px-3 text-center">สถานะการส่ง</th>
+                    <th className="py-3 px-3 text-center whitespace-nowrap min-w-[120px]">ผลประเมินเฉลี่ย</th>
+                    <th className="py-3 px-3 min-w-[270px] max-w-sm">ความต้องการ & ข้อเสนอแนะ</th>
                     <th className="py-3 px-3 text-right">ดำเนินการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {loading ? (
                     <tr>
-                      <td colSpan={7} className="text-center py-8 text-slate-400">
+                      <td colSpan={9} className="text-center py-8 text-slate-400">
                         <RefreshCw size={16} className="animate-spin inline mr-2" />
                         กำลังโหลดรายการงานที่เสร็จสิ้น...
                       </td>
                     </tr>
                   ) : filteredCompletedBriefs.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="text-center py-8 text-slate-400">
+                      <td colSpan={9} className="text-center py-8 text-slate-400">
                         ไม่พบรายการงานที่เสร็จสิ้น
                       </td>
                     </tr>
                   ) : (
-                    filteredCompletedBriefs.slice(0, 15).map(b => {
+                    filteredCompletedBriefs.slice(0, 20).map(b => {
                       const taskCode = getTaskCode(b);
                       const dispatched = dispatchRecords.find(d => d.briefId === taskCode || d.briefId === b.id);
                       return (
@@ -2316,17 +2406,36 @@ export default function StakeholdersReportDetail() {
                             {b.project_name || "ชิ้นงานสร้างสรรค์"}
                           </td>
                           <td className="py-3 px-3">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                              (b.unit || "").toLowerCase() === "creative"
-                                ? "bg-rose-50 text-rose-700 border-rose-200"
-                                : (b.unit || "").toLowerCase() === "content"
-                                ? "bg-amber-50 text-amber-700 border-amber-200"
-                                : (b.unit || "").toLowerCase() === "pr"
-                                ? "bg-blue-50 text-blue-700 border-blue-200"
-                                : "bg-slate-100 text-slate-700 border-slate-200"
-                            }`}>
-                              {b.unit || "creative"}
-                            </span>
+                            <div className="flex items-center gap-1 flex-wrap">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                                (b.unit || "").toLowerCase() === "creative"
+                                  ? "bg-rose-50 text-rose-700 border-rose-200"
+                                  : (b.unit || "").toLowerCase() === "content"
+                                  ? "bg-amber-50 text-amber-700 border-amber-200"
+                                  : (b.unit || "").toLowerCase() === "pr"
+                                  ? "bg-blue-50 text-blue-700 border-blue-200"
+                                  : "bg-slate-100 text-slate-700 border-slate-200"
+                              }`}>
+                                {b.unit || "creative"}
+                              </span>
+                              {(() => {
+                                const isSpecialCase =
+                                  !taskCode.toUpperCase().startsWith("IT") && (
+                                    taskCode.toUpperCase().startsWith("RSP") ||
+                                    taskCode.toUpperCase().startsWith("IDC") ||
+                                    Boolean(b.details?.rsp_code) ||
+                                    Boolean(b.details?.idc_code)
+                                  );
+                                if (isSpecialCase) {
+                                  return (
+                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-200" title="งานที่เป็นกรณีพิเศษตามข้อกำหนด (รหัสงาน RSP / IDC)">
+                                      กรณีพิเศษ ({taskCode.slice(0, 3)})
+                                    </span>
+                                  );
+                                }
+                                return null;
+                              })()}
+                            </div>
                           </td>
                           <td className="py-3 px-3 text-slate-600 font-mono text-[11px] truncate max-w-[150px]">
                             {b.requester_email || "-"}
@@ -2334,51 +2443,142 @@ export default function StakeholdersReportDetail() {
                           <td className="py-3 px-3 text-slate-500 font-mono text-[11px]">
                             {b.completed_at ? b.completed_at.slice(0, 10) : "-"}
                           </td>
-                          <td className="py-3 px-3 text-center">
-                            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full shadow-2xs whitespace-nowrap">
-                              <CheckCircle2 size={12} className="text-emerald-600" />
-                              <span>ส่งแล้ว</span>
-                            </span>
-                          </td>
-                          <td className="py-3 px-3 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                onClick={() => setViewDetailsBrief(b)}
-                                title="เปิดดูรายละเอียดที่กรอกมาในแบบประเมิน"
-                                className="px-2.5 py-1 text-[11px] font-bold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95"
-                              >
-                                <Eye size={12} className="text-[#E03131]" />
-                                <span>เปิดดู</span>
-                              </button>
+                          {(() => {
+                            const taskCode = getTaskCode(b);
+                            const evalDetails = getBriefEvaluationDetails(b);
+                            const hasResp = Boolean(
+                              (evalDetails.scores && evalDetails.averagePercent) ||
+                              (b.details?.satisfaction_scores && (b.details.satisfaction_scores.averagePercent || b.details.satisfaction_scores.accuracy)) ||
+                              (typeof b.details?.satisfaction_rate === "number" && (b.details.satisfaction_rate > 0 || b.details.survey_status === "completed"))
+                            );
+                            const isDispatched = Boolean(
+                              b.details?.survey_status === "sent" ||
+                              b.details?.survey_status === "completed" ||
+                              b.details?.survey_sent_at ||
+                              dispatchRecords.some(d => d.briefId === taskCode || d.briefId === b.id)
+                            );
+                            const avgPercent = hasResp ? (evalDetails.averagePercent || b.details?.satisfaction_scores?.averagePercent || Number(b.details?.satisfaction_rate) || 100) : 0;
+                            const scoreOutOf5 = Number((avgPercent / 20).toFixed(1));
 
-                              <button
-                                onClick={() => handleCopyLinkDirect(b)}
-                                title="คัดลอกลิงก์แบบประเมินสำหรับส่งผ่าน LINE / Chat"
-                                className="px-2.5 py-1 text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg inline-flex items-center gap-1 cursor-pointer transition-all active:scale-95"
-                              >
-                                {copySuccess === b.id ? (
-                                  <>
-                                    <Check size={12} className="text-emerald-600" />
-                                    <span className="text-emerald-600 font-bold">คัดลอกแล้ว</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Copy size={12} />
-                                    <span className="hidden sm:inline">คัดลอก</span>
-                                  </>
-                                )}
-                              </button>
+                            return (
+                              <>
+                                <td className="py-3 px-3 text-center">
+                                  {hasResp ? (
+                                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full shadow-2xs whitespace-nowrap">
+                                      <CheckCircle2 size={12} className="text-emerald-600" />
+                                      <span>ประเมินแล้ว</span>
+                                    </span>
+                                  ) : isDispatched ? (
+                                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-full shadow-2xs whitespace-nowrap">
+                                      <Send size={11} className="text-blue-600" />
+                                      <span>ส่งแล้ว</span>
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-full whitespace-nowrap">
+                                      <Clock size={11} className="text-slate-400" />
+                                      <span>รอส่งประเมิน</span>
+                                    </span>
+                                  )}
+                                </td>
 
-                              <button
-                                onClick={() => handleOpenDispatch(b)}
-                                title="ส่งแบบประเมินซ้ำ หรือเปลี่ยนผู้รับ"
-                                className="px-2.5 py-1 text-[11px] font-bold text-white bg-[#E03131] hover:bg-[#c92a2a] rounded-lg inline-flex items-center gap-1 cursor-pointer shadow-2xs transition-all active:scale-95 whitespace-nowrap"
-                              >
-                                <Send size={11} />
-                                <span>ส่งซ้ำ ✉️</span>
-                              </button>
-                            </div>
-                          </td>
+                                {/* 1. ผลประเมินความพึงพอใจเฉลี่ยของแต่ละงาน */}
+                                <td className="py-3 px-3 text-center">
+                                  {hasResp ? (
+                                    <div className="inline-flex flex-col items-center gap-0.5">
+                                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-300 font-extrabold text-xs shadow-2xs whitespace-nowrap">
+                                        <Star size={11} className="fill-amber-400 text-amber-500" />
+                                        <span>{scoreOutOf5.toFixed(1)} / 5.0</span>
+                                      </span>
+                                      <span className="text-[10px] font-bold text-emerald-600 font-mono">
+                                        ({avgPercent}%)
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-slate-400 text-xs italic">-</span>
+                                  )}
+                                </td>
+
+                                {/* 2. ช่อง ความต้องการที่จำเป็น (Needs) / ความคาดหวังเชิงคุณค่า (Expectations) / ข้อเสนอแนะอื่น ๆ เพื่อการพัฒนา (Suggestions) */}
+                                <td className="py-3 px-3">
+                                  {hasResp ? (
+                                    <div className="flex flex-col gap-1 text-[11px] py-0.5">
+                                      {/* Needs */}
+                                      <div className="flex items-start gap-1 leading-snug">
+                                        <span className="font-bold text-rose-700 bg-rose-50 px-1 py-0.5 rounded text-[9.5px] shrink-0 border border-rose-200">
+                                          Needs:
+                                        </span>
+                                        <span className={`line-clamp-2 ${evalDetails.needs && evalDetails.needs !== "-" && !evalDetails.needs.includes("ยังไม่มีข้อมูล") ? "text-slate-800 font-medium" : "text-slate-400 italic"}`} title={evalDetails.needs}>
+                                          {evalDetails.needs && evalDetails.needs !== "-" && !evalDetails.needs.includes("ยังไม่มีข้อมูล") ? evalDetails.needs : "ไม่ได้ระบุ"}
+                                        </span>
+                                      </div>
+
+                                      {/* Expectations */}
+                                      <div className="flex items-start gap-1 leading-snug">
+                                        <span className="font-bold text-purple-700 bg-purple-50 px-1 py-0.5 rounded text-[9.5px] shrink-0 border border-purple-200">
+                                          Expectations:
+                                        </span>
+                                        <span className={`line-clamp-2 ${evalDetails.expectations && evalDetails.expectations !== "-" && !evalDetails.expectations.includes("ยังไม่มีข้อมูล") ? "text-slate-800 font-medium" : "text-slate-400 italic"}`} title={evalDetails.expectations}>
+                                          {evalDetails.expectations && evalDetails.expectations !== "-" && !evalDetails.expectations.includes("ยังไม่มีข้อมูล") ? evalDetails.expectations : "ไม่ได้ระบุ"}
+                                        </span>
+                                      </div>
+
+                                      {/* Suggestions */}
+                                      <div className="flex items-start gap-1 leading-snug">
+                                        <span className="font-bold text-amber-700 bg-amber-50 px-1 py-0.5 rounded text-[9.5px] shrink-0 border border-amber-200">
+                                          Suggestions:
+                                        </span>
+                                        <span className={`line-clamp-2 ${evalDetails.suggestions && evalDetails.suggestions !== "-" ? "text-slate-800 font-medium" : "text-slate-400 italic"}`} title={evalDetails.suggestions}>
+                                          {evalDetails.suggestions && evalDetails.suggestions !== "-" ? evalDetails.suggestions : "ไม่มีข้อเสนอแนะเพิ่มเติม"}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <span className="text-slate-400 text-xs italic">-</span>
+                                  )}
+                                </td>
+
+                                <td className="py-3 px-3 text-right">
+                                  <div className="flex items-center justify-end gap-1.5">
+                                    <button
+                                      onClick={() => setViewDetailsBrief(b)}
+                                      title={hasResp ? "เปิดดูรายละเอียดที่กรอกมาในแบบประเมิน" : "ดูสถานะแบบประเมิน"}
+                                      className="px-2.5 py-1 text-[11px] font-bold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95"
+                                    >
+                                      <Eye size={12} className="text-[#E03131]" />
+                                      <span>เปิดดู</span>
+                                    </button>
+
+                                    <button
+                                      onClick={() => handleCopyLinkDirect(b)}
+                                      title="คัดลอกลิงก์แบบประเมินสำหรับส่งผ่าน LINE / Chat"
+                                      className="px-2.5 py-1 text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg inline-flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+                                    >
+                                      {copySuccess === b.id ? (
+                                        <>
+                                          <Check size={12} className="text-emerald-600" />
+                                          <span className="text-emerald-600 font-bold">คัดลอกแล้ว</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Copy size={12} />
+                                          <span className="hidden sm:inline">คัดลอก</span>
+                                        </>
+                                      )}
+                                    </button>
+
+                                    <button
+                                      onClick={() => handleOpenDispatch(b)}
+                                      title={isDispatched ? "ส่งแบบประเมินซ้ำ หรือเปลี่ยนผู้รับ" : "ส่งแบบประเมินให้ผู้ขอรับบริการ"}
+                                      className="px-2.5 py-1 text-[11px] font-bold text-white bg-[#E03131] hover:bg-[#c92a2a] rounded-lg inline-flex items-center gap-1 cursor-pointer shadow-2xs transition-all active:scale-95 whitespace-nowrap"
+                                    >
+                                      <Send size={11} />
+                                      <span>{isDispatched ? "ส่งซ้ำ ✉️" : "ส่งประเมิน ✉️"}</span>
+                                    </button>
+                                  </div>
+                                </td>
+                              </>
+                            );
+                          })()}
                         </tr>
                       );
                     })
@@ -2393,27 +2593,33 @@ export default function StakeholdersReportDetail() {
                 <Clock size={13} className="text-slate-400" />
                 <span>ประวัติการส่งแบบประเมินผู้มีส่วนได้ส่วนเสียล่าสุด (Dispatch Log)</span>
               </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                {filteredDispatchRecords.slice(0, 6).map((rec, i) => (
-                  <div key={i} className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono font-bold text-slate-800 truncate max-w-[60%]">
-                        {rec.briefId}
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-mono">
-                        {rec.dispatchedAt}
-                      </span>
+              {filteredDispatchRecords.length === 0 ? (
+                <div className="p-6 text-center text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-xs">
+                  ยังไม่มีประวัติการส่งแบบประเมินในระบบ (เมื่อกดส่งแบบประเมิน รายการจะถูกบันทึกที่นี่โดยอัตโนมัติ)
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                  {filteredDispatchRecords.slice(0, 6).map((rec, i) => (
+                    <div key={i} className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono font-bold text-slate-800 truncate max-w-[60%]">
+                          {rec.briefId}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono">
+                          {rec.dispatchedAt}
+                        </span>
+                      </div>
+                      <p className="text-slate-700 font-medium truncate">
+                        {rec.projectName}
+                      </p>
+                      <div className="flex items-center justify-between text-[10.5px] text-slate-500 pt-1">
+                        <span>ถึง: <strong className="text-slate-700 font-mono">{rec.requesterEmail}</strong></span>
+                        <span className="text-emerald-600 font-bold">ส่งโดย {rec.dispatchedBy}</span>
+                      </div>
                     </div>
-                    <p className="text-slate-700 font-medium truncate">
-                      {rec.projectName}
-                    </p>
-                    <div className="flex items-center justify-between text-[10.5px] text-slate-500 pt-1">
-                      <span>ถึง: <strong className="text-slate-700 font-mono">{rec.requesterEmail}</strong></span>
-                      <span className="text-emerald-600 font-bold">ส่งโดย {rec.dispatchedBy}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -2434,30 +2640,54 @@ export default function StakeholdersReportDetail() {
               </p>
             </div>
 
-            {/* 5-Dimension Rating Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-              {[
-                { title: "คุณภาพชิ้นงาน (Quality)", score: 4.88, sub: "สวยงาม ตรงตามมาตรฐาน CI" },
-                { title: "ความตรงต่อเวลา (Timeliness)", score: 4.82, sub: "ส่งมอบตาม SLA ที่ตกลง" },
-                { title: "ความถูกต้องตามบรีฟ (Accuracy)", score: 4.90, sub: "ข้อมูลครบถ้วน ไม่ต้องแก้งานซ้ำ" },
-                { title: "ความใส่ใจ (Attentiveness)", score: 4.94, sub: "การสื่อสารสุภาพและตอบสนองไว" },
-                { title: "ความคิดสร้างสรรค์ (Creativity)", score: 4.86, sub: "เพิ่มมูลค่า แปลกใหม่ น่าสนใจ" },
-              ].map((dim, i) => (
-                <div key={i} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
-                  <span className="text-[11px] font-bold text-slate-600 block truncate">{dim.title}</span>
-                  <div className="flex items-baseline gap-1.5 my-1">
-                    <span className="text-2xl font-black text-slate-900">{dim.score}</span>
-                    <span className="text-xs text-slate-500 font-mono">/ 5.00</span>
-                  </div>
-                  <div className="flex items-center text-amber-500">
-                    {[1, 2, 3, 4, 5].map(star => (
-                      <Star key={star} size={12} fill="currentColor" />
-                    ))}
-                  </div>
-                  <p className="text-[10px] text-slate-500 pt-1 truncate">{dim.sub}</p>
+            {/* 5-Dimension Rating Cards - Dynamic & Truthful */}
+            {(() => {
+              const scoredResponses = filteredResponses.filter(r => r.scores);
+              const count = scoredResponses.length;
+
+              const getDimAvg = (accessor: (s: NonNullable<StakeholderFeedbackResponse["scores"]>) => number | undefined) => {
+                if (count === 0) return "0.00";
+                const sum = scoredResponses.reduce((acc, r) => acc + (r.scores ? (accessor(r.scores) || 0) : 0), 0);
+                return (sum / count).toFixed(2);
+              };
+
+              const dimensions = [
+                { title: "คุณภาพชิ้นงาน (Quality)", score: getDimAvg(s => s.quality), sub: "สวยงาม ตรงตามมาตรฐาน CI" },
+                { title: "ความตรงต่อเวลา (Timeliness)", score: getDimAvg(s => s.timeliness), sub: "ส่งมอบตรงตามเวลาที่ตกลง" },
+                { title: "ความถูกต้องตามบรีฟ (Accuracy)", score: getDimAvg(s => s.accuracy), sub: "ข้อมูลครบถ้วน ถูกต้องตามบรีฟ" },
+                { title: "ความใส่ใจ (Attentiveness)", score: getDimAvg(s => s.attentiveness), sub: "การสื่อสารสุภาพและตอบสนองไว" },
+                { title: "ความคิดสร้างสรรค์ (Creativity)", score: getDimAvg(s => s.ownership), sub: "เพิ่มมูลค่า แปลกใหม่ น่าสนใจ" },
+              ];
+
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                  {dimensions.map((dim, i) => (
+                    <div key={i} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                      <span className="text-[11px] font-bold text-slate-600 block truncate">{dim.title}</span>
+                      <div className="flex items-baseline gap-1.5 my-1">
+                        <span className={`text-2xl font-black ${count > 0 ? "text-slate-900" : "text-slate-400"}`}>
+                          {dim.score}
+                        </span>
+                        <span className="text-xs text-slate-400 font-mono">/ 5.00</span>
+                      </div>
+                      <div className="flex items-center text-amber-500">
+                        {[1, 2, 3, 4, 5].map(star => (
+                          <Star
+                            key={star}
+                            size={12}
+                            fill={count > 0 && Number(dim.score) >= star ? "currentColor" : "none"}
+                            className={count > 0 && Number(dim.score) >= star ? "text-amber-500" : "text-slate-300"}
+                          />
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-slate-500 pt-1 truncate">
+                        {count > 0 ? dim.sub : "รอข้อมูลประเมินจริง (0 รายการ)"}
+                      </p>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              );
+            })()}
 
             {/* Service Improvement Action Plan Table */}
             <div className="space-y-3">
@@ -2478,39 +2708,29 @@ export default function StakeholdersReportDetail() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    <tr className="hover:bg-slate-50">
-                      <td className="py-3 px-3 font-bold text-slate-900">งานด่วนฉุกเฉิน</td>
-                      <td className="py-3 px-3 text-slate-600">มีงานประชาสัมพันธ์ด่วนที่ผู้บริหารสั่งการ ทำให้ใช้เวลาประสานงานนาน</td>
-                      <td className="py-3 px-3 text-slate-800 font-medium">จัดทำ Fast-Track Template และคลังกราฟิกสำเร็จรูปลดเวลาผลิตลง 50%</td>
-                      <td className="py-3 px-3 text-purple-700 font-bold">ยูนิตดีไซเนอร์ (จอย RL / พิม AC)</td>
-                      <td className="py-3 px-3 text-center">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          สำเร็จแล้ว
-                        </span>
-                      </td>
-                    </tr>
-                    <tr className="hover:bg-slate-50">
-                      <td className="py-3 px-3 font-bold text-slate-900">การติดตามสถานะงาน</td>
-                      <td className="py-3 px-3 text-slate-600">ผู้สั่งงานอยากทราบว่าชิ้นงานอยู่ในขั้นตอนใด กำลังทำหรือรอตรวจ</td>
-                      <td className="py-3 px-3 text-slate-800 font-medium">เปิดระบบ Track Status ผ่านหน้าแรก ให้ผู้ขอรับบริการกรอกเลขอีเมลติดตามได้เรียลไทม์</td>
-                      <td className="py-3 px-3 text-purple-700 font-bold">หัวหน้าทีม (จ๊อบ AA / วา WK)</td>
-                      <td className="py-3 px-3 text-center">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          สำเร็จแล้ว
-                        </span>
-                      </td>
-                    </tr>
-                    <tr className="hover:bg-slate-50">
-                      <td className="py-3 px-3 font-bold text-slate-900">วิดีโอคลิปสั้นสำหรับโซเชียล</td>
-                      <td className="py-3 px-3 text-slate-600">ผู้ประกอบการและโครงการอยากได้คลิปสั้น Reel/TikTok โปรโมตนวัตกรรม</td>
-                      <td className="py-3 px-3 text-slate-800 font-medium">พัฒนาทักษะ Short-form Video Production และเพิ่มแพ็กเกจบริการคลิปสั้นใน WI-CC-003</td>
-                      <td className="py-3 px-3 text-purple-700 font-bold">ยูนิตผลิตสื่อสร้างสรรค์ (เอ็นจอย SLR / แก้ว KYK / ต้า TTY)</td>
-                      <td className="py-3 px-3 text-center">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                          กำลังดำเนินการ
-                        </span>
-                      </td>
-                    </tr>
+                    {filteredResponses.filter(r => r.suggestions && r.suggestions !== "-").length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-8 text-center text-slate-400 text-xs">
+                          ยังไม่มีข้อเสนอแนะหรือบันทึกการปรับปรุงบริการจากผู้มีส่วนได้ส่วนเสียในระบบ (รอข้อมูลประเมินจริง)
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredResponses
+                        .filter(r => r.suggestions && r.suggestions !== "-")
+                        .map((r, i) => (
+                          <tr key={i} className="hover:bg-slate-50">
+                            <td className="py-3 px-3 font-bold text-slate-900">{r.stakeholderRole}</td>
+                            <td className="py-3 px-3 text-slate-600">{r.suggestions}</td>
+                            <td className="py-3 px-3 text-slate-800 font-medium">นำข้อเสนอแนะเข้าสู่วาระทบทวนกระบวนการทำงาน</td>
+                            <td className="py-3 px-3 text-purple-700 font-bold">ทีม CC</td>
+                            <td className="py-3 px-3 text-center">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                บันทึกแล้ว
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -2822,10 +3042,17 @@ export default function StakeholdersReportDetail() {
                       ยูนิต {viewDetailsBrief.unit || "creative"}
                     </span>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-                    <CheckCircle2 size={12} />
-                    <span>ส่งแบบประเมินอัตโนมัติแล้ว • ได้รับข้อมูลแล้ว</span>
-                  </span>
+                  {details.scores ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                      <CheckCircle2 size={12} />
+                      <span>ได้รับผลประเมินแล้ว</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-full">
+                      <Clock size={12} />
+                      <span>{viewDetailsBrief?.details?.survey_status === 'sent' || viewDetailsBrief?.details?.survey_sent_at ? 'ส่งแบบประเมินแล้ว (รอผลประเมิน)' : 'รอส่งแบบประเมิน'}</span>
+                    </span>
+                  )}
                 </div>
 
                 <h4 className="text-sm sm:text-base font-bold text-slate-900 leading-snug">
@@ -2839,70 +3066,109 @@ export default function StakeholdersReportDetail() {
                 </div>
               </div>
 
-              {/* 5-Dimension Rating Box */}
-              <div className="p-4 rounded-2xl bg-slate-50/60 border border-slate-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                    <Star size={13} className="text-amber-500 fill-amber-500" />
-                    <span>คะแนนประเมินความพึงพอใจ 5 มิติ (CSAT)</span>
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xl font-black text-emerald-600">{details.averagePercent || 100}%</span>
-                    <span className="text-xs text-slate-500 font-mono">(5.00 / 5.00)</span>
+              {!details.scores ? (
+                <div className="py-12 px-6 text-center bg-slate-50 border border-dashed border-slate-200 rounded-2xl space-y-3">
+                  <Users size={36} className="mx-auto text-slate-300" />
+                  <h4 className="text-sm font-bold text-slate-800">
+                    ยังไม่มีข้อมูลผลการประเมินสำหรับงานนี้
+                  </h4>
+                  <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+                    ผู้ขอรับบริการยังไม่ได้กรอกแบบประเมินความพึงพอใจ ความต้องการ (Needs) หรือความคาดหวัง (Expectations) เข้าสู่ระบบ คุณสามารถกดคัดลอกลิงก์หรือส่งแบบประเมินให้ผู้ขอรับบริการได้
+                  </p>
+                  <div className="pt-2 flex items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleCopyLinkDirect(viewDetailsBrief)}
+                      className="px-3.5 py-1.5 text-xs font-bold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <Copy size={13} />
+                      <span>{copySuccess === viewDetailsBrief.id ? "คัดลอกแล้ว" : "คัดลอกลิงก์ประเมิน"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setViewDetailsBrief(null);
+                        handleOpenDispatch(viewDetailsBrief);
+                      }}
+                      className="px-3.5 py-1.5 text-xs font-bold bg-[#E03131] hover:bg-[#c92a2a] text-white rounded-xl inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <Send size={13} />
+                      <span>เปิดหน้าส่งแบบประเมิน ✉️</span>
+                    </button>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center text-xs">
-                  {[
-                    { label: "คุณภาพ", val: details.scores?.quality || 5 },
-                    { label: "ตรงเวลา", val: details.scores?.timeliness || 5 },
-                    { label: "ความถูกต้อง", val: details.scores?.accuracy || 5 },
-                    { label: "ความใส่ใจ", val: details.scores?.attentiveness || 5 },
-                    { label: "สร้างสรรค์", val: details.scores?.ownership || 5 }
-                  ].map((d, i) => (
-                    <div key={i} className="p-2 bg-white rounded-xl border border-slate-200">
-                      <div className="text-[10.5px] text-slate-500">{d.label}</div>
-                      <div className="text-sm font-black text-slate-900 mt-0.5 flex items-center justify-center gap-0.5">
-                        <span>{d.val}</span>
-                        <Star size={10} className="text-amber-500 fill-amber-500" />
+              ) : (
+                <>
+                  {/* 5-Dimension Rating Box */}
+                  <div className="p-4 rounded-2xl bg-slate-50/60 border border-slate-200 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <Star size={13} className="text-amber-500 fill-amber-500" />
+                        <span>คะแนนประเมินความพึงพอใจ 5 มิติ (CSAT)</span>
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xl font-black text-emerald-600">{details.averagePercent || 100}%</span>
+                        <span className="text-xs text-slate-500 font-mono">
+                          {((details.averagePercent || 100) / 20).toFixed(2)} / 5.00
+                        </span>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
 
-              {/* Detailed Responses Filled in */}
-              <div className="space-y-3 text-xs">
-                <div className="p-3.5 rounded-2xl bg-white border border-slate-200 space-y-1 shadow-2xs">
-                  <span className="text-[11px] font-bold text-rose-600 uppercase tracking-wider flex items-center gap-1.5">
-                    <Target size={13} />
-                    <span>ความต้องการที่จำเป็น (Needs):</span>
-                  </span>
-                  <p className="text-slate-800 font-medium leading-relaxed text-[12.5px] bg-slate-50/50 p-2.5 rounded-xl border border-slate-100">
-                    {details.needs || "ระบุความถูกต้องตรงตามบรีฟ ส่งมอบงานตรงเวลา และไฟล์งานพร้อมใช้งาน"}
-                  </p>
-                </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center text-xs">
+                      {[
+                        { label: "คุณภาพ", val: details.scores?.quality || 5 },
+                        { label: "ตรงเวลา", val: details.scores?.timeliness || 5 },
+                        { label: "ความถูกต้อง", val: details.scores?.accuracy || 5 },
+                        { label: "ความใส่ใจ", val: details.scores?.attentiveness || 5 },
+                        { label: "สร้างสรรค์", val: details.scores?.ownership || 5 }
+                      ].map((d, i) => (
+                        <div key={i} className="p-2 bg-white rounded-xl border border-slate-200">
+                          <div className="text-[10.5px] text-slate-500">{d.label}</div>
+                          <div className="text-sm font-black text-slate-900 mt-0.5 flex items-center justify-center gap-0.5">
+                            <span>{d.val}</span>
+                            <Star size={10} className="text-amber-500 fill-amber-500" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
-                <div className="p-3.5 rounded-2xl bg-white border border-slate-200 space-y-1 shadow-2xs">
-                  <span className="text-[11px] font-bold text-purple-600 uppercase tracking-wider flex items-center gap-1.5">
-                    <Sparkles size={13} />
-                    <span>ความคาดหวังเชิงคุณค่า (Expectations):</span>
-                  </span>
-                  <p className="text-slate-800 font-medium leading-relaxed text-[12.5px] bg-slate-50/50 p-2.5 rounded-xl border border-slate-100">
-                    {details.expectations || "งานมีความคิดสร้างสรรค์ระดับสากล มีเทมเพลตพร้อมใช้ และให้คำแนะนำเชิงวิชาชีพ"}
-                  </p>
-                </div>
+                  {/* Detailed Responses Filled in */}
+                  <div className="space-y-3 text-xs">
+                    <div className="p-3.5 rounded-2xl bg-white border border-slate-200 space-y-1 shadow-2xs">
+                      <span className="text-[11px] font-bold text-rose-600 uppercase tracking-wider flex items-center gap-1.5">
+                        <Target size={13} />
+                        <span>ความต้องการที่จำเป็น (Needs):</span>
+                      </span>
+                      <p className="text-slate-800 font-medium leading-relaxed text-[12.5px] bg-slate-50/50 p-2.5 rounded-xl border border-slate-100">
+                        {details.needs}
+                      </p>
+                    </div>
 
-                <div className="p-3.5 rounded-2xl bg-white border border-slate-200 space-y-1 shadow-2xs">
-                  <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider flex items-center gap-1.5">
-                    <Lightbulb size={13} className="text-amber-500" />
-                    <span>ข้อเสนอแนะอื่น ๆ เพื่อการพัฒนา (Suggestions):</span>
-                  </span>
-                  <p className="text-slate-800 font-medium leading-relaxed text-[12.5px] bg-amber-50/40 p-2.5 rounded-xl border border-amber-100">
-                    {details.suggestions || "ทีมงานให้คำปรึกษาดีมาก รวดเร็วและใส่ใจในรายละเอียด"}
-                  </p>
-                </div>
-              </div>
+                    <div className="p-3.5 rounded-2xl bg-white border border-slate-200 space-y-1 shadow-2xs">
+                      <span className="text-[11px] font-bold text-purple-600 uppercase tracking-wider flex items-center gap-1.5">
+                        <Sparkles size={13} />
+                        <span>ความคาดหวังเชิงคุณค่า (Expectations):</span>
+                      </span>
+                      <p className="text-slate-800 font-medium leading-relaxed text-[12.5px] bg-slate-50/50 p-2.5 rounded-xl border border-slate-100">
+                        {details.expectations}
+                      </p>
+                    </div>
+
+                    {details.suggestions && details.suggestions !== "-" && (
+                      <div className="p-3.5 rounded-2xl bg-white border border-slate-200 space-y-1 shadow-2xs">
+                        <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider flex items-center gap-1.5">
+                          <Lightbulb size={13} className="text-amber-500" />
+                          <span>ข้อเสนอแนะอื่น ๆ เพื่อการพัฒนา (Suggestions):</span>
+                        </span>
+                        <p className="text-slate-800 font-medium leading-relaxed text-[12.5px] bg-amber-50/40 p-2.5 rounded-xl border border-amber-100">
+                          {details.suggestions}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
 
               {/* Modal Actions */}
               <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100">

@@ -20,11 +20,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CC TEAM | Briefing & Management System - CC Insights",
+  title: "CC TEAM | Creative and Communication - CC Insights",
   description: "ระบบบริหารจัดการงานและวิเคราะห์ผลการปฏิบัติงานทีมสื่อสารสร้างสรรค์ (CC TEAM) อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
 };
 
 import GoogleSheetsAutoSyncWorker from "@/components/GoogleSheetsAutoSyncWorker";
+import HalloweenBats from "@/components/HalloweenBats";
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
@@ -35,6 +46,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${inter.variable} ${ibmPlexThai.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/manifest.webmanifest" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -45,6 +61,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                   document.documentElement.style.colorScheme = 'light';
                   localStorage.setItem('cc_theme_mode', 'light');
                 } catch(e) {}
+
+                // Register Service Worker for Minimal Offline Support
+                if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+                  window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/sw.js').catch(function() {});
+                  });
+                }
               })();
             `,
           }}
@@ -52,6 +75,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="min-h-full flex flex-col">
         {children}
+        <HalloweenBats />
         <GoogleSheetsAutoSyncWorker />
       </body>
     </html>

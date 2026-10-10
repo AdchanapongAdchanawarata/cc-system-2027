@@ -299,7 +299,7 @@ export default function FullComprehensivePdfReport({
               <div className="mt-1 text-[10px] text-blue-800 font-medium flex gap-3 border-t border-blue-200/80 pt-1">
                 <span>• เสร็จสิ้น: {orgTotals.completedTasks}</span>
                 <span>• กำลังทำ: {orgTotals.inProgressTasks}</span>
-                <span>• รอเริ่ม: {orgTotals.pendingTasks}</span>
+                <span>• รอทำ: {orgTotals.pendingTasks}</span>
               </div>
             </div>
 
@@ -800,7 +800,7 @@ export default function FullComprehensivePdfReport({
               <div className="text-base font-black text-amber-900 mt-0.5 font-mono">
                 {orgTotals.inProgressTasks} งาน
               </div>
-              <span className="text-[8.5px] text-amber-700">รอเริ่ม {orgTotals.pendingTasks} งาน</span>
+              <span className="text-[8.5px] text-amber-700">รอทำ {orgTotals.pendingTasks} งาน</span>
             </div>
           </div>
 
@@ -816,7 +816,7 @@ export default function FullComprehensivePdfReport({
                   <th className="py-1 px-2">ยูนิต</th>
                   <th className="py-1 px-2 text-center">เสร็จสิ้นแล้ว</th>
                   <th className="py-1 px-2 text-center">กำลังดำเนินงาน</th>
-                  <th className="py-1 px-2 text-center">รอเริ่มงาน</th>
+                  <th className="py-1 px-2 text-center">รอทำ</th>
                   <th className="py-1 px-2 text-center">ระยะเวลาเฉลี่ย (วัน)</th>
                   <th className="py-1 px-2 text-center">ส่งตรงเวลา (%)</th>
                 </tr>
@@ -876,7 +876,7 @@ export default function FullComprehensivePdfReport({
             </table>
           </div>
 
-          {/* 3.4 Production Categories & Overdue SLA Watch */}
+          {/* 3.4 Production Categories & Overdue Watch */}
           <div className="grid grid-cols-2 gap-2.5">
             <div className="border border-slate-200 bg-slate-50/60 rounded-xl p-2">
               <span className="text-[10px] font-black uppercase text-slate-700 tracking-wider block mb-1">
@@ -897,7 +897,7 @@ export default function FullComprehensivePdfReport({
 
             <div className="border border-slate-200 bg-slate-50/60 rounded-xl p-2 space-y-1">
               <span className="text-[10px] font-black uppercase text-slate-700 tracking-wider block">
-                การบริหารงานคั่งค้างและความเสี่ยง (SLA & Workflow Health)
+                การบริหารงานคั่งค้างและความเสี่ยง (Workflow Health)
               </span>
               <div className="space-y-1 text-[10px] text-slate-700">
                 <div className="flex justify-between items-center bg-white px-2 py-1 rounded border border-slate-200">

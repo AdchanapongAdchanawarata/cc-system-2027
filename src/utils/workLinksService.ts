@@ -277,9 +277,9 @@ export function parsePastedSheetRows(text: string): WorkLinkItem[] {
 
     // Attempt to match category
     let category = "เอกสาร & แบบฟอร์มทางการ";
-    let subCategory = "สเปรดชีตแผนงาน";
+    const subCategory = "สเปรดชีตแผนงาน";
     let description = "";
-    let targetUnits = "ทุกยูนิตในทีม CC";
+    const targetUnits = "ทุกยูนิตในทีม CC";
 
     for (let i = 0; i < cols.length; i++) {
       if (i === urlColIdx) continue;

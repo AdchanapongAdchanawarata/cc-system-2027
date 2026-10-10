@@ -92,59 +92,19 @@ const BRANCH_DATA = [
     id: "pr",
     num: "2",
     name: "ยูนิตสื่อสารองค์กร",
-    sub: "PR Officer",
+    sub: "Unit PR",
     count: "2 สมาชิก",
     icon: Mic,
     members: [
-      {
-        fullName: "นางสาวสุทธิอาภา คุ้มครอง",
-        firstName: "นางสาวสุทธิอาภา",
-        lastName: "คุ้มครอง",
-        nickname: "ลูกอิน",
-        code: "STK",
-        role: "พนักงานสร้างสรรค์และสื่อสารองค์กร",
-        phone: "087-1910010",
-        email: "suthiarpa.k@cmu.ac.th"
-      },
       {
         fullName: "นางสาวชนนิกานต์ บุญแก้ว",
         firstName: "นางสาวชนนิกานต์",
         lastName: "บุญแก้ว",
         nickname: "โอ๊ต",
         code: "CNB",
-        role: "พนักงานสร้างสรรค์และสื่อสารองค์กร",
+        role: "PR",
         phone: "088-8135494",
         email: "chonnikarn.b@cmu.ac.th"
-      }
-    ]
-  },
-  {
-    id: "content",
-    num: "3",
-    name: "ยูนิตผลิตสื่อสร้างสรรค์",
-    sub: "Content Creator",
-    count: "3 สมาชิก",
-    icon: Video,
-    members: [
-      {
-        fullName: "นางสาวศิริลักษณ์ กันจะนะ",
-        firstName: "นางสาวศิริลักษณ์",
-        lastName: "กันจะนะ",
-        nickname: "เอ็นจอย",
-        code: "SLR",
-        role: "พนักงานผลิตสื่อสร้างสรรค์",
-        phone: "083-6249641",
-        email: "Siriluk.k@cmu.ac.th"
-      },
-      {
-        fullName: "นางสาวกัลยกร อภิวงศ์",
-        firstName: "นางสาวกัลยกร",
-        lastName: "อภิวงศ์",
-        nickname: "แก้ว",
-        code: "KYK",
-        role: "พนักงานผลิตสื่อสร้างสรรค์",
-        phone: "090-3174818",
-        email: "kanyakorn.a@cmu.ac.th"
       },
       {
         fullName: "นางสาวฐิติยา เข็มพล",
@@ -152,9 +112,49 @@ const BRANCH_DATA = [
         lastName: "เข็มพล",
         nickname: "ต้า",
         code: "TTY",
-        role: "พนักงานผลิตสื่อสร้างสรรค์",
+        role: "PR",
         phone: "090-0590926",
         email: "thitiya.kh@cmu.ac.th"
+      }
+    ]
+  },
+  {
+    id: "content",
+    num: "3",
+    name: "ยูนิตผลิตสื่อสร้างสรรค์",
+    sub: "Unit Content",
+    count: "3 สมาชิก",
+    icon: Video,
+    members: [
+      {
+        fullName: "นางสาวกัลยกร อภิวงศ์",
+        firstName: "นางสาวกัลยกร",
+        lastName: "อภิวงศ์",
+        nickname: "แก้วก่อ",
+        code: "KYK",
+        role: "Content Creator",
+        phone: "090-3174818",
+        email: "kanyakorn.a@cmu.ac.th"
+      },
+      {
+        fullName: "นางสาวสุทธิอาภา คุ้มครอง",
+        firstName: "นางสาวสุทธิอาภา",
+        lastName: "คุ้มครอง",
+        nickname: "ลูกอิน",
+        code: "STK",
+        role: "Content Creator",
+        phone: "087-1910010",
+        email: "suthiarpa.k@cmu.ac.th"
+      },
+      {
+        fullName: "นางสาวศิริลักษณ์ กันจะนะ",
+        firstName: "นางสาวศิริลักษณ์",
+        lastName: "กันจะนะ",
+        nickname: "เอ็นจอย",
+        code: "SLR",
+        role: "Content Creator",
+        phone: "083-6249641",
+        email: "Siriluk.k@cmu.ac.th"
       }
     ]
   }

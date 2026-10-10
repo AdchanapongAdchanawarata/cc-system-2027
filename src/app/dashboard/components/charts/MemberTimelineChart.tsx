@@ -539,10 +539,10 @@ export default function MemberTimelineChart({
             )}
 
             {/* Quick Filter: Top 3 & Show All */}
-            <div className="flex items-center gap-1.5">
+            <div className="grid grid-cols-3 sm:flex items-center gap-1 sm:gap-1.5 w-full sm:w-auto shrink-0">
               <button
                 onClick={selectTop3}
-                className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
+                className={`py-1 sm:py-1.5 px-2 sm:px-2.5 rounded-xl text-[10.5px] sm:text-xs font-bold text-center transition-all cursor-pointer ${
                   viewFilter === 'top3'
                     ? "bg-orange-500 text-white font-black shadow-xs"
                     : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 shadow-2xs"
@@ -552,7 +552,7 @@ export default function MemberTimelineChart({
               </button>
               <button
                 onClick={selectAll}
-                className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
+                className={`py-1 sm:py-1.5 px-2 sm:px-2.5 rounded-xl text-[10.5px] sm:text-xs font-bold text-center transition-all cursor-pointer ${
                   viewFilter === 'all'
                     ? "bg-orange-500 text-white font-black shadow-xs"
                     : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 shadow-2xs"
@@ -562,7 +562,7 @@ export default function MemberTimelineChart({
               </button>
               <button
                 onClick={() => setShowAverage(!showAverage)}
-                className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                className={`py-1 sm:py-1.5 px-2 sm:px-2.5 rounded-xl text-[10.5px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
                   showAverage
                     ? "bg-amber-500 text-white font-black shadow-xs"
                     : "bg-white text-slate-500 hover:text-slate-800 border border-slate-200 shadow-2xs"
@@ -576,18 +576,18 @@ export default function MemberTimelineChart({
         </div>
 
         {/* Stock Info Ribbon: ช่วงวันที่ที่เลือก & ผลรวมในช่วงนี้ & ผู้มีผลงานสูงสุด */}
-        <div className="pt-2 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="text-slate-500 flex items-center gap-1">
-              <span>ช่วงเวลาที่วิเคราะห์:</span>
+        <div className="pt-2 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-1.5 sm:gap-3 text-xs">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
+            <span className="text-slate-500 flex items-center gap-1 text-[11px] sm:text-xs shrink-0">
+              <span>ช่วงเวลา:</span>
               <strong className="text-slate-800 font-mono font-bold">{thaiRangeLabel}</strong>
-              <span className="text-[10px] text-slate-400">({months.length} จุดแสดงผล)</span>
+              <span className="text-[10px] text-slate-400">({months.length} จุด)</span>
             </span>
             {timelineResult.topMember && (
-              <span className="text-slate-500 flex items-center gap-1">
-                <span>ผู้นำผลงานช่วงนี้:</span>
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: timelineResult.topMember.color }} />
-                <strong className="text-slate-800">{timelineResult.topMember.memberName}</strong>
+              <span className="text-slate-500 flex items-center gap-1 text-[11px] sm:text-xs shrink-0">
+                <span className="hidden xs:inline">ผู้นำ:</span>
+                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: timelineResult.topMember.color }} />
+                <strong className="text-slate-800 truncate max-w-[95px] sm:max-w-none">{timelineResult.topMember.memberName}</strong>
                 <span className="text-orange-600 font-mono font-bold">
                   ({formatMetricValue(timelineResult.topMember.totalValue, metric)})
                 </span>
@@ -595,40 +595,40 @@ export default function MemberTimelineChart({
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-slate-500 text-[11px]">ยอดรวมในช่วงที่เลือก:</span>
-            <span className="font-mono font-bold text-sm text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200/80 shadow-2xs">
+          <div className="flex items-center gap-1.5 self-center sm:self-auto shrink-0 ml-auto sm:ml-0">
+            <span className="text-slate-500 text-[10.5px] sm:text-[11px]">ยอดรวม:</span>
+            <span className="font-mono font-bold text-xs sm:text-sm text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200/80 shadow-2xs">
               {formatMetricValue(timelineResult.totalPeriodValue, metric)}
             </span>
           </div>
         </div>
       </div>
 
-      {/* 2. Member Chips Selector (คลิกเพื่อเปิด/ปิดทีละคน) */}
-      <div className="flex flex-wrap gap-1.5 pt-0.5 print:hidden">
+      {/* 2. Member Chips Selector (2-Column Grid on Mobile, Flex on Desktop - Minimal Design) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:flex-wrap gap-1 sm:gap-1.5 pt-0.5 print:hidden">
         {series.map(s => {
           const isSelected = selectedIds.has(s.memberId);
           return (
             <button
               key={s.memberId}
               onClick={() => toggleMember(s.memberId)}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center justify-between gap-1 px-2 sm:px-3 py-1 rounded-xl text-[10.5px] sm:text-xs font-semibold transition-all cursor-pointer border ${
                 isSelected
-                  ? "bg-slate-900 text-white shadow-xs"
-                  : "bg-slate-100 text-slate-400 hover:text-slate-700 hover:bg-slate-200"
+                  ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                  : "bg-slate-50 text-slate-500 border-slate-200/80 hover:bg-slate-100"
               }`}
             >
-              <span
-                className="w-2.5 h-2.5 rounded-full shrink-0"
-                style={{
-                  backgroundColor: isSelected ? s.color : "#94a3b8",
-                }}
-              />
-              <span className={isSelected ? "text-white font-medium" : "text-slate-500 font-medium"}>
-                {s.memberName}
-              </span>
+              <div className="flex items-center gap-1.5 min-w-0 truncate">
+                <span
+                  className="w-2 h-2 rounded-full shrink-0"
+                  style={{
+                    backgroundColor: isSelected ? s.color : "#94a3b8",
+                  }}
+                />
+                <span className="truncate text-left">{s.memberName}</span>
+              </div>
               {isSelected && (
-                <span className="text-[11px] font-mono text-white/90 pl-0.5 font-bold">
+                <span className="text-[10px] sm:text-[11px] font-mono text-white/90 pl-1 font-bold shrink-0">
                   {formatMetricValue(s.totalValue, metric)}
                 </span>
               )}

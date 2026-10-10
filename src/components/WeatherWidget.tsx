@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Cloud, CloudRain, Sun, RefreshCw } from "lucide-react";
+import HalloweenPumpkin from "@/components/HalloweenPumpkin";
 
 // WMO Weather interpretation codes
 function getWeatherStatus(code: number): { label: string; type: "sunny" | "cloudy" | "rainy" } {
@@ -15,38 +16,178 @@ function getWeatherStatus(code: number): { label: string; type: "sunny" | "cloud
   return { label: "Partly Cloudy", type: "cloudy" };
 }
 
-const QUOTES = [
-  { text: "Design is not just what it looks like and feels like. Design is how it works.", author: "Steve Jobs" },
-  { text: "Good design is obvious. Great design is transparent.", author: "Joe Sparano" },
-  { text: "Simplicity is the ultimate sophistication.", author: "Leonardo da Vinci" },
-  { text: "Make it simple, but significant.", author: "Don Draper" },
-  { text: "Creativity is nothing but a mind set free.", author: "Torrie T. Asai" },
-  { text: "Less, but better.", author: "Dieter Rams" },
-  { text: "Everything is designed. Few things are designed well.", author: "Brian Reed" }
+export interface CreativeQuote {
+  text: string;
+  author: string;
+  role?: string;
+}
+
+export const CREATIVE_QUOTES: CreativeQuote[] = [
+  // World-Class Industrial & Product Design Legends
+  { text: "Less, but better.", author: "Dieter Rams", role: "Industrial Design Legend" },
+  { text: "Good design is as little design as possible.", author: "Dieter Rams", role: "Braun & Vitsœ" },
+  { text: "Design is not just what it looks like and feels like. Design is how it works.", author: "Steve Jobs", role: "Apple Co-founder" },
+  { text: "Stay hungry, stay foolish.", author: "Steve Jobs", role: "Apple Co-founder" },
+  { text: "Simplicity isn’t just the absence of clutter. It’s about bringing order to complexity.", author: "Jony Ive", role: "Former Chief Design Officer, Apple" },
+  { text: "The details are not the details. They make the design.", author: "Charles Eames", role: "Eames Office" },
+  { text: "Recognizing the need is the primary condition for design.", author: "Charles Eames", role: "Eames Office" },
+  { text: "What works good is better than what looks good, because what works good lasts.", author: "Ray Eames", role: "Eames Office" },
+  { text: "Design needs to be plugged into human behavior naturally.", author: "Naoto Fukasawa", role: "Product Designer & Muji Advisor" },
+  { text: "Design is not just about making things look good, it is about communicating the essence of things.", author: "Kenya Hara", role: "Art Director, MUJI" },
+  { text: "Design brings ideas to life, transforming complex technologies into meaningful experiences.", author: "Yves Béhar", role: "fuseproject" },
+
+  // Graphic Design, Typography & Identity Masters
+  { text: "Design is so simple, that's why it is so complicated.", author: "Paul Rand", role: "Corporate Identity Legend (IBM, ABC, UPS)" },
+  { text: "Don't try to be original, just try to be good.", author: "Paul Rand", role: "Graphic Design Icon" },
+  { text: "If you can design one thing, you can design everything.", author: "Massimo Vignelli", role: "Modernist Master" },
+  { text: "Styles come and go. Good design is a language, not a style.", author: "Massimo Vignelli", role: "Unimark & Vignelli Associates" },
+  { text: "Design is thinking made visual.", author: "Saul Bass", role: "Title Sequence & Logo Legend" },
+  { text: "It took me a few seconds to draw it, but it took me 34 years of experience to learn how to draw it in a few seconds.", author: "Paula Scher", role: "Partner, Pentagram" },
+  { text: "There are three responses to a piece of design – yes, no, and WOW! Wow is the one to aim for.", author: "Milton Glaser", role: "Creator of I ❤️ NY" },
+  { text: "To design is to communicate clearly by whatever means you can control or master.", author: "Milton Glaser", role: "Graphic Design Pioneer" },
+  { text: "Good design is about making something intelligible and memorable. Great design is about making something memorable and meaningful.", author: "Erik Spiekermann", role: "Typographer & Type Designer" },
+  { text: "The grid system is an aid, not a guarantee.", author: "Josef Müller-Brockmann", role: "Pioneer of Swiss Style" },
+  { text: "Good design shouldn't be about showing off; it should be about serving the user.", author: "Susan Kare", role: "Original Apple Macintosh Icon Designer" },
+  { text: "Good art inspires; good design motivates.", author: "Otl Aicher", role: "Ulm School & Munich 1972" },
+  { text: "Digital design is like painting, except the paint never dries.", author: "Neville Brody", role: "The Face & Research Studios" },
+  { text: "Design is not what it looks like, it’s what it does.", author: "Alan Fletcher", role: "Co-founder, Pentagram" },
+  { text: "You have to be willing to take risks to create something that hasn't been seen before.", author: "Herb Lubalin", role: "Typographer & ITC Avant Garde" },
+  { text: "Never fall in love with an idea. If the one you're with isn't doing the job, there's always another.", author: "Chip Kidd", role: "Iconic Book Cover Designer" },
+  { text: "Confusion is the welcome mat at the door of creativity.", author: "Tibor Kalman", role: "M&Co & Colors Magazine" },
+  { text: "There's no such thing as a bad client. Part of our job is to do good work and get the client to accept it.", author: "Bob Gill", role: "Illustrator & Pentagram Co-founder" },
+  { text: "You can have an art experience in front of a Rembrandt, or in front of a piece of graphic design.", author: "Stefan Sagmeister", role: "Sagmeister & Walsh" },
+  { text: "Creativity is a habit, not just a talent. Do what you love and don't compromise.", author: "Jessica Walsh", role: "Founder, &Walsh" },
+  { text: "If you're not failing every now and then, it's a sign you're not being very innovative.", author: "Michael Bierut", role: "Partner, Pentagram" },
+  { text: "People ignore design that ignores people.", author: "Frank Chimero", role: "Designer & Writer" },
+
+  // Legendary Advertising & Creative Directors
+  { text: "If it doesn't sell, it isn't creative.", author: "David Ogilvy", role: "The Father of Advertising" },
+  { text: "The best ideas come as jokes. Make your thinking as funny as possible.", author: "David Ogilvy", role: "Ogilvy & Mather" },
+  { text: "Creativity can solve almost any problem. The defeat of habit by originality overcomes everything.", author: "George Lois", role: "Esquire Magazine & Big Idea Pioneer" },
+  { text: "An idea can turn to dust or magic, depending on the talent that rubs against it.", author: "Bill Bernbach", role: "DDB Co-founder" },
+  { text: "Most ideas are a bit scary, and if an idea isn't scary, it's not an idea at all.", author: "Lee Clow", role: "TBWA\\Chiat\\Day & Apple 1984" },
+  { text: "Dare to look foolish. The best work comes from the places you least expect.", author: "Dan Wieden", role: "Co-Founder, Wieden+Kennedy" },
+
+  // Architecture & Spatial Visionaries
+  { text: "There are 360 degrees, so why stick to one?", author: "Zaha Hadid", role: "Pritzker Architecture Laureate" },
+  { text: "I believe that architecture should be quiet, and let light and wind speak.", author: "Tadao Ando", role: "Pritzker Architecture Laureate" },
+  { text: "Architecture is the learned game, correct and magnificent, of forms assembled in the light.", author: "Le Corbusier", role: "Modernist Architecture Master" },
+  { text: "Art and technology: a new unity.", author: "Walter Gropius", role: "Founder of the Bauhaus" },
+  { text: "Form must have a content, and that content must be linked with nature.", author: "Alvar Aalto", role: "Finnish Architect & Designer" },
+  { text: "When I am working on a problem, I never think about beauty, but when I have finished, if the solution is not beautiful, I know it is wrong.", author: "Buckminster Fuller", role: "Architect & Inventor" },
+  { text: "Architecture should speak of its time and place, but yearn for timelessness.", author: "Frank Gehry", role: "Pritzker Architecture Laureate" },
+
+  // Contemporary Creative Innovators & Storytellers
+  { text: "Simplicity is about subtracting the obvious and adding the meaningful.", author: "John Maeda", role: "The Laws of Simplicity" },
+  { text: "A delayed game is eventually good, but a rushed game is forever bad.", author: "Shigeru Miyamoto", role: "Creative Legend, Nintendo" },
+  { text: "Do everything by hand, even when using the computer.", author: "Hayao Miyazaki", role: "Director, Studio Ghibli" },
+  { text: "Steal from anywhere that resonates with inspiration or fuels your imagination.", author: "Austin Kleon", role: "Author of Steal Like an Artist" },
+  { text: "You can’t use up creativity. The more you use, the more you have.", author: "Maya Angelou", role: "Poet & Creator" },
+  { text: "Inspiration exists, but it has to find you working.", author: "Pablo Picasso", role: "Artist & Master of Modern Art" },
+  { text: "Simplicity is the ultimate sophistication.", author: "Leonardo da Vinci", role: "Renaissance Polymath" },
+  { text: "Good design is obvious. Great design is transparent.", author: "Joe Sparano", role: "Designer & Educator" },
+  { text: "Everything is designed. Few things are designed well.", author: "Brian Reed", role: "Front-end Architect" },
+  { text: "Design is where science and art break even.", author: "Robin Mathew", role: "Design Thinker" },
+  { text: "Don't be afraid to allow your work to surprise you.", author: "Bruce Mau", role: "Massive Change Network" },
+  { text: "Design is not for philosophy, it's for life.", author: "Issey Miyake", role: "Miyake Design Studio" },
+  { text: "Make it simple, but significant.", author: "Don Draper", role: "Mad Men" },
+  { text: "Creativity is nothing but a mind set free.", author: "Torrie T. Asai", role: "Creative Thinker" }
 ];
 
-const MAX_WEATHER_CACHE_AGE = 30 * 60 * 1000; // 30 minutes
+export const QUOTES = CREATIVE_QUOTES;
+
+const QUOTES_STORAGE_KEY = "cc_creative_quotes_shuffle_v3";
+
+/**
+ * Returns the next quote index from a non-repeating shuffle deck.
+ * Guaranteed to cycle through all quotes without repeats until every quote has been shown.
+ */
+export function getNextNonRepeatingQuoteIndex(currentIndex?: number): number {
+  if (typeof window === "undefined") {
+    return Math.floor(Math.random() * CREATIVE_QUOTES.length);
+  }
+
+  try {
+    const raw = localStorage.getItem(QUOTES_STORAGE_KEY);
+    let pool: number[] = raw ? JSON.parse(raw) : [];
+
+    // Filter out invalid indices in case list size changed
+    pool = pool.filter(i => typeof i === "number" && i >= 0 && i < CREATIVE_QUOTES.length);
+
+    // If deck is empty, build a fresh shuffled deck
+    if (pool.length === 0) {
+      pool = Array.from({ length: CREATIVE_QUOTES.length }, (_, i) => i);
+      // Fisher-Yates shuffle
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+      // Ensure the first quote of new deck doesn't match the current one
+      if (currentIndex !== undefined && pool[0] === currentIndex && pool.length > 1) {
+        [pool[0], pool[1]] = [pool[1], pool[0]];
+      }
+    }
+
+    const nextIndex = pool.shift() ?? 0;
+    localStorage.setItem(QUOTES_STORAGE_KEY, JSON.stringify(pool));
+    return nextIndex;
+  } catch (e) {
+    return Math.floor(Math.random() * CREATIVE_QUOTES.length);
+  }
+}
 
 export function InspirationalQuote() {
   const [quoteIndex, setQuoteIndex] = useState(0);
+  const [isFading, setIsFading] = useState(false);
+
+  const rotateQuote = () => {
+    setIsFading(true);
+    setTimeout(() => {
+      setQuoteIndex(prev => getNextNonRepeatingQuoteIndex(prev));
+      setIsFading(false);
+    }, 220);
+  };
 
   useEffect(() => {
-    setQuoteIndex(Math.floor(Date.now() / 86400000) % QUOTES.length);
+    // Pick next non-repeating quote on mount
+    setQuoteIndex(getNextNonRepeatingQuoteIndex());
+
+    // Auto rotate every 16 seconds
+    const interval = setInterval(() => {
+      rotateQuote();
+    }, 16000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  const quote = QUOTES[quoteIndex];
+  const quote = CREATIVE_QUOTES[quoteIndex] || CREATIVE_QUOTES[0];
 
   return (
-    <div className="text-center max-w-3xl mx-auto px-4 select-none">
-      <p className="text-sm sm:text-base md:text-xl lg:text-2xl font-serif italic text-foreground mb-1 leading-snug sm:leading-relaxed">
-        "{quote.text}"
-      </p>
-      <p className="text-[10px] sm:text-xs md:text-sm font-medium text-primary tracking-[0.15em] sm:tracking-[0.25em] uppercase">
-        — {quote.author} —
-      </p>
+    <div 
+      onClick={rotateQuote}
+      title="คลิกเพื่อหมุนเวียนคำบันดาลใจจากครีเอทีฟระดับโลกท่านถัดไป"
+      className="text-center max-w-3xl mx-auto px-4 select-none cursor-pointer group transition-all"
+    >
+      <div className={`transition-all duration-300 ease-out transform ${isFading ? "opacity-0 translate-y-1 scale-[0.99]" : "opacity-100 translate-y-0 scale-100"}`}>
+        <p className="text-sm sm:text-base md:text-xl lg:text-2xl font-serif italic text-foreground mb-2 leading-snug sm:leading-relaxed group-hover:text-primary transition-colors">
+          "{quote.text}"
+        </p>
+        <div className="flex flex-col items-center justify-center gap-0.5 mt-1">
+          <p className="text-[10px] sm:text-xs md:text-sm font-semibold text-primary tracking-[0.15em] sm:tracking-[0.25em] uppercase text-center">
+            — {quote.author} —
+          </p>
+          {quote.role && (
+            <p className="text-[10px] sm:text-xs text-muted-foreground/80 font-sans tracking-normal font-normal text-center">
+              ({quote.role})
+            </p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
+
+const MAX_WEATHER_CACHE_AGE = 30 * 60 * 1000; // 30 minutes
 
 export default function WeatherWidget({ 
   variant = "full",
@@ -126,7 +267,7 @@ export default function WeatherWidget({
       fetchWeather(18.7961, 98.9793);
     }
 
-    setQuoteIndex(Math.floor(Date.now() / 86400000) % QUOTES.length);
+    setQuoteIndex(getNextNonRepeatingQuoteIndex());
     
     const today = new Date();
     setDateString(today.toLocaleDateString('en-US', { 
@@ -199,6 +340,11 @@ export default function WeatherWidget({
               <img src="/animation/ฝน (Rainy)_4.png" alt="Rainy" className="absolute inset-0 w-full h-full object-contain anim-frame-4 f4" />
             </>
           )}
+
+          {/* Halloween Pumpkin sitting directly on the green grass mound next to the logs */}
+          <div className="absolute bottom-[30.5%] sm:bottom-[31%] md:bottom-[31%] right-[13%] sm:right-[14%] md:right-[14.5%] z-20 pointer-events-auto">
+            <HalloweenPumpkin className="w-[36px] h-[33px] sm:w-[48px] sm:h-[44px] md:w-[62px] md:h-[57px]" />
+          </div>
         </div>
 
         {/* Weather Text & Date (Real Weather - No Manual Switchers) */}
@@ -211,9 +357,18 @@ export default function WeatherWidget({
       {/* Quote */}
       {showQuote && (
         <div className={variant === "hidden" ? "opacity-0" : "opacity-100"}>
-          <div className="mt-4 sm:mt-6 md:mt-7 mb-2 sm:mb-3 text-center max-w-3xl mx-auto px-3">
-            <p className="text-sm sm:text-xl md:text-2xl lg:text-3xl font-serif italic text-foreground mb-0.5 sm:mb-1 leading-snug sm:leading-relaxed">"{quote.text}"</p>
-            <p className="text-[10px] sm:text-xs md:text-sm font-medium text-primary tracking-[0.15em] sm:tracking-[0.25em] uppercase">— {quote.author} —</p>
+          <div className={`${variant === "quoteOnly" ? "-mt-3 sm:-mt-6 md:-mt-8 mb-0 sm:mb-1" : "mt-4 sm:mt-6 md:mt-7 mb-2 sm:mb-3"} text-center max-w-3xl mx-auto px-3`}>
+            <p className="text-sm sm:text-xl md:text-2xl lg:text-3xl font-serif italic text-foreground mb-2 leading-snug sm:leading-relaxed">"{quote.text}"</p>
+            <div className="flex flex-col items-center justify-center gap-0.5 mt-1">
+              <p className="text-[10px] sm:text-xs md:text-sm font-semibold text-primary tracking-[0.15em] sm:tracking-[0.25em] uppercase text-center">
+                — {quote.author} —
+              </p>
+              {quote.role && (
+                <p className="text-[10px] sm:text-xs text-muted-foreground/80 font-sans tracking-normal font-normal text-center">
+                  ({quote.role})
+                </p>
+              )}
+            </div>
           </div>
         </div>
       )}

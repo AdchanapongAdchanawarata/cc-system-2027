@@ -1900,7 +1900,7 @@ export default function AssignmentsView() {
                       {isUnderWatch && (
                         <span 
                           onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-[#FFD43B] hover:bg-[#FCC419] text-black border border-[#FAB005] shadow-2xs transition-all cursor-help mr-1.5 align-middle group/watch relative select-none"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-[#FFD43B] hover:bg-[#FCC419] text-black shadow-2xs transition-all cursor-help mr-1.5 align-middle group/watch relative select-none"
                           title={`🔍 เฝ้าระวัง:\n${watchReasons.map(r => `• ${r}`).join('\n')}`}
                         >
                           <WatchEyeIcon size={11} className="text-black shrink-0" />

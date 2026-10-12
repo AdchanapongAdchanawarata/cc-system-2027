@@ -13,6 +13,7 @@ import { parseMemberRecord, DEFAULT_MEMBER_METADATA } from "@/utils/memberProfil
 import { getTaskSurveyUrl } from "@/utils/surveyTokens";
 import { resolveTaskCode } from "@/utils/taskCodeService";
 import { syncCustomQuotesFromAssignees, getMemberCustomQuote } from "@/utils/memberQuote";
+import { syncAvatarsFromAssignees } from "@/utils/avatar3dPresets";
 import { Assignee3DAvatarBadge, CHEEKY_QUOTES } from "@/components/Assignee3DAvatarBadge";
 
 interface BriefItem {
@@ -121,6 +122,7 @@ function TrackContent() {
         if (aData) {
           setAssignees(aData);
           syncCustomQuotesFromAssignees(aData);
+          syncAvatarsFromAssignees(aData);
         }
       } catch (err) {
         console.error("Failed to fetch tracking data:", err);
@@ -170,6 +172,7 @@ function TrackContent() {
       if (aData && aData.length > 0) {
         setAssignees(aData);
         syncCustomQuotesFromAssignees(aData);
+        syncAvatarsFromAssignees(aData);
       }
 
       const results = freshBriefs.filter((b) => {

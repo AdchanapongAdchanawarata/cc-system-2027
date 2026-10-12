@@ -17,6 +17,7 @@ import AnimatedMascotLogo from "@/components/AnimatedMascotLogo";
 import { Assignee3DAvatarBadge } from "@/components/Assignee3DAvatarBadge";
 import { createClient } from "@/utils/supabase/client";
 import { syncCustomQuotesFromAssignees } from "@/utils/memberQuote";
+import { syncAvatarsFromAssignees } from "@/utils/avatar3dPresets";
 import ActiveAssignmentNotifier from "@/components/ActiveAssignmentNotifier";
 import DailyMissionModal from "@/components/DailyMissionModal";
 import { computeDailyMission, DailyMissionResult } from "@/utils/dailyMissionService";
@@ -90,12 +91,13 @@ export default function DashboardPage() {
       setCurrentUserRole(saved);
     }
 
-    // Load assignees list & sync custom quotes
+    // Load assignees list & sync custom quotes & avatars
     const supabase = createClient();
     supabase.from("assignees").select("id, name, unit").then(({ data }) => {
       if (data && data.length > 0) {
         setAssigneesList(data.map((d: any) => ({ id: d.id, name: d.name })));
         syncCustomQuotesFromAssignees(data);
+        syncAvatarsFromAssignees(data);
       }
     });
 

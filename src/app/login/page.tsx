@@ -5,6 +5,8 @@ import { ArrowRight, Mail, CheckCircle2, ShieldAlert } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { parseMemberRecord } from "@/utils/memberProfile";
+import { syncAvatarsFromAssignees } from "@/utils/avatar3dPresets";
+import { syncCustomQuotesFromAssignees } from "@/utils/memberQuote";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -44,6 +46,11 @@ export default function LoginPage() {
 
       if (fetchErr) {
         throw new Error("ไม่สามารถเชื่อมต่อฐานข้อมูลเพื่อตรวจสอบสิทธิ์ได้ กรุณาลองใหม่อีกครั้ง");
+      }
+
+      if (members && members.length > 0) {
+        syncAvatarsFromAssignees(members);
+        syncCustomQuotesFromAssignees(members);
       }
 
       // Match against primary email or secondary cmuEmail registered in profile

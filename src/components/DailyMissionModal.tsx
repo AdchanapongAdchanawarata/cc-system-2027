@@ -41,8 +41,8 @@ export default function DailyMissionModal({
     .replace("⚠️ ความเสี่ยงหากล่าช้า: ", "")
     .trim();
 
-  const cleanQuote = mission.encouragementQuote
-    .replace(/^[\s\u2000-\u206F\u2E00-\u2E7F\\'!"#$%&()*+,\-.\/:;<=>?@\[\]^_`{|}~]+/u, "")
+  const cleanQuote = (mission.encouragementQuote || "")
+    .replace(/^["'“\s]+|["'”\s]+$/g, "")
     .trim();
 
   return createPortal(
@@ -114,8 +114,17 @@ export default function DailyMissionModal({
         </div>
 
         {/* Content Body */}
-        <div className="p-6 sm:p-8 space-y-5">
+        <div className="p-6 sm:p-8 space-y-6">
           
+          {/* Energy & Encouragement Quote: Borderless, Large, Multiline, Energizing */}
+          {cleanQuote && (
+            <div className="text-left -mt-1 pb-1">
+              <p className="text-[15px] sm:text-base font-bold text-neutral-800 leading-relaxed whitespace-pre-line tracking-tight">
+                {cleanQuote}
+              </p>
+            </div>
+          )}
+
           {/* Mission Section */}
           <div className="space-y-3">
             <div className="text-xs font-bold text-neutral-900 uppercase tracking-wider flex items-center justify-between">
@@ -168,15 +177,6 @@ export default function DailyMissionModal({
             </div>
 
           </div>
-
-          {/* Encouragement Quote: Clean Minimal Block */}
-          {cleanQuote && (
-            <div className="p-3.5 rounded-xl bg-neutral-50 border border-neutral-200/60 text-center">
-              <p className="text-xs text-neutral-600 italic font-medium leading-relaxed">
-                "{cleanQuote}"
-              </p>
-            </div>
-          )}
 
         </div>
 

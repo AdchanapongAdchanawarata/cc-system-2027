@@ -29,7 +29,12 @@ import {
   Avatar2DAccessories 
 } from "@/types/avatar3d";
 import { Avatar2DRenderer, AvatarItemThumbnail } from "./Avatar2DRenderer";
-import { AVATAR_16_PRESETS, getMemberAvatarConfig, saveMemberAvatarConfigLocally } from "@/utils/avatar3dPresets";
+import { 
+  AVATAR_16_PRESETS, 
+  getMemberAvatarConfig, 
+  saveMemberAvatarConfigLocally,
+  resolveCanonicalMemberKey,
+} from "@/utils/avatar3dPresets";
 import { getMemberCustomQuote, saveMemberCustomQuote } from "@/utils/memberQuote";
 import { createClient } from "@/utils/supabase/client";
 
@@ -59,12 +64,14 @@ export const Avatar3DStudioModal: React.FC<Avatar3DStudioModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      const initial = getMemberAvatarConfig(selectedMember);
+      const activeMember = currentMemberName || "จ๊อบ AA";
+      setSelectedMember(activeMember);
+      const initial = getMemberAvatarConfig(activeMember);
       setConfig(initial);
-      setCustomQuote(getMemberCustomQuote(selectedMember) || "");
+      setCustomQuote(getMemberCustomQuote(activeMember) || "");
       setSaveSuccess(false);
     }
-  }, [isOpen, selectedMember]);
+  }, [isOpen, currentMemberName]);
 
   if (!isOpen) return null;
 
@@ -145,9 +152,21 @@ export const Avatar3DStudioModal: React.FC<Avatar3DStudioModalProps> = ({
       }
 
       const { data: memberList } = await supabase.from("assignees").select("id, name, unit");
-      const matched = memberList?.find((m) => m.name === selectedMember || m.id === selectedMember);
+      const canonical = resolveCanonicalMemberKey(selectedMember);
+      const matched = memberList?.find((m) => 
+        m.name === selectedMember || 
+        m.id === selectedMember || 
+        (canonical && (m.name === canonical || resolveCanonicalMemberKey(m.name) === canonical))
+      );
 
       if (matched) {
+        // Also save locally under matched.id and matched.name so all badges resolve immediately
+        saveMemberAvatarConfigLocally(matched.id, config);
+        saveMemberAvatarConfigLocally(matched.name, config);
+        if (canonical) {
+          saveMemberAvatarConfigLocally(canonical, config);
+        }
+
         const parts = (matched.unit || "creative").split("|");
         const cleanUnit = parts[0] || "creative";
         const role = parts[1] || "assignee";

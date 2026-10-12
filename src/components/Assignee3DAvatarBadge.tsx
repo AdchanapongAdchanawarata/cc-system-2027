@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Avatar3DRenderer } from "./Avatar3DRenderer";
-import { getMemberAvatarConfig } from "@/utils/avatar3dPresets";
+import { getMemberAvatarConfig, resolveCanonicalMemberKey } from "@/utils/avatar3dPresets";
 import { Avatar3DConfig } from "@/types/avatar3d";
 import { DEFAULT_MEMBER_METADATA } from "@/utils/memberProfile";
 import { Sparkles, Trophy, Heart, Flame, DollarSign, Briefcase, Star, Pencil } from "lucide-react";
@@ -106,7 +106,16 @@ export const Assignee3DAvatarBadge: React.FC<Assignee3DAvatarBadgeProps> = ({
 
     const handleAvatarUpdate = (e: any) => {
       const detail = e.detail;
-      if (!detail || detail.member === identifier || detail.member === name || detail.member === id) {
+      const canonical = resolveCanonicalMemberKey(identifier);
+      if (
+        !detail || 
+        detail.all || 
+        detail.member === identifier || 
+        detail.member === name || 
+        detail.member === id ||
+        (detail.canonicalKey && detail.canonicalKey === canonical) ||
+        (detail.member && resolveCanonicalMemberKey(detail.member) === canonical)
+      ) {
         setConfig(getMemberAvatarConfig(identifier));
       }
     };

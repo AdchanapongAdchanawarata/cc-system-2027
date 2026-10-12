@@ -141,6 +141,46 @@ function getBarPosition(
   };
 }
 
+export function computeTimeBasedProgress(
+  startDateStr: string,
+  endDateStr: string,
+  status?: string,
+  manualProgress?: number
+): number {
+  if (status === "completed") return 100;
+  if (status === "not_started") return 0;
+
+  const s = new Date(startDateStr).getTime();
+  const e = new Date(endDateStr).getTime();
+  const now = Date.now();
+
+  if (isNaN(s) || isNaN(e) || e <= s) {
+    if (manualProgress !== undefined && manualProgress > 0) return manualProgress;
+    return status === "completed" ? 100 : 50;
+  }
+
+  // Not yet started
+  if (now <= s) return 1;
+
+  // Reached or passed end date
+  if (now >= e) return 100;
+
+  // Proximity to completion based on elapsed duration
+  const elapsed = now - s;
+  const total = e - s;
+  const pct = Math.round((elapsed / total) * 100);
+
+  // Clamp active tasks between 1% and 99%
+  return Math.max(1, Math.min(99, pct));
+}
+
+export function getDaysRemaining(endDateStr: string): number {
+  const e = new Date(endDateStr).getTime();
+  const now = Date.now();
+  if (isNaN(e)) return 0;
+  return Math.ceil((e - now) / 86400000);
+}
+
 const formatThaiDateShort = (dStr: string) => {
   if (!dStr) return "";
   const cleanStr = String(dStr).split("T")[0].split(" ")[0];
@@ -331,7 +371,7 @@ export default function TeamActionPlanReportDetail() {
         const isCompleted = b.status === "completed";
         const isDelayed = !isCompleted && Boolean(rawDeadline) && new Date(rawDeadline).getTime() < Date.now();
         const statusVal: "not_started" | "in_progress" | "completed" | "delayed" = isCompleted ? "completed" : isDelayed ? "delayed" : "in_progress";
-        const progressVal = isCompleted ? 100 : (b.details?.progress !== undefined ? Number(b.details.progress) : 50);
+        const progressVal = computeTimeBasedProgress(startDate, endDate, statusVal, b.details?.progress !== undefined ? Number(b.details.progress) : undefined);
 
         mappedPmProjects.push({
           id: b.id,
@@ -542,8 +582,10 @@ export default function TeamActionPlanReportDetail() {
     const rev = item.revenue !== undefined ? item.revenue : (parseFloat((item.budget || "").replace(/[^0-9.-]+/g, "")) || 0);
     const cost = item.cost || 0;
     const profit = item.profit !== undefined ? item.profit : (rev - cost);
+    const timeProg = computeTimeBasedProgress(item.startDate, item.endDate, item.status, item.progress);
     setEditForm({
       ...item,
+      progress: timeProg,
       revenue: rev,
       cost,
       profit
@@ -565,6 +607,9 @@ export default function TeamActionPlanReportDetail() {
       const cost = Number(editForm.cost) || 0;
       const profit = rev - cost;
       const budgetStr = rev > 0 ? `฿${rev.toLocaleString()}` : (editForm.budget || "-");
+      const finalProgress = editForm.status === "completed" 
+        ? 100 
+        : (editForm.progress !== undefined ? editForm.progress : computeTimeBasedProgress(editForm.startDate, editForm.endDate, editForm.status));
 
       const finalItem: ActionPlanItem = {
         ...editForm,
@@ -572,6 +617,7 @@ export default function TeamActionPlanReportDetail() {
         revenue: rev,
         cost,
         profit,
+        progress: finalProgress,
         assigneeCode: editForm.assignee?.split(" ")[0] || editForm.assigneeCode || editForm.assignee,
       };
 
@@ -737,7 +783,7 @@ export default function TeamActionPlanReportDetail() {
       kpi: proj.kpi,
       budget: proj.budget,
       status: proj.status,
-      progress: proj.progress,
+      progress: computeTimeBasedProgress(pmStartDate, pmEndDate, proj.status, proj.progress),
       isCcLiveProject: true,
       briefId: proj.id
     };
@@ -758,8 +804,9 @@ export default function TeamActionPlanReportDetail() {
     lines.push('"ลำดับ","รหัส","โครงการ / กิจกรรมหลัก","ยูนิตรับผิดชอบ","ผู้รับผิดชอบ","วันเริ่มต้น","วันสิ้นสุด","ตัวชี้วัดความสำเร็จ (KPI)","งบประมาณ","สถานะ","ความคืบหน้า (%)"');
 
     plans.forEach((p, idx) => {
+      const pProg = computeTimeBasedProgress(p.startDate, p.endDate, p.status, p.progress);
       const statusStr = p.status === "completed" ? "เสร็จสิ้น" : p.status === "in_progress" ? "กำลังดำเนินการ" : p.status === "delayed" ? "ล่าช้า" : "ยังไม่เริ่ม";
-      lines.push(`${idx + 1},"${p.code}","${p.title.replace(/"/g, '""')}","${p.unit}","${p.assigneeCode} (${p.assignee})","${p.startDate}","${p.endDate}","${p.kpi.replace(/"/g, '""')}","${p.budget}","${statusStr}",${p.progress}`);
+      lines.push(`${idx + 1},"${p.code}","${p.title.replace(/"/g, '""')}","${p.unit}","${p.assigneeCode} (${p.assignee})","${p.startDate}","${p.endDate}","${p.kpi.replace(/"/g, '""')}","${p.budget}","${statusStr}",${pProg}`);
     });
 
     const blob = new Blob([lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
@@ -776,7 +823,10 @@ export default function TeamActionPlanReportDetail() {
     const completed = plans.filter(p => p.status === "completed").length;
     const inProgress = plans.filter(p => p.status === "in_progress").length;
     const delayed = plans.filter(p => p.status === "delayed").length;
-    const avgProgress = total > 0 ? Math.round(plans.reduce((acc, c) => acc + c.progress, 0) / total) : 0;
+    const avgProgress = total > 0 ? Math.round(plans.reduce((acc, c) => {
+      const pProg = computeTimeBasedProgress(c.startDate, c.endDate, c.status, c.progress);
+      return acc + pProg;
+    }, 0) / total) : 0;
     const ccProjectsCount = plans.filter(p => p.isCcLiveProject).length;
     const totalRevenue = plans.reduce((acc, p) => acc + (p.revenue || 0), 0);
     const totalCost = plans.reduce((acc, p) => acc + (p.cost || 0), 0);
@@ -1175,6 +1225,8 @@ export default function TeamActionPlanReportDetail() {
                     const isCompleted = item.status === "completed";
                     const isDelayed = item.status === "delayed";
                     const isInProgress = item.status === "in_progress";
+                    const progressPct = computeTimeBasedProgress(item.startDate, item.endDate, item.status, item.progress);
+                    const daysLeft = getDaysRemaining(item.endDate);
 
                     const barGradient = isCompleted
                       ? "from-emerald-500 to-teal-500"
@@ -1263,7 +1315,7 @@ export default function TeamActionPlanReportDetail() {
                           <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono">
                             <span>{formatThaiDateShort(item.startDate)} - {formatThaiDateShort(item.endDate)}</span>
                             <span className="text-[10px] font-sans font-medium text-slate-500">
-                              คืบหน้า {item.progress}%
+                              คืบหน้า {progressPct}%
                             </span>
                           </div>
 
@@ -1310,12 +1362,12 @@ export default function TeamActionPlanReportDetail() {
                               left: barPos.left,
                               width: barPos.width,
                             }}
-                            title={`${item.title} (${formatThaiDateShort(item.startDate)} - ${formatThaiDateShort(item.endDate)})\nงบประมาณ: ฿${(item.revenue || 0).toLocaleString()} | ต้นทุน: ฿${(item.cost || 0).toLocaleString()} | กำไร: ฿${(item.profit || 0).toLocaleString()}\nความคืบหน้า: ${item.progress}%\nตัวชี้วัด: ${item.kpi}${barPos.isSpillLeft ? "\n(งานเริ่มก่อนปีงบประมาณนี้)" : ""}${barPos.isSpillRight ? "\n(ดำเนินงานต่อเนื่องไปปีงบประมาณถัดไป)" : ""}`}
+                            title={`${item.title} (${formatThaiDateShort(item.startDate)} - ${formatThaiDateShort(item.endDate)})\nงบประมาณ: ฿${(item.revenue || 0).toLocaleString()} | ต้นทุน: ฿${(item.cost || 0).toLocaleString()} | กำไร: ฿${(item.profit || 0).toLocaleString()}\nความคืบหน้าระยะเวลา: ${progressPct}%${daysLeft > 0 ? ` (เหลืออีก ${daysLeft} วันจะครบกำหนด)` : daysLeft === 0 ? " (ครบกำหนดวันนี้)" : ` (เกินกำหนด ${Math.abs(daysLeft)} วัน)`}\nตัวชี้วัด: ${item.kpi}${barPos.isSpillLeft ? "\n(งานเริ่มก่อนปีงบประมาณนี้)" : ""}${barPos.isSpillRight ? "\n(ดำเนินงานต่อเนื่องไปปีงบประมาณถัดไป)" : ""}`}
                           >
                             {/* Inner Progress Track Overlay */}
                             <div
                               className="absolute top-0 bottom-0 left-0 bg-white/20 pointer-events-none"
-                              style={{ width: `${item.progress}%` }}
+                              style={{ width: `${progressPct}%` }}
                             />
 
                             {/* Bar Gradient Classes */}
@@ -1337,7 +1389,7 @@ export default function TeamActionPlanReportDetail() {
 
                             <div className="flex items-center gap-1 shrink-0 ml-1.5 z-10">
                               <span className="text-[10px] font-mono font-black text-white bg-black/25 px-1.5 py-0.5 rounded-md">
-                                {item.progress}%
+                                {progressPct}%
                               </span>
                               {barPos.isSpillRight && (
                                 <span className="text-[10px] text-amber-200 font-extrabold" title="ดำเนินงานต่อเนื่องข้ามปีงบประมาณถัดไป">
@@ -1495,6 +1547,9 @@ export default function TeamActionPlanReportDetail() {
                     );
                   }
 
+                  const progressPct = computeTimeBasedProgress(item.startDate, item.endDate, item.status, item.progress);
+                  const daysLeft = getDaysRemaining(item.endDate);
+
                   return (
                     <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3 px-3 font-mono font-bold text-slate-700">
@@ -1559,16 +1614,16 @@ export default function TeamActionPlanReportDetail() {
                         </span>
                       </td>
                       <td className="py-3 px-3 w-32 whitespace-nowrap">
-                        <div className="space-y-1 max-w-[100px] mx-auto">
+                        <div className="space-y-1 max-w-[100px] mx-auto" title={`ความคืบหน้าระยะเวลา: ${progressPct}%${daysLeft > 0 ? ` (เหลือ ${daysLeft} วัน)` : daysLeft === 0 ? " (ครบกำหนดวันนี้)" : ` (เกินกำหนด ${Math.abs(daysLeft)} วัน)`}`}>
                           <div className="flex items-center justify-center text-[10px] font-mono font-bold text-slate-600">
-                            <span>{item.progress}%</span>
+                            <span>{progressPct}%</span>
                           </div>
                           <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
                             <div
                               className={`h-1.5 rounded-full ${
-                                item.progress === 100 ? "bg-emerald-500" : "bg-blue-600"
+                                progressPct === 100 ? "bg-emerald-500" : "bg-blue-600"
                               }`}
-                              style={{ width: `${item.progress}%` }}
+                              style={{ width: `${progressPct}%` }}
                             />
                           </div>
                         </div>
@@ -2050,7 +2105,11 @@ export default function TeamActionPlanReportDetail() {
                     type="date"
                     required
                     value={editForm.startDate}
-                    onChange={e => setEditForm({ ...editForm, startDate: e.target.value })}
+                    onChange={e => {
+                      const newStart = e.target.value;
+                      const newProg = computeTimeBasedProgress(newStart, editForm.endDate, editForm.status);
+                      setEditForm({ ...editForm, startDate: newStart, progress: newProg });
+                    }}
                     className="w-full p-2 rounded-xl bg-white border border-slate-200 font-mono text-slate-900 focus:outline-none focus:border-blue-500 text-xs"
                   />
                 </div>
@@ -2064,7 +2123,11 @@ export default function TeamActionPlanReportDetail() {
                     type="date"
                     required
                     value={editForm.endDate}
-                    onChange={e => setEditForm({ ...editForm, endDate: e.target.value })}
+                    onChange={e => {
+                      const newEnd = e.target.value;
+                      const newProg = computeTimeBasedProgress(editForm.startDate, newEnd, editForm.status);
+                      setEditForm({ ...editForm, endDate: newEnd, progress: newProg });
+                    }}
                     className="w-full p-2 rounded-xl bg-white border border-slate-200 font-mono text-slate-900 focus:outline-none focus:border-blue-500 text-xs"
                   />
                 </div>
@@ -2118,7 +2181,11 @@ export default function TeamActionPlanReportDetail() {
                   <label className="font-bold text-slate-700">สถานะโครงการ:</label>
                   <select
                     value={editForm.status}
-                    onChange={e => setEditForm({ ...editForm, status: e.target.value as any })}
+                    onChange={e => {
+                      const newStatus = e.target.value as any;
+                      const newProg = computeTimeBasedProgress(editForm.startDate, editForm.endDate, newStatus);
+                      setEditForm({ ...editForm, status: newStatus, progress: newProg });
+                    }}
                     className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500"
                   >
                     <option value="not_started">ยังไม่เริ่ม (Not Started)</option>
@@ -2130,8 +2197,21 @@ export default function TeamActionPlanReportDetail() {
 
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <label className="font-bold text-slate-700">ความคืบหน้า (%):</label>
-                    <span className="font-mono font-bold text-blue-600">{editForm.progress}%</span>
+                    <label className="font-bold text-slate-700">ความคืบหน้าตามระยะเวลา (%):</label>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono font-bold text-blue-600">{editForm.progress}%</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const autoP = computeTimeBasedProgress(editForm.startDate, editForm.endDate, editForm.status);
+                          setEditForm({ ...editForm, progress: autoP });
+                        }}
+                        className="text-[10px] text-blue-600 hover:text-blue-800 underline cursor-pointer"
+                        title="รีเซ็ตให้คำนวณตามระยะเวลาอัตโนมัติ"
+                      >
+                        คำนวณตามเวลา
+                      </button>
+                    </div>
                   </div>
                   <input
                     type="range"

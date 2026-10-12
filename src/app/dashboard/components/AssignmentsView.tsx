@@ -49,7 +49,7 @@ export function OverdueClockIcon({ size = 20, className = "text-[#E03131]" }: { 
 }
 
 // Clean, minimal Surveillance/Watch icon (crisp eye contour with filled pupil)
-export function WatchEyeIcon({ size = 11, className = "text-amber-600 dark:text-amber-400 shrink-0" }: { size?: number; className?: string }) {
+export function WatchEyeIcon({ size = 11, className = "text-white shrink-0" }: { size?: number; className?: string }) {
   return (
     <svg 
       width={size} 
@@ -1900,29 +1900,29 @@ export default function AssignmentsView() {
                       {isUnderWatch && (
                         <span 
                           onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/10 dark:bg-amber-400/10 text-amber-800 dark:text-amber-200 border border-amber-400/30 dark:border-amber-400/20 shadow-2xs hover:bg-amber-500/15 hover:border-amber-400/50 transition-all cursor-help mr-1.5 align-middle group/watch relative select-none"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#E03131] hover:bg-[#c92a2a] text-white border border-[#E03131] shadow-2xs transition-all cursor-help mr-1.5 align-middle group/watch relative select-none"
                           title={`🔍 เฝ้าระวัง:\n${watchReasons.map(r => `• ${r}`).join('\n')}`}
                         >
-                          <WatchEyeIcon size={11} className="text-amber-600 dark:text-amber-400 shrink-0" />
-                          <span className="tracking-tight font-bold">เฝ้าระวัง</span>
+                          <WatchEyeIcon size={11} className="text-white shrink-0" />
+                          <span className="tracking-tight font-bold text-white">เฝ้าระวัง</span>
 
                           {/* Elegant Hover Popover Card */}
-                          <span className="hidden group-hover/watch:flex flex-col absolute left-0 bottom-full mb-2 z-50 w-64 p-2.5 bg-slate-900/95 dark:bg-black/95 text-white backdrop-blur-md rounded-xl shadow-2xl border border-amber-500/40 text-left pointer-events-none animate-in fade-in-0 zoom-in-95 duration-150">
-                            <span className="flex items-center gap-1.5 text-amber-400 font-bold text-[11px] mb-1 pb-1 border-b border-white/10">
-                              <WatchEyeIcon size={12} className="shrink-0 text-amber-400" />
+                          <span className="hidden group-hover/watch:flex flex-col absolute left-0 bottom-full mb-2 z-50 w-64 p-2.5 bg-slate-900/95 dark:bg-black/95 text-white backdrop-blur-md rounded-xl shadow-2xl border border-rose-500/40 text-left pointer-events-none animate-in fade-in-0 zoom-in-95 duration-150">
+                            <span className="flex items-center gap-1.5 text-rose-400 font-bold text-[11px] mb-1 pb-1 border-b border-white/10">
+                              <WatchEyeIcon size={12} className="shrink-0 text-rose-400" />
                               <span>รายการเฝ้าระวัง (Watch List)</span>
                             </span>
                             <span className="space-y-1 text-[10px] text-slate-200 font-normal leading-relaxed block">
                               {watchReasons.map((reason, idx) => (
                                 <span key={idx} className="flex items-start gap-1.5 block">
-                                  <span className="text-amber-400 font-bold leading-none mt-1 shrink-0">•</span>
+                                  <span className="text-rose-400 font-bold leading-none mt-1 shrink-0">•</span>
                                   <span>{reason}</span>
                                 </span>
                               ))}
                             </span>
                             <span className="mt-1.5 pt-1 border-t border-white/10 text-[9px] text-slate-400 flex items-center justify-between">
                               <span>เกณฑ์ควบคุมคุณภาพงาน</span>
-                              <span className="text-amber-400/90 font-mono font-semibold">CC QUALITY</span>
+                              <span className="text-rose-400/90 font-mono font-semibold">CC QUALITY</span>
                             </span>
                           </span>
                         </span>

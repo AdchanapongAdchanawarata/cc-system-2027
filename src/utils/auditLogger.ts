@@ -17,7 +17,8 @@ export interface AuditLogEntry {
     | "TASK_RESTORE" 
     | "TASK_PURGE"
     | "SYSTEM_BACKUP"
-    | "SETTINGS_CHANGE";
+    | "SETTINGS_CHANGE"
+    | "DAILY_MISSION_ACK";
   actor_name: string;
   actor_email: string;
   actor_role: string;

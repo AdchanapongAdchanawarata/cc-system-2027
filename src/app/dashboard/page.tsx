@@ -18,6 +18,9 @@ import { Assignee3DAvatarBadge } from "@/components/Assignee3DAvatarBadge";
 import { createClient } from "@/utils/supabase/client";
 import { syncCustomQuotesFromAssignees } from "@/utils/memberQuote";
 import ActiveAssignmentNotifier from "@/components/ActiveAssignmentNotifier";
+import DailyMissionModal from "@/components/DailyMissionModal";
+import { computeDailyMission, DailyMissionResult } from "@/utils/dailyMissionService";
+import { logActivity, getCurrentActor } from "@/utils/auditLogger";
 
 export default function DashboardPage() {
   const [activeView, setActiveView] = useState<"assignments" | "dashboards" | "data-reports" | null>(null);
@@ -25,6 +28,7 @@ export default function DashboardPage() {
   const [isSetupOpen, setIsSetupOpen] = useState(false);
   const [isInternalTaskOpen, setIsInternalTaskOpen] = useState(false);
   const [isAvatarStudioOpen, setIsAvatarStudioOpen] = useState(false);
+  const [dailyMission, setDailyMission] = useState<DailyMissionResult | null>(null);
   const [assigneesList, setAssigneesList] = useState<{ id: string; name: string }[]>([]);
   const [currentUserRole, setCurrentUserRole] = useState<"admin" | "assignee" | "viewer">(() => {
     if (typeof window !== "undefined") {
@@ -94,6 +98,26 @@ export default function DashboardPage() {
         syncCustomQuotesFromAssignees(data);
       }
     });
+
+    // Check Mission of the Day (First visit of the day)
+    const todayStr = new Date().toISOString().split("T")[0];
+    const missionKey = `cc_mission_ack_${todayStr}`;
+    const alreadySeen = localStorage.getItem(missionKey);
+
+    if (!alreadySeen) {
+      supabase
+        .from("briefs")
+        .select("*")
+        .neq("status", "purged")
+        .then(({ data: briefsData }) => {
+          if (briefsData && briefsData.length > 0) {
+            const currentName = savedName || "";
+            const currentEmail = savedEmail || "";
+            const calculatedMission = computeDailyMission(briefsData, currentName, currentEmail);
+            setDailyMission(calculatedMission);
+          }
+        });
+    }
 
     // Read view from URL query if present
     if (typeof window !== "undefined") {
@@ -610,6 +634,57 @@ export default function DashboardPage() {
         currentMemberName={userDisplayName || "จ๊อบ AA"}
         assignees={assigneesList}
       />
+      {dailyMission && (
+        <DailyMissionModal
+          mission={dailyMission}
+          onAcknowledge={async () => {
+            const todayStr = new Date().toISOString().split("T")[0];
+            const missionKey = `cc_mission_ack_${todayStr}`;
+            try {
+              localStorage.setItem(missionKey, new Date().toISOString());
+
+              // 1. Log to Advice History / Audit Trail
+              const actor = getCurrentActor();
+              await logActivity({
+                action: "DAILY_MISSION_ACK",
+                actor_name: actor.name,
+                actor_email: actor.email,
+                actor_role: actor.role,
+                details: {
+                  headline: dailyMission.headline,
+                  missions: dailyMission.missions,
+                  urgentTasksCount: dailyMission.urgentTasksCount,
+                  unassignedCount: dailyMission.unassignedCount,
+                  overdueCount: dailyMission.overdueCount,
+                  positiveImpact: dailyMission.positiveImpact,
+                  riskImpact: dailyMission.riskImpact,
+                  acknowledged_at: new Date().toISOString(),
+                },
+              });
+
+              // 2. Also record to notification history drawer for quick review
+              const notifHistory = JSON.parse(localStorage.getItem("cc_recent_assignment_alerts") || "[]");
+              const missionAlert = {
+                id: `mission_${todayStr}`,
+                projectName: `🎯 ภารกิจประจำวัน: ${dailyMission.headline}`,
+                taskCode: "MISSION",
+                deadline: todayStr,
+                requesterName: "ระบบชี้แจงเป้าหมายประจำวัน",
+                unit: dailyMission.roleTitle,
+                alertType: "assigned",
+                timestamp: Date.now(),
+              };
+              const updated = [missionAlert, ...notifHistory.filter((h: any) => h.id !== missionAlert.id)].slice(0, 30);
+              localStorage.setItem("cc_recent_assignment_alerts", JSON.stringify(updated));
+              window.dispatchEvent(new CustomEvent("cc_notif_history_updated"));
+            } catch (err) {
+              console.warn("Failed to log mission ack:", err);
+            }
+            setDailyMission(null);
+          }}
+          onClose={() => setDailyMission(null)}
+        />
+      )}
       {/* Floating Admin Switcher: Only visible when an authentic Admin is simulating Assignee view */}
       {isActualAdmin && currentUserRole === "assignee" && (
         <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2.5 bg-slate-900/95 text-white px-4 py-2.5 rounded-full shadow-2xl border border-slate-700/80 backdrop-blur-md animate-in fade-in slide-in-from-bottom-2 duration-300 text-xs select-none">

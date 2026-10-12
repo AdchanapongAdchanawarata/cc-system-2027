@@ -88,6 +88,8 @@ export default function AuditLogsAndBackupHub() {
         return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">กู้คืนงาน</span>;
       case "SYSTEM_BACKUP":
         return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200">สำรองข้อมูล</span>;
+      case "DAILY_MISSION_ACK":
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">รับทราบภารกิจ (Mission Ack)</span>;
       default:
         return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">{action}</span>;
     }
@@ -208,6 +210,7 @@ export default function AuditLogsAndBackupHub() {
               <option value="DEADLINE_CHANGE">การแก้ไขกำหนดส่ง</option>
               <option value="TASK_PURGE">การลบถาวร (Purge)</option>
               <option value="SYSTEM_BACKUP">การสำรองข้อมูล</option>
+              <option value="DAILY_MISSION_ACK">การรับทราบภารกิจประจำวัน (Mission Ack)</option>
             </select>
           </div>
         </div>
@@ -265,6 +268,19 @@ export default function AuditLogsAndBackupHub() {
                     {log.details?.filename && (
                       <div className="text-[11.5px] text-teal-700">
                         ไฟล์สำรอง: {log.details.filename} ({log.details.totalBriefs} รายการ)
+                      </div>
+                    )}
+
+                    {log.action === "DAILY_MISSION_ACK" && log.details?.headline && (
+                      <div className="text-[11.5px] text-indigo-700 bg-indigo-50/80 p-2 rounded-xl border border-indigo-100 space-y-1">
+                        <div className="font-bold">🎯 {log.details.headline}</div>
+                        {log.details.missions && Array.isArray(log.details.missions) && (
+                          <div className="text-[11px] text-indigo-900 list-disc list-inside space-y-0.5">
+                            {log.details.missions.map((m: string, i: number) => (
+                              <div key={i}>• {m}</div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
 

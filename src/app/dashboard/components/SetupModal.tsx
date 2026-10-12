@@ -123,7 +123,7 @@ const DEFAULT_PRICING: Omit<ServicePricing, 'id'>[] = DEFAULT_STEP_PRICING.map(i
 }));
 
 export default function SetupModal({ onClose, isReadOnly = false }: { onClose: () => void; isReadOnly?: boolean }) {
-  const [activeTab, setActiveTab] = useState<"team" | "okr" | "pricing" | "storage" | "sheets-sync" | "ai-control">("team");
+  const [activeTab, setActiveTab] = useState<"team" | "okr" | "pricing" | "storage" | "sheets-sync" | "ai-control" | "advice-history">("team");
   const [assignees, setAssignees] = useState<Assignee[]>([]);
   const [activeBriefs, setActiveBriefs] = useState<any[]>([]);
   const [okrs, setOkrs] = useState<OKR[]>([]);
@@ -690,6 +690,15 @@ export default function SetupModal({ onClose, isReadOnly = false }: { onClose: (
             }`}
           >
             <Sparkles size={16} /> AI Control & Guardrails
+          </button>
+
+          <button 
+            onClick={() => setActiveTab("advice-history")}
+            className={`pb-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all ${
+              activeTab === "advice-history" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            <ShieldCheck size={16} /> Advice History
           </button>
         </div>
 
@@ -2799,6 +2808,28 @@ export default function SetupModal({ onClose, isReadOnly = false }: { onClose: (
           {activeTab === "ai-control" && (
             <div className="space-y-6 animate-in fade-in duration-200">
               <AiControlHub />
+            </div>
+          )}
+
+          {/* TAB 7: ADVICE HISTORY (MISSION OF THE DAY LOGS) */}
+          {activeTab === "advice-history" && (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-200">
+                    <ShieldCheck size={22} />
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-black text-slate-900">
+                      ประวัติการรับทราบคำแนะนำและภารกิจประจำวัน (Advice & Daily Mission History)
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      บันทึกหลักฐานการแจ้งเตือนภารกิจประจำวัน (Mission of the Day) ของพนักงานแต่ละคน พร้อมเวลาที่กดยืนยันรับทราบ เพื่อความโปร่งใสและตรวจสอบได้
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <AuditLogsAndBackupHub />
             </div>
           )}
         </div>

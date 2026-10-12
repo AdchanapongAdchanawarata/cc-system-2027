@@ -337,7 +337,7 @@ export default function IsoQualityCsatView() {
           <div className="space-y-1">
             <h2 className="text-lg sm:text-xl font-black text-slate-900 flex items-center gap-2">
               <Award className="text-emerald-600" size={22} />
-              <span>ผลสัมฤทธิ์วัตถุประสงค์คุณภาพและคะแนนความพึงพอใจลูกค้า (CSAT Analytics)</span>
+              <span>ผลสัมฤทธิ์วัตถุประสงค์คุณภาพและระดับความพึงพอใจของผู้รับบริการ (Satisfaction Analytics)</span>
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
               การติดตามตัวชี้วัดคุณภาพระดับทีม (Quality Objectives Tracking) และการวิเคราะห์แนวโน้มผลประเมินความพึงพอใจของผู้รับบริการ
@@ -396,7 +396,7 @@ export default function IsoQualityCsatView() {
           <div>
             <h3 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
               <HeartHandshake className="text-emerald-600" size={20} />
-              <span>ผลประเมินความพึงพอใจผู้รับบริการแยกตาม 3 ยูนิตการทำงาน (CSAT Unit Breakdown)</span>
+              <span>ผลประเมินความพึงพอใจผู้รับบริการแยกตาม 3 ยูนิตการทำงาน</span>
             </h3>
             <p className="text-xs text-slate-500">
               ผลการประเมินจากผู้ขอรับบริการจริงครอบคลุมทั้ง 4 มิติคุณภาพ: สุนทรียภาพ, ความถูกต้อง CI, ความรวดเร็ว, และการประสานงาน

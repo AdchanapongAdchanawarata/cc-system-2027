@@ -14,7 +14,7 @@ import { getTaskSurveyUrl } from "@/utils/surveyTokens";
 import { resolveTaskCode } from "@/utils/taskCodeService";
 import { syncCustomQuotesFromAssignees, getMemberCustomQuote } from "@/utils/memberQuote";
 import { syncAvatarsFromAssignees } from "@/utils/avatar3dPresets";
-import { Assignee3DAvatarBadge, CHEEKY_QUOTES } from "@/components/Assignee3DAvatarBadge";
+import { Assignee3DAvatarBadge } from "@/components/Assignee3DAvatarBadge";
 
 interface BriefItem {
   id: string;
@@ -625,7 +625,7 @@ function TrackContent() {
                             </div>
                           )}
                           {assignee && (() => {
-                            const quote = getMemberCustomQuote(assignee.name) || CHEEKY_QUOTES[assignee.name]?.[0];
+                            const quote = getMemberCustomQuote(assignee.name || assignee.id);
                             if (!quote) return null;
                             return (
                               <div className="mt-2.5 pt-2 border-t border-zinc-200/70">

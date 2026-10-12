@@ -1,4 +1,5 @@
 import { BriefTaskLike } from "@/utils/stats";
+import { getMemberCustomQuote } from "@/utils/memberQuote";
 
 export interface DailyMissionResult {
   hasMission: boolean;
@@ -106,7 +107,8 @@ export function computeDailyMission(
 
   const myInProgress = myTasks.filter((b) => b.status === "in_progress");
 
-  const quote = ENCOURAGEMENT_QUOTES[Math.floor(Math.random() * ENCOURAGEMENT_QUOTES.length)];
+  const customMemberQuote = getMemberCustomQuote(memberName);
+  const quote = customMemberQuote || ENCOURAGEMENT_QUOTES[Math.floor(Math.random() * ENCOURAGEMENT_QUOTES.length)];
 
   // Case 1: Design Supervisor / Leads (วา WK, ก้อง)
   if (isDesignLead) {

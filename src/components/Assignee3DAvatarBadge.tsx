@@ -28,47 +28,8 @@ interface Assignee3DAvatarBadgeProps {
   title?: string;
 }
 
-export const CHEEKY_QUOTES: Record<string, string[]> = {
-  "โอ๊ต CNB": [
-    "จ้องตาแบบนี้ มีใจหรือมีงานให้ผมครับ? 👀✨",
-    "PR ตัวตึง วิดีโอไฟลุก พร้อมเสิร์ฟความปัง 🎬🔥",
-    "งานด่วนโทรมา งานช้าทักแชทได้ค้าบ 🏃‍♂️💨",
-  ],
-  "จ๊อบ AA": [
-    "หัวหน้าทีมพร้อมลุย ดราฟนี้เป๊ะทุกพิกเซล 😎✨",
-    "บรีฟเช้า เอาบ่าย ดราฟแรกผ่านชัวร์! 🚀",
-    "งานออกแบบเทพๆ ไว้ใจจ๊อบ AA ได้เลย 🎨",
-  ],
-  "วา WK": [
-    "ผู้ช่วยคนเก่ง งานไว ไอเดียสดใหม่ตลอดเวลา 💖",
-    "สวยเป๊ะ ทรงพลัง พร้อมลุยทุกโปรเจกต์ CC 💅",
-  ],
-  "เยียร์ LLP": [
-    "สายกราฟิกตัวแม่ ไอเดียพุ่งทะยาน 🌟",
-    "แก้งานได้ 3 ครั้ง เกินนั้นเลี้ยงชาไข่มุกนะ 🧋",
-  ],
-  "ก้อง": [
-    "โมชั่นสมูท กราฟิกเนียนตา ไว้ใจก้องได้ครับ ⚡",
-    "ปั่นงานไฟลุกอยู่ค้าบ สู้ชีวิตสุดๆ 🔥💻",
-  ],
-  "นิน": [
-    "คอนเทนต์ตัวแม่ แคปชั่นเด็ดสะเทือนโซเชียล ✍️✨",
-    "คำคมโดนใจ ไวรัลทุกโพสต์ 📱🔥",
-  ],
-};
-
-const GENERIC_CHEEKY_QUOTES = [
-  "จ้องตาแบบนี้ มีใจหรือมีงานครับ? 👀✨",
-  "พร้อมลุยทุกโปรเจกต์ CC เสมอครับ! 🎨",
-  "ปั่นงานไฟลุกอยู่ค้าบ สู้ชีวิตสุดๆ 🔥💻",
-  "งานด่วนโทรมา งานช้าทักไลน์ 🏃‍♂️💨",
-  "หล่อเท่สะดุดตา ออร่าจับประจำทีม 😎",
-  "แก้งานได้ 3 ครั้ง เกินนั้นเลี้ยงชานมนะ 🧋",
-  "สู้ชีวิตมาก แต่งานสู้กลับตลอด ✌️😅",
-  "บรีฟเช้า เอาบ่าย ดราฟแรกผ่านเลย! 🚀",
-  "กำลังเรนเดอร์ไอเดียขั้นเทพอยู่คร้าบ ✨",
-  "แวะมาส่งยิ้มให้ คนข้างๆ ห้ามอู้งานนะ 😜",
-];
+// Backward-compatible empty export (no random mock quotes)
+export const CHEEKY_QUOTES: Record<string, string[]> = {};
 
 export const Assignee3DAvatarBadge: React.FC<Assignee3DAvatarBadgeProps> = ({
   name,
@@ -91,7 +52,6 @@ export const Assignee3DAvatarBadge: React.FC<Assignee3DAvatarBadgeProps> = ({
     left: 0,
     placement: "top",
   });
-  const [quoteIndex, setQuoteIndex] = useState(0);
   const [memberStats, setMemberStats] = useState<CompactMemberStats>(() => getCachedMemberStats(identifier));
   const [customQuote, setCustomQuote] = useState<string>(() => getMemberCustomQuote(identifier) || "");
   const [isEditingQuote, setIsEditingQuote] = useState(false);
@@ -104,7 +64,7 @@ export const Assignee3DAvatarBadge: React.FC<Assignee3DAvatarBadgeProps> = ({
     setConfig(getMemberAvatarConfig(identifier));
     setMemberStats(getCachedMemberStats(identifier));
     const savedQ = getMemberCustomQuote(identifier);
-    if (savedQ !== null) setCustomQuote(savedQ);
+    setCustomQuote(savedQ || "");
 
     const handleAvatarUpdate = (e: any) => {
       const detail = e.detail;
@@ -128,7 +88,7 @@ export const Assignee3DAvatarBadge: React.FC<Assignee3DAvatarBadgeProps> = ({
 
     const handleQuoteUpdate = (e: any) => {
       const saved = getMemberCustomQuote(identifier);
-      if (saved !== null) setCustomQuote(saved);
+      setCustomQuote(saved || "");
     };
 
     window.addEventListener("cc_avatar_updated", handleAvatarUpdate);
@@ -187,7 +147,6 @@ export const Assignee3DAvatarBadge: React.FC<Assignee3DAvatarBadgeProps> = ({
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
     hoverTimerRef.current = setTimeout(() => {
       updatePosition();
-      setQuoteIndex(Math.floor(Math.random() * 10));
       setIsOpen(true);
     }, 100);
   };
@@ -207,23 +166,24 @@ export const Assignee3DAvatarBadge: React.FC<Assignee3DAvatarBadgeProps> = ({
     }
     if (disableHoverPreview) return;
     updatePosition();
-    setQuoteIndex(Math.floor(Math.random() * 10));
     setIsOpen((prev) => !prev);
   };
 
-  const meta = DEFAULT_MEMBER_METADATA[identifier] || {};
-  const quotesList = CHEEKY_QUOTES[identifier] || GENERIC_CHEEKY_QUOTES;
-  const fallbackQuote = quotesList[quoteIndex % quotesList.length] || GENERIC_CHEEKY_QUOTES[0];
-  const displayQuote = customQuote.trim() || fallbackQuote;
+  const canonical = resolveCanonicalMemberKey(identifier);
+  const meta = DEFAULT_MEMBER_METADATA[identifier] || (canonical ? DEFAULT_MEMBER_METADATA[canonical] : undefined) || {};
   const persona = calculatePersona(memberStats, identifier);
 
   // Strictly check if current logged-in user is the owner of this avatar card
   const canEdit = (() => {
     if (typeof window === "undefined") return false;
-    const currentName = (localStorage.getItem("cc_user_name") || "").trim().toLowerCase();
+    const currentName = (localStorage.getItem("cc_user_name") || "").trim();
     if (!currentName) return false;
-    const target = identifier.trim().toLowerCase();
-    return currentName === target || currentName.includes(target) || target.includes(currentName);
+    const curCanonical = resolveCanonicalMemberKey(currentName) || currentName.toLowerCase();
+    const targetCanonical = resolveCanonicalMemberKey(identifier) || identifier.toLowerCase();
+    if (curCanonical && targetCanonical && curCanonical === targetCanonical) return true;
+    const curLower = currentName.toLowerCase();
+    const targetLower = identifier.trim().toLowerCase();
+    return curLower === targetLower || curLower.includes(targetLower) || targetLower.includes(curLower);
   })();
 
   const effectiveTitle = title !== undefined 
@@ -344,7 +304,7 @@ export const Assignee3DAvatarBadge: React.FC<Assignee3DAvatarBadgeProps> = ({
                   <Pencil size={11} className="text-amber-500" />
                   คำคมประจำตัวของคุณ
                 </span>
-                <span className="text-[9px] text-slate-400 font-normal">บันทึกเพื่อแสดงผล</span>
+                <span className="text-[9px] text-slate-400 font-normal">บันทึกเพื่อแสดงผลเหมือนกันทุก Task</span>
               </div>
               <textarea
                 value={quoteInput}
@@ -378,11 +338,11 @@ export const Assignee3DAvatarBadge: React.FC<Assignee3DAvatarBadgeProps> = ({
                 </button>
               </div>
             </div>
-          ) : (
+          ) : customQuote.trim() ? (
             <div className="group/quote relative mt-2 px-2 py-1 text-center w-full">
               <p className="text-[15.5px] font-extrabold text-slate-800 dark:text-slate-100 leading-snug tracking-tight">
                 <span className="text-amber-500 font-serif mr-1 text-base font-black select-none">“</span>
-                {displayQuote}
+                {customQuote.trim()}
                 <span className="text-amber-500 font-serif ml-1 text-base font-black select-none">”</span>
               </p>
 
@@ -392,7 +352,7 @@ export const Assignee3DAvatarBadge: React.FC<Assignee3DAvatarBadgeProps> = ({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setQuoteInput(customQuote || displayQuote);
+                    setQuoteInput(customQuote.trim());
                     setIsEditingQuote(true);
                   }}
                   className="absolute -top-1.5 right-0 p-1 rounded-md text-slate-300 hover:text-amber-600 hover:bg-slate-100 transition-colors opacity-0 group-hover/quote:opacity-100 cursor-pointer"
@@ -401,6 +361,28 @@ export const Assignee3DAvatarBadge: React.FC<Assignee3DAvatarBadgeProps> = ({
                   <Pencil size={11} />
                 </button>
               )}
+            </div>
+          ) : canEdit ? (
+            <div className="mt-2 w-full flex justify-center">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setQuoteInput("");
+                  setIsEditingQuote(true);
+                }}
+                className="px-3 py-1.5 rounded-full text-xs font-bold text-amber-800 bg-amber-50/90 hover:bg-amber-100 border border-amber-200/90 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                title="คลิกเพื่อตั้งคำคมประจำตัวของคุณสำหรับแสดงบนทุก Task"
+              >
+                <Pencil size={11} className="text-amber-600" />
+                <span>+ ตั้งคำคมประจำตัวของคุณ</span>
+              </button>
+            </div>
+          ) : (
+            <div className="mt-2 px-2 py-0.5 text-center w-full">
+              <p className="text-[11px] text-slate-400 font-medium">
+                (ยังไม่ได้ตั้งคำคมประจำตัว)
+              </p>
             </div>
           )}
 

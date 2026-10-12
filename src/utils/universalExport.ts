@@ -633,14 +633,8 @@ export function exportTeamActionPlanReport(format: "pdf" | "csv") {
   }
 
   // Fallback defaults if empty
-  if (!plans || plans.length === 0) {
-    plans = [
-      { code: "CC-ACT-01", title: "Brand CI Guidelines & Template Hub", unit: "งานออกแบบ", assignee: "จอย RL", startDate: "2026-10-01", endDate: "2026-12-31", kpi: "คู่มือ CI 1 เล่ม", budget: "฿30,000", status: "completed", progress: 100 },
-      { code: "CC-ACT-02", title: "ยกระดับ Key Visual ชิงรางวัล Good Design Award", unit: "งานออกแบบ", assignee: "พิม AC", startDate: "2027-01-01", endDate: "2027-03-31", kpi: "ส่งผลงานประกวด 2 รายการ", budget: "฿50,000", status: "completed", progress: 100 },
-      { code: "CC-ACT-03", title: "Creative Trend Radar & สรุปบทวิเคราะห์สื่อดิจิทัล", unit: "งานออกแบบ", assignee: "ก้อง IK", startDate: "2027-04-01", endDate: "2027-09-30", kpi: "รายงานวิเคราะห์ 4 ฉบับ", budget: "฿25,000", status: "in_progress", progress: 65 },
-      { code: "CC-ACT-04", title: "STeP PR Media Network & งานแถลงข่าวนวัตกรรม", unit: "สื่อสารองค์กร", assignee: "ลูกอิน STK", startDate: "2026-10-01", endDate: "2027-09-30", kpi: "สื่อลงข่าว ≥ 120 ชิ้น", budget: "฿60,000", status: "in_progress", progress: 70 },
-      { code: "CC-ACT-05", title: "วิดีโอสั้น 'วิทย์ฯ นอกกรอบ' (Reels & TikTok) 36 ตอน", unit: "ผลิตสื่อสร้างสรรค์", assignee: "เอ็นจอย SLR", startDate: "2026-10-01", endDate: "2027-09-30", kpi: "ยอดวิวรวม ≥ 500,000 วิว", budget: "฿45,000", status: "in_progress", progress: 80 }
-    ];
+  if (Array.isArray(plans)) {
+    plans = plans.filter((p: any) => !p.code?.startsWith("CC-ACT-") && !p.id?.startsWith("ap-"));
   }
 
   const total = plans.length;
@@ -660,7 +654,7 @@ export function exportTeamActionPlanReport(format: "pdf" | "csv") {
         "ล่าช้า": `${delayed} โครงการ`,
         "ความคืบหน้ารวม": `${avgProgress}%`
       },
-      headers: ["ลำดับ", "รหัส", "โครงการ / กิจกรรมหลัก", "ยูนิต", "ผู้รับผิดชอบ", "วันเริ่มต้น", "วันสิ้นสุด", "ตัวชี้วัดความสำเร็จ (KPI)", "งบประมาณ", "สถานะ", "ความคืบหน้า (%)"],
+      headers: ["ลำดับ", "รหัส", "โครงการ / กิจกรรมหลัก", "ยูนิต", "ผู้รับผิดชอบ", "วันเริ่มต้น", "วันสิ้นสุด", "ตัวชี้วัดความสำเร็จ (KPI)", "งบประมาณ", "ต้นทุน", "กำไร CC", "สถานะ", "ความคืบหน้า (%)"],
       rows: plans.map((p, i) => [
         i + 1,
         p.code || "-",
@@ -670,7 +664,9 @@ export function exportTeamActionPlanReport(format: "pdf" | "csv") {
         p.startDate || "-",
         p.endDate || "-",
         p.kpi || "-",
-        p.budget || "-",
+        p.revenue ? `฿${Number(p.revenue).toLocaleString()}` : (p.budget || "-"),
+        p.cost ? `฿${Number(p.cost).toLocaleString()}` : "฿0",
+        p.profit ? `฿${Number(p.profit).toLocaleString()}` : "฿0",
         p.status === "completed" ? "เสร็จสิ้น" : p.status === "in_progress" ? "กำลังดำเนินการ" : p.status === "delayed" ? "ล่าช้า" : "ยังไม่เริ่ม",
         `${p.progress || 0}%`
       ])
@@ -690,9 +686,9 @@ export function exportTeamActionPlanReport(format: "pdf" | "csv") {
         {
           title: "ตารางรายการแผนการดำเนินงานรายโครงการ (Project Action Items)",
           description: "รายละเอียดกำหนดการ, ยูนิต, ผู้รับผิดชอบหลัก, งบประมาณ และตัวชี้วัดความสำเร็จ",
-          headers: ["#", "รหัส", "โครงการ / กิจกรรม", "ยูนิต", "ผู้รับผิดชอบ", "ระยะเวลา", "KPI เป้าหมาย", "งบประมาณ", "สถานะ", "คืบหน้า"],
-          columnAligns: ["center", "center", "left", "left", "left", "center", "left", "right", "center", "right"],
-          columnWidths: ["4%", "9%", "23%", "10%", "10%", "13%", "15%", "7%", "5%", "4%"],
+          headers: ["#", "รหัส", "โครงการ / กิจกรรม", "ยูนิต", "ผู้รับผิดชอบ", "ระยะเวลา", "KPI เป้าหมาย", "งบประมาณ", "ต้นทุน", "กำไร CC", "สถานะ", "คืบหน้า"],
+          columnAligns: ["center", "center", "left", "left", "left", "center", "left", "right", "right", "right", "center", "right"],
+          columnWidths: ["3%", "8%", "20%", "8%", "8%", "11%", "14%", "7%", "7%", "7%", "4%", "3%"],
           rows: plans.map((p, i) => [
             i + 1,
             p.code || "-",
@@ -701,7 +697,9 @@ export function exportTeamActionPlanReport(format: "pdf" | "csv") {
             p.assigneeCode || p.assignee || "-",
             `${p.startDate || ""} ~ ${p.endDate || ""}`,
             p.kpi || "-",
-            p.budget || "-",
+            p.revenue ? `฿${Number(p.revenue).toLocaleString()}` : (p.budget || "-"),
+            p.cost ? `฿${Number(p.cost).toLocaleString()}` : "฿0",
+            p.profit ? `฿${Number(p.profit).toLocaleString()}` : "฿0",
             p.status === "completed" ? "เสร็จสิ้น" : p.status === "in_progress" ? "กำลังดำเนินการ" : "ล่าช้า",
             `${p.progress || 0}%`
           ])

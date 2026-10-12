@@ -48,6 +48,7 @@ export interface ActionPlanItem {
   isCcLiveProject?: boolean;
   briefId?: string;
   revenue?: number;
+  cost?: number;
   profit?: number;
 }
 
@@ -67,120 +68,7 @@ export interface InternalPmProject {
 
 export const DEFAULT_INTERNAL_PM_PROJECTS: InternalPmProject[] = [];
 
-export const DEFAULT_ACTION_PLANS: ActionPlanItem[] = [
-  {
-    id: "ap-1",
-    code: "CC-ACT-01",
-    title: "จัดทำ Brand CI Guidelines & Template Hub อุทยานฯ ฉบับสมบูรณ์ 2027",
-    unit: "งานออกแบบ",
-    assignee: "นางสาวรติพร กัลปพฤกษ์",
-    assigneeCode: "จอย RL",
-    startDate: "2026-10-01",
-    endDate: "2026-12-31",
-    kpi: "คู่มือ CI 1 เล่ม + เทมเพลต 20 ชุดพร้อมใช้",
-    budget: "฿30,000",
-    status: "completed",
-    progress: 100
-  },
-  {
-    id: "ap-2",
-    code: "CC-ACT-02",
-    title: "ยกระดับการผลิต Key Visual & งานออกแบบนวัตกรรมเพื่อรางวัล Good Design Award",
-    unit: "งานออกแบบ",
-    assignee: "นางสาวอัจฉราภรณ์ ศักดาวงศ์เสรี",
-    assigneeCode: "พิม AC",
-    startDate: "2027-01-01",
-    endDate: "2027-03-31",
-    kpi: "ส่งผลงานประกวด 2 ผลงาน / ได้รับรางวัล 1 รางวัล",
-    budget: "฿50,000",
-    status: "completed",
-    progress: 100
-  },
-  {
-    id: "ap-3",
-    code: "CC-ACT-03",
-    title: "พัฒนาระบบ Creative Trend Radar & สรุปบทวิเคราะห์สื่อดิจิทัลทุกไตรมาส",
-    unit: "งานออกแบบ",
-    assignee: "นางสาวมัทนิน ยงค์ไสว",
-    assigneeCode: "นิน MTN",
-    startDate: "2026-10-01",
-    endDate: "2027-09-30",
-    kpi: "รายงาน Trend Radar ครบ 4 ไตรมาส",
-    budget: "฿15,000",
-    status: "in_progress",
-    progress: 75
-  },
-  {
-    id: "ap-4",
-    code: "CC-ACT-04",
-    title: "จัดทำแคมเปญข่าวประชาสัมพันธ์ RSP Innovation Stories เผยแพร่สื่อมวลชน 50 ชิ้น",
-    unit: "สื่อสารองค์กร",
-    assignee: "นางสาวสุทธิอาภา คุ้มครอง",
-    assigneeCode: "ลูกอิน STK",
-    startDate: "2026-10-01",
-    endDate: "2027-09-30",
-    kpi: "ข่าวเผยแพร่ผ่านสื่อระดับประเทศ ≥ 50 ชิ้น",
-    budget: "฿60,000",
-    status: "in_progress",
-    progress: 85
-  },
-  {
-    id: "ap-5",
-    code: "CC-ACT-05",
-    title: "โครงการ Press Tour สื่อมวลชนสัญจรชมสตาร์ทอัพและแล็บนวัตกรรม มช.",
-    unit: "สื่อสารองค์กร",
-    assignee: "นางสาวชนนิกานต์ บุญแก้ว",
-    assigneeCode: "โอ๊ต CNB",
-    startDate: "2027-04-01",
-    endDate: "2027-06-30",
-    kpi: "สื่อมวลชนเข้าร่วม ≥ 15 สำนักข่าว",
-    budget: "฿80,000",
-    status: "completed",
-    progress: 100
-  },
-  {
-    id: "ap-6",
-    code: "CC-ACT-06",
-    title: "ซีรีส์วิดีโอสั้น 'วิทย์ฯ นอกกรอบ' (Short-form Video Reels & TikTok) 36 ตอน",
-    unit: "ผลิตสื่อสร้างสรรค์",
-    assignee: "นางสาวศิริลักษณ์ กันจะนะ",
-    assigneeCode: "เอ็นจอย SLR",
-    startDate: "2026-10-01",
-    endDate: "2027-09-30",
-    kpi: "ผลิตคลิปครบ 36 ตอน ยอดรับชมสะสม ≥ 500,000 วิว",
-    budget: "฿45,000",
-    status: "in_progress",
-    progress: 80
-  },
-  {
-    id: "ap-7",
-    code: "CC-ACT-07",
-    title: "ผลิตสื่อมัลติมีเดีย Virtual Tour แนะนำอุทยานวิทยาศาสตร์ฯ ระบบ Interactive 360",
-    unit: "ผลิตสื่อสร้างสรรค์",
-    assignee: "นางสาวกัลยกร อภิวงศ์",
-    assigneeCode: "แก้ว KYK",
-    startDate: "2027-07-01",
-    endDate: "2027-09-30",
-    kpi: "ระบบ Virtual Tour พร้อมใช้งานบนเว็บไซต์",
-    budget: "฿70,000",
-    status: "in_progress",
-    progress: 60
-  },
-  {
-    id: "ap-8",
-    code: "CC-ACT-08",
-    title: "ระบบบริหารคุณภาพ ISO 9001:2015 และติดตาม WI-CC-001 ถึง 005 แบบเรียลไทม์",
-    unit: "บริหารทีม",
-    assignee: "นายอัจชนะพงษ์ อัจชนะวราทา",
-    assigneeCode: "จ๊อบ AA",
-    startDate: "2026-10-01",
-    endDate: "2027-09-30",
-    kpi: "ผ่านการ Audit ISO 9001 ผลประเมิน CAR = 0",
-    budget: "฿25,000",
-    status: "in_progress",
-    progress: 92
-  }
-];
+export const DEFAULT_ACTION_PLANS: ActionPlanItem[] = [];
 
 export function getFiscalYearConfig(thaiFiscalYear: number) {
   const christianEndYear = thaiFiscalYear - 543;
@@ -298,7 +186,8 @@ export default function TeamActionPlanReportDetail() {
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            return migratePlansToFY2570(parsed);
+            const clean = parsed.filter(p => !p.code?.startsWith("CC-ACT-") && !p.id?.startsWith("ap-"));
+            return migratePlansToFY2570(clean);
           }
         }
       } catch (e) {
@@ -360,7 +249,8 @@ export default function TeamActionPlanReportDetail() {
           []
         );
         if (cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
-          const migrated = migratePlansToFY2570(cloudData);
+          const cleanCloud = cloudData.filter(p => !p.code?.startsWith("CC-ACT-") && !p.id?.startsWith("ap-"));
+          const migrated = migratePlansToFY2570(cleanCloud);
           setPlans(prev => {
             const prevStr = JSON.stringify(prev);
             const nextStr = JSON.stringify(migrated);
@@ -474,6 +364,7 @@ export default function TeamActionPlanReportDetail() {
               isCcLiveProject: true,
               briefId: b.id,
               revenue: rev,
+              cost: cost,
               profit: profit
             });
           });
@@ -486,7 +377,7 @@ export default function TeamActionPlanReportDetail() {
 
           // AUTOMATICALLY MERGE INTO PLANS:
           setPlans(prev => {
-            const basePlans = prev && prev.length > 0 ? prev : DEFAULT_ACTION_PLANS;
+            const basePlans = (prev || []).filter(p => !p.code?.startsWith("CC-ACT-") && !p.id?.startsWith("ap-"));
             const updated = [...basePlans];
 
             liveActionPlans.forEach(liveItem => {
@@ -511,6 +402,7 @@ export default function TeamActionPlanReportDetail() {
                   isCcLiveProject: true,
                   briefId: liveItem.briefId,
                   revenue: liveItem.revenue,
+                  cost: liveItem.cost,
                   profit: liveItem.profit
                 };
               } else {
@@ -519,11 +411,12 @@ export default function TeamActionPlanReportDetail() {
               }
             });
 
+            const finalPlans = updated.filter(p => !p.code?.startsWith("CC-ACT-") && !p.id?.startsWith("ap-"));
             if (typeof window !== "undefined") {
-              localStorage.setItem("cc_team_action_plan_v2_fy70", JSON.stringify(updated));
-              localStorage.setItem("cc_team_action_plan_v1", JSON.stringify(updated));
+              localStorage.setItem("cc_team_action_plan_v2_fy70", JSON.stringify(finalPlans));
+              localStorage.setItem("cc_team_action_plan_v1", JSON.stringify(finalPlans));
             }
-            return updated;
+            return finalPlans;
           });
         }
       }
@@ -711,8 +604,10 @@ export default function TeamActionPlanReportDetail() {
     const avgProgress = total > 0 ? Math.round(plans.reduce((acc, c) => acc + c.progress, 0) / total) : 0;
     const ccProjectsCount = plans.filter(p => p.isCcLiveProject).length;
     const totalRevenue = plans.reduce((acc, p) => acc + (p.revenue || 0), 0);
+    const totalCost = plans.reduce((acc, p) => acc + (p.cost || 0), 0);
+    const totalProfit = plans.reduce((acc, p) => acc + (p.profit || 0), 0);
 
-    return { total, completed, inProgress, delayed, avgProgress, ccProjectsCount, totalRevenue };
+    return { total, completed, inProgress, delayed, avgProgress, ccProjectsCount, totalRevenue, totalCost, totalProfit };
   }, [plans]);
 
   return (
@@ -808,9 +703,10 @@ export default function TeamActionPlanReportDetail() {
               <span className="text-2xl sm:text-3xl font-black text-slate-900">{stats.total}</span>
               <span className="text-xs text-slate-500">กิจกรรม</span>
             </div>
-            <p className="text-[10.5px] text-slate-500 mt-1">
-              {stats.totalRevenue > 0 ? `มูลค่าโครงการ CC รวม ฿${stats.totalRevenue.toLocaleString()}` : "ครอบคลุมทั้ง 3 ยูนิตปฏิบัติการ"}
-            </p>
+            <div className="mt-1 pt-1 border-t border-slate-200/60 flex items-center justify-between text-[10px] font-mono">
+              <span className="text-slate-500">งบรวม: <b className="text-slate-800">฿{stats.totalRevenue.toLocaleString()}</b></span>
+              <span className="text-emerald-700 bg-emerald-100/70 px-1.5 py-0.2 rounded font-bold">กำไร: ฿{stats.totalProfit.toLocaleString()}</span>
+            </div>
           </div>
 
           <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80">
@@ -840,6 +736,49 @@ export default function TeamActionPlanReportDetail() {
               <span className="text-xs text-purple-700 font-mono">Overall Progress</span>
             </div>
             <p className="text-[10.5px] text-purple-700 mt-1">เป้าหมายประจำปีงบประมาณ</p>
+          </div>
+        </div>
+
+        {/* Financial Transparency Banner (ตามกฎเหล็ก Rule 3: AGENTS.md) */}
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-amber-50/80 via-emerald-50/70 to-blue-50/80 border border-amber-200/80 flex items-center justify-between gap-4 flex-wrap shadow-2xs">
+          <div className="flex items-center gap-2.5">
+            <span className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-sm shadow-xs">
+              ฿
+            </span>
+            <div>
+              <div className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                <span>สรุปสถานะการเงินโครงการ CC (Financial Transparency)</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white border border-amber-300 font-mono text-amber-900 font-bold">
+                  KR4 PROFIT
+                </span>
+              </div>
+              <p className="text-[10.5px] text-slate-500">
+                รายงานความโปร่งใสด้านงบประมาณ ต้นทุนดำเนินงาน และกำไรโครงการของทีม CC ทั้งหมด
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 sm:gap-6 font-mono text-xs">
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] text-slate-400 font-sans">งบประมาณรวม (Revenue)</span>
+              <span className="font-bold text-slate-900 text-sm sm:text-base tabular-nums">
+                ฿{stats.totalRevenue.toLocaleString()}
+              </span>
+            </div>
+            <div className="h-6 w-px bg-slate-200" />
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] text-slate-400 font-sans">ต้นทุนรวม (Total Cost)</span>
+              <span className="font-semibold text-rose-600 text-sm sm:text-base tabular-nums">
+                ฿{stats.totalCost.toLocaleString()}
+              </span>
+            </div>
+            <div className="h-6 w-px bg-slate-200" />
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] text-slate-400 font-sans">กำไรโครงการรวม (Profit)</span>
+              <span className="font-extrabold text-emerald-700 bg-emerald-100/90 px-2.5 py-0.5 rounded-lg text-sm sm:text-base tabular-nums border border-emerald-300/80">
+                +฿{stats.totalProfit.toLocaleString()}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -1113,7 +1052,28 @@ export default function TeamActionPlanReportDetail() {
                           </h4>
                           <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono">
                             <span>{formatThaiDateShort(item.startDate)} - {formatThaiDateShort(item.endDate)}</span>
-                            <span className="font-bold text-slate-600">{item.budget}</span>
+                          </div>
+
+                          {/* Financial breakdown: งบประมาณ • ต้นทุน • กำไร CC */}
+                          <div className="mt-1 pt-1.5 border-t border-slate-100 grid grid-cols-3 gap-1 text-[10px] font-mono bg-slate-50/90 px-2 py-1.5 rounded-xl border border-slate-200/60">
+                            <div className="flex flex-col" title="งบประมาณโครงการ / รายรับ">
+                              <span className="text-[9px] text-slate-400 font-sans">งบประมาณ</span>
+                              <span className="font-bold text-slate-800 tabular-nums truncate">
+                                ฿{(item.revenue !== undefined ? item.revenue : (parseFloat((item.budget || "").replace(/[^0-9.-]+/g, "")) || 0)).toLocaleString()}
+                              </span>
+                            </div>
+                            <div className="flex flex-col" title="ต้นทุนโครงการ">
+                              <span className="text-[9px] text-slate-400 font-sans">ต้นทุน</span>
+                              <span className="font-semibold text-rose-600 tabular-nums truncate">
+                                ฿{(item.cost || 0).toLocaleString()}
+                              </span>
+                            </div>
+                            <div className="flex flex-col" title="กำไรโครงการ CC">
+                              <span className="text-[9px] text-slate-400 font-sans">กำไร CC</span>
+                              <span className="font-bold text-emerald-700 tabular-nums truncate">
+                                {(item.profit || 0) >= 0 ? `+฿${(item.profit || 0).toLocaleString()}` : `-฿${Math.abs(item.profit || 0).toLocaleString()}`}
+                              </span>
+                            </div>
                           </div>
                         </div>
 
@@ -1137,7 +1097,7 @@ export default function TeamActionPlanReportDetail() {
                               left: barPos.left,
                               width: barPos.width,
                             }}
-                            title={`${item.title} (${formatThaiDateShort(item.startDate)} - ${formatThaiDateShort(item.endDate)})\nความคืบหน้า: ${item.progress}%\nตัวชี้วัด: ${item.kpi}${barPos.isSpillLeft ? "\n(งานเริ่มก่อนปีงบประมาณนี้)" : ""}${barPos.isSpillRight ? "\n(ดำเนินงานต่อเนื่องไปปีงบประมาณถัดไป)" : ""}`}
+                            title={`${item.title} (${formatThaiDateShort(item.startDate)} - ${formatThaiDateShort(item.endDate)})\nงบประมาณ: ฿${(item.revenue || 0).toLocaleString()} | ต้นทุน: ฿${(item.cost || 0).toLocaleString()} | กำไร: ฿${(item.profit || 0).toLocaleString()}\nความคืบหน้า: ${item.progress}%\nตัวชี้วัด: ${item.kpi}${barPos.isSpillLeft ? "\n(งานเริ่มก่อนปีงบประมาณนี้)" : ""}${barPos.isSpillRight ? "\n(ดำเนินงานต่อเนื่องไปปีงบประมาณถัดไป)" : ""}`}
                           >
                             {/* Inner Progress Track Overlay */}
                             <div
@@ -1198,7 +1158,7 @@ export default function TeamActionPlanReportDetail() {
                   <th className="py-3 px-3 w-28 whitespace-nowrap text-center">ยูนิต</th>
                   <th className="py-3 px-3 w-32 whitespace-nowrap text-center">ผู้รับผิดชอบ</th>
                   <th className="py-3 px-3 w-36 text-center whitespace-nowrap">ระยะเวลา</th>
-                  <th className="py-3 px-3 w-24 text-center whitespace-nowrap">งบประมาณ</th>
+                  <th className="py-3 px-3 min-w-[130px] text-center whitespace-nowrap">การเงิน (งบ • ทุน • กำไร)</th>
                   <th className="py-3 px-3 min-w-[160px]">ตัวชี้วัดความสำเร็จ (KPI)</th>
                   <th className="py-3 px-3 w-32 text-center whitespace-nowrap">สถานะ</th>
                   <th className="py-3 px-3 w-32 text-center whitespace-nowrap">ความคืบหน้า</th>
@@ -1351,8 +1311,23 @@ export default function TeamActionPlanReportDetail() {
                       <td className="py-3 px-3 text-center font-mono text-[11px] text-slate-500 whitespace-nowrap">
                         {formatThaiDateShort(item.startDate)} - {formatThaiDateShort(item.endDate)}
                       </td>
-                      <td className="py-3 px-3 text-center font-mono text-slate-700 font-medium whitespace-nowrap">
-                        {item.budget}
+                      <td className="py-3 px-3 text-center font-mono whitespace-nowrap">
+                        <div className="flex flex-col items-center gap-0.5 text-[11px]">
+                          <div className="flex items-center gap-1 text-slate-800 font-bold">
+                            <span className="text-[9px] text-slate-400 font-sans">งบ:</span>
+                            <span>฿{(item.revenue !== undefined ? item.revenue : (parseFloat((item.budget || "").replace(/[^0-9.-]+/g, "")) || 0)).toLocaleString()}</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-rose-600 font-medium text-[10px]">
+                            <span className="text-[9px] text-slate-400 font-sans">ทุน:</span>
+                            <span>฿{(item.cost || 0).toLocaleString()}</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-emerald-700 font-bold text-[10px]">
+                            <span className="text-[9px] text-slate-400 font-sans">กำไร:</span>
+                            <span className="bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/60">
+                              {(item.profit || 0) >= 0 ? `+฿${(item.profit || 0).toLocaleString()}` : `-฿${Math.abs(item.profit || 0).toLocaleString()}`}
+                            </span>
+                          </div>
+                        </div>
                       </td>
                       <td className="py-3 px-3 text-slate-600">
                         {item.kpi}

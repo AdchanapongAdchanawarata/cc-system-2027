@@ -49,7 +49,7 @@ export function OverdueClockIcon({ size = 20, className = "text-[#E03131]" }: { 
 }
 
 // Clean, minimal Surveillance/Watch icon (crisp eye contour with filled pupil)
-export function WatchEyeIcon({ size = 11, className = "text-black shrink-0" }: { size?: number; className?: string }) {
+export function WatchEyeIcon({ size = 10, className = "text-black shrink-0" }: { size?: number; className?: string }) {
   return (
     <svg 
       width={size} 
@@ -57,7 +57,7 @@ export function WatchEyeIcon({ size = 11, className = "text-black shrink-0" }: {
       viewBox="0 0 24 24" 
       fill="none" 
       stroke="currentColor" 
-      strokeWidth="2.2" 
+      strokeWidth="2.3" 
       strokeLinecap="round" 
       strokeLinejoin="round" 
       className={className}
@@ -1900,11 +1900,11 @@ export default function AssignmentsView() {
                       {isUnderWatch && (
                         <span 
                           onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11.5px] font-black bg-[#FFD43B] hover:bg-[#FCC419] text-black shadow-xs transition-all cursor-help mr-1.5 align-middle group/watch relative select-none"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-black bg-[#FFD43B] hover:bg-[#FCC419] text-black shadow-xs transition-all cursor-help mr-1.5 align-middle group/watch relative select-none"
                           title={`🔍 เฝ้าระวัง:\n${watchReasons.map(r => `• ${r}`).join('\n')}`}
                         >
-                          <WatchEyeIcon size={13} className="text-black shrink-0" />
-                          <span className="tracking-normal font-black text-black leading-none">เฝ้าระวัง</span>
+                          <WatchEyeIcon size={10} className="text-black shrink-0" />
+                          <span className="tracking-tight font-black text-black leading-none">เฝ้าระวัง</span>
 
                           {/* Elegant Hover Popover Card */}
                           <span className="hidden group-hover/watch:flex flex-col absolute left-0 bottom-full mb-2 z-50 w-64 p-2.5 bg-slate-900/95 dark:bg-black/95 text-white backdrop-blur-md rounded-xl shadow-2xl border border-yellow-400/40 text-left pointer-events-none animate-in fade-in-0 zoom-in-95 duration-150">

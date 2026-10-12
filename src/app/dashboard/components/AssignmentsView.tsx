@@ -465,10 +465,46 @@ export default function AssignmentsView() {
     if (selectedBrief && selectedBrief.id === id) {
       setSelectedBrief(prev => prev ? { ...prev, ...updates } : null);
     }
+    if (updates.deadline) {
+      const curDetails = updates.details || brief?.details || {};
+      updates.details = {
+        ...curDetails,
+        deadline: updates.deadline,
+        target_deadline: updates.deadline,
+      };
+    }
+
     await supabase.from('briefs').update(updates).eq('id', id);
 
-    // Broadcast brief update to entire dashboard & Action Plan / Roadmap
+    // Sync action plan cache in localStorage immediately
     if (typeof window !== "undefined") {
+      try {
+        const savedPlans = localStorage.getItem("cc_team_action_plan_v2_fy70");
+        if (savedPlans) {
+          const parsed = JSON.parse(savedPlans);
+          if (Array.isArray(parsed)) {
+            let planChanged = false;
+            const updatedPlans = parsed.map((p: any) => {
+              if (p.briefId === id || p.id === `cc-pm-${id}` || p.id === id) {
+                planChanged = true;
+                return {
+                  ...p,
+                  endDate: updates.deadline ? String(updates.deadline).split("T")[0].split(" ")[0] : p.endDate,
+                  status: updates.status || p.status,
+                  title: updates.project_name || p.title,
+                };
+              }
+              return p;
+            });
+            if (planChanged) {
+              localStorage.setItem("cc_team_action_plan_v2_fy70", JSON.stringify(updatedPlans));
+              localStorage.setItem("cc_team_action_plan_v1", JSON.stringify(updatedPlans));
+            }
+          }
+        }
+      } catch {}
+
+      // Broadcast brief update to entire dashboard & Action Plan / Roadmap
       window.dispatchEvent(new CustomEvent("cc_briefs_updated", { detail: { id, updates } }));
       window.dispatchEvent(new CustomEvent("cc_tasks_updated"));
     }

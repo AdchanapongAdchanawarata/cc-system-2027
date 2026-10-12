@@ -143,13 +143,17 @@ function getBarPosition(
 
 const formatThaiDateShort = (dStr: string) => {
   if (!dStr) return "";
-  const parts = dStr.split("-");
-  if (parts.length !== 3) return dStr;
-  const monthNames = ["", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
-  const m = parseInt(parts[1], 10);
-  const day = parseInt(parts[2], 10);
-  const yr = (parseInt(parts[0], 10) + 543) % 100;
-  return `${day} ${monthNames[m] || parts[1]} ${yr}`;
+  const cleanStr = String(dStr).split("T")[0].split(" ")[0];
+  const parts = cleanStr.split("-");
+  if (parts.length === 3) {
+    const monthNames = ["", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+    const m = parseInt(parts[1], 10);
+    const day = parseInt(parts[2], 10);
+    const rawYr = parseInt(parts[0], 10);
+    const yr = rawYr > 2400 ? rawYr % 100 : (rawYr + 543) % 100;
+    return `${day} ${monthNames[m] || parts[1]} ${yr}`;
+  }
+  return dStr;
 };
 
 const migratePlansToFY2570 = (items: ActionPlanItem[]): ActionPlanItem[] => {
@@ -246,44 +250,17 @@ export default function TeamActionPlanReportDetail() {
   const [newStatus, setNewStatus] = useState<any>("in_progress");
   const [newProgress, setNewProgress] = useState(0);
 
-  // Load from Supabase Cloud with fallback to LocalStorage
-  useEffect(() => {
-    async function loadCloudPlans() {
-      try {
-        const cloudData = await getCloudJson<ActionPlanItem[]>(
-          CLOUD_KEYS.TEAM_ACTION_PLAN,
-          "cc_team_action_plan_v2_fy70",
-          []
-        );
-        if (cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
-          const cleanCloud = cloudData.filter(p => 
-            !p.code?.startsWith("CC-ACT-") && 
-            !p.id?.startsWith("ap-") &&
-            !p.title?.includes("มช.เคียงข้าง") &&
-            p.briefId !== "efab0882-2399-4b8e-abd9-d7cec621d687"
-          );
-          const migrated = migratePlansToFY2570(cleanCloud);
-          setPlans(prev => {
-            const prevStr = JSON.stringify(prev);
-            const nextStr = JSON.stringify(migrated);
-            return prevStr === nextStr ? prev : migrated;
-          });
-        }
-      } catch (e) {
-        console.error("Error loading action plans from cloud:", e);
-      } finally {
-        isCloudLoadedRef.current = true;
-      }
-    }
-    loadCloudPlans();
-  }, []);
-
-  // Fetch Internal & CC PM Projects from Supabase and AUTOMATICALLY LINK to Roadmap
+  // Fetch Cloud Plans AND Live CC PM Projects from Supabase and AUTOMATICALLY SYNC
   const syncLiveCcProjects = async () => {
     setIsSyncingLive(true);
     try {
       const supabase = createClient();
-      const [briefsRes, assigneesRes] = await Promise.all([
+      const [cloudData, briefsRes, assigneesRes] = await Promise.all([
+        getCloudJson<ActionPlanItem[]>(
+          CLOUD_KEYS.TEAM_ACTION_PLAN,
+          "cc_team_action_plan_v2_fy70",
+          []
+        ),
         supabase
           .from("briefs")
           .select("id, project_name, unit, status, priority, deadline, created_at, assignee_id, coordinator_nickname, details")
@@ -294,171 +271,184 @@ export default function TeamActionPlanReportDetail() {
           .select("id, name, unit")
       ]);
 
-      if (briefsRes.data && briefsRes.data.length > 0) {
-        const assigneesMap: Record<string, { name: string; unit?: string }> = {};
-        (assigneesRes.data || []).forEach(a => {
-          assigneesMap[a.id] = { name: a.name, unit: a.unit };
-        });
+      const assigneesMap: Record<string, { name: string; unit?: string }> = {};
+      (assigneesRes.data || []).forEach(a => {
+        assigneesMap[a.id] = { name: a.name, unit: a.unit };
+      });
 
-        // Filter valid PM & CC projects (Rule 1: filter purged/deleted/cancelled/hidden)
-        const pmBriefs = briefsRes.data.filter(b => {
-          if (b.details?.is_deleted || b.details?.is_permanently_deleted || b.status === "cancelled" || b.details?.hide_from_action_plan) return false;
-          // Strictly exclude non-CC PM tasks (e.g. ประสานงานโครงการ, มช.เคียงข้าง)
-          if (b.details?.category === "ประสานงานโครงการ" || (b.project_name && b.project_name.includes("มช.เคียงข้าง"))) return false;
+      // Filter valid PM & CC projects (Rule 1: filter purged/deleted/cancelled/hidden)
+      const pmBriefs = (briefsRes.data || []).filter(b => {
+        if (b.details?.is_deleted || b.details?.is_permanently_deleted || b.status === "cancelled" || b.details?.hide_from_action_plan) return false;
+        if (b.details?.category === "ประสานงานโครงการ" || (b.project_name && b.project_name.includes("มช.เคียงข้าง"))) return false;
 
-          const details = b.details || {};
-          const cat = (details.category || (b as any).category || "").toString();
-          const srv = (details.service || (b as any).service || details.type || "").toString();
-          const pName = (b.project_name || "").toString();
+        const details = b.details || {};
+        const cat = (details.category || (b as any).category || "").toString();
+        const srv = (details.service || (b as any).service || details.type || "").toString();
+        const pName = (b.project_name || "").toString();
 
-          const isStrictCcPm = (
-            details.is_pm_project === true ||
-            cat.trim() === "PM โครงการของ CC" ||
-            cat.includes("PM โครงการ") ||
-            srv.includes("PM โครงการ") ||
-            pName.startsWith("[PM]")
-          );
-          return isStrictCcPm;
-        });
+        const isStrictCcPm = (
+          details.is_pm_project === true ||
+          cat.trim() === "PM โครงการของ CC" ||
+          cat.includes("PM โครงการ") ||
+          srv.includes("PM โครงการ") ||
+          pName.startsWith("[PM]")
+        );
+        return isStrictCcPm;
+      });
 
-        if (pmBriefs.length > 0) {
-          const mappedPmProjects: InternalPmProject[] = [];
-          const liveActionPlans: ActionPlanItem[] = [];
+      const mappedPmProjects: InternalPmProject[] = [];
+      const liveActionPlans: ActionPlanItem[] = [];
 
-          pmBriefs.forEach((b, idx) => {
-            const pCode = b.details?.project_code || b.details?.code || `CC-PM-${String(idx + 1).padStart(2, "0")}`;
-            const aName = b.assignee_id ? (assigneesMap[b.assignee_id]?.name || "ทีม CC") : (b.coordinator_nickname || "ทีม CC");
-            const shortName = aName.split(" ")[0] || aName;
-            const rev = Number(b.details?.revenue) || Number(b.details?.budget) || Number(b.details?.project_value) || 0;
-            const cost = Number(b.details?.cost) || 0;
-            const profit = Number(b.details?.profit) !== undefined && !isNaN(Number(b.details?.profit)) ? Number(b.details.profit) : (rev > 0 ? rev - cost : 0);
-            const budgetStr = rev > 0 ? `฿${rev.toLocaleString()}` : (b.details?.budget ? `฿${Number(b.details.budget).toLocaleString()}` : "฿50,000");
+      pmBriefs.forEach((b, idx) => {
+        const pCode = b.details?.project_code || b.details?.code || `CC-PM-${String(idx + 1).padStart(2, "0")}`;
+        const aName = b.assignee_id ? (assigneesMap[b.assignee_id]?.name || "ทีม CC") : (b.coordinator_nickname || "ทีม CC");
+        const shortName = aName.split(" ")[0] || aName;
+        const rev = Number(b.details?.revenue) || Number(b.details?.budget) || Number(b.details?.project_value) || 0;
+        const cost = Number(b.details?.cost) || 0;
+        const profit = Number(b.details?.profit) !== undefined && !isNaN(Number(b.details?.profit)) ? Number(b.details.profit) : (rev > 0 ? rev - cost : 0);
+        const budgetStr = rev > 0 ? `฿${rev.toLocaleString()}` : (b.details?.budget ? `฿${Number(b.details.budget).toLocaleString()}` : "฿50,000");
 
-            let unitVal: "งานออกแบบ" | "สื่อสารองค์กร" | "ผลิตสื่อสร้างสรรค์" | "บริหารทีม" = "บริหารทีม";
-            const catLower = (b.details?.category || b.project_name || "").toLowerCase();
-            if (b.unit === "creative" || catLower.includes("ออกแบบ") || catLower.includes("design") || catLower.includes("ci") || catLower.includes("บรรจุภัณฑ์")) {
-              unitVal = "งานออกแบบ";
-            } else if (b.unit === "pr" || catLower.includes("สื่อสาร") || catLower.includes("ข่าว") || catLower.includes("pr") || catLower.includes("ภาพลักษณ์")) {
-              unitVal = "สื่อสารองค์กร";
-            } else if (catLower.includes("ผลิตสื่อ") || catLower.includes("วิดีโอ") || catLower.includes("video") || catLower.includes("talkspective") || catLower.includes("content")) {
-              unitVal = "ผลิตสื่อสร้างสรรค์";
-            }
-
-            let startDate = b.details?.start_date || b.details?.project_start_date;
-            if (!startDate && b.created_at) startDate = b.created_at.slice(0, 10);
-            if (!startDate) startDate = "2026-10-01";
-
-            let endDate = b.deadline ? b.deadline.slice(0, 10) : b.details?.end_date;
-            if (!endDate) endDate = "2027-09-30";
-            if (endDate < startDate) endDate = "2027-09-30";
-
-            const isCompleted = b.status === "completed";
-            const isDelayed = !isCompleted && Boolean(b.deadline) && new Date(b.deadline).getTime() < Date.now();
-            const statusVal: "not_started" | "in_progress" | "completed" | "delayed" = isCompleted ? "completed" : isDelayed ? "delayed" : "in_progress";
-            const progressVal = isCompleted ? 100 : (b.details?.progress !== undefined ? Number(b.details.progress) : 50);
-
-            mappedPmProjects.push({
-              id: b.id,
-              code: pCode,
-              title: b.project_name || `โครงการ PM ${pCode}`,
-              unit: unitVal,
-              pmName: aName,
-              pmCode: shortName,
-              budget: budgetStr,
-              kpi: b.details?.kpi || b.details?.deliverables || "ส่งมอบผลผลิตโครงการและบริหารจัดการตามเป้าหมาย 100%",
-              deadline: b.deadline,
-              status: statusVal,
-              progress: progressVal
-            });
-
-            liveActionPlans.push({
-              id: `cc-pm-${b.id}`,
-              code: pCode,
-              title: b.project_name || `โครงการ PM ${pCode}`,
-              unit: unitVal,
-              assignee: aName,
-              assigneeCode: shortName,
-              startDate: startDate,
-              endDate: endDate,
-              kpi: b.details?.kpi || b.details?.deliverables || "ส่งมอบผลผลิตโครงการและบริหารจัดการตามเป้าหมาย 100%",
-              budget: budgetStr,
-              status: statusVal,
-              progress: progressVal,
-              isCcLiveProject: true,
-              briefId: b.id,
-              revenue: rev,
-              cost: cost,
-              profit: profit
-            });
-          });
-
-          setAvailablePmProjects(mappedPmProjects);
-          if (mappedPmProjects.length > 0) {
-            setSelectedPmProjectId(mappedPmProjects[0].id);
-            if (mappedPmProjects[0].deadline) setPmEndDate(mappedPmProjects[0].deadline);
-          }
-
-          // AUTOMATICALLY MERGE INTO PLANS:
-          setPlans(prev => {
-            const basePlans = (prev || []).filter(p => 
-              !p.code?.startsWith("CC-ACT-") && 
-              !p.id?.startsWith("ap-") &&
-              !p.title?.includes("มช.เคียงข้าง") &&
-              p.briefId !== "efab0882-2399-4b8e-abd9-d7cec621d687"
-            );
-            const updated = [...basePlans];
-
-            liveActionPlans.forEach(liveItem => {
-              const matchIdx = updated.findIndex(u => 
-                u.id === liveItem.id ||
-                u.code === liveItem.code ||
-                (u.briefId && u.briefId === liveItem.briefId) ||
-                (u.title && liveItem.title && u.title.trim().toLowerCase() === liveItem.title.trim().toLowerCase())
-              );
-
-              if (matchIdx >= 0) {
-                // Update live values
-                updated[matchIdx] = {
-                  ...updated[matchIdx],
-                  code: liveItem.code,
-                  title: liveItem.title,
-                  assignee: liveItem.assignee,
-                  assigneeCode: liveItem.assigneeCode,
-                  startDate: liveItem.startDate,
-                  endDate: liveItem.endDate,
-                  budget: liveItem.budget,
-                  status: liveItem.status,
-                  progress: liveItem.progress,
-                  isCcLiveProject: true,
-                  briefId: liveItem.briefId,
-                  revenue: liveItem.revenue,
-                  cost: liveItem.cost,
-                  profit: liveItem.profit
-                };
-              } else {
-                // Prepend live CC project
-                updated.unshift(liveItem);
-              }
-            });
-
-            const finalPlans = updated.filter(p => 
-              !p.code?.startsWith("CC-ACT-") && 
-              !p.id?.startsWith("ap-") &&
-              !p.title?.includes("มช.เคียงข้าง") &&
-              p.briefId !== "efab0882-2399-4b8e-abd9-d7cec621d687"
-            );
-            if (typeof window !== "undefined") {
-              localStorage.setItem("cc_team_action_plan_v2_fy70", JSON.stringify(finalPlans));
-              localStorage.setItem("cc_team_action_plan_v1", JSON.stringify(finalPlans));
-            }
-            return finalPlans;
-          });
+        let unitVal: "งานออกแบบ" | "สื่อสารองค์กร" | "ผลิตสื่อสร้างสรรค์" | "บริหารทีม" = "บริหารทีม";
+        const catLower = (b.details?.category || b.project_name || "").toLowerCase();
+        if (b.unit === "creative" || catLower.includes("ออกแบบ") || catLower.includes("design") || catLower.includes("ci") || catLower.includes("บรรจุภัณฑ์")) {
+          unitVal = "งานออกแบบ";
+        } else if (b.unit === "pr" || catLower.includes("สื่อสาร") || catLower.includes("ข่าว") || catLower.includes("pr") || catLower.includes("ภาพลักษณ์")) {
+          unitVal = "สื่อสารองค์กร";
+        } else if (catLower.includes("ผลิตสื่อ") || catLower.includes("วิดีโอ") || catLower.includes("video") || catLower.includes("talkspective") || catLower.includes("content")) {
+          unitVal = "ผลิตสื่อสร้างสรรค์";
         }
+
+        const rawStart = b.details?.start_date || b.details?.project_start_date || b.created_at;
+        let startDate = rawStart ? String(rawStart).split("T")[0].split(" ")[0] : "2026-10-01";
+
+        const rawDeadline = b.deadline || b.details?.publish_date || b.details?.usage_date || b.details?.target_deadline || b.details?.deadline || b.details?.end_date;
+        let endDate = rawDeadline ? String(rawDeadline).split("T")[0].split(" ")[0] : "2027-09-30";
+
+        if (endDate < startDate) {
+          startDate = endDate;
+        }
+
+        const isCompleted = b.status === "completed";
+        const isDelayed = !isCompleted && Boolean(rawDeadline) && new Date(rawDeadline).getTime() < Date.now();
+        const statusVal: "not_started" | "in_progress" | "completed" | "delayed" = isCompleted ? "completed" : isDelayed ? "delayed" : "in_progress";
+        const progressVal = isCompleted ? 100 : (b.details?.progress !== undefined ? Number(b.details.progress) : 50);
+
+        mappedPmProjects.push({
+          id: b.id,
+          code: pCode,
+          title: b.project_name || `โครงการ PM ${pCode}`,
+          unit: unitVal,
+          pmName: aName,
+          pmCode: shortName,
+          budget: budgetStr,
+          kpi: b.details?.kpi || b.details?.deliverables || "ส่งมอบผลผลิตโครงการและบริหารจัดการตามเป้าหมาย 100%",
+          deadline: rawDeadline,
+          status: statusVal,
+          progress: progressVal
+        });
+
+        liveActionPlans.push({
+          id: `cc-pm-${b.id}`,
+          code: pCode,
+          title: b.project_name || `โครงการ PM ${pCode}`,
+          unit: unitVal,
+          assignee: aName,
+          assigneeCode: shortName,
+          startDate: startDate,
+          endDate: endDate,
+          kpi: b.details?.kpi || b.details?.deliverables || "ส่งมอบผลผลิตโครงการและบริหารจัดการตามเป้าหมาย 100%",
+          budget: budgetStr,
+          status: statusVal,
+          progress: progressVal,
+          isCcLiveProject: true,
+          briefId: b.id,
+          revenue: rev,
+          cost: cost,
+          profit: profit
+        });
+      });
+
+      setAvailablePmProjects(mappedPmProjects);
+      if (mappedPmProjects.length > 0) {
+        setSelectedPmProjectId(mappedPmProjects[0].id);
+        if (mappedPmProjects[0].deadline) setPmEndDate(mappedPmProjects[0].deadline);
+      }
+
+      // Base plans from cloudData or initial
+      const rawBase = (cloudData && Array.isArray(cloudData) && cloudData.length > 0) ? cloudData : [];
+      const cleanBase = rawBase.filter(p => 
+        !p.code?.startsWith("CC-ACT-") && 
+        !p.id?.startsWith("ap-") &&
+        !p.title?.includes("มช.เคียงข้าง") &&
+        p.briefId !== "efab0882-2399-4b8e-abd9-d7cec621d687"
+      );
+      const migratedBase = migratePlansToFY2570(cleanBase);
+
+      const mergedMap = new Map<string, ActionPlanItem>();
+
+      // 1. First add base plans
+      migratedBase.forEach(item => {
+        mergedMap.set(item.briefId || item.id, item);
+      });
+
+      // 2. Override with live CC PM plans (Live Brief is Authoritative Source of Truth)
+      liveActionPlans.forEach(liveItem => {
+        const existingKey = Array.from(mergedMap.keys()).find(k => {
+          const item = mergedMap.get(k);
+          return (
+            k === liveItem.briefId ||
+            k === liveItem.id ||
+            item?.code === liveItem.code ||
+            (item?.title && liveItem.title && item.title.trim().toLowerCase() === liveItem.title.trim().toLowerCase())
+          );
+        });
+
+        if (existingKey) {
+          const prev = mergedMap.get(existingKey)!;
+          mergedMap.set(existingKey, {
+            ...prev,
+            ...liveItem,
+            id: prev.id || liveItem.id,
+            code: liveItem.code,
+            title: liveItem.title,
+            assignee: liveItem.assignee,
+            assigneeCode: liveItem.assigneeCode,
+            startDate: liveItem.startDate,
+            endDate: liveItem.endDate, // Live deadline from brief always wins!
+            budget: liveItem.budget,
+            status: liveItem.status,
+            progress: liveItem.progress,
+            isCcLiveProject: true,
+            briefId: liveItem.briefId,
+            revenue: liveItem.revenue,
+            cost: liveItem.cost,
+            profit: liveItem.profit
+          });
+        } else {
+          mergedMap.set(liveItem.briefId || liveItem.id, liveItem);
+        }
+      });
+
+      const finalPlans = Array.from(mergedMap.values()).filter(p => 
+        !p.code?.startsWith("CC-ACT-") && 
+        !p.id?.startsWith("ap-") &&
+        !p.title?.includes("มช.เคียงข้าง") &&
+        p.briefId !== "efab0882-2399-4b8e-abd9-d7cec621d687"
+      );
+
+      setPlans(finalPlans);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("cc_team_action_plan_v2_fy70", JSON.stringify(finalPlans));
+        localStorage.setItem("cc_team_action_plan_v1", JSON.stringify(finalPlans));
+      }
+      if (!isViewer && finalPlans.length > 0) {
+        await setCloudJson(CLOUD_KEYS.TEAM_ACTION_PLAN, finalPlans, "cc_team_action_plan_v2_fy70");
       }
     } catch (err) {
       console.error("Error syncing live CC PM projects:", err);
     } finally {
       setIsSyncingLive(false);
+      isCloudLoadedRef.current = true;
     }
   };
 
@@ -468,51 +458,26 @@ export default function TeamActionPlanReportDetail() {
 
   // Listen for real-time task updates across the system (Bidirectional Auto-Sync)
   useEffect(() => {
-    const handleBriefsUpdated = (e: any) => {
-      const { id, updates } = e.detail || {};
-      if (!id || !updates) {
-        syncLiveCcProjects();
-        return;
-      }
-      setPlans(prev => {
-        let changed = false;
-        const updated = prev.map(p => {
-          if (p.briefId === id || p.id === `cc-pm-${id}` || p.id === id) {
-            changed = true;
-            const newEndDate = updates.deadline ? updates.deadline.slice(0, 10) : p.endDate;
-            const newStatus = updates.status ? (updates.status === "completed" ? "completed" : p.status) : p.status;
-            const newTitle = updates.project_name || p.title;
-            const newProgress = updates.details?.progress !== undefined ? Number(updates.details.progress) : p.progress;
-            const newRev = updates.details?.revenue !== undefined ? Number(updates.details.revenue) : p.revenue;
-            const newCost = updates.details?.cost !== undefined ? Number(updates.details.cost) : p.cost;
-            const newProfit = (newRev !== undefined && newCost !== undefined) ? (newRev - newCost) : p.profit;
-            return {
-              ...p,
-              title: newTitle,
-              endDate: newEndDate,
-              status: newStatus,
-              progress: newProgress,
-              revenue: newRev,
-              cost: newCost,
-              profit: newProfit,
-              budget: newRev !== undefined ? `฿${newRev.toLocaleString()}` : p.budget
-            };
-          }
-          return p;
-        });
-        if (changed) {
-          saveToStorage(updated);
-          return updated;
-        }
-        return prev;
-      });
+    const handleBriefsUpdated = () => {
+      syncLiveCcProjects();
     };
 
     window.addEventListener("cc_briefs_updated", handleBriefsUpdated);
-    window.addEventListener("cc_tasks_updated", syncLiveCcProjects);
+    window.addEventListener("cc_tasks_updated", handleBriefsUpdated);
+
+    // Supabase Realtime channel for live brief changes across all browsers
+    const supabase = createClient();
+    const channel = supabase
+      .channel("briefs_action_plan_live_sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "briefs" }, () => {
+        syncLiveCcProjects();
+      })
+      .subscribe();
+
     return () => {
       window.removeEventListener("cc_briefs_updated", handleBriefsUpdated);
-      window.removeEventListener("cc_tasks_updated", syncLiveCcProjects);
+      window.removeEventListener("cc_tasks_updated", handleBriefsUpdated);
+      supabase.removeChannel(channel);
     };
   }, []);
 

@@ -7,7 +7,8 @@ import {
   UserCircle2, CalendarDays, Tags, KanbanSquare, Flame, 
   CheckCircle2, XCircle, Trash2, Copy, Clock, ClockAlert, History, 
   Users, Star, MessageSquare, Undo2, Redo2, RotateCcw, AlertCircle, Mail,
-  LayoutList, ChevronDown, Check, Search, Eye, Bell, BellRing, BellOff
+  LayoutList, ChevronDown, Check, Search, Eye, Bell, BellRing, BellOff,
+  ArrowDown, Move
 } from "lucide-react";
 import BriefDetailsModal from "./BriefDetailsModal";
 import TrashBinModal from "./TrashBinModal";
@@ -217,6 +218,9 @@ export default function AssignmentsView() {
   
   // Drag and Drop state
   const [draggedBriefId, setDraggedBriefId] = useState<string | null>(null);
+  const [dragOverColId, setDragOverColId] = useState<string | null>(null);
+  const [dragOverBriefId, setDragOverBriefId] = useState<string | null>(null);
+  const [dropPosition, setDropPosition] = useState<"before" | "after" | null>(null);
 
   // Undo / Redo & Trash state
   const [canUndo, setCanUndo] = useState(false);
@@ -903,70 +907,190 @@ export default function AssignmentsView() {
   const handleDragStart = (e: React.DragEvent, id: string) => {
     setDraggedBriefId(id);
     e.dataTransfer.effectAllowed = "move";
-    setTimeout(() => { (e.target as HTMLElement).style.opacity = "0.5"; }, 0);
+    e.dataTransfer.setData("text/plain", id);
   };
 
-  const handleDragEnd = (e: React.DragEvent) => {
-    (e.target as HTMLElement).style.opacity = "1";
+  const handleDragEnd = () => {
     setDraggedBriefId(null);
+    setDragOverColId(null);
+    setDragOverBriefId(null);
+    setDropPosition(null);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleColumnDragOver = (e: React.DragEvent, colId: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
+    if (dragOverColId !== colId) {
+      setDragOverColId(colId);
+    }
   };
 
-  const handleDrop = (e: React.DragEvent, columnId: string) => {
+  const handleColumnDragLeave = (e: React.DragEvent, colId: string) => {
+    const related = e.relatedTarget as HTMLElement | null;
+    if (!related || !e.currentTarget.contains(related)) {
+      if (dragOverColId === colId) {
+        setDragOverColId(null);
+        setDragOverBriefId(null);
+        setDropPosition(null);
+      }
+    }
+  };
+
+  const handleCardDragOver = (e: React.DragEvent, targetBriefId: string, colId: string) => {
     e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "move";
+    if (draggedBriefId === targetBriefId) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    const pos = e.clientY < midY ? "before" : "after";
+
+    if (dragOverColId !== colId) setDragOverColId(colId);
+    if (dragOverBriefId !== targetBriefId || dropPosition !== pos) {
+      setDragOverBriefId(targetBriefId);
+      setDropPosition(pos);
+    }
+  };
+
+  const handleDrop = async (
+    e: React.DragEvent,
+    columnId: string,
+    targetBriefId?: string | null,
+    position?: "before" | "after" | null
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const activeDraggedId = draggedBriefId;
+    setDraggedBriefId(null);
+    setDragOverColId(null);
+    setDragOverBriefId(null);
+    setDropPosition(null);
+
     if (isViewer) {
-      setDraggedBriefId(null);
       alert("โหมดผู้เข้าชม (Viewer Mode): คุณมีสิทธิ์อ่านอย่างเดียว ไม่สามารถเปลี่ยนสถานะงานได้");
       return;
     }
-    if (draggedBriefId) {
-      const brief = briefs.find(b => b.id === draggedBriefId);
-      if (!brief) {
-        setDraggedBriefId(null);
-        return;
-      }
+    if (!activeDraggedId) return;
 
-      if (columnId === 'unassigned') {
-        updateField(draggedBriefId, 'assignee_id', null);
-        if (brief.status !== 'pending') {
-          updateField(draggedBriefId, 'status', 'pending');
-        }
-        showToast(`ย้าย "${brief.project_name}" ไปที่ UNASSIGNED (รอมอบหมาย)`, "info");
-      } else if (columnId === 'pending') {
-        if (!brief.assignee_id) {
-          setSelectedBrief(brief);
-          showToast(`กรุณากำหนดผู้รับผิดชอบงาน "${brief.project_name}" เพื่อย้ายเข้า Pending (รอทำ)`, "info");
-        } else {
-          updateField(draggedBriefId, 'status', 'pending');
-        }
-      } else if (columnId === 'in_progress') {
-        if (!brief.assignee_id) {
-          setSelectedBrief(brief);
-          showToast(`กรุณากำหนดผู้รับผิดชอบงาน "${brief.project_name}" ก่อนเริ่มงาน (In Progress)`, "info");
-        } else {
-          updateField(draggedBriefId, 'status', 'in_progress');
-        }
-      } else if (columnId === 'completed') {
-        if (brief.status === 'pending') {
-          alert(
-            "⚠️ ไม่สามารถย้ายงานจาก 'Pending (รอทำ)' หรือ 'Unassigned' ไปยังสถานะ 'Completed' ได้โดยตรง!\n\n" +
-            "📌 ขั้นตอนการทำงานที่ถูกต้อง:\n" +
-            "1. กำหนดผู้รับผิดชอบงาน (Assignee)\n" +
-            "2. ย้ายสถานะไปที่ 'In Progress (กำลังทำ)' เพื่อเริ่มงานและแจ้งผู้เกี่ยวข้อง\n" +
-            "3. ดำเนินงานจนส่งมอบสมบูรณ์ จึงจะเปลี่ยนสถานะเป็น 'Completed'"
-          );
-          setDraggedBriefId(null);
-          return;
-        }
-        updateField(draggedBriefId, 'status', 'completed');
-      } else {
-        updateField(draggedBriefId, 'status', columnId);
+    const brief = briefs.find(b => b.id === activeDraggedId);
+    if (!brief) return;
+
+    // Check status transition rules
+    if (columnId === 'completed' && brief.status === 'pending') {
+      alert(
+        "⚠️ ไม่สามารถย้ายงานจาก 'Pending (รอทำ)' หรือ 'Unassigned' ไปยังสถานะ 'Completed' ได้โดยตรง!\n\n" +
+        "📌 ขั้นตอนการทำงานที่ถูกต้อง:\n" +
+        "1. กำหนดผู้รับผิดชอบงาน (Assignee)\n" +
+        "2. ย้ายสถานะไปที่ 'In Progress (กำลังทำ)' เพื่อเริ่มงานและแจ้งผู้เกี่ยวข้อง\n" +
+        "3. ดำเนินงานจนส่งมอบสมบูรณ์ จึงจะเปลี่ยนสถานะเป็น 'Completed'"
+      );
+      return;
+    }
+
+    if ((columnId === 'pending' || columnId === 'in_progress') && !brief.assignee_id) {
+      setSelectedBrief(brief);
+      showToast(
+        columnId === 'pending'
+          ? `กรุณากำหนดผู้รับผิดชอบงาน "${brief.project_name}" เพื่อย้ายเข้า Pending (รอทำ)`
+          : `กรุณากำหนดผู้รับผิดชอบงาน "${brief.project_name}" ก่อนเริ่มงาน (In Progress)`,
+        "info"
+      );
+      return;
+    }
+
+    // Determine target status and assignee
+    let newStatus = columnId;
+    let newAssigneeId = brief.assignee_id;
+    if (columnId === 'unassigned') {
+      newAssigneeId = null;
+      newStatus = 'pending';
+      showToast(`ย้าย "${brief.project_name}" ไปที่ UNASSIGNED (รอมอบหมาย)`, "info");
+    }
+
+    // Compute reordering in destination column
+    const colBriefs = getColumnBriefs(columnId).filter(b => b.id !== activeDraggedId);
+    let targetIndex = colBriefs.length;
+
+    if (targetBriefId) {
+      const idx = colBriefs.findIndex(b => b.id === targetBriefId);
+      if (idx !== -1) {
+        targetIndex = position === "before" ? idx : idx + 1;
       }
-      setDraggedBriefId(null);
+    }
+
+    const updatedColBriefs = [...colBriefs];
+    updatedColBriefs.splice(targetIndex, 0, { ...brief, status: newStatus, assignee_id: newAssigneeId });
+
+    // Assign integer ranks (10, 20, 30, ...)
+    const rankMap = new Map<string, number>();
+    updatedColBriefs.forEach((b, idx) => {
+      rankMap.set(b.id, (idx + 1) * 10);
+    });
+
+    const targetRank = rankMap.get(activeDraggedId) || 10;
+    const curDetails = brief.details || {};
+    const updatedDetails = {
+      ...curDetails,
+      kanban_order: targetRank
+    };
+
+    const updates: any = {
+      status: newStatus,
+      assignee_id: newAssigneeId,
+      details: updatedDetails
+    };
+
+    const now = new Date().toISOString();
+    if (newStatus === 'in_progress' && !brief.in_progress_at) updates.in_progress_at = now;
+    if ((newStatus === 'completed' || newStatus === 'cancelled') && !brief.completed_at) updates.completed_at = now;
+
+    // Optimistically update all reordered briefs in state
+    setBriefs(prev => prev.map(b => {
+      if (b.id === activeDraggedId) {
+        return { ...b, ...updates };
+      }
+      if (rankMap.has(b.id)) {
+        return {
+          ...b,
+          details: { ...(b.details || {}), kanban_order: rankMap.get(b.id)! }
+        };
+      }
+      return b;
+    }));
+
+    // Record history
+    globalHistoryManager.push({
+      id: Math.random().toString(36).substring(2, 9),
+      type: 'MOVE_STATUS',
+      description: `ย้าย "${brief.project_name}" ไป ${columnId}`,
+      briefId: activeDraggedId,
+      timestamp: Date.now(),
+      undo: async () => {
+        await updateFieldInternal(activeDraggedId, { status: brief.status, assignee_id: brief.assignee_id, details: brief.details });
+      },
+      redo: async () => {
+        await updateFieldInternal(activeDraggedId, updates);
+      }
+    });
+
+    await updateFieldInternal(activeDraggedId, updates);
+
+    // Save siblings rank updates to Supabase in background
+    try {
+      const supabase = createClient();
+      for (const b of updatedColBriefs) {
+        if (b.id !== activeDraggedId) {
+          const rank = rankMap.get(b.id)!;
+          if (b.details?.kanban_order !== rank) {
+            const siblingDetails = { ...(b.details || {}), kanban_order: rank };
+            supabase.from('briefs').update({ details: siblingDetails }).eq('id', b.id);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Failed to persist sibling ranks:", err);
     }
   };
 
@@ -1269,7 +1393,14 @@ export default function AssignmentsView() {
              b.details?.description?.toLowerCase().includes(q) ||
              b.details?.notes?.toLowerCase().includes(q);
     })
-    .sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    .sort((a, b) => {
+      const orderA = a.details?.kanban_order;
+      const orderB = b.details?.kanban_order;
+      if (typeof orderA === "number" && typeof orderB === "number") return orderA - orderB;
+      if (typeof orderA === "number") return -1;
+      if (typeof orderB === "number") return 1;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
 
   // Categorize tasks cleanly into 5 distinct columns: UNASSIGNED, TO-DO LIST (Pending), IN PROGRESS, COMPLETED, CANCELLED
   const getColumnBriefs = (colId: string) => {
@@ -1766,19 +1897,33 @@ export default function AssignmentsView() {
       <div className="flex-1 min-h-0 flex flex-col md:grid md:grid-cols-5 gap-2 sm:gap-2.5 overflow-hidden h-full">
         {COLUMNS.map(col => {
           const columnBriefs = getColumnBriefs(col.id);
+          const isColDragOver = dragOverColId === col.id;
+
           return (
             <div 
               key={col.id} 
-              className={`w-full flex-col h-full min-h-0 bg-slate-100/50 rounded-xl p-1.5 sm:p-2 transition-colors border border-transparent hover:border-slate-200 ${
+              className={`w-full flex-col h-full min-h-0 rounded-xl p-1.5 sm:p-2 transition-all border ${
+                isColDragOver
+                  ? "bg-indigo-50/40 dark:bg-indigo-950/20 border-indigo-400 dark:border-indigo-500 shadow-md ring-2 ring-indigo-400/20"
+                  : "bg-slate-100/50 hover:border-slate-200 border-transparent"
+              } ${
                 mobileStatusTab === col.id ? "flex" : "hidden md:flex"
               }`}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, col.id)}
+              onDragOver={(e) => handleColumnDragOver(e, col.id)}
+              onDragLeave={(e) => handleColumnDragLeave(e, col.id)}
+              onDrop={(e) => handleDrop(e, col.id, dragOverBriefId, dropPosition)}
             >
               
               {/* Column Header: Hidden on mobile (since top tab switcher already displays it); Visible on md+ */}
               <div className={`hidden md:flex items-center justify-between mb-2 px-2.5 py-1.5 rounded-xl border border-t-4 shadow-2xs shrink-0 ${col.headerBg}`}>
-                <h3 className="font-bold text-[11px] sm:text-xs uppercase tracking-wide truncate">{col.shortLabel}</h3>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <h3 className="font-bold text-[11px] sm:text-xs uppercase tracking-wide truncate">{col.shortLabel}</h3>
+                  {isColDragOver && (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-indigo-600 text-white animate-pulse">
+                      <ArrowDown size={10} /> วางที่นี่
+                    </span>
+                  )}
+                </div>
                 <span className={`text-[11px] sm:text-xs font-bold px-1.5 py-0.2 rounded-full shadow-2xs shrink-0 ${col.badgeBg}`}>
                   {columnBriefs.length}
                 </span>
@@ -1786,6 +1931,25 @@ export default function AssignmentsView() {
               
               {/* Column Cards */}
               <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pb-2 pr-0.5 custom-scrollbar">
+                {/* Empty column drop target box */}
+                {columnBriefs.length === 0 && draggedBriefId && (
+                  <div 
+                    onDragOver={(e) => handleColumnDragOver(e, col.id)}
+                    onDrop={(e) => handleDrop(e, col.id)}
+                    className={`h-36 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 p-3 transition-all ${
+                      isColDragOver
+                        ? "border-indigo-500 bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 scale-[1.01]"
+                        : "border-slate-300 dark:border-zinc-700 bg-slate-50/50 dark:bg-zinc-800/30 text-slate-400"
+                    }`}
+                  >
+                    <Move size={22} className={isColDragOver ? "animate-bounce text-indigo-600" : "text-slate-400"} />
+                    <span className="text-xs font-bold text-center">
+                      {isColDragOver ? "ปล่อยเพื่อวางงานในคอลัมน์นี้" : "ลากงานมาวางที่นี่"}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-medium">ย้ายเข้า {col.label}</span>
+                  </div>
+                )}
+
                 {columnBriefs.map(brief => {
                 const ages = getTaskAges(brief);
                 
@@ -1854,15 +2018,52 @@ export default function AssignmentsView() {
 
                 const isUnderWatch = watchReasons.length > 0 && brief.status !== 'completed' && brief.status !== 'cancelled';
 
+                const isDraggingThis = draggedBriefId === brief.id;
+                const isDropBefore = dragOverColId === col.id && dragOverBriefId === brief.id && dropPosition === 'before' && !isDraggingThis;
+                const isDropAfter = dragOverColId === col.id && dragOverBriefId === brief.id && dropPosition === 'after' && !isDraggingThis;
+
+                if (isDraggingThis) {
+                  return (
+                    <div 
+                      key={brief.id}
+                      className="min-h-[105px] p-3 rounded-xl border-2 border-dashed border-indigo-400 dark:border-indigo-500 bg-indigo-50/60 dark:bg-indigo-950/40 flex flex-col items-center justify-center gap-1.5 text-center transition-all select-none animate-pulse shadow-xs"
+                    >
+                      <div className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 font-bold text-xs">
+                        <Move size={14} className="animate-spin text-indigo-600 dark:text-indigo-400" />
+                        <span>กำลังยกย้ายงานนี้...</span>
+                      </div>
+                      <span className="font-mono text-[11px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/60 px-2 py-0.5 rounded-md">
+                        {getTaskCode(brief.unit, brief.id)}
+                      </span>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[180px] font-medium">
+                        {brief.project_name}
+                      </p>
+                    </div>
+                  );
+                }
+
                 return (
-                  <div 
-                    key={brief.id} 
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, brief.id)}
-                    onDragEnd={handleDragEnd}
-                    onClick={() => setSelectedBrief(brief)}
-                    className="bg-surface p-2.5 rounded-xl border border-surface-border shadow-2xs hover:shadow-md hover:border-slate-300 dark:hover:border-zinc-700 transition-all cursor-grab active:cursor-grabbing group flex flex-col justify-between relative min-h-[105px] select-none"
-                  >
+                  <div key={brief.id} className="space-y-1">
+                    {/* Insertion slot BEFORE */}
+                    {isDropBefore && (
+                      <div 
+                        onDragOver={(e) => handleCardDragOver(e, brief.id, col.id)}
+                        onDrop={(e) => handleDrop(e, col.id, brief.id, 'before')}
+                        className="h-9 rounded-xl border-2 border-dashed border-indigo-500 bg-indigo-100/90 dark:bg-indigo-950/70 flex items-center justify-center gap-1.5 text-indigo-700 dark:text-indigo-300 text-xs font-bold shadow-xs animate-in fade-in zoom-in-95 duration-150"
+                      >
+                        <ArrowDown size={14} className="animate-bounce text-indigo-600" />
+                        <span>แทรกงานตรงนี้ (ก่อน {getTaskCode(brief.unit, brief.id)})</span>
+                      </div>
+                    )}
+
+                    <div 
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, brief.id)}
+                      onDragEnd={handleDragEnd}
+                      onDragOver={(e) => handleCardDragOver(e, brief.id, col.id)}
+                      onClick={() => setSelectedBrief(brief)}
+                      className="bg-surface p-2.5 rounded-xl border border-surface-border shadow-2xs hover:shadow-md hover:border-slate-300 dark:hover:border-zinc-700 transition-all cursor-grab active:cursor-grabbing group flex flex-col justify-between relative min-h-[105px] select-none"
+                    >
                     {/* Corner Status Icons: Overdue (Clockwise Clock Arrow) or Urgent/Due <= 3 days (Red Flame) - Enlarged size=20, No circle container */}
                     {isOverdue ? (
                       <div 
@@ -2128,8 +2329,33 @@ export default function AssignmentsView() {
                       </button>
                     </div>
                   </div>
+
+                    {/* Insertion slot AFTER */}
+                    {isDropAfter && (
+                      <div 
+                        onDragOver={(e) => handleCardDragOver(e, brief.id, col.id)}
+                        onDrop={(e) => handleDrop(e, col.id, brief.id, 'after')}
+                        className="h-9 rounded-xl border-2 border-dashed border-indigo-500 bg-indigo-100/90 dark:bg-indigo-950/70 flex items-center justify-center gap-1.5 text-indigo-700 dark:text-indigo-300 text-xs font-bold shadow-xs animate-in fade-in zoom-in-95 duration-150"
+                      >
+                        <ArrowDown size={14} className="animate-bounce text-indigo-600" />
+                        <span>แทรกงานตรงนี้ (หลัง {getTaskCode(brief.unit, brief.id)})</span>
+                      </div>
+                    )}
+                  </div>
                 );
               })}
+
+              {/* Slot at bottom of column when dragging over column but not over specific card */}
+              {isColDragOver && !dragOverBriefId && draggedBriefId && columnBriefs.length > 0 && (
+                <div 
+                  onDragOver={(e) => handleColumnDragOver(e, col.id)}
+                  onDrop={(e) => handleDrop(e, col.id, null, null)}
+                  className="h-10 my-1 rounded-xl border-2 border-dashed border-indigo-400 bg-indigo-50/80 dark:bg-indigo-950/40 flex items-center justify-center gap-1.5 text-indigo-600 dark:text-indigo-300 text-xs font-bold shadow-xs animate-in fade-in duration-150"
+                >
+                  <ArrowDown size={13} className="animate-bounce" />
+                  <span>วางต่อท้ายคอลัมน์นี้</span>
+                </div>
+              )}
             </div>
           </div>
         );

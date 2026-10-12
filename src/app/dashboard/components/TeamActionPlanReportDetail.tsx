@@ -29,6 +29,7 @@ import ModernDatePicker from "@/components/ModernDatePicker";
 import ExportDataDropdown from "./ExportDataDropdown";
 import { exportTeamActionPlanReport } from "@/utils/universalExport";
 import { getCloudJson, setCloudJson, CLOUD_KEYS } from "@/utils/cloudSyncService";
+import { isCcPmProject } from "@/utils/stats";
 
 export interface ActionPlanItem {
   id: string;
@@ -44,6 +45,10 @@ export interface ActionPlanItem {
   budget: string;
   status: "not_started" | "in_progress" | "completed" | "delayed";
   progress: number;
+  isCcLiveProject?: boolean;
+  briefId?: string;
+  revenue?: number;
+  profit?: number;
 }
 
 export interface InternalPmProject {
@@ -62,7 +67,120 @@ export interface InternalPmProject {
 
 export const DEFAULT_INTERNAL_PM_PROJECTS: InternalPmProject[] = [];
 
-const DEFAULT_ACTION_PLANS: ActionPlanItem[] = [];
+export const DEFAULT_ACTION_PLANS: ActionPlanItem[] = [
+  {
+    id: "ap-1",
+    code: "CC-ACT-01",
+    title: "จัดทำ Brand CI Guidelines & Template Hub อุทยานฯ ฉบับสมบูรณ์ 2027",
+    unit: "งานออกแบบ",
+    assignee: "นางสาวรติพร กัลปพฤกษ์",
+    assigneeCode: "จอย RL",
+    startDate: "2026-10-01",
+    endDate: "2026-12-31",
+    kpi: "คู่มือ CI 1 เล่ม + เทมเพลต 20 ชุดพร้อมใช้",
+    budget: "฿30,000",
+    status: "completed",
+    progress: 100
+  },
+  {
+    id: "ap-2",
+    code: "CC-ACT-02",
+    title: "ยกระดับการผลิต Key Visual & งานออกแบบนวัตกรรมเพื่อรางวัล Good Design Award",
+    unit: "งานออกแบบ",
+    assignee: "นางสาวอัจฉราภรณ์ ศักดาวงศ์เสรี",
+    assigneeCode: "พิม AC",
+    startDate: "2027-01-01",
+    endDate: "2027-03-31",
+    kpi: "ส่งผลงานประกวด 2 ผลงาน / ได้รับรางวัล 1 รางวัล",
+    budget: "฿50,000",
+    status: "completed",
+    progress: 100
+  },
+  {
+    id: "ap-3",
+    code: "CC-ACT-03",
+    title: "พัฒนาระบบ Creative Trend Radar & สรุปบทวิเคราะห์สื่อดิจิทัลทุกไตรมาส",
+    unit: "งานออกแบบ",
+    assignee: "นางสาวมัทนิน ยงค์ไสว",
+    assigneeCode: "นิน MTN",
+    startDate: "2026-10-01",
+    endDate: "2027-09-30",
+    kpi: "รายงาน Trend Radar ครบ 4 ไตรมาส",
+    budget: "฿15,000",
+    status: "in_progress",
+    progress: 75
+  },
+  {
+    id: "ap-4",
+    code: "CC-ACT-04",
+    title: "จัดทำแคมเปญข่าวประชาสัมพันธ์ RSP Innovation Stories เผยแพร่สื่อมวลชน 50 ชิ้น",
+    unit: "สื่อสารองค์กร",
+    assignee: "นางสาวสุทธิอาภา คุ้มครอง",
+    assigneeCode: "ลูกอิน STK",
+    startDate: "2026-10-01",
+    endDate: "2027-09-30",
+    kpi: "ข่าวเผยแพร่ผ่านสื่อระดับประเทศ ≥ 50 ชิ้น",
+    budget: "฿60,000",
+    status: "in_progress",
+    progress: 85
+  },
+  {
+    id: "ap-5",
+    code: "CC-ACT-05",
+    title: "โครงการ Press Tour สื่อมวลชนสัญจรชมสตาร์ทอัพและแล็บนวัตกรรม มช.",
+    unit: "สื่อสารองค์กร",
+    assignee: "นางสาวชนนิกานต์ บุญแก้ว",
+    assigneeCode: "โอ๊ต CNB",
+    startDate: "2027-04-01",
+    endDate: "2027-06-30",
+    kpi: "สื่อมวลชนเข้าร่วม ≥ 15 สำนักข่าว",
+    budget: "฿80,000",
+    status: "completed",
+    progress: 100
+  },
+  {
+    id: "ap-6",
+    code: "CC-ACT-06",
+    title: "ซีรีส์วิดีโอสั้น 'วิทย์ฯ นอกกรอบ' (Short-form Video Reels & TikTok) 36 ตอน",
+    unit: "ผลิตสื่อสร้างสรรค์",
+    assignee: "นางสาวศิริลักษณ์ กันจะนะ",
+    assigneeCode: "เอ็นจอย SLR",
+    startDate: "2026-10-01",
+    endDate: "2027-09-30",
+    kpi: "ผลิตคลิปครบ 36 ตอน ยอดรับชมสะสม ≥ 500,000 วิว",
+    budget: "฿45,000",
+    status: "in_progress",
+    progress: 80
+  },
+  {
+    id: "ap-7",
+    code: "CC-ACT-07",
+    title: "ผลิตสื่อมัลติมีเดีย Virtual Tour แนะนำอุทยานวิทยาศาสตร์ฯ ระบบ Interactive 360",
+    unit: "ผลิตสื่อสร้างสรรค์",
+    assignee: "นางสาวกัลยกร อภิวงศ์",
+    assigneeCode: "แก้ว KYK",
+    startDate: "2027-07-01",
+    endDate: "2027-09-30",
+    kpi: "ระบบ Virtual Tour พร้อมใช้งานบนเว็บไซต์",
+    budget: "฿70,000",
+    status: "in_progress",
+    progress: 60
+  },
+  {
+    id: "ap-8",
+    code: "CC-ACT-08",
+    title: "ระบบบริหารคุณภาพ ISO 9001:2015 และติดตาม WI-CC-001 ถึง 005 แบบเรียลไทม์",
+    unit: "บริหารทีม",
+    assignee: "นายอัจชนะพงษ์ อัจชนะวราทา",
+    assigneeCode: "จ๊อบ AA",
+    startDate: "2026-10-01",
+    endDate: "2027-09-30",
+    kpi: "ผ่านการ Audit ISO 9001 ผลประเมิน CAR = 0",
+    budget: "฿25,000",
+    status: "in_progress",
+    progress: 92
+  }
+];
 
 export function getFiscalYearConfig(thaiFiscalYear: number) {
   const christianEndYear = thaiFiscalYear - 543;
@@ -187,25 +305,27 @@ export default function TeamActionPlanReportDetail() {
         console.error(e);
       }
     }
-    return [];
+    return DEFAULT_ACTION_PLANS;
   });
 
   // Save plans to Supabase Cloud + LocalStorage
   useEffect(() => {
     if (!isCloudLoadedRef.current) return;
     if (isViewer) return;
-    if (plans) {
+    if (plans && plans.length > 0) {
       setCloudJson(CLOUD_KEYS.TEAM_ACTION_PLAN, plans, "cc_team_action_plan_v2_fy70");
     }
   }, [plans, isViewer]);
 
   const [viewMode, setViewMode] = useState<"timeline" | "table">("timeline");
+  const [projectTypeFilter, setProjectTypeFilter] = useState<"ALL" | "CC_ONLY" | "ACTION_PLAN_ONLY">("ALL");
   const [unitFilter, setUnitFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<ActionPlanItem | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [isSyncingLive, setIsSyncingLive] = useState(false);
 
   // Dynamic Fiscal Year State (Default: 2570, starts from 2570)
   const [selectedFiscalYear, setSelectedFiscalYear] = useState<number>(2570);
@@ -256,89 +376,196 @@ export default function TeamActionPlanReportDetail() {
     loadCloudPlans();
   }, []);
 
-  // Fetch Internal PM Projects from Supabase (where CC is PM)
-  useEffect(() => {
-    async function fetchInternalPmProjects() {
-      try {
-        const supabase = createClient();
-        const [briefsRes, assigneesRes] = await Promise.all([
-          supabase
-            .from("briefs").select("id, project_name, unit, status, priority, deadline, created_at, assignee_id, coordinator_nickname, details").neq("status", "purged").order("created_at", { ascending: false }),
-          supabase
-            .from("assignees")
-            .select("id, name, unit")
-        ]);
+  // Fetch Internal & CC PM Projects from Supabase and AUTOMATICALLY LINK to Roadmap
+  const syncLiveCcProjects = async () => {
+    setIsSyncingLive(true);
+    try {
+      const supabase = createClient();
+      const [briefsRes, assigneesRes] = await Promise.all([
+        supabase
+          .from("briefs")
+          .select("id, project_name, unit, status, priority, deadline, created_at, assignee_id, coordinator_nickname, details")
+          .neq("status", "purged")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("assignees")
+          .select("id, name, unit")
+      ]);
 
-        if (briefsRes.data && briefsRes.data.length > 0) {
-          const assigneesMap: Record<string, { name: string; unit?: string }> = {};
-          (assigneesRes.data || []).forEach(a => {
-            assigneesMap[a.id] = { name: a.name, unit: a.unit };
-          });
+      if (briefsRes.data && briefsRes.data.length > 0) {
+        const assigneesMap: Record<string, { name: string; unit?: string }> = {};
+        (assigneesRes.data || []).forEach(a => {
+          assigneesMap[a.id] = { name: a.name, unit: a.unit };
+        });
 
-          // Filter PM projects where CC is PM
-          const pmBriefs = briefsRes.data.filter(b => {
-            if (b.status === "cancelled") return false;
-            const cat = (b.details?.category || b.details?.service_name || "").toLowerCase();
-            const isPmCat = cat.includes("pm โครงการ") || cat.includes("pm project") || cat === "pm โครงการของ cc".toLowerCase();
-            const isInternalWithCode = b.unit === "internal" && Boolean(b.details?.project_code || b.details?.revenue !== undefined);
-            const isPmName = (b.project_name || "").toLowerCase().includes("pm");
-            return isPmCat || isInternalWithCode || isPmName;
-          });
+        // Filter valid PM & CC projects (Rule 1: filter purged/deleted/cancelled)
+        const pmBriefs = briefsRes.data.filter(b => {
+          if (b.details?.is_deleted || b.details?.is_permanently_deleted || b.status === "cancelled") return false;
+          const isPm = isCcPmProject(b);
+          const isInternal = b.unit === "internal";
+          const hasProjectCode = Boolean(b.details?.project_code || b.details?.code);
+          const hasRevenue = Number(b.details?.revenue) > 0 || Number(b.details?.budget) > 0;
+          return isPm || (isInternal && (hasProjectCode || hasRevenue || isPm));
+        });
 
-          if (pmBriefs.length > 0) {
-            const mapped: InternalPmProject[] = pmBriefs.map((b, idx) => {
-              const pCode = b.details?.project_code || `PM-CC-${String(idx + 1).padStart(2, "0")}`;
-              const aName = b.assignee_id ? (assigneesMap[b.assignee_id]?.name || "ทีม CC") : (b.coordinator_nickname || "ทีม CC");
-              const shortName = aName.split(" ")[0] || aName;
-              const rev = Number(b.details?.revenue) || Number(b.details?.budget) || Number(b.details?.project_value) || 0;
-              const budgetStr = rev > 0 ? `฿${rev.toLocaleString()}` : "฿50,000";
+        if (pmBriefs.length > 0) {
+          const mappedPmProjects: InternalPmProject[] = [];
+          const liveActionPlans: ActionPlanItem[] = [];
 
-              let unitVal: "งานออกแบบ" | "สื่อสารองค์กร" | "ผลิตสื่อสร้างสรรค์" | "บริหารทีม" = "บริหารทีม";
-              const catLower = (b.details?.category || b.project_name || "").toLowerCase();
-              if (catLower.includes("ออกแบบ") || catLower.includes("design") || catLower.includes("ci")) unitVal = "งานออกแบบ";
-              else if (catLower.includes("สื่อสาร") || catLower.includes("ข่าว") || catLower.includes("pr")) unitVal = "สื่อสารองค์กร";
-              else if (catLower.includes("ผลิตสื่อ") || catLower.includes("วิดีโอ") || catLower.includes("video")) unitVal = "ผลิตสื่อสร้างสรรค์";
+          pmBriefs.forEach((b, idx) => {
+            const pCode = b.details?.project_code || b.details?.code || `CC-PM-${String(idx + 1).padStart(2, "0")}`;
+            const aName = b.assignee_id ? (assigneesMap[b.assignee_id]?.name || "ทีม CC") : (b.coordinator_nickname || "ทีม CC");
+            const shortName = aName.split(" ")[0] || aName;
+            const rev = Number(b.details?.revenue) || Number(b.details?.budget) || Number(b.details?.project_value) || 0;
+            const cost = Number(b.details?.cost) || 0;
+            const profit = Number(b.details?.profit) || (rev > 0 ? rev - cost : 0);
+            const budgetStr = rev > 0 ? `฿${rev.toLocaleString()}` : (b.details?.budget ? `฿${Number(b.details.budget).toLocaleString()}` : "฿50,000");
 
-              return {
-                id: b.id,
-                code: pCode,
-                title: b.project_name || `โครงการ PM ${pCode}`,
-                unit: unitVal,
-                pmName: aName,
-                pmCode: shortName,
-                budget: budgetStr,
-                kpi: b.details?.kpi || b.details?.deliverables || "ส่งมอบผลผลิตโครงการและบริหารจัดการตามเป้าหมาย 100%",
-                deadline: b.deadline,
-                status: (b.status === "completed" ? "completed" : b.status === "in_progress" ? "in_progress" : "not_started") as any,
-                progress: b.status === "completed" ? 100 : b.status === "in_progress" ? 50 : 0
-              };
+            let unitVal: "งานออกแบบ" | "สื่อสารองค์กร" | "ผลิตสื่อสร้างสรรค์" | "บริหารทีม" = "บริหารทีม";
+            const catLower = (b.details?.category || b.project_name || "").toLowerCase();
+            if (b.unit === "creative" || catLower.includes("ออกแบบ") || catLower.includes("design") || catLower.includes("ci") || catLower.includes("บรรจุภัณฑ์")) {
+              unitVal = "งานออกแบบ";
+            } else if (b.unit === "pr" || catLower.includes("สื่อสาร") || catLower.includes("ข่าว") || catLower.includes("pr") || catLower.includes("ภาพลักษณ์")) {
+              unitVal = "สื่อสารองค์กร";
+            } else if (catLower.includes("ผลิตสื่อ") || catLower.includes("วิดีโอ") || catLower.includes("video") || catLower.includes("talkspective") || catLower.includes("content")) {
+              unitVal = "ผลิตสื่อสร้างสรรค์";
+            }
+
+            let startDate = b.details?.start_date || b.details?.project_start_date;
+            if (!startDate && b.created_at) startDate = b.created_at.slice(0, 10);
+            if (!startDate) startDate = "2026-10-01";
+
+            let endDate = b.deadline ? b.deadline.slice(0, 10) : b.details?.end_date;
+            if (!endDate) endDate = "2027-09-30";
+            if (endDate < startDate) endDate = "2027-09-30";
+
+            const isCompleted = b.status === "completed";
+            const isDelayed = !isCompleted && Boolean(b.deadline) && new Date(b.deadline).getTime() < Date.now();
+            const statusVal: "not_started" | "in_progress" | "completed" | "delayed" = isCompleted ? "completed" : isDelayed ? "delayed" : "in_progress";
+            const progressVal = isCompleted ? 100 : (b.details?.progress !== undefined ? Number(b.details.progress) : 50);
+
+            mappedPmProjects.push({
+              id: b.id,
+              code: pCode,
+              title: b.project_name || `โครงการ PM ${pCode}`,
+              unit: unitVal,
+              pmName: aName,
+              pmCode: shortName,
+              budget: budgetStr,
+              kpi: b.details?.kpi || b.details?.deliverables || "ส่งมอบผลผลิตโครงการและบริหารจัดการตามเป้าหมาย 100%",
+              deadline: b.deadline,
+              status: statusVal,
+              progress: progressVal
             });
 
-            const combined = mapped;
-            setAvailablePmProjects(combined);
-            if (combined.length > 0) {
-              setSelectedPmProjectId(combined[0].id);
-              if (combined[0].deadline) setPmEndDate(combined[0].deadline);
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Error loading internal PM projects:", err);
-      }
-    }
+            liveActionPlans.push({
+              id: `cc-pm-${b.id}`,
+              code: pCode,
+              title: b.project_name || `โครงการ PM ${pCode}`,
+              unit: unitVal,
+              assignee: aName,
+              assigneeCode: shortName,
+              startDate: startDate,
+              endDate: endDate,
+              kpi: b.details?.kpi || b.details?.deliverables || "ส่งมอบผลผลิตโครงการและบริหารจัดการตามเป้าหมาย 100%",
+              budget: budgetStr,
+              status: statusVal,
+              progress: progressVal,
+              isCcLiveProject: true,
+              briefId: b.id,
+              revenue: rev,
+              profit: profit
+            });
+          });
 
-    fetchInternalPmProjects();
+          setAvailablePmProjects(mappedPmProjects);
+          if (mappedPmProjects.length > 0) {
+            setSelectedPmProjectId(mappedPmProjects[0].id);
+            if (mappedPmProjects[0].deadline) setPmEndDate(mappedPmProjects[0].deadline);
+          }
+
+          // AUTOMATICALLY MERGE INTO PLANS:
+          setPlans(prev => {
+            const basePlans = prev && prev.length > 0 ? prev : DEFAULT_ACTION_PLANS;
+            const updated = [...basePlans];
+
+            liveActionPlans.forEach(liveItem => {
+              const matchIdx = updated.findIndex(u => 
+                u.id === liveItem.id ||
+                u.code === liveItem.code ||
+                (u.briefId && u.briefId === liveItem.briefId) ||
+                (u.title && liveItem.title && u.title.trim().toLowerCase() === liveItem.title.trim().toLowerCase())
+              );
+
+              if (matchIdx >= 0) {
+                // Update live values
+                updated[matchIdx] = {
+                  ...updated[matchIdx],
+                  code: liveItem.code,
+                  title: liveItem.title,
+                  assignee: liveItem.assignee,
+                  assigneeCode: liveItem.assigneeCode,
+                  budget: liveItem.budget,
+                  status: liveItem.status,
+                  progress: liveItem.progress,
+                  isCcLiveProject: true,
+                  briefId: liveItem.briefId,
+                  revenue: liveItem.revenue,
+                  profit: liveItem.profit
+                };
+              } else {
+                // Prepend live CC project
+                updated.unshift(liveItem);
+              }
+            });
+
+            if (typeof window !== "undefined") {
+              localStorage.setItem("cc_team_action_plan_v2_fy70", JSON.stringify(updated));
+              localStorage.setItem("cc_team_action_plan_v1", JSON.stringify(updated));
+            }
+            return updated;
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Error syncing live CC PM projects:", err);
+    } finally {
+      setIsSyncingLive(false);
+    }
+  };
+
+  useEffect(() => {
+    syncLiveCcProjects();
   }, []);
 
   const saveToStorage = (items: ActionPlanItem[]) => {
     setPlans(items);
     if (typeof window !== "undefined") {
+      localStorage.setItem("cc_team_action_plan_v2_fy70", JSON.stringify(items));
       localStorage.setItem("cc_team_action_plan_v1", JSON.stringify(items));
     }
   };
 
   const filteredPlans = useMemo(() => {
     return plans.filter(item => {
+      // Filter by Project Type (All vs CC Projects vs General Action Plans)
+      if (projectTypeFilter === "CC_ONLY" && !item.isCcLiveProject) return false;
+      if (projectTypeFilter === "ACTION_PLAN_ONLY" && item.isCcLiveProject) return false;
+
+      // In Timeline View: check fiscal year overlap
+      if (viewMode === "timeline") {
+        let s = new Date(item.startDate).getTime();
+        let e = new Date(item.endDate).getTime();
+        if (isNaN(s)) s = fiscalConfig.fiscalStart;
+        if (isNaN(e)) e = fiscalConfig.fiscalEnd;
+        if (e < s) e = s + 30 * 86400000;
+
+        // If completely before or after the selected fiscal year, hide from this fiscal year's Gantt bar
+        if (e < fiscalConfig.fiscalStart || s > fiscalConfig.fiscalEnd) {
+          return false;
+        }
+      }
+
       if (unitFilter !== "ALL" && item.unit !== unitFilter) return false;
       if (statusFilter !== "ALL" && item.status !== statusFilter) return false;
       if (searchQuery.trim()) {
@@ -353,7 +580,7 @@ export default function TeamActionPlanReportDetail() {
       }
       return true;
     });
-  }, [plans, unitFilter, statusFilter, searchQuery]);
+  }, [plans, projectTypeFilter, viewMode, fiscalConfig, unitFilter, statusFilter, searchQuery]);
 
   // Handle Edit
   const handleStartEdit = (item: ActionPlanItem) => {
@@ -382,8 +609,9 @@ export default function TeamActionPlanReportDetail() {
   };
 
   const handleResetToDefault = () => {
-    if (confirm("ต้องการรีเซ็ตกลับเป็นข้อมูลตัวอย่างเริ่มต้นใช่หรือไม่?")) {
-      saveToStorage([]);
+    if (confirm("ต้องการรีเซ็ตแผนดำเนินงานกลับเป็นค่าเริ่มต้นพร้อมซิงค์โครงการ CC ใช่หรือไม่?")) {
+      saveToStorage(DEFAULT_ACTION_PLANS);
+      syncLiveCcProjects();
     }
   };
 
@@ -441,7 +669,9 @@ export default function TeamActionPlanReportDetail() {
       kpi: proj.kpi,
       budget: proj.budget,
       status: proj.status,
-      progress: proj.progress
+      progress: proj.progress,
+      isCcLiveProject: true,
+      briefId: proj.id
     };
 
     const updated = [newItem, ...plans];
@@ -479,8 +709,10 @@ export default function TeamActionPlanReportDetail() {
     const inProgress = plans.filter(p => p.status === "in_progress").length;
     const delayed = plans.filter(p => p.status === "delayed").length;
     const avgProgress = total > 0 ? Math.round(plans.reduce((acc, c) => acc + c.progress, 0) / total) : 0;
+    const ccProjectsCount = plans.filter(p => p.isCcLiveProject).length;
+    const totalRevenue = plans.reduce((acc, p) => acc + (p.revenue || 0), 0);
 
-    return { total, completed, inProgress, delayed, avgProgress };
+    return { total, completed, inProgress, delayed, avgProgress, ccProjectsCount, totalRevenue };
   }, [plans]);
 
   return (
@@ -527,6 +759,17 @@ export default function TeamActionPlanReportDetail() {
               </div>
             ) : (
               <>
+                {/* Real-time Sync from CC Projects Button */}
+                <button
+                  onClick={syncLiveCcProjects}
+                  disabled={isSyncingLive}
+                  className="px-3.5 py-2 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-full inline-flex items-center gap-1.5 shadow-2xs cursor-pointer active:scale-95 transition-all disabled:opacity-50"
+                  title="ซิงค์ดึงโครงการล่าสุดของ CC จากฐานข้อมูล Supabase"
+                >
+                  <RefreshCw size={13} className={isSyncingLive ? "animate-spin text-emerald-600" : "text-emerald-600"} />
+                  <span>{isSyncingLive ? "กำลังซิงค์โครงการ..." : "ซิงค์โครงการ CC"}</span>
+                </button>
+
                 {/* Button to import from Internal PM Project */}
                 <button
                   onClick={() => setShowPmImportModal(true)}
@@ -552,12 +795,22 @@ export default function TeamActionPlanReportDetail() {
         {/* 4 Summary Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">โครงการทั้งหมด</span>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">โครงการทั้งหมด</span>
+              {stats.ccProjectsCount > 0 && (
+                <span className="text-[10px] font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded-full border border-amber-300 flex items-center gap-1">
+                  <Sparkles size={10} className="text-amber-600" />
+                  <span>โครงการ CC: {stats.ccProjectsCount}</span>
+                </span>
+              )}
+            </div>
             <div className="mt-1 flex items-baseline gap-2">
               <span className="text-2xl sm:text-3xl font-black text-slate-900">{stats.total}</span>
               <span className="text-xs text-slate-500">กิจกรรม</span>
             </div>
-            <p className="text-[10.5px] text-slate-500 mt-1">ครอบคลุมทั้ง 3 ยูนิตปฏิบัติการ</p>
+            <p className="text-[10.5px] text-slate-500 mt-1">
+              {stats.totalRevenue > 0 ? `มูลค่าโครงการ CC รวม ฿${stats.totalRevenue.toLocaleString()}` : "ครอบคลุมทั้ง 3 ยูนิตปฏิบัติการ"}
+            </p>
           </div>
 
           <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80">
@@ -615,6 +868,25 @@ export default function TeamActionPlanReportDetail() {
                 <Layers size={13} />
                 <span>ตารางข้อมูล</span>
               </button>
+            </div>
+
+            {/* Filter by Project Source / Category */}
+            <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-xs">
+              {[
+                { key: "ALL", label: `ทั้งหมด (${plans.length})` },
+                { key: "CC_ONLY", label: `💼 โครงการ CC (${stats.ccProjectsCount})` },
+                { key: "ACTION_PLAN_ONLY", label: `แผนงานทั่วไป (${plans.length - stats.ccProjectsCount})` }
+              ].map(t => (
+                <button
+                  key={t.key}
+                  onClick={() => setProjectTypeFilter(t.key as any)}
+                  className={`px-3 py-1 font-bold rounded-lg transition-all cursor-pointer ${
+                    projectTypeFilter === t.key ? "bg-white text-slate-900 shadow-2xs" : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
             </div>
 
             <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-xs">
@@ -714,7 +986,7 @@ export default function TeamActionPlanReportDetail() {
                   onChange={e => setSelectedFiscalYear(Number(e.target.value))}
                   className="text-xs font-black px-2 py-1 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 focus:outline-none focus:border-emerald-500 cursor-pointer"
                 >
-                  {[2570, 2571, 2572, 2573, 2574, 2575, 2576].map(y => (
+                  {[2569, 2570, 2571, 2572, 2573, 2574, 2575, 2576].map(y => (
                     <option key={y} value={y}>
                       {y} (ต.ค. {y - 1} - ก.ย. {y})
                     </option>
@@ -809,6 +1081,12 @@ export default function TeamActionPlanReportDetail() {
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                               {item.unit}
                             </span>
+                            {item.isCcLiveProject && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300 flex items-center gap-0.5" title="โครงการของ CC ที่ซิงค์จากระบบ">
+                                <Sparkles size={9} className="text-amber-600" />
+                                <span>โครงการ CC</span>
+                              </span>
+                            )}
                             <span className="text-[11px] font-semibold text-slate-600">
                               {item.assigneeCode}
                             </span>
@@ -1050,9 +1328,17 @@ export default function TeamActionPlanReportDetail() {
                         {item.code}
                       </td>
                       <td className="py-3 px-3">
-                        <span className="font-bold text-slate-900 block">
-                          {item.title}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-bold text-slate-900">
+                            {item.title}
+                          </span>
+                          {item.isCcLiveProject && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300 inline-flex items-center gap-1">
+                              <Sparkles size={10} className="text-amber-600" />
+                              <span>โครงการ CC</span>
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3 px-3 text-center whitespace-nowrap">
                         <span className="inline-block whitespace-nowrap px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-slate-100 text-slate-700 border border-slate-200">

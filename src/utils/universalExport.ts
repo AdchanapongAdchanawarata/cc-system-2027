@@ -626,7 +626,7 @@ export function openPdfPrintWindow(htmlContent: string) {
 export function exportTeamActionPlanReport(format: "pdf" | "csv") {
   let plans: any[] = [];
   try {
-    const raw = localStorage.getItem("cc_team_action_plan_v1");
+    const raw = localStorage.getItem("cc_team_action_plan_v2_fy70") || localStorage.getItem("cc_team_action_plan_v1");
     if (raw) plans = JSON.parse(raw);
   } catch (e) {
     console.error(e);

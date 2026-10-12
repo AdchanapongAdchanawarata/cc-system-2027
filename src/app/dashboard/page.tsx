@@ -694,7 +694,6 @@ export default function DashboardPage() {
             }
             setDailyMission(null);
           }}
-          onClose={() => setDailyMission(null)}
         />
       )}
       {/* Floating Admin Switcher: Only visible when an authentic Admin is simulating Assignee view */}

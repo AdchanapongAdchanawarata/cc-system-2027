@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { 
-  Sparkles, AlertTriangle, ArrowRight, X, Flame
+  Sparkles, AlertTriangle, ArrowRight, Flame
 } from "lucide-react";
 import { DailyMissionResult } from "@/utils/dailyMissionService";
 import { Assignee3DAvatarBadge } from "./Assignee3DAvatarBadge";
@@ -11,13 +11,11 @@ import { Assignee3DAvatarBadge } from "./Assignee3DAvatarBadge";
 interface DailyMissionModalProps {
   mission: DailyMissionResult;
   onAcknowledge: () => void;
-  onClose?: () => void;
 }
 
 export default function DailyMissionModal({
   mission,
   onAcknowledge,
-  onClose,
 }: DailyMissionModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -41,9 +39,8 @@ export default function DailyMissionModal({
     .replace("⚠️ ความเสี่ยงหากล่าช้า: ", "")
     .trim();
 
-  const cleanQuote = (mission.encouragementQuote || "")
-    .replace(/^["'“\s]+|["'”\s]+$/g, "")
-    .trim();
+  const rawQuote = (mission.encouragementQuote || "").trim();
+  const cleanQuote = rawQuote.replace(/^["'“\s]+|["'”\s]+$/g, "").trim();
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] bg-neutral-900/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
@@ -52,21 +49,11 @@ export default function DailyMissionModal({
         {/* Dieter Rams Header: High Contrast, Clean Grid */}
         <div className="p-6 sm:p-8 pb-5 border-b border-neutral-100">
           
-          {/* Top Category Tag & Close Button */}
+          {/* Top Category Tag (No Close Button) */}
           <div className="flex items-center justify-between gap-3 mb-4">
             <div className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-neutral-400 uppercase font-mono">
               MISSION BRIEFING • DAILY FOCUS
             </div>
-
-            {onClose && (
-              <button
-                onClick={onClose}
-                className="text-neutral-400 hover:text-neutral-800 p-1.5 rounded-full hover:bg-neutral-100 transition-colors cursor-pointer"
-                title="ปิด"
-              >
-                <X size={18} />
-              </button>
-            )}
           </div>
 
           {/* User Profile Row: Enlarged Avatar & Bold Typography */}
@@ -116,11 +103,11 @@ export default function DailyMissionModal({
         {/* Content Body */}
         <div className="p-6 sm:p-8 space-y-6">
           
-          {/* Energy & Encouragement Quote: Borderless, Large, Multiline, Energizing */}
+          {/* Energy & Encouragement Quote: Centered, Short, Enclosed in Quotes */}
           {cleanQuote && (
-            <div className="text-left -mt-1 pb-1">
-              <p className="text-[15px] sm:text-base font-bold text-neutral-800 leading-relaxed whitespace-pre-line tracking-tight">
-                {cleanQuote}
+            <div className="text-center py-1 px-4 -mt-1">
+              <p className="text-sm sm:text-base font-bold text-neutral-800 leading-relaxed tracking-tight">
+                “{cleanQuote}”
               </p>
             </div>
           )}
@@ -188,7 +175,7 @@ export default function DailyMissionModal({
             onClick={handleConfirm}
             className="w-full py-3.5 px-6 rounded-xl bg-[#FF6200] hover:bg-[#EE5500] active:scale-[0.99] text-white font-bold text-xs sm:text-sm tracking-wide transition-all shadow-[0_4px_14px_rgba(255,98,0,0.25)] hover:shadow-[0_6px_20px_rgba(255,98,0,0.35)] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 select-none"
           >
-            <span>รับทราบภารกิจและเริ่มงาน</span>
+            <span>รับทราบภารกิจ</span>
             <ArrowRight size={15} />
           </button>
         </div>

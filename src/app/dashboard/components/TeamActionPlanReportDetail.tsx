@@ -186,7 +186,12 @@ export default function TeamActionPlanReportDetail() {
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            const clean = parsed.filter(p => !p.code?.startsWith("CC-ACT-") && !p.id?.startsWith("ap-"));
+            const clean = parsed.filter(p => 
+              !p.code?.startsWith("CC-ACT-") && 
+              !p.id?.startsWith("ap-") &&
+              !p.title?.includes("มช.เคียงข้าง") &&
+              p.briefId !== "efab0882-2399-4b8e-abd9-d7cec621d687"
+            );
             return migratePlansToFY2570(clean);
           }
         }
@@ -213,6 +218,8 @@ export default function TeamActionPlanReportDetail() {
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<ActionPlanItem | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [isSyncingLive, setIsSyncingLive] = useState(false);
 
@@ -249,7 +256,12 @@ export default function TeamActionPlanReportDetail() {
           []
         );
         if (cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
-          const cleanCloud = cloudData.filter(p => !p.code?.startsWith("CC-ACT-") && !p.id?.startsWith("ap-"));
+          const cleanCloud = cloudData.filter(p => 
+            !p.code?.startsWith("CC-ACT-") && 
+            !p.id?.startsWith("ap-") &&
+            !p.title?.includes("มช.เคียงข้าง") &&
+            p.briefId !== "efab0882-2399-4b8e-abd9-d7cec621d687"
+          );
           const migrated = migratePlansToFY2570(cleanCloud);
           setPlans(prev => {
             const prevStr = JSON.stringify(prev);
@@ -288,14 +300,25 @@ export default function TeamActionPlanReportDetail() {
           assigneesMap[a.id] = { name: a.name, unit: a.unit };
         });
 
-        // Filter valid PM & CC projects (Rule 1: filter purged/deleted/cancelled)
+        // Filter valid PM & CC projects (Rule 1: filter purged/deleted/cancelled/hidden)
         const pmBriefs = briefsRes.data.filter(b => {
-          if (b.details?.is_deleted || b.details?.is_permanently_deleted || b.status === "cancelled") return false;
-          const isPm = isCcPmProject(b);
-          const isInternal = b.unit === "internal";
-          const hasProjectCode = Boolean(b.details?.project_code || b.details?.code);
-          const hasRevenue = Number(b.details?.revenue) > 0 || Number(b.details?.budget) > 0;
-          return isPm || (isInternal && (hasProjectCode || hasRevenue || isPm));
+          if (b.details?.is_deleted || b.details?.is_permanently_deleted || b.status === "cancelled" || b.details?.hide_from_action_plan) return false;
+          // Strictly exclude non-CC PM tasks (e.g. ประสานงานโครงการ, มช.เคียงข้าง)
+          if (b.details?.category === "ประสานงานโครงการ" || (b.project_name && b.project_name.includes("มช.เคียงข้าง"))) return false;
+
+          const details = b.details || {};
+          const cat = (details.category || (b as any).category || "").toString();
+          const srv = (details.service || (b as any).service || details.type || "").toString();
+          const pName = (b.project_name || "").toString();
+
+          const isStrictCcPm = (
+            details.is_pm_project === true ||
+            cat.trim() === "PM โครงการของ CC" ||
+            cat.includes("PM โครงการ") ||
+            srv.includes("PM โครงการ") ||
+            pName.startsWith("[PM]")
+          );
+          return isStrictCcPm;
         });
 
         if (pmBriefs.length > 0) {
@@ -308,7 +331,7 @@ export default function TeamActionPlanReportDetail() {
             const shortName = aName.split(" ")[0] || aName;
             const rev = Number(b.details?.revenue) || Number(b.details?.budget) || Number(b.details?.project_value) || 0;
             const cost = Number(b.details?.cost) || 0;
-            const profit = Number(b.details?.profit) || (rev > 0 ? rev - cost : 0);
+            const profit = Number(b.details?.profit) !== undefined && !isNaN(Number(b.details?.profit)) ? Number(b.details.profit) : (rev > 0 ? rev - cost : 0);
             const budgetStr = rev > 0 ? `฿${rev.toLocaleString()}` : (b.details?.budget ? `฿${Number(b.details.budget).toLocaleString()}` : "฿50,000");
 
             let unitVal: "งานออกแบบ" | "สื่อสารองค์กร" | "ผลิตสื่อสร้างสรรค์" | "บริหารทีม" = "บริหารทีม";
@@ -377,7 +400,12 @@ export default function TeamActionPlanReportDetail() {
 
           // AUTOMATICALLY MERGE INTO PLANS:
           setPlans(prev => {
-            const basePlans = (prev || []).filter(p => !p.code?.startsWith("CC-ACT-") && !p.id?.startsWith("ap-"));
+            const basePlans = (prev || []).filter(p => 
+              !p.code?.startsWith("CC-ACT-") && 
+              !p.id?.startsWith("ap-") &&
+              !p.title?.includes("มช.เคียงข้าง") &&
+              p.briefId !== "efab0882-2399-4b8e-abd9-d7cec621d687"
+            );
             const updated = [...basePlans];
 
             liveActionPlans.forEach(liveItem => {
@@ -396,6 +424,8 @@ export default function TeamActionPlanReportDetail() {
                   title: liveItem.title,
                   assignee: liveItem.assignee,
                   assigneeCode: liveItem.assigneeCode,
+                  startDate: liveItem.startDate,
+                  endDate: liveItem.endDate,
                   budget: liveItem.budget,
                   status: liveItem.status,
                   progress: liveItem.progress,
@@ -411,7 +441,12 @@ export default function TeamActionPlanReportDetail() {
               }
             });
 
-            const finalPlans = updated.filter(p => !p.code?.startsWith("CC-ACT-") && !p.id?.startsWith("ap-"));
+            const finalPlans = updated.filter(p => 
+              !p.code?.startsWith("CC-ACT-") && 
+              !p.id?.startsWith("ap-") &&
+              !p.title?.includes("มช.เคียงข้าง") &&
+              p.briefId !== "efab0882-2399-4b8e-abd9-d7cec621d687"
+            );
             if (typeof window !== "undefined") {
               localStorage.setItem("cc_team_action_plan_v2_fy70", JSON.stringify(finalPlans));
               localStorage.setItem("cc_team_action_plan_v1", JSON.stringify(finalPlans));
@@ -431,11 +466,73 @@ export default function TeamActionPlanReportDetail() {
     syncLiveCcProjects();
   }, []);
 
-  const saveToStorage = (items: ActionPlanItem[]) => {
+  // Listen for real-time task updates across the system (Bidirectional Auto-Sync)
+  useEffect(() => {
+    const handleBriefsUpdated = (e: any) => {
+      const { id, updates } = e.detail || {};
+      if (!id || !updates) {
+        syncLiveCcProjects();
+        return;
+      }
+      setPlans(prev => {
+        let changed = false;
+        const updated = prev.map(p => {
+          if (p.briefId === id || p.id === `cc-pm-${id}` || p.id === id) {
+            changed = true;
+            const newEndDate = updates.deadline ? updates.deadline.slice(0, 10) : p.endDate;
+            const newStatus = updates.status ? (updates.status === "completed" ? "completed" : p.status) : p.status;
+            const newTitle = updates.project_name || p.title;
+            const newProgress = updates.details?.progress !== undefined ? Number(updates.details.progress) : p.progress;
+            const newRev = updates.details?.revenue !== undefined ? Number(updates.details.revenue) : p.revenue;
+            const newCost = updates.details?.cost !== undefined ? Number(updates.details.cost) : p.cost;
+            const newProfit = (newRev !== undefined && newCost !== undefined) ? (newRev - newCost) : p.profit;
+            return {
+              ...p,
+              title: newTitle,
+              endDate: newEndDate,
+              status: newStatus,
+              progress: newProgress,
+              revenue: newRev,
+              cost: newCost,
+              profit: newProfit,
+              budget: newRev !== undefined ? `฿${newRev.toLocaleString()}` : p.budget
+            };
+          }
+          return p;
+        });
+        if (changed) {
+          saveToStorage(updated);
+          return updated;
+        }
+        return prev;
+      });
+    };
+
+    window.addEventListener("cc_briefs_updated", handleBriefsUpdated);
+    window.addEventListener("cc_tasks_updated", syncLiveCcProjects);
+    return () => {
+      window.removeEventListener("cc_briefs_updated", handleBriefsUpdated);
+      window.removeEventListener("cc_tasks_updated", syncLiveCcProjects);
+    };
+  }, []);
+
+  const saveToStorage = async (items: ActionPlanItem[]) => {
     setPlans(items);
     if (typeof window !== "undefined") {
       localStorage.setItem("cc_team_action_plan_v2_fy70", JSON.stringify(items));
       localStorage.setItem("cc_team_action_plan_v1", JSON.stringify(items));
+    }
+    try {
+      const supabase = createClient();
+      await supabase
+        .from("okr_settings")
+        .update({
+          target_value: JSON.stringify(items),
+          updated_at: new Date().toISOString()
+        })
+        .eq("description", "CONFIG_TEAM_ACTION_PLAN_JSON");
+    } catch (err) {
+      console.warn("Failed to persist action plans to cloud:", err);
     }
   };
 
@@ -475,29 +572,142 @@ export default function TeamActionPlanReportDetail() {
     });
   }, [plans, projectTypeFilter, viewMode, fiscalConfig, unitFilter, statusFilter, searchQuery]);
 
-  // Handle Edit
-  const handleStartEdit = (item: ActionPlanItem) => {
-    setEditingId(item.id);
-    setEditForm({ ...item });
+  // Handle Edit Modal
+  const handleOpenEditModal = (item: ActionPlanItem) => {
+    const rev = item.revenue !== undefined ? item.revenue : (parseFloat((item.budget || "").replace(/[^0-9.-]+/g, "")) || 0);
+    const cost = item.cost || 0;
+    const profit = item.profit !== undefined ? item.profit : (rev - cost);
+    setEditForm({
+      ...item,
+      revenue: rev,
+      cost,
+      profit
+    });
+    setShowEditModal(true);
   };
 
-  const handleSaveEdit = () => {
+  const handleStartEdit = (item: ActionPlanItem) => {
+    handleOpenEditModal(item);
+  };
+
+  const handleSaveEdit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!editForm) return;
-    const updated = plans.map(p => (p.id === editForm.id ? editForm : p));
-    saveToStorage(updated);
-    setEditingId(null);
-    setEditForm(null);
+
+    setIsSavingEdit(true);
+    try {
+      const rev = Number(editForm.revenue) || 0;
+      const cost = Number(editForm.cost) || 0;
+      const profit = rev - cost;
+      const budgetStr = rev > 0 ? `฿${rev.toLocaleString()}` : (editForm.budget || "-");
+
+      const finalItem: ActionPlanItem = {
+        ...editForm,
+        budget: budgetStr,
+        revenue: rev,
+        cost,
+        profit,
+        assigneeCode: editForm.assignee?.split(" ")[0] || editForm.assigneeCode || editForm.assignee,
+      };
+
+      const updatedPlans = plans.map(p => (p.id === finalItem.id ? finalItem : p));
+      await saveToStorage(updatedPlans);
+
+      // Bidirectional sync: If linked to a brief in Supabase, update the brief directly
+      if (finalItem.briefId) {
+        const supabase = createClient();
+        const deadlineIso = finalItem.endDate ? new Date(finalItem.endDate).toISOString() : undefined;
+        const briefStatus = finalItem.status === "delayed" ? "in_progress" : (finalItem.status === "not_started" ? "pending" : finalItem.status);
+
+        const { data: curBrief } = await supabase.from("briefs").select("details").eq("id", finalItem.briefId).single();
+        const curDetails = curBrief?.details || {};
+
+        const updatedDetails = {
+          ...curDetails,
+          start_date: finalItem.startDate,
+          end_date: finalItem.endDate,
+          target_deadline: finalItem.endDate,
+          deadline: finalItem.endDate,
+          kpi: finalItem.kpi,
+          progress: finalItem.progress,
+          revenue: rev,
+          budget: rev,
+          cost,
+          profit,
+        };
+
+        await supabase.from("briefs").update({
+          project_name: finalItem.title,
+          deadline: deadlineIso,
+          status: briefStatus,
+          details: updatedDetails,
+        }).eq("id", finalItem.briefId);
+
+        // Broadcast to entire app (AssignmentsView, Dashboard stats, etc.)
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("cc_briefs_updated", {
+            detail: {
+              id: finalItem.briefId,
+              updates: {
+                project_name: finalItem.title,
+                deadline: deadlineIso,
+                status: briefStatus,
+                details: updatedDetails,
+              }
+            }
+          }));
+          window.dispatchEvent(new CustomEvent("cc_tasks_updated"));
+        }
+      }
+
+      setShowEditModal(false);
+      setEditForm(null);
+      setEditingId(null);
+    } catch (err) {
+      console.error("Error saving action plan edit:", err);
+      alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsSavingEdit(false);
+    }
   };
 
   const handleCancelEdit = () => {
+    setShowEditModal(false);
     setEditingId(null);
     setEditForm(null);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm("คุณแน่ใจหรือไม่ว่าต้องการลบรายการแผนดำเนินงานนี้?")) {
-      const updated = plans.filter(p => p.id !== id);
-      saveToStorage(updated);
+  const handleDelete = async (id: string) => {
+    const targetItem = plans.find(p => p.id === id);
+    if (!targetItem) return;
+
+    if (!confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบโครงการ "${targetItem.title}" ออกจากแผนดำเนินงานและโรดแมป?`)) {
+      return;
+    }
+
+    const updated = plans.filter(p => p.id !== id);
+    await saveToStorage(updated);
+
+    if (showEditModal && editForm?.id === id) {
+      setShowEditModal(false);
+      setEditForm(null);
+    }
+
+    // If it was linked to a brief, hide from action plan in Supabase
+    if (targetItem.briefId) {
+      try {
+        const supabase = createClient();
+        const { data: curBrief } = await supabase.from("briefs").select("details").eq("id", targetItem.briefId).single();
+        const curDetails = curBrief?.details || {};
+        await supabase.from("briefs").update({
+          details: {
+            ...curDetails,
+            hide_from_action_plan: true,
+          }
+        }).eq("id", targetItem.briefId);
+      } catch (err) {
+        console.warn("Failed to hide brief from action plan:", err);
+      }
     }
   };
 
@@ -1013,45 +1223,83 @@ export default function TeamActionPlanReportDetail() {
                       <div key={item.id} className="flex hover:bg-slate-50/80 transition-colors group">
                         {/* Project Info Column */}
                         <div className="w-[340px] shrink-0 p-3.5 border-r border-slate-200/80 flex flex-col justify-center gap-1">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-mono font-bold text-[10.5px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
-                              {item.code}
-                            </span>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-                              {item.unit}
-                            </span>
-                            {item.isCcLiveProject && (
-                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300 flex items-center gap-0.5" title="โครงการของ CC ที่ซิงค์จากระบบ">
-                                <Sparkles size={9} className="text-amber-600" />
-                                <span>โครงการ CC</span>
+                          <div className="flex items-center justify-between gap-1 mb-0.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-mono font-bold text-[10.5px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                                {item.code}
                               </span>
-                            )}
-                            <span className="text-[11px] font-semibold text-slate-600">
-                              {item.assigneeCode}
-                            </span>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                                {item.unit}
+                              </span>
+                              {item.isCcLiveProject && (
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300 flex items-center gap-0.5" title="โครงการของ CC ที่ซิงค์จากระบบ">
+                                  <Sparkles size={9} className="text-amber-600" />
+                                  <span>โครงการ CC</span>
+                                </span>
+                              )}
+                              <span className="text-[11px] font-semibold text-slate-600">
+                                {item.assigneeCode}
+                              </span>
 
-                            {/* Cross-Fiscal-Year Indicators */}
-                            {barPos.isSpillLeft && !barPos.isSpillRight && (
-                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200" title={`งานเริ่มก่อนปีงบประมาณ (${item.startDate})`}>
-                                ← เริ่มปีก่อน
-                              </span>
-                            )}
-                            {barPos.isSpillRight && !barPos.isSpillLeft && (
-                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200" title={`งานต่อเนื่องไปปีงบถัดไป (${item.endDate})`}>
-                                ข้ามปีงบ →
-                              </span>
-                            )}
-                            {barPos.isSpillLeft && barPos.isSpillRight && (
-                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200" title="โครงการระยะยาวต่อเนื่องข้ามปี">
-                                ⇄ ข้ามปี
-                              </span>
+                              {/* Cross-Fiscal-Year Indicators */}
+                              {barPos.isSpillLeft && !barPos.isSpillRight && (
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200" title={`งานเริ่มก่อนปีงบประมาณ (${item.startDate})`}>
+                                  ← เริ่มปีก่อน
+                                </span>
+                              )}
+                              {barPos.isSpillRight && !barPos.isSpillLeft && (
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200" title={`งานต่อเนื่องไปปีงบถัดไป (${item.endDate})`}>
+                                  ข้ามปีงบ →
+                                </span>
+                              )}
+                              {barPos.isSpillLeft && barPos.isSpillRight && (
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200" title="โครงการระยะยาวต่อเนื่องข้ามปี">
+                                  ⇄ ข้ามปี
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Action Buttons: Edit & Delete */}
+                            {!isViewer && (
+                              <div className="flex items-center gap-0.5 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenEditModal(item);
+                                  }}
+                                  className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all cursor-pointer"
+                                  title="แก้ไขโครงการและกำหนดการ (ซิงค์อัตโนมัติ)"
+                                >
+                                  <Edit2 size={13} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDelete(item.id);
+                                  }}
+                                  className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
+                                  title="ลบโครงการออกจากแผนงาน"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </div>
                             )}
                           </div>
-                          <h4 className="text-xs font-bold text-slate-900 leading-snug line-clamp-1 group-hover:text-blue-600 transition-colors" title={item.title}>
+
+                          <h4 
+                            onClick={() => !isViewer && handleOpenEditModal(item)}
+                            className="text-xs font-bold text-slate-900 leading-snug line-clamp-1 group-hover:text-blue-600 transition-colors cursor-pointer" 
+                            title={`${item.title} (คลิกเพื่อแก้ไข)`}
+                          >
                             {item.title}
                           </h4>
                           <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono">
                             <span>{formatThaiDateShort(item.startDate)} - {formatThaiDateShort(item.endDate)}</span>
+                            <span className="text-[10px] font-sans font-medium text-slate-500">
+                              คืบหน้า {item.progress}%
+                            </span>
                           </div>
 
                           {/* Financial breakdown: งบประมาณ • ต้นทุน • กำไร CC */}
@@ -1725,6 +1973,255 @@ export default function TeamActionPlanReportDetail() {
                   <Briefcase size={13} />
                   <span>บรรจุเข้าสู่แผนดำเนินงาน</span>
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Edit Action Plan / CC Project */}
+      {showEditModal && editForm && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-premium-fade">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-xl w-full shadow-2xl space-y-5 border border-slate-100 max-h-[92vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                  <Edit2 size={16} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">
+                    แก้ไขโครงการ / กำหนดการดำเนินงาน
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-mono">
+                    {editForm.code} • {editForm.isCcLiveProject ? "โครงการ CC (เชื่อมโยงกับ Task)" : "แผนงานทั่วไป"}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditForm(null);
+                }}
+                className="text-slate-400 hover:text-slate-700 text-lg font-bold p-1 rounded-full hover:bg-slate-100 transition-all cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Sync Alert Banner */}
+            {editForm.isCcLiveProject && (
+              <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-200/80 flex items-center gap-2.5 text-xs text-blue-900">
+                <Sparkles size={16} className="text-blue-600 shrink-0" />
+                <span className="leading-relaxed">
+                  <strong>เชื่อมโยงกับ Task อัตโนมัติ:</strong> การเปลี่ยนเดดไลน์, สถานะ หรือข้อมูลในหน้านี้ จะอัปเดตไปยัง Task ในระบบหลัก (Supabase) และส่วนอื่น ๆ ที่เกี่ยวข้องทั้งหมดทันที
+                </span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
+              {/* Project Title */}
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700">ชื่อโครงการ / แผนงานหลัก:</label>
+                <input
+                  type="text"
+                  required
+                  value={editForm.title}
+                  onChange={e => setEditForm({ ...editForm, title: e.target.value })}
+                  className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              {/* Code & Unit */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700">รหัสโครงการ:</label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.code}
+                    onChange={e => setEditForm({ ...editForm, code: e.target.value })}
+                    className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 font-mono font-bold text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700">ยูนิตรับผิดชอบ:</label>
+                  <select
+                    value={editForm.unit}
+                    onChange={e => setEditForm({ ...editForm, unit: e.target.value as any })}
+                    className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="งานออกแบบ">งานออกแบบ</option>
+                    <option value="สื่อสารองค์กร">สื่อสารองค์กร</option>
+                    <option value="ผลิตสื่อสร้างสรรค์">ผลิตสื่อสร้างสรรค์</option>
+                    <option value="บริหารทีม">บริหารทีม</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Assignee */}
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700">ผู้รับผิดชอบหลัก (PM / Assignee):</label>
+                <input
+                  type="text"
+                  required
+                  value={editForm.assignee}
+                  onChange={e => setEditForm({ ...editForm, assignee: e.target.value })}
+                  placeholder="เช่น เอ็นจอย SLR, ลูกอิน STK"
+                  className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 font-medium text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              {/* Start Date & End Date (Deadline) */}
+              <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 flex items-center gap-1">
+                    <CalendarDays size={13} className="text-blue-600" />
+                    <span>วันเริ่มต้น:</span>
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={editForm.startDate}
+                    onChange={e => setEditForm({ ...editForm, startDate: e.target.value })}
+                    className="w-full p-2 rounded-xl bg-white border border-slate-200 font-mono text-slate-900 focus:outline-none focus:border-blue-500 text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 flex items-center gap-1">
+                    <Clock size={13} className="text-rose-600" />
+                    <span>วันสิ้นสุด / กำหนดส่ง (Deadline):</span>
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={editForm.endDate}
+                    onChange={e => setEditForm({ ...editForm, endDate: e.target.value })}
+                    className="w-full p-2 rounded-xl bg-white border border-slate-200 font-mono text-slate-900 focus:outline-none focus:border-blue-500 text-xs"
+                  />
+                </div>
+              </div>
+
+              {/* Financial Box: Revenue, Cost, Profit */}
+              <div className="p-3 bg-gradient-to-br from-slate-50 to-emerald-50/30 rounded-2xl border border-slate-200 space-y-2">
+                <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center justify-between">
+                  <span>ข้อมูลการเงินโครงการ (Financial Breakdown)</span>
+                  <span className="text-[10px] text-emerald-700 font-mono font-bold">
+                    กำไรสุทธิ: ฿{((Number(editForm.revenue) || 0) - (Number(editForm.cost) || 0)).toLocaleString()}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="space-y-0.5">
+                    <label className="text-[10px] text-slate-500 font-semibold">งบประมาณ / รายรับ (฿):</label>
+                    <input
+                      type="number"
+                      value={editForm.revenue || 0}
+                      onChange={e => {
+                        const rev = Number(e.target.value) || 0;
+                        setEditForm({ ...editForm, revenue: rev, profit: rev - (editForm.cost || 0) });
+                      }}
+                      className="w-full p-2 rounded-xl bg-white border border-slate-200 font-mono font-bold text-slate-900 text-xs"
+                    />
+                  </div>
+                  <div className="space-y-0.5">
+                    <label className="text-[10px] text-slate-500 font-semibold">ต้นทุนโครงการ (฿):</label>
+                    <input
+                      type="number"
+                      value={editForm.cost || 0}
+                      onChange={e => {
+                        const cost = Number(e.target.value) || 0;
+                        setEditForm({ ...editForm, cost, profit: (editForm.revenue || 0) - cost });
+                      }}
+                      className="w-full p-2 rounded-xl bg-white border border-slate-200 font-mono font-semibold text-rose-600 text-xs"
+                    />
+                  </div>
+                  <div className="space-y-0.5">
+                    <label className="text-[10px] text-slate-500 font-semibold">กำไรโครงการ CC (฿):</label>
+                    <div className="w-full p-2 rounded-xl bg-emerald-50 border border-emerald-200 font-mono font-bold text-emerald-800 text-xs truncate">
+                      ฿{((Number(editForm.revenue) || 0) - (Number(editForm.cost) || 0)).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status & Progress */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700">สถานะโครงการ:</label>
+                  <select
+                    value={editForm.status}
+                    onChange={e => setEditForm({ ...editForm, status: e.target.value as any })}
+                    className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="not_started">ยังไม่เริ่ม (Not Started)</option>
+                    <option value="in_progress">กำลังดำเนินการ (In Progress)</option>
+                    <option value="completed">เสร็จสิ้น (Completed)</option>
+                    <option value="delayed">ล่าช้า (Delayed)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="font-bold text-slate-700">ความคืบหน้า (%):</label>
+                    <span className="font-mono font-bold text-blue-600">{editForm.progress}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={editForm.progress}
+                    onChange={e => setEditForm({ ...editForm, progress: Number(e.target.value) })}
+                    className="w-full accent-blue-600 cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              {/* KPI */}
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700">ตัวชี้วัดความสำเร็จ (KPI / Deliverables):</label>
+                <textarea
+                  rows={2}
+                  value={editForm.kpi}
+                  onChange={e => setEditForm({ ...editForm, kpi: e.target.value })}
+                  placeholder="เช่น ส่งมอบผลผลิตโครงการและบริหารจัดการตามเป้าหมาย 100%"
+                  className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 font-medium text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => handleDelete(editForm.id)}
+                  className="px-3.5 py-2 text-xs font-bold text-rose-600 hover:text-white hover:bg-rose-600 border border-rose-200 rounded-full inline-flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <Trash2 size={13} />
+                  <span>ลบโครงการนี้</span>
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEditModal(false);
+                      setEditForm(null);
+                    }}
+                    className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-full transition-all cursor-pointer"
+                  >
+                    ยกเลิก
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingEdit}
+                    className="px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-full inline-flex items-center gap-1.5 shadow-md cursor-pointer active:scale-95 transition-all"
+                  >
+                    <Save size={13} />
+                    <span>{isSavingEdit ? "กำลังบันทึก..." : "บันทึกและซิงค์ข้อมูล"}</span>
+                  </button>
+                </div>
               </div>
             </form>
           </div>

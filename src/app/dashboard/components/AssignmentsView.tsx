@@ -273,6 +273,28 @@ export default function AssignmentsView() {
     }
   }, []);
 
+  // Sync tasks when updated remotely (e.g. from Team Action Plan & Annual Roadmap)
+  useEffect(() => {
+    const handleRemoteBriefUpdate = (e: any) => {
+      const { id, updates } = e.detail || {};
+      if (!id || !updates) return;
+      setBriefs(prev => prev.map(b => b.id === id ? { 
+        ...b, 
+        ...updates, 
+        details: { ...(b.details || {}), ...(updates.details || {}) } 
+      } : b));
+      if (selectedBrief && selectedBrief.id === id) {
+        setSelectedBrief(prev => prev ? { 
+          ...prev, 
+          ...updates, 
+          details: { ...(prev.details || {}), ...(updates.details || {}) } 
+        } : null);
+      }
+    };
+    window.addEventListener("cc_briefs_updated", handleRemoteBriefUpdate);
+    return () => window.removeEventListener("cc_briefs_updated", handleRemoteBriefUpdate);
+  }, [selectedBrief]);
+
   // ทุกคนที่ login หรือเปิดหน้า task จะต้องเห็นมุมมอง All CC เสมอ เพื่อให้ตระหนักถึงภาพรวมงานของทีม
 
   // Listen to History Manager changes
@@ -444,6 +466,12 @@ export default function AssignmentsView() {
       setSelectedBrief(prev => prev ? { ...prev, ...updates } : null);
     }
     await supabase.from('briefs').update(updates).eq('id', id);
+
+    // Broadcast brief update to entire dashboard & Action Plan / Roadmap
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("cc_briefs_updated", { detail: { id, updates } }));
+      window.dispatchEvent(new CustomEvent("cc_tasks_updated"));
+    }
 
     // Audit Log for Activity Trail (ISO 9001:2015)
     try {

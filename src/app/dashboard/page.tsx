@@ -99,10 +99,20 @@ export default function DashboardPage() {
       }
     });
 
-    // Check Mission of the Day (First visit of the day)
+    // Check Mission of the Day (First visit of the day or forced reset)
     const todayStr = new Date().toISOString().split("T")[0];
     const missionKey = `cc_mission_ack_${todayStr}`;
-    const alreadySeen = localStorage.getItem(missionKey);
+    
+    // Check if user requested mission reset via query param e.g. ?reset_mission=1
+    const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+    const isResetRequested = urlParams?.get("reset_mission") === "1" || urlParams?.get("mission") === "reset";
+    if (isResetRequested) {
+      try {
+        localStorage.removeItem(missionKey);
+      } catch {}
+    }
+
+    const alreadySeen = !isResetRequested && localStorage.getItem(missionKey);
 
     if (!alreadySeen) {
       supabase

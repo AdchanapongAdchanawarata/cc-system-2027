@@ -66,7 +66,8 @@ export default function DailyMissionModal({
                 showName={false}
                 showBorder={false}
                 disableHoverPreview={true}
-                className="w-full h-full flex items-center justify-center"
+                title=""
+                className="w-full h-full flex items-center justify-center pointer-events-none"
               />
             </div>
 

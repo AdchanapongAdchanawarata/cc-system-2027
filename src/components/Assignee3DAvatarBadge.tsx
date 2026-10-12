@@ -25,6 +25,7 @@ interface Assignee3DAvatarBadgeProps {
   onClick?: () => void;
   showBorder?: boolean;
   disableHoverPreview?: boolean;
+  title?: string;
 }
 
 export const CHEEKY_QUOTES: Record<string, string[]> = {
@@ -78,6 +79,7 @@ export const Assignee3DAvatarBadge: React.FC<Assignee3DAvatarBadgeProps> = ({
   onClick,
   showBorder = false,
   disableHoverPreview = false,
+  title,
 }) => {
   const identifier = name || id || "CC";
   const [config, setConfig] = useState<Avatar3DConfig>(() => getMemberAvatarConfig(identifier));
@@ -224,6 +226,14 @@ export const Assignee3DAvatarBadge: React.FC<Assignee3DAvatarBadgeProps> = ({
     return currentName === target || currentName.includes(target) || target.includes(currentName);
   })();
 
+  const effectiveTitle = title !== undefined 
+    ? (title || undefined) 
+    : (disableHoverPreview ? undefined : `คลิกหรือชี้เพื่อดู Avatar และผลงานของ ${identifier}`);
+
+  const interactiveClasses = disableHoverPreview
+    ? ""
+    : "cursor-pointer hover:scale-125 hover:rotate-6 active:scale-95";
+
   return (
     <>
       <div
@@ -231,8 +241,8 @@ export const Assignee3DAvatarBadge: React.FC<Assignee3DAvatarBadgeProps> = ({
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onClick={handleClick}
-        className={`group/avatar inline-flex items-center gap-1.5 shrink-0 cursor-pointer select-none transition-transform duration-200 hover:scale-125 hover:rotate-6 active:scale-95 ${className}`}
-        title={`คลิกหรือชี้เพื่อดู Avatar และผลงานของ ${identifier}`}
+        className={`group/avatar inline-flex items-center gap-1.5 shrink-0 select-none transition-transform duration-200 ${interactiveClasses} ${className}`}
+        title={effectiveTitle}
       >
         <Avatar3DRenderer config={config} size={size} showBorder={showBorder} />
         {showName && name && (

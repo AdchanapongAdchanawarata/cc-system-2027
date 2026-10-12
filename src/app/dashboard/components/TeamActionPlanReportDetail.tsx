@@ -2101,16 +2101,16 @@ export default function TeamActionPlanReportDetail() {
                     <CalendarDays size={13} className="text-blue-600" />
                     <span>วันเริ่มต้น:</span>
                   </label>
-                  <input
-                    type="date"
-                    required
+                  <ModernDatePicker
                     value={editForm.startDate}
-                    onChange={e => {
-                      const newStart = e.target.value;
+                    onChange={(val) => {
+                      const newStart = val;
                       const newProg = computeTimeBasedProgress(newStart, editForm.endDate, editForm.status);
                       setEditForm({ ...editForm, startDate: newStart, progress: newProg });
                     }}
-                    className="w-full p-2 rounded-xl bg-white border border-slate-200 font-mono text-slate-900 focus:outline-none focus:border-blue-500 text-xs"
+                    placeholder="เลือกวันเริ่มต้น..."
+                    required={true}
+                    className="w-full h-9 px-3 rounded-xl bg-white border border-slate-300 font-mono text-xs text-slate-900 focus:outline-none focus:border-blue-500 shadow-2xs"
                   />
                 </div>
 
@@ -2119,16 +2119,16 @@ export default function TeamActionPlanReportDetail() {
                     <Clock size={13} className="text-rose-600" />
                     <span>วันสิ้นสุด / กำหนดส่ง (Deadline):</span>
                   </label>
-                  <input
-                    type="date"
-                    required
+                  <ModernDatePicker
                     value={editForm.endDate}
-                    onChange={e => {
-                      const newEnd = e.target.value;
+                    onChange={(val) => {
+                      const newEnd = val;
                       const newProg = computeTimeBasedProgress(editForm.startDate, newEnd, editForm.status);
                       setEditForm({ ...editForm, endDate: newEnd, progress: newProg });
                     }}
-                    className="w-full p-2 rounded-xl bg-white border border-slate-200 font-mono text-slate-900 focus:outline-none focus:border-blue-500 text-xs"
+                    placeholder="เลือกวันสิ้นสุด..."
+                    required={true}
+                    className="w-full h-9 px-3 rounded-xl bg-white border border-slate-300 font-mono text-xs text-slate-900 focus:outline-none focus:border-blue-500 shadow-2xs"
                   />
                 </div>
               </div>

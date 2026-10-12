@@ -7,8 +7,7 @@ import {
   UserCircle2, CalendarDays, Tags, KanbanSquare, Flame, 
   CheckCircle2, XCircle, Trash2, Copy, Clock, ClockAlert, History, 
   Users, Star, MessageSquare, Undo2, Redo2, RotateCcw, AlertCircle, Mail,
-  LayoutList, ChevronDown, Check, Search, Eye, Bell, BellRing, BellOff,
-  ArrowDown, Move
+  LayoutList, ChevronDown, Check, Search, Eye, Bell, BellRing, BellOff
 } from "lucide-react";
 import BriefDetailsModal from "./BriefDetailsModal";
 import TrashBinModal from "./TrashBinModal";
@@ -905,9 +904,11 @@ export default function AssignmentsView() {
 
   // --- DRAG AND DROP HANDLERS ---
   const handleDragStart = (e: React.DragEvent, id: string) => {
-    setDraggedBriefId(id);
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", id);
+    requestAnimationFrame(() => {
+      setDraggedBriefId(id);
+    });
   };
 
   const handleDragEnd = () => {
@@ -1902,10 +1903,10 @@ export default function AssignmentsView() {
           return (
             <div 
               key={col.id} 
-              className={`w-full flex-col h-full min-h-0 rounded-xl p-1.5 sm:p-2 transition-all border ${
+              className={`w-full flex-col h-full min-h-0 bg-slate-100/50 rounded-xl p-1.5 sm:p-2 transition-all border ${
                 isColDragOver
-                  ? "bg-indigo-50/40 dark:bg-indigo-950/20 border-indigo-400 dark:border-indigo-500 shadow-md ring-2 ring-indigo-400/20"
-                  : "bg-slate-100/50 hover:border-slate-200 border-transparent"
+                  ? "border-slate-300 dark:border-zinc-600 bg-slate-100/80 dark:bg-zinc-800/50"
+                  : "border-transparent hover:border-slate-200"
               } ${
                 mobileStatusTab === col.id ? "flex" : "hidden md:flex"
               }`}
@@ -1916,38 +1917,24 @@ export default function AssignmentsView() {
               
               {/* Column Header: Hidden on mobile (since top tab switcher already displays it); Visible on md+ */}
               <div className={`hidden md:flex items-center justify-between mb-2 px-2.5 py-1.5 rounded-xl border border-t-4 shadow-2xs shrink-0 ${col.headerBg}`}>
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <h3 className="font-bold text-[11px] sm:text-xs uppercase tracking-wide truncate">{col.shortLabel}</h3>
-                  {isColDragOver && (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-indigo-600 text-white animate-pulse">
-                      <ArrowDown size={10} /> วางที่นี่
-                    </span>
-                  )}
-                </div>
+                <h3 className="font-bold text-[11px] sm:text-xs uppercase tracking-wide truncate">{col.shortLabel}</h3>
                 <span className={`text-[11px] sm:text-xs font-bold px-1.5 py-0.2 rounded-full shadow-2xs shrink-0 ${col.badgeBg}`}>
                   {columnBriefs.length}
                 </span>
               </div>
               
               {/* Column Cards */}
-              <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pb-2 pr-0.5 custom-scrollbar">
-                {/* Empty column drop target box */}
-                {columnBriefs.length === 0 && draggedBriefId && (
-                  <div 
-                    onDragOver={(e) => handleColumnDragOver(e, col.id)}
-                    onDrop={(e) => handleDrop(e, col.id)}
-                    className={`h-36 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 p-3 transition-all ${
-                      isColDragOver
-                        ? "border-indigo-500 bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 scale-[1.01]"
-                        : "border-slate-300 dark:border-zinc-700 bg-slate-50/50 dark:bg-zinc-800/30 text-slate-400"
-                    }`}
-                  >
-                    <Move size={22} className={isColDragOver ? "animate-bounce text-indigo-600" : "text-slate-400"} />
-                    <span className="text-xs font-bold text-center">
-                      {isColDragOver ? "ปล่อยเพื่อวางงานในคอลัมน์นี้" : "ลากงานมาวางที่นี่"}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-medium">ย้ายเข้า {col.label}</span>
-                  </div>
+              <div 
+                className="flex-1 min-h-0 overflow-y-auto space-y-2 pb-2 pr-0.5 custom-scrollbar"
+                onDragOver={(e) => {
+                  if (e.target === e.currentTarget) {
+                    handleColumnDragOver(e, col.id);
+                  }
+                }}
+              >
+                {/* Empty column ClickUp placeholder */}
+                {draggedBriefId && isColDragOver && columnBriefs.filter(b => b.id !== draggedBriefId).length === 0 && (
+                  <div className="w-full min-h-[105px] rounded-xl border border-slate-200/90 dark:border-zinc-700/80 bg-slate-100/70 dark:bg-zinc-800/40 transition-all duration-150 pointer-events-none" />
                 )}
 
                 {columnBriefs.map(brief => {
@@ -2019,41 +2006,28 @@ export default function AssignmentsView() {
                 const isUnderWatch = watchReasons.length > 0 && brief.status !== 'completed' && brief.status !== 'cancelled';
 
                 const isDraggingThis = draggedBriefId === brief.id;
-                const isDropBefore = dragOverColId === col.id && dragOverBriefId === brief.id && dropPosition === 'before' && !isDraggingThis;
-                const isDropAfter = dragOverColId === col.id && dragOverBriefId === brief.id && dropPosition === 'after' && !isDraggingThis;
+                const isTargetElsewhere = Boolean(dragOverColId && (dragOverColId !== col.id || (dragOverBriefId && dragOverBriefId !== brief.id)));
 
                 if (isDraggingThis) {
+                  if (isTargetElsewhere) {
+                    return null;
+                  }
                   return (
                     <div 
                       key={brief.id}
-                      className="min-h-[105px] p-3 rounded-xl border-2 border-dashed border-indigo-400 dark:border-indigo-500 bg-indigo-50/60 dark:bg-indigo-950/40 flex flex-col items-center justify-center gap-1.5 text-center transition-all select-none animate-pulse shadow-xs"
-                    >
-                      <div className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 font-bold text-xs">
-                        <Move size={14} className="animate-spin text-indigo-600 dark:text-indigo-400" />
-                        <span>กำลังยกย้ายงานนี้...</span>
-                      </div>
-                      <span className="font-mono text-[11px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/60 px-2 py-0.5 rounded-md">
-                        {getTaskCode(brief.unit, brief.id)}
-                      </span>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[180px] font-medium">
-                        {brief.project_name}
-                      </p>
-                    </div>
+                      className="w-full min-h-[105px] rounded-xl border border-slate-200/90 dark:border-zinc-700/80 bg-slate-100/70 dark:bg-zinc-800/40 transition-all duration-150 pointer-events-none"
+                    />
                   );
                 }
 
+                const isDropBefore = isColDragOver && dragOverBriefId === brief.id && dropPosition === 'before';
+                const isDropAfter = isColDragOver && dragOverBriefId === brief.id && dropPosition === 'after';
+
                 return (
-                  <div key={brief.id} className="space-y-1">
-                    {/* Insertion slot BEFORE */}
+                  <div key={brief.id} className="space-y-2">
+                    {/* ClickUp Blank Insertion Placeholder BEFORE */}
                     {isDropBefore && (
-                      <div 
-                        onDragOver={(e) => handleCardDragOver(e, brief.id, col.id)}
-                        onDrop={(e) => handleDrop(e, col.id, brief.id, 'before')}
-                        className="h-9 rounded-xl border-2 border-dashed border-indigo-500 bg-indigo-100/90 dark:bg-indigo-950/70 flex items-center justify-center gap-1.5 text-indigo-700 dark:text-indigo-300 text-xs font-bold shadow-xs animate-in fade-in zoom-in-95 duration-150"
-                      >
-                        <ArrowDown size={14} className="animate-bounce text-indigo-600" />
-                        <span>แทรกงานตรงนี้ (ก่อน {getTaskCode(brief.unit, brief.id)})</span>
-                      </div>
+                      <div className="w-full min-h-[105px] rounded-xl border border-slate-200/90 dark:border-zinc-700/80 bg-slate-100/70 dark:bg-zinc-800/40 transition-all duration-150 pointer-events-none" />
                     )}
 
                     <div 
@@ -2330,31 +2304,17 @@ export default function AssignmentsView() {
                     </div>
                   </div>
 
-                    {/* Insertion slot AFTER */}
+                    {/* ClickUp Blank Insertion Placeholder AFTER */}
                     {isDropAfter && (
-                      <div 
-                        onDragOver={(e) => handleCardDragOver(e, brief.id, col.id)}
-                        onDrop={(e) => handleDrop(e, col.id, brief.id, 'after')}
-                        className="h-9 rounded-xl border-2 border-dashed border-indigo-500 bg-indigo-100/90 dark:bg-indigo-950/70 flex items-center justify-center gap-1.5 text-indigo-700 dark:text-indigo-300 text-xs font-bold shadow-xs animate-in fade-in zoom-in-95 duration-150"
-                      >
-                        <ArrowDown size={14} className="animate-bounce text-indigo-600" />
-                        <span>แทรกงานตรงนี้ (หลัง {getTaskCode(brief.unit, brief.id)})</span>
-                      </div>
+                      <div className="w-full min-h-[105px] rounded-xl border border-slate-200/90 dark:border-zinc-700/80 bg-slate-100/70 dark:bg-zinc-800/40 transition-all duration-150 pointer-events-none" />
                     )}
                   </div>
                 );
               })}
 
-              {/* Slot at bottom of column when dragging over column but not over specific card */}
-              {isColDragOver && !dragOverBriefId && draggedBriefId && columnBriefs.length > 0 && (
-                <div 
-                  onDragOver={(e) => handleColumnDragOver(e, col.id)}
-                  onDrop={(e) => handleDrop(e, col.id, null, null)}
-                  className="h-10 my-1 rounded-xl border-2 border-dashed border-indigo-400 bg-indigo-50/80 dark:bg-indigo-950/40 flex items-center justify-center gap-1.5 text-indigo-600 dark:text-indigo-300 text-xs font-bold shadow-xs animate-in fade-in duration-150"
-                >
-                  <ArrowDown size={13} className="animate-bounce" />
-                  <span>วางต่อท้ายคอลัมน์นี้</span>
-                </div>
+              {/* ClickUp Blank Placeholder at bottom of column when dragging over column space */}
+              {isColDragOver && !dragOverBriefId && draggedBriefId && columnBriefs.filter(b => b.id !== draggedBriefId).length > 0 && (
+                <div className="w-full min-h-[105px] rounded-xl border border-slate-200/90 dark:border-zinc-700/80 bg-slate-100/70 dark:bg-zinc-800/40 transition-all duration-150 pointer-events-none" />
               )}
             </div>
           </div>

@@ -2151,23 +2151,23 @@ export default function AssignmentsView() {
                       onClick={() => setSelectedBrief(brief)}
                       className="bg-surface p-2.5 rounded-xl border border-surface-border shadow-2xs hover:shadow-md hover:border-slate-300 dark:hover:border-zinc-700 transition-all cursor-grab active:cursor-grabbing group flex flex-col justify-between relative min-h-[105px] select-none"
                     >
-                    {/* Corner Status Icons: Overdue (Clockwise Clock Arrow) or Urgent/Due <= 3 days (Red Flame) */}
+                    {/* Corner Status Icons: Overdue or Urgent - Strictly anchored to top-right corner */}
                     {isOverdue ? (
                       <div 
-                        className="absolute top-2 right-2 z-10 text-[#E03131] dark:text-rose-500 flex items-center justify-center animate-in zoom-in-75 duration-200 group/corner relative cursor-help"
+                        className="absolute top-2.5 right-2.5 z-10 text-[#E03131] dark:text-rose-500 flex items-center justify-center animate-in zoom-in-75 duration-200 group/corner cursor-help"
                       >
-                        <OverdueClockIcon size={20} className="text-[#E03131] dark:text-rose-500" />
-                        <div className="hidden group-hover/corner:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap p-2 bg-neutral-950 text-white rounded-xl shadow-2xl border border-neutral-800 text-left pointer-events-none animate-in fade-in zoom-in-95 duration-100 font-sans">
+                        <OverdueClockIcon size={19} className="text-[#E03131] dark:text-rose-500" />
+                        <div className="hidden group-hover/corner:flex flex-col absolute right-0 top-full mt-1.5 z-50 whitespace-nowrap p-2.5 bg-neutral-900/85 text-white rounded-xl shadow-2xl border border-white/15 backdrop-blur-md text-left pointer-events-none animate-in fade-in zoom-in-95 duration-100 font-sans">
                           <span className="text-[8.5px] font-mono tracking-[0.2em] text-rose-400 uppercase font-bold">STATUS • OVERDUE</span>
                           <span className="text-[11px] font-bold text-white mt-0.5">เลยกำหนดส่งตามแผนงาน</span>
                         </div>
                       </div>
                     ) : isUrgent ? (
                       <div 
-                        className="absolute top-2 right-2 z-10 text-[#E03131] dark:text-rose-500 flex items-center justify-center animate-in zoom-in-75 duration-200 group/corner relative cursor-help"
+                        className="absolute top-2.5 right-2.5 z-10 text-[#E03131] dark:text-rose-500 flex items-center justify-center animate-in zoom-in-75 duration-200 group/corner cursor-help"
                       >
-                        <Flame size={20} className="fill-[#E03131] dark:fill-rose-500 text-[#E03131] dark:text-rose-500" />
-                        <div className="hidden group-hover/corner:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap p-2 bg-neutral-950 text-white rounded-xl shadow-2xl border border-neutral-800 text-left pointer-events-none animate-in fade-in zoom-in-95 duration-100 font-sans">
+                        <Flame size={19} className="fill-[#E03131] dark:fill-rose-500 text-[#E03131] dark:text-rose-500" />
+                        <div className="hidden group-hover/corner:flex flex-col absolute right-0 top-full mt-1.5 z-50 whitespace-nowrap p-2.5 bg-neutral-900/85 text-white rounded-xl shadow-2xl border border-white/15 backdrop-blur-md text-left pointer-events-none animate-in fade-in zoom-in-95 duration-100 font-sans">
                           <span className="text-[8.5px] font-mono tracking-[0.2em] text-amber-400 uppercase font-bold">
                             {isSlaUrgent ? "SLA • LEAD TIME CRITICAL" : "URGENT • DEADLINE ALERT"}
                           </span>
@@ -2201,14 +2201,14 @@ export default function AssignmentsView() {
                         >
                           <span className="tracking-tight font-black text-black leading-none">เฝ้าระวัง</span>
 
-                          {/* Dieter Rams Minimal Guide Popover Card */}
-                          <div className="hidden group-hover/watch:flex flex-col absolute left-0 bottom-full mb-2 z-50 w-72 p-3 bg-neutral-950 text-white rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.45)] border border-neutral-800 text-left pointer-events-none animate-in fade-in zoom-in-95 duration-150 font-sans">
+                          {/* Dieter Rams Semi-transparent Frosted Glass Guide Popover Card */}
+                          <div className="hidden group-hover/watch:flex flex-col absolute left-0 bottom-full mb-2 z-50 w-72 p-3 bg-neutral-900/85 text-white rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.45)] border border-white/15 backdrop-blur-md text-left pointer-events-none animate-in fade-in zoom-in-95 duration-150 font-sans">
                             {/* Minimal Grid Header */}
-                            <div className="flex items-center justify-between gap-2 pb-1.5 mb-2 border-b border-neutral-800">
+                            <div className="flex items-center justify-between gap-2 pb-1.5 mb-2 border-b border-white/10">
                               <span className="text-[9px] font-bold font-mono tracking-[0.2em] text-neutral-400 uppercase">
                                 MONITORING • CRITERIA
                               </span>
-                              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-neutral-800 text-neutral-300 font-bold">
+                              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-white/10 text-neutral-300 font-bold">
                                 {watchReasons.length} ITEMS
                               </span>
                             </div>
@@ -2219,14 +2219,14 @@ export default function AssignmentsView() {
 
                             <div className="space-y-1.5">
                               {watchReasons.map((reason, idx) => (
-                                <div key={idx} className="flex items-start gap-2 text-[11px] text-neutral-300 font-medium leading-relaxed">
+                                <div key={idx} className="flex items-start gap-2 text-[11px] text-neutral-200 font-medium leading-relaxed">
                                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0 mt-1.5" />
                                   <span className="flex-1">{reason}</span>
                                 </div>
                               ))}
                             </div>
 
-                            <div className="mt-2.5 pt-2 border-t border-neutral-800 flex items-center justify-between text-[9px] font-mono text-neutral-500">
+                            <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between text-[9px] font-mono text-neutral-400">
                               <span>CC QUALITY SYSTEM</span>
                               <span>ISO 9001:2015</span>
                             </div>
@@ -2343,9 +2343,9 @@ export default function AssignmentsView() {
                                   <Users size={9} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                                   <span className="truncate">+{activeAsts.length} {activeAsts.length === 1 && firstAst?.name ? `${firstAst.name} ` : ''}({totalPct}%)</span>
                                 </span>
-                                {/* Dieter Rams Assistant Card */}
-                                <div className="hidden group-hover/ast:flex flex-col absolute left-0 bottom-full mb-1.5 z-50 whitespace-nowrap p-2.5 bg-neutral-950 text-white rounded-xl shadow-2xl border border-neutral-800 text-left pointer-events-none font-sans min-w-[160px]">
-                                  <span className="text-[8.5px] font-mono tracking-[0.2em] text-emerald-400 uppercase font-bold border-b border-neutral-800 pb-1 mb-1.5">TEAM • ASSISTANTS</span>
+                                {/* Dieter Rams Assistant Card - Semi-transparent */}
+                                <div className="hidden group-hover/ast:flex flex-col absolute left-0 bottom-full mb-1.5 z-50 whitespace-nowrap p-2.5 bg-neutral-900/85 backdrop-blur-md text-white rounded-xl shadow-2xl border border-white/15 text-left pointer-events-none font-sans min-w-[160px]">
+                                  <span className="text-[8.5px] font-mono tracking-[0.2em] text-emerald-400 uppercase font-bold border-b border-white/10 pb-1 mb-1.5">TEAM • ASSISTANTS</span>
                                   <div className="space-y-1 text-[10.5px]">
                                     {activeAsts.map((a: any, i: number) => {
                                       const m = assignees.find(as => as.id === a.assignee_id);
@@ -2383,12 +2383,12 @@ export default function AssignmentsView() {
                                     <Star size={9} className="fill-amber-400 text-amber-500" />
                                     <span>{satPercent}%</span>
                                   </span>
-                                  {/* Dieter Rams Satisfaction Guide Card */}
-                                  <div className="hidden group-hover/sat:flex flex-col absolute left-0 bottom-full mb-1.5 z-50 p-2.5 bg-neutral-950 text-white rounded-xl shadow-2xl border border-neutral-800 text-left pointer-events-none font-sans min-w-[180px] max-w-[240px]">
-                                    <span className="text-[8.5px] font-mono tracking-[0.2em] text-amber-400 uppercase font-bold border-b border-neutral-800 pb-1 mb-1">EVALUATION • RATING</span>
+                                  {/* Dieter Rams Satisfaction Guide Card - Semi-transparent */}
+                                  <div className="hidden group-hover/sat:flex flex-col absolute left-0 bottom-full mb-1.5 z-50 p-2.5 bg-neutral-900/85 backdrop-blur-md text-white rounded-xl shadow-2xl border border-white/15 text-left pointer-events-none font-sans min-w-[180px] max-w-[240px]">
+                                    <span className="text-[8.5px] font-mono tracking-[0.2em] text-amber-400 uppercase font-bold border-b border-white/10 pb-1 mb-1">EVALUATION • RATING</span>
                                     <span className="text-[11px] font-bold text-white">ผลประเมินความพึงพอใจ: {satPercent}%</span>
                                     {brief.details?.satisfaction_scores?.comment && (
-                                      <p className="text-[10px] text-neutral-300 mt-1 italic leading-relaxed border-t border-neutral-800/60 pt-1">
+                                      <p className="text-[10px] text-neutral-300 mt-1 italic leading-relaxed border-t border-white/10 pt-1">
                                         &ldquo;{brief.details.satisfaction_scores.comment}&rdquo;
                                       </p>
                                     )}
@@ -2423,25 +2423,25 @@ export default function AssignmentsView() {
                           })()}
                         </div>
                         
-                        {/* Task Age Indicators (Dieter Rams Minimal Guide) */}
+                        {/* Task Age Indicators (Dieter Rams Semi-transparent Guide) */}
                         <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-medium tracking-tight shrink-0 ml-auto select-none">
                           <div className="group/age relative flex items-center gap-0.5 cursor-help">
                             <span className="w-2 h-2 rounded-full bg-slate-400 dark:bg-slate-500"></span> {ages.unassignedDays}d
-                            <div className="hidden group-hover/age:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap px-2 py-1 bg-neutral-950 text-white rounded-lg shadow-xl border border-neutral-800 text-[10px] font-mono pointer-events-none">
+                            <div className="hidden group-hover/age:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap px-2 py-1 bg-neutral-900/85 backdrop-blur-md text-white rounded-lg shadow-xl border border-white/15 text-[10px] font-mono pointer-events-none">
                               <span className="text-[8px] text-neutral-400 tracking-wider">UNASSIGNED AGE</span>
                               <span>อยู่ในรอมอบหมาย: {ages.unassignedDays} วัน</span>
                             </div>
                           </div>
                           <div className="group/age relative flex items-center gap-0.5 cursor-help">
                             <span className="w-2 h-2 rounded-full bg-[#f59e0b]"></span> {ages.pendingDays}d
-                            <div className="hidden group-hover/age:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap px-2 py-1 bg-neutral-950 text-white rounded-lg shadow-xl border border-neutral-800 text-[10px] font-mono pointer-events-none">
+                            <div className="hidden group-hover/age:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap px-2 py-1 bg-neutral-900/85 backdrop-blur-md text-white rounded-lg shadow-xl border border-white/15 text-[10px] font-mono pointer-events-none">
                               <span className="text-[8px] text-amber-400 tracking-wider">TO-DO LIST AGE</span>
                               <span>อยู่ในรอทำ: {ages.pendingDays} วัน</span>
                             </div>
                           </div>
                           <div className="group/age relative flex items-center gap-0.5 cursor-help">
                             <span className="w-2 h-2 rounded-full bg-[#3b82f6]"></span> {ages.inProgressDays}d
-                            <div className="hidden group-hover/age:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap px-2 py-1 bg-neutral-950 text-white rounded-lg shadow-xl border border-neutral-800 text-[10px] font-mono pointer-events-none">
+                            <div className="hidden group-hover/age:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap px-2 py-1 bg-neutral-900/85 backdrop-blur-md text-white rounded-lg shadow-xl border border-white/15 text-[10px] font-mono pointer-events-none">
                               <span className="text-[8px] text-blue-400 tracking-wider">IN-PROGRESS AGE</span>
                               <span>อยู่ในกำลังทำ: {ages.inProgressDays} วัน</span>
                             </div>

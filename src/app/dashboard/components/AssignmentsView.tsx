@@ -2188,10 +2188,9 @@ export default function AssignmentsView() {
                       {isUnderWatch && (
                         <span 
                           onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-black bg-[#FFD43B] hover:bg-[#FCC419] text-black shadow-xs transition-all cursor-help mr-1.5 align-middle group/watch relative select-none"
+                          className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10.5px] font-black bg-[#FFD43B] hover:bg-[#FCC419] text-black shadow-xs transition-all cursor-help mr-1.5 align-middle group/watch relative select-none"
                           title={`🔍 เฝ้าระวัง:\n${watchReasons.map(r => `• ${r}`).join('\n')}`}
                         >
-                          <WatchEyeIcon size={10} className="text-black shrink-0" />
                           <span className="tracking-tight font-black text-black leading-none">เฝ้าระวัง</span>
 
                           {/* Elegant Hover Popover Card */}

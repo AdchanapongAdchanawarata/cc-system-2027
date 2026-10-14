@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import CustomSelect from "./CustomSelect";
 import { createClient } from "@/utils/supabase/client";
 import { 
@@ -255,6 +256,52 @@ export default function AssignmentsView() {
     initialMemberName?: string;
     initialDate?: string;
   }>({ isOpen: false });
+
+  // Active Watch Surveillance Tooltip Portal State (Top Layer, Unclipped)
+  const [activeWatchTooltip, setActiveWatchTooltip] = useState<{
+    top: number;
+    left: number;
+    reasons: string[];
+  } | null>(null);
+
+  // Close watch tooltip on scroll to prevent detached floating
+  useEffect(() => {
+    const handleScroll = () => {
+      setActiveWatchTooltip(null);
+    };
+    window.addEventListener("scroll", handleScroll, { capture: true, passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll, { capture: true });
+    };
+  }, []);
+
+  const handleWatchMouseEnter = (e: React.MouseEvent<HTMLElement>, reasons: string[]) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const popoverWidth = 300;
+    const estimatedHeight = 160 + Math.max(0, reasons.length - 2) * 26;
+    const margin = 8;
+
+    let top = rect.top - estimatedHeight - margin;
+    // Flip below the badge if clipping against viewport top (e.g. card at the top of Kanban column)
+    if (top < 12) {
+      top = rect.bottom + margin;
+    }
+
+    // Align horizontally with badge, clamped to viewport boundaries
+    let left = rect.left;
+    if (left + popoverWidth > window.innerWidth - 12) {
+      left = window.innerWidth - popoverWidth - 12;
+    }
+    if (left < 12) {
+      left = 12;
+    }
+
+    setActiveWatchTooltip({ top, left, reasons });
+  };
+
+  const handleWatchMouseLeave = () => {
+    setActiveWatchTooltip(null);
+  };
 
   const supabase = createClient();
 
@@ -2157,9 +2204,9 @@ export default function AssignmentsView() {
                         className="absolute top-2.5 right-2.5 z-20 text-[#E03131] dark:text-rose-500 flex items-center justify-center animate-in zoom-in-75 duration-200 group/corner cursor-help"
                       >
                         <OverdueClockIcon size={19} className="text-[#E03131] dark:text-rose-500" />
-                        <div className="hidden group-hover/corner:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap p-2.5 bg-neutral-900/90 text-white rounded-xl border border-white/20 backdrop-blur-md text-left pointer-events-none animate-in fade-in zoom-in-95 duration-100 font-sans shadow-none">
-                          <span className="text-[8.5px] font-mono tracking-[0.2em] text-rose-400 uppercase font-bold">STATUS • OVERDUE</span>
-                          <span className="text-[11px] font-bold text-white mt-0.5">เลยกำหนดส่งตามแผนงาน</span>
+                        <div className="hidden group-hover/corner:flex flex-col absolute right-0 top-full mt-1 z-50 whitespace-nowrap p-2 bg-[#EBECF0]/95 text-zinc-900 dark:bg-zinc-800/95 dark:text-zinc-100 rounded-xl border border-zinc-300/90 dark:border-zinc-700/80 backdrop-blur-md text-left pointer-events-none animate-in fade-in zoom-in-95 duration-100 font-sans shadow-xs">
+                          <span className="text-[8.5px] font-mono tracking-[0.2em] text-rose-600/90 dark:text-rose-400 uppercase font-bold">STATUS • OVERDUE</span>
+                          <span className="text-[11px] font-bold text-zinc-800/90 dark:text-zinc-100 mt-0.5">เลยกำหนดส่งตามแผนงาน</span>
                         </div>
                       </div>
                     ) : isUrgent ? (
@@ -2167,11 +2214,11 @@ export default function AssignmentsView() {
                         className="absolute top-2.5 right-2.5 z-20 text-[#E03131] dark:text-rose-500 flex items-center justify-center animate-in zoom-in-75 duration-200 group/corner cursor-help"
                       >
                         <Flame size={19} className="fill-[#E03131] dark:fill-rose-500 text-[#E03131] dark:text-rose-500" />
-                        <div className="hidden group-hover/corner:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap p-2.5 bg-neutral-900/90 text-white rounded-xl border border-white/20 backdrop-blur-md text-left pointer-events-none animate-in fade-in zoom-in-95 duration-100 font-sans shadow-none">
-                          <span className="text-[8.5px] font-mono tracking-[0.2em] text-amber-400 uppercase font-bold">
+                        <div className="hidden group-hover/corner:flex flex-col absolute right-0 top-full mt-1 z-50 whitespace-nowrap p-2 bg-[#EBECF0]/95 text-zinc-900 dark:bg-zinc-800/95 dark:text-zinc-100 rounded-xl border border-zinc-300/90 dark:border-zinc-700/80 backdrop-blur-md text-left pointer-events-none animate-in fade-in zoom-in-95 duration-100 font-sans shadow-xs">
+                          <span className="text-[8.5px] font-mono tracking-[0.2em] text-amber-600/90 dark:text-amber-400 uppercase font-bold">
                             {isSlaUrgent ? "LEAD TIME CRITICAL" : "DEADLINE ALERT"}
                           </span>
-                          <span className="text-[11px] font-bold text-white mt-0.5">
+                          <span className="text-[11px] font-bold text-zinc-800/90 dark:text-zinc-100 mt-0.5">
                             {isSlaUrgent 
                               ? `มาตรฐาน ${slaLeadTime} วัน • เหลือ ${daysUntilDue === 0 ? "วันนี้" : `${daysUntilDue} วัน`}` 
                               : `กำหนดส่งภายใน ${daysUntilDue === 0 ? "วันนี้" : `${daysUntilDue} วัน`}`}
@@ -2180,7 +2227,7 @@ export default function AssignmentsView() {
                       </div>
                     ) : null}
 
-                    {/* Card Header: Task Code + Watch Badge (Unclipped Popover) */}
+                    {/* Card Header: Task Code + Watch Badge (Unclipped Popover Portal) */}
                     <div className={`flex items-center gap-1.5 flex-wrap min-w-0 mb-1 select-none ${hasTopBadge ? 'pr-7' : 'pr-0'}`}>
                       <span className={`font-bold text-xs ${
                         brief.unit?.toLowerCase() === "creative" ? "text-[#7c3aed] dark:text-[#c4b5fd]" : 
@@ -2192,45 +2239,15 @@ export default function AssignmentsView() {
                         {getTaskCode(brief.unit, brief.id)}
                       </span>
 
-                      {/* Surveillance / Watch Badge with Dieter Rams Minimal Guide Popover */}
+                      {/* Surveillance / Watch Badge (Unclipped Top Layer via Portal) */}
                       {isUnderWatch && (
                         <span 
                           onClick={(e) => e.stopPropagation()}
-                          title={`เหตุผลการเฝ้าระวัง:\n${watchReasons.map(r => `• ${r}`).join('\n')}`}
-                          className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10.5px] font-black bg-[#FFD43B] hover:bg-[#FCC419] text-black shadow-xs transition-all cursor-help group/watch relative select-none"
+                          onMouseEnter={(e) => handleWatchMouseEnter(e, watchReasons)}
+                          onMouseLeave={handleWatchMouseLeave}
+                          className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10.5px] font-black bg-[#FFD43B] hover:bg-[#FCC419] text-black shadow-xs transition-all cursor-help relative select-none"
                         >
                           <span className="tracking-tight font-black text-black leading-none">เฝ้าระวัง</span>
-
-                          {/* Dieter Rams Semi-transparent Frosted Glass Guide Popover Card */}
-                          <div className="hidden group-hover/watch:flex flex-col absolute left-0 bottom-full mb-1.5 z-50 w-72 p-3 bg-neutral-900/90 text-white rounded-2xl border border-white/20 backdrop-blur-md text-left pointer-events-none animate-in fade-in zoom-in-95 duration-150 font-sans shadow-none">
-                            {/* Minimal Grid Header */}
-                            <div className="flex items-center justify-between gap-2 pb-1.5 mb-2 border-b border-white/10">
-                              <span className="text-[9px] font-bold font-mono tracking-[0.2em] text-neutral-400 uppercase">
-                                MONITORING • CRITERIA
-                              </span>
-                              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-white/10 text-neutral-300 font-bold">
-                                {watchReasons.length} ITEMS
-                              </span>
-                            </div>
-
-                            <div className="text-xs font-bold text-white mb-2 tracking-tight">
-                              เหตุผลการเฝ้าระวังคุณภาพงาน
-                            </div>
-
-                            <div className="space-y-1.5">
-                              {watchReasons.map((reason, idx) => (
-                                <div key={idx} className="flex items-start gap-2 text-[11px] text-neutral-200 font-medium leading-relaxed">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0 mt-1.5" />
-                                  <span className="flex-1">{reason}</span>
-                                </div>
-                              ))}
-                            </div>
-
-                            <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between text-[9px] font-mono text-neutral-400">
-                              <span>CC QUALITY SYSTEM</span>
-                              <span>ISO 9001:2015</span>
-                            </div>
-                          </div>
                         </span>
                       )}
                     </div>
@@ -2621,6 +2638,47 @@ export default function AssignmentsView() {
           assignees={assignees}
           onClose={() => setDailyMissionViewer({ isOpen: false })}
         />
+      )}
+
+      {/* Top Layer Surveillance Watch Popover Portal (Dieter Rams Minimal - Light Grey + Dark Semi-transparent Text) */}
+      {activeWatchTooltip && typeof document !== "undefined" && createPortal(
+        <div
+          style={{
+            top: `${activeWatchTooltip.top}px`,
+            left: `${activeWatchTooltip.left}px`,
+            width: "300px",
+          }}
+          className="fixed z-[99999] pointer-events-none flex flex-col p-3.5 bg-[#EBECF0]/95 dark:bg-zinc-800/95 text-zinc-900 dark:text-zinc-100 rounded-2xl border border-zinc-300/90 dark:border-zinc-700/80 backdrop-blur-md shadow-md animate-in fade-in zoom-in-95 duration-150 font-sans select-none"
+        >
+          {/* Minimal Grid Header */}
+          <div className="flex items-center justify-between gap-2 pb-1.5 mb-2 border-b border-zinc-300/70 dark:border-zinc-700/70">
+            <span className="text-[9px] font-bold font-mono tracking-[0.2em] text-zinc-700/80 dark:text-zinc-400 uppercase">
+              MONITORING • CRITERIA
+            </span>
+            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-zinc-300/60 dark:bg-zinc-700/60 text-zinc-800/80 dark:text-zinc-200 font-bold">
+              {activeWatchTooltip.reasons.length} ITEMS
+            </span>
+          </div>
+
+          <div className="text-xs font-bold text-zinc-900/90 dark:text-zinc-100 mb-2 tracking-tight">
+            เหตุผลการเฝ้าระวังคุณภาพงาน
+          </div>
+
+          <div className="space-y-1.5">
+            {activeWatchTooltip.reasons.map((reason, idx) => (
+              <div key={idx} className="flex items-start gap-2 text-[11.5px] text-zinc-800/85 dark:text-zinc-200 font-medium leading-relaxed">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0 mt-1.5" />
+                <span className="flex-1">{reason}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-2.5 pt-2 border-t border-zinc-300/70 dark:border-zinc-700/70 flex items-center justify-between text-[9px] font-mono text-zinc-600/70 dark:text-zinc-400 font-medium">
+            <span>CC QUALITY SYSTEM</span>
+            <span>ISO 9001:2015</span>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

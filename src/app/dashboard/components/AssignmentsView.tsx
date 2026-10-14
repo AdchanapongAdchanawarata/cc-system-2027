@@ -2155,7 +2155,6 @@ export default function AssignmentsView() {
                     {isOverdue ? (
                       <div 
                         className="absolute top-2.5 right-2.5 z-20 text-[#E03131] dark:text-rose-500 flex items-center justify-center animate-in zoom-in-75 duration-200 group/corner cursor-help"
-                        title="เลยกำหนดส่งตามแผนงาน (Overdue)"
                       >
                         <OverdueClockIcon size={19} className="text-[#E03131] dark:text-rose-500" />
                         <div className="hidden group-hover/corner:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap p-2.5 bg-neutral-900/90 text-white rounded-xl border border-white/20 backdrop-blur-md text-left pointer-events-none animate-in fade-in zoom-in-95 duration-100 font-sans shadow-none">
@@ -2166,14 +2165,11 @@ export default function AssignmentsView() {
                     ) : isUrgent ? (
                       <div 
                         className="absolute top-2.5 right-2.5 z-20 text-[#E03131] dark:text-rose-500 flex items-center justify-center animate-in zoom-in-75 duration-200 group/corner cursor-help"
-                        title={isSlaUrgent 
-                          ? `มาตรฐาน ${slaLeadTime} วัน • เหลือ ${daysUntilDue === 0 ? "วันนี้" : `${daysUntilDue} วัน`}` 
-                          : `กำหนดส่งภายใน ${daysUntilDue === 0 ? "วันนี้" : `${daysUntilDue} วัน`}`}
                       >
                         <Flame size={19} className="fill-[#E03131] dark:fill-rose-500 text-[#E03131] dark:text-rose-500" />
                         <div className="hidden group-hover/corner:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap p-2.5 bg-neutral-900/90 text-white rounded-xl border border-white/20 backdrop-blur-md text-left pointer-events-none animate-in fade-in zoom-in-95 duration-100 font-sans shadow-none">
                           <span className="text-[8.5px] font-mono tracking-[0.2em] text-amber-400 uppercase font-bold">
-                            {isSlaUrgent ? "SLA • LEAD TIME CRITICAL" : "URGENT • DEADLINE ALERT"}
+                            {isSlaUrgent ? "LEAD TIME CRITICAL" : "DEADLINE ALERT"}
                           </span>
                           <span className="text-[11px] font-bold text-white mt-0.5">
                             {isSlaUrgent 
@@ -2184,11 +2180,9 @@ export default function AssignmentsView() {
                       </div>
                     ) : null}
 
-                    {/* Task Name - Clamped to max 3 lines per user requirement */}
-                    <h4 
-                      className={`font-semibold text-foreground text-xs leading-snug break-words line-clamp-3 select-none ${hasTopBadge ? 'pr-7' : 'pr-0'}`}
-                    >
-                      <span className={`font-bold mr-1 ${
+                    {/* Card Header: Task Code + Watch Badge (Unclipped Popover) */}
+                    <div className={`flex items-center gap-1.5 flex-wrap min-w-0 mb-1 select-none ${hasTopBadge ? 'pr-7' : 'pr-0'}`}>
+                      <span className={`font-bold text-xs ${
                         brief.unit?.toLowerCase() === "creative" ? "text-[#7c3aed] dark:text-[#c4b5fd]" : 
                         brief.unit?.toLowerCase() === "content" ? "text-[#db2777] dark:text-[#f472b6]" : 
                         brief.unit?.toLowerCase() === "pr" ? "text-[#1d4ed8] dark:text-[#93c5fd]" : 
@@ -2197,16 +2191,18 @@ export default function AssignmentsView() {
                       }`}>
                         {getTaskCode(brief.unit, brief.id)}
                       </span>
+
                       {/* Surveillance / Watch Badge with Dieter Rams Minimal Guide Popover */}
                       {isUnderWatch && (
                         <span 
                           onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10.5px] font-black bg-[#FFD43B] hover:bg-[#FCC419] text-black shadow-xs transition-all cursor-help mr-1.5 align-middle group/watch relative select-none"
+                          title={`เหตุผลการเฝ้าระวัง:\n${watchReasons.map(r => `• ${r}`).join('\n')}`}
+                          className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10.5px] font-black bg-[#FFD43B] hover:bg-[#FCC419] text-black shadow-xs transition-all cursor-help group/watch relative select-none"
                         >
                           <span className="tracking-tight font-black text-black leading-none">เฝ้าระวัง</span>
 
                           {/* Dieter Rams Semi-transparent Frosted Glass Guide Popover Card */}
-                          <div className="hidden group-hover/watch:flex flex-col absolute left-0 bottom-full mb-2 z-50 w-72 p-3 bg-neutral-900/90 text-white rounded-2xl border border-white/20 backdrop-blur-md text-left pointer-events-none animate-in fade-in zoom-in-95 duration-150 font-sans shadow-none">
+                          <div className="hidden group-hover/watch:flex flex-col absolute left-0 bottom-full mb-1.5 z-50 w-72 p-3 bg-neutral-900/90 text-white rounded-2xl border border-white/20 backdrop-blur-md text-left pointer-events-none animate-in fade-in zoom-in-95 duration-150 font-sans shadow-none">
                             {/* Minimal Grid Header */}
                             <div className="flex items-center justify-between gap-2 pb-1.5 mb-2 border-b border-white/10">
                               <span className="text-[9px] font-bold font-mono tracking-[0.2em] text-neutral-400 uppercase">
@@ -2218,7 +2214,7 @@ export default function AssignmentsView() {
                             </div>
 
                             <div className="text-xs font-bold text-white mb-2 tracking-tight">
-                              ข้อบ่งชี้เฝ้าระวังคุณภาพงาน
+                              เหตุผลการเฝ้าระวังคุณภาพงาน
                             </div>
 
                             <div className="space-y-1.5">
@@ -2237,6 +2233,12 @@ export default function AssignmentsView() {
                           </div>
                         </span>
                       )}
+                    </div>
+
+                    {/* Task Name - Clamped to max 2 lines */}
+                    <h4 
+                      className={`font-semibold text-foreground text-xs leading-snug break-words line-clamp-2 select-none mb-1`}
+                    >
                       {brief.project_name}
                     </h4>
                     

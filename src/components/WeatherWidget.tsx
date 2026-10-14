@@ -4,15 +4,30 @@ import { useEffect, useState } from "react";
 import { Cloud, CloudRain, Sun, RefreshCw } from "lucide-react";
 import HalloweenPumpkin from "@/components/HalloweenPumpkin";
 
-// WMO Weather interpretation codes
-function getWeatherStatus(code: number): { label: string; type: "sunny" | "cloudy" | "rainy" } {
+// WMO Weather interpretation codes with real precipitation verification
+function getWeatherStatus(code: number, rainAmount = 0, precipitation = 0): { label: string; type: "sunny" | "cloudy" | "rainy" } {
+  // If weather code says drizzle (51-55) but rain/precip is negligible (< 0.5mm), it is not actively raining -> Cloudy / Partly Cloudy
+  if (code >= 51 && code <= 55 && precipitation < 0.5 && rainAmount < 0.5) {
+    return { label: "Partly Cloudy", type: "cloudy" };
+  }
   if (code === 0 || code === 1) return { label: "Sunny", type: "sunny" };
   if (code === 2) return { label: "Partly Cloudy", type: "cloudy" };
   if (code === 3) return { label: "Overcast", type: "cloudy" };
   if (code >= 45 && code <= 48) return { label: "Foggy", type: "cloudy" };
-  if (code >= 51 && code <= 67) return { label: "Rainy", type: "rainy" };
+  if (code >= 51 && code <= 67) {
+    // Only classify as Rainy if precipitation is actually measurable (>= 0.5mm) or moderate/heavy code (>= 63)
+    if (precipitation >= 0.5 || rainAmount >= 0.5 || code >= 63) {
+      return { label: "Rainy", type: "rainy" };
+    }
+    return { label: "Partly Cloudy", type: "cloudy" };
+  }
   if (code >= 71 && code <= 77) return { label: "Snow", type: "cloudy" };
-  if (code >= 80 && code <= 99) return { label: "Rainy", type: "rainy" };
+  if (code >= 80 && code <= 99) {
+    if (precipitation >= 0.5 || rainAmount >= 0.5 || code >= 81) {
+      return { label: "Rain Showers", type: "rainy" };
+    }
+    return { label: "Partly Cloudy", type: "cloudy" };
+  }
   return { label: "Partly Cloudy", type: "cloudy" };
 }
 
@@ -187,7 +202,8 @@ export function InspirationalQuote() {
   );
 }
 
-const MAX_WEATHER_CACHE_AGE = 30 * 60 * 1000; // 30 minutes
+const MAX_WEATHER_CACHE_AGE = 15 * 60 * 1000; // 15 minutes
+const WEATHER_STORAGE_KEY = "cc_weather_cache_v5";
 
 export default function WeatherWidget({ 
   variant = "full",
@@ -199,7 +215,7 @@ export default function WeatherWidget({
   const [weather, setWeather] = useState<{ temp: number; label: string; type: "sunny" | "cloudy" | "rainy" }>(() => {
     if (typeof window !== "undefined") {
       try {
-        const saved = localStorage.getItem("cc_weather_cache");
+        const saved = localStorage.getItem(WEATHER_STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
           if (parsed && typeof parsed.temp === "number" && parsed.timestamp && (Date.now() - parsed.timestamp < MAX_WEATHER_CACHE_AGE)) {
@@ -210,7 +226,7 @@ export default function WeatherWidget({
         // ignore
       }
     }
-    return { temp: 28, label: "Chiang Mai", type: "cloudy" };
+    return { temp: 29, label: "Partly Cloudy", type: "cloudy" };
   });
   const [loading, setLoading] = useState(true);
   const [quoteIndex, setQuoteIndex] = useState(0);
@@ -219,10 +235,12 @@ export default function WeatherWidget({
   const fetchWeather = async (lat = 18.7961, lon = 98.9793) => {
     setLoading(true);
     try {
-      const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code`);
+      const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,precipitation,rain`);
       const data = await res.json();
       if (data && data.current) {
-        const status = getWeatherStatus(data.current.weather_code);
+        const rainVal = Number(data.current.rain || 0);
+        const precipVal = Number(data.current.precipitation || 0);
+        const status = getWeatherStatus(data.current.weather_code, rainVal, precipVal);
         const newWeather = {
           temp: Math.round(data.current.temperature_2m),
           label: status.label,
@@ -230,7 +248,7 @@ export default function WeatherWidget({
         };
         setWeather(newWeather);
         if (typeof window !== "undefined") {
-          localStorage.setItem("cc_weather_cache", JSON.stringify({ ...newWeather, timestamp: Date.now() }));
+          localStorage.setItem(WEATHER_STORAGE_KEY, JSON.stringify({ ...newWeather, timestamp: Date.now() }));
         }
       }
     } catch (error) {
@@ -243,7 +261,7 @@ export default function WeatherWidget({
   useEffect(() => {
     // Try immediate read from localStorage with cache validity check
     try {
-      const saved = localStorage.getItem("cc_weather_cache");
+      const saved = localStorage.getItem(WEATHER_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && typeof parsed.temp === "number" && parsed.timestamp && (Date.now() - parsed.timestamp < MAX_WEATHER_CACHE_AGE)) {

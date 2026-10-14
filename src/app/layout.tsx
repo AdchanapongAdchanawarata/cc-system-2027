@@ -35,7 +35,6 @@ export const metadata: Metadata = {
 };
 
 import GoogleSheetsAutoSyncWorker from "@/components/GoogleSheetsAutoSyncWorker";
-import HalloweenBats from "@/components/HalloweenBats";
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
@@ -75,7 +74,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="min-h-full flex flex-col">
         {children}
-        <HalloweenBats />
         <GoogleSheetsAutoSyncWorker />
       </body>
     </html>

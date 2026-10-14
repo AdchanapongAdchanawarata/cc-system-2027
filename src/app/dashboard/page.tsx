@@ -22,6 +22,7 @@ import ActiveAssignmentNotifier from "@/components/ActiveAssignmentNotifier";
 import DailyMissionModal from "@/components/DailyMissionModal";
 import { computeDailyMission, DailyMissionResult } from "@/utils/dailyMissionService";
 import { logActivity, getCurrentActor } from "@/utils/auditLogger";
+import HalloweenBats from "@/components/HalloweenBats";
 
 export default function DashboardPage() {
   const [activeView, setActiveView] = useState<"assignments" | "dashboards" | "data-reports" | null>(null);
@@ -515,6 +516,7 @@ export default function DashboardPage() {
       {/* Main Content Area */}
       {!activeView ? (
         <>
+        <HalloweenBats />
         {/* Viewer Mode Banner */}
         {currentUserRole === "viewer" && (
           <div className="w-full mb-3 px-4 py-2.5 bg-cyan-50 border border-cyan-200 rounded-2xl flex items-center justify-between text-cyan-900 text-xs font-semibold shadow-xs animate-in fade-in">

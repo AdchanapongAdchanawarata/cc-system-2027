@@ -11,6 +11,7 @@ import ModernSelect from "@/components/ModernSelect";
 import { generateNextTaskCode, getUnitPrefix } from "@/utils/taskCodeService";
 import { getSavedContact, saveContact, ContactProfile } from "@/utils/contactMemory";
 import ContactMemoryBanner from "@/components/ContactMemoryBanner";
+import HalloweenBats from "@/components/HalloweenBats";
 
 type UnitType = 'creative' | 'content' | 'pr';
 
@@ -1083,6 +1084,7 @@ function FormContent() {
 export default function PublicRequestFormPage() {
   return (
     <main className="flex-1 w-full max-w-4xl mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8 flex flex-col min-h-screen">
+      <HalloweenBats />
       <div className="flex-1">
         <Suspense fallback={<div className="flex justify-center p-12 text-muted-foreground">กำลังโหลดแบบฟอร์ม...</div>}>
           <FormContent />

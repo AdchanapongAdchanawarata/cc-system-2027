@@ -70,6 +70,11 @@ export function WatchEyeIcon({ size = 10, className = "text-black shrink-0" }: {
   );
 }
 
+export type WatchReasonItem = {
+  title: string;
+  detail?: string;
+};
+
 type Brief = {
   id: string;
   project_name: string;
@@ -262,7 +267,7 @@ export default function AssignmentsView() {
     top: number;
     left: number;
     type: "watch" | "urgent" | "overdue";
-    reasons?: string[];
+    reasons?: WatchReasonItem[];
     badgeHeader?: string;
     badgeColorClass?: string;
     bodyText?: string;
@@ -279,10 +284,10 @@ export default function AssignmentsView() {
     };
   }, []);
 
-  const handleWatchMouseEnter = (e: React.MouseEvent<HTMLElement>, reasons: string[]) => {
+  const handleWatchMouseEnter = (e: React.MouseEvent<HTMLElement>, reasons: WatchReasonItem[]) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const popoverWidth = 300;
-    const estimatedHeight = 160 + Math.max(0, reasons.length - 2) * 26;
+    const popoverWidth = 330;
+    const estimatedHeight = 145 + reasons.length * 42;
     const margin = 8;
 
     let top = rect.top - estimatedHeight - margin;
@@ -2185,28 +2190,46 @@ export default function AssignmentsView() {
 
                 const revCount = brief.details?.revisions_count || 0;
                 
-                // Construct detailed reasons for Surveillance / Quality Watch
-                const watchReasons: string[] = [];
+                // Construct detailed reasons for Surveillance / Quality Watch (Structured line breaks & clean phrasing)
+                const watchReasons: WatchReasonItem[] = [];
                 if (revCount >= 3) {
-                  watchReasons.push(`แก้ไขงานแล้ว ${revCount} ครั้ง (เกินเกณฑ์ควบคุมคุณภาพ WI 3 ครั้ง)`);
+                  watchReasons.push({
+                    title: `แก้ไขงานแล้ว ${revCount} ครั้ง`,
+                    detail: "เกินเกณฑ์ควบคุมคุณภาพ WI (ไม่เกิน 3 ครั้ง)"
+                  });
                 } else if (revCount === 2) {
-                  watchReasons.push("แก้ไขงานแล้ว 2 ครั้ง (ใกล้แตะเพดานควบคุมคุณภาพ WI 3 ครั้ง)");
+                  watchReasons.push({
+                    title: "แก้ไขงานแล้ว 2 ครั้ง",
+                    detail: "ใกล้แตะเพดานควบคุมคุณภาพ WI (3 ครั้ง)"
+                  });
                 }
 
                 if (brief.status === 'pending') {
                   if (brief.assignee_id && ages.pendingDays > 3) {
-                    watchReasons.push(`ค้างอยู่ใน To-Do List นาน ${ages.pendingDays} วัน (เกณฑ์ปกติไม่เกิน 3 วัน)`);
+                    watchReasons.push({
+                      title: `ค้างอยู่ใน To-Do List นาน ${ages.pendingDays} วัน`,
+                      detail: "เกณฑ์ปกติกำหนดให้ไม่เกิน 3 วัน"
+                    });
                   } else if (!brief.assignee_id && ages.unassignedDays > 3) {
-                    watchReasons.push(`รอมอบหมายผู้รับผิดชอบนาน ${ages.unassignedDays} วัน (เกณฑ์ปกติไม่เกิน 3 วัน)`);
+                    watchReasons.push({
+                      title: `รอมอบหมายผู้รับผิดชอบนาน ${ages.unassignedDays} วัน`,
+                      detail: "เกณฑ์ปกติกำหนดให้ไม่เกิน 3 วัน"
+                    });
                   }
                 } else if (brief.status === 'in_progress') {
                   if (ages.inProgressDays > 14) {
-                    watchReasons.push(`กำลังดำเนินการต่อเนื่องนาน ${ages.inProgressDays} วัน`);
+                    watchReasons.push({
+                      title: `กำลังดำเนินการต่อเนื่องนาน ${ages.inProgressDays} วัน`,
+                      detail: "อยู่ในสถานะ In-Progress นานกว่าเกณฑ์ 14 วัน"
+                    });
                   }
                 }
 
                 if (brief.status === 'pending' && daysUntilDue !== null && daysUntilDue <= 2 && daysUntilDue >= 0) {
-                  watchReasons.push(`ใกล้ถึงกำหนดส่ง (เหลือ ${daysUntilDue === 0 ? "วันนี้" : `${daysUntilDue} วัน`}) แต่ยังไม่ได้เริ่ม In-Progress`);
+                  watchReasons.push({
+                    title: `ใกล้ถึงกำหนดส่ง (เหลือ ${daysUntilDue === 0 ? "วันนี้" : `${daysUntilDue} วัน`})`,
+                    detail: "สถานะปัจจุบันยังไม่ได้เริ่ม In-Progress"
+                  });
                 }
 
                 const isUnderWatch = watchReasons.length > 0 && brief.status !== 'completed' && brief.status !== 'cancelled';
@@ -2697,7 +2720,7 @@ export default function AssignmentsView() {
             style={{
               top: `${activeCardTooltip.top}px`,
               left: `${activeCardTooltip.left}px`,
-              width: "305px",
+              width: "330px",
             }}
             className="fixed z-[99999] pointer-events-none flex flex-col p-3.5 bg-white/45 dark:bg-zinc-950/50 text-slate-900 dark:text-zinc-100 rounded-2xl border border-white/90 dark:border-white/30 backdrop-blur-md shadow-[0_0_22px_rgba(255,255,255,0.95),0_0_35px_rgba(251,191,36,0.25),0_14px_40px_rgba(0,0,0,0.14)] ring-1 ring-white/90 dark:ring-white/20 animate-in fade-in zoom-in-95 duration-150 font-sans select-none"
           >
@@ -2711,15 +2734,24 @@ export default function AssignmentsView() {
               </span>
             </div>
 
-            <div className="text-xs font-bold text-slate-950 dark:text-white mb-2 tracking-tight">
+            <div className="text-xs font-bold text-slate-950 dark:text-white mb-2.5 tracking-tight">
               เหตุผลการเฝ้าระวังคุณภาพงาน
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-2.5">
               {activeCardTooltip.reasons?.map((reason, idx) => (
-                <div key={idx} className="flex items-start gap-2 text-[11.5px] text-slate-900 dark:text-zinc-100 font-medium leading-relaxed">
+                <div key={idx} className="flex items-start gap-2.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.6)] shrink-0 mt-1.5" />
-                  <span className="flex-1">{reason}</span>
+                  <div className="flex-1 flex flex-col gap-0.5 leading-snug">
+                    <span className="text-[12px] font-bold text-slate-950 dark:text-white tracking-tight">
+                      {reason.title}
+                    </span>
+                    {reason.detail && (
+                      <span className="text-[10.5px] font-medium text-slate-600 dark:text-zinc-300">
+                        {reason.detail}
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

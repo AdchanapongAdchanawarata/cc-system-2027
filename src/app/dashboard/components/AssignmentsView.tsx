@@ -2151,29 +2151,38 @@ export default function AssignmentsView() {
                       onClick={() => setSelectedBrief(brief)}
                       className="bg-surface p-2.5 rounded-xl border border-surface-border shadow-2xs hover:shadow-md hover:border-slate-300 dark:hover:border-zinc-700 transition-all cursor-grab active:cursor-grabbing group flex flex-col justify-between relative min-h-[105px] select-none"
                     >
-                    {/* Corner Status Icons: Overdue (Clockwise Clock Arrow) or Urgent/Due <= 3 days (Red Flame) - Enlarged size=20, No circle container */}
+                    {/* Corner Status Icons: Overdue (Clockwise Clock Arrow) or Urgent/Due <= 3 days (Red Flame) */}
                     {isOverdue ? (
                       <div 
-                        className="absolute top-2 right-2 z-10 text-[#E03131] dark:text-rose-500 flex items-center justify-center animate-in zoom-in-75 duration-200" 
-                        title="เลยกำหนดส่ง (OVERDUE)"
+                        className="absolute top-2 right-2 z-10 text-[#E03131] dark:text-rose-500 flex items-center justify-center animate-in zoom-in-75 duration-200 group/corner relative cursor-help"
                       >
                         <OverdueClockIcon size={20} className="text-[#E03131] dark:text-rose-500" />
+                        <div className="hidden group-hover/corner:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap p-2 bg-neutral-950 text-white rounded-xl shadow-2xl border border-neutral-800 text-left pointer-events-none animate-in fade-in zoom-in-95 duration-100 font-sans">
+                          <span className="text-[8.5px] font-mono tracking-[0.2em] text-rose-400 uppercase font-bold">STATUS • OVERDUE</span>
+                          <span className="text-[11px] font-bold text-white mt-0.5">เลยกำหนดส่งตามแผนงาน</span>
+                        </div>
                       </div>
                     ) : isUrgent ? (
                       <div 
-                        className="absolute top-2 right-2 z-10 text-[#E03131] dark:text-rose-500 flex items-center justify-center animate-in zoom-in-75 duration-200" 
-                        title={isSlaUrgent 
-                          ? `งานด่วนตามระยะเวลามาตรฐาน (มาตรฐาน ${slaLeadTime} วัน, เหลือ ${daysUntilDue === 0 ? "วันนี้" : `${daysUntilDue} วัน`})` 
-                          : `งานด่วน / กำหนดส่งภายใน ${daysUntilDue === 0 ? "วันนี้" : `${daysUntilDue} วัน`}`}
+                        className="absolute top-2 right-2 z-10 text-[#E03131] dark:text-rose-500 flex items-center justify-center animate-in zoom-in-75 duration-200 group/corner relative cursor-help"
                       >
                         <Flame size={20} className="fill-[#E03131] dark:fill-rose-500 text-[#E03131] dark:text-rose-500" />
+                        <div className="hidden group-hover/corner:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap p-2 bg-neutral-950 text-white rounded-xl shadow-2xl border border-neutral-800 text-left pointer-events-none animate-in fade-in zoom-in-95 duration-100 font-sans">
+                          <span className="text-[8.5px] font-mono tracking-[0.2em] text-amber-400 uppercase font-bold">
+                            {isSlaUrgent ? "SLA • LEAD TIME CRITICAL" : "URGENT • DEADLINE ALERT"}
+                          </span>
+                          <span className="text-[11px] font-bold text-white mt-0.5">
+                            {isSlaUrgent 
+                              ? `มาตรฐาน ${slaLeadTime} วัน • เหลือ ${daysUntilDue === 0 ? "วันนี้" : `${daysUntilDue} วัน`}` 
+                              : `กำหนดส่งภายใน ${daysUntilDue === 0 ? "วันนี้" : `${daysUntilDue} วัน`}`}
+                          </span>
+                        </div>
                       </div>
                     ) : null}
 
                     {/* Task Name - Clamped to max 3 lines per user requirement */}
                     <h4 
                       className={`font-semibold text-foreground text-xs leading-snug break-words line-clamp-3 ${hasTopBadge ? 'pr-7' : 'pr-0'}`}
-                      title={brief.project_name}
                     >
                       <span className={`font-bold mr-1 ${
                         brief.unit?.toLowerCase() === "creative" ? "text-[#7c3aed] dark:text-[#c4b5fd]" : 
@@ -2184,34 +2193,44 @@ export default function AssignmentsView() {
                       }`}>
                         {getTaskCode(brief.unit, brief.id)}
                       </span>
-                      {/* Surveillance / Watch Badge with Interactive Hover Details */}
+                      {/* Surveillance / Watch Badge with Dieter Rams Minimal Guide Popover */}
                       {isUnderWatch && (
                         <span 
                           onClick={(e) => e.stopPropagation()}
                           className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10.5px] font-black bg-[#FFD43B] hover:bg-[#FCC419] text-black shadow-xs transition-all cursor-help mr-1.5 align-middle group/watch relative select-none"
-                          title={`🔍 เฝ้าระวัง:\n${watchReasons.map(r => `• ${r}`).join('\n')}`}
                         >
                           <span className="tracking-tight font-black text-black leading-none">เฝ้าระวัง</span>
 
-                          {/* Elegant Hover Popover Card */}
-                          <span className="hidden group-hover/watch:flex flex-col absolute left-0 bottom-full mb-2 z-50 w-64 p-2.5 bg-slate-900/95 dark:bg-black/95 text-white backdrop-blur-md rounded-xl shadow-2xl border border-yellow-400/40 text-left pointer-events-none animate-in fade-in-0 zoom-in-95 duration-150">
-                            <span className="flex items-center gap-1.5 text-yellow-400 font-bold text-[11px] mb-1 pb-1 border-b border-white/10">
-                              <WatchEyeIcon size={12} className="shrink-0 text-yellow-400" />
-                              <span>รายการเฝ้าระวัง (Watch List)</span>
-                            </span>
-                            <span className="space-y-1 text-[10px] text-slate-200 font-normal leading-relaxed block">
+                          {/* Dieter Rams Minimal Guide Popover Card */}
+                          <div className="hidden group-hover/watch:flex flex-col absolute left-0 bottom-full mb-2 z-50 w-72 p-3 bg-neutral-950 text-white rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.45)] border border-neutral-800 text-left pointer-events-none animate-in fade-in zoom-in-95 duration-150 font-sans">
+                            {/* Minimal Grid Header */}
+                            <div className="flex items-center justify-between gap-2 pb-1.5 mb-2 border-b border-neutral-800">
+                              <span className="text-[9px] font-bold font-mono tracking-[0.2em] text-neutral-400 uppercase">
+                                MONITORING • CRITERIA
+                              </span>
+                              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-neutral-800 text-neutral-300 font-bold">
+                                {watchReasons.length} ITEMS
+                              </span>
+                            </div>
+
+                            <div className="text-xs font-bold text-white mb-2 tracking-tight">
+                              ข้อบ่งชี้เฝ้าระวังคุณภาพงาน
+                            </div>
+
+                            <div className="space-y-1.5">
                               {watchReasons.map((reason, idx) => (
-                                <span key={idx} className="flex items-start gap-1.5 block">
-                                  <span className="text-yellow-400 font-bold leading-none mt-1 shrink-0">•</span>
-                                  <span>{reason}</span>
-                                </span>
+                                <div key={idx} className="flex items-start gap-2 text-[11px] text-neutral-300 font-medium leading-relaxed">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0 mt-1.5" />
+                                  <span className="flex-1">{reason}</span>
+                                </div>
                               ))}
-                            </span>
-                            <span className="mt-1.5 pt-1 border-t border-white/10 text-[9px] text-slate-400 flex items-center justify-between">
-                              <span>เกณฑ์ควบคุมคุณภาพงาน</span>
-                              <span className="text-yellow-400/90 font-mono font-semibold">CC QUALITY</span>
-                            </span>
-                          </span>
+                            </div>
+
+                            <div className="mt-2.5 pt-2 border-t border-neutral-800 flex items-center justify-between text-[9px] font-mono text-neutral-500">
+                              <span>CC QUALITY SYSTEM</span>
+                              <span>ISO 9001:2015</span>
+                            </div>
+                          </div>
                         </span>
                       )}
                       {brief.project_name}
@@ -2317,16 +2336,29 @@ export default function AssignmentsView() {
                             const totalPct = activeAsts.reduce((sum: number, a: any) => sum + (Number(a.percentage) || 0), 0);
                             const firstAst = assignees.find((as: any) => as.id === activeAsts[0]?.assignee_id);
                             return (
-                              <span 
-                                className="inline-flex items-center gap-0.5 text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/60 px-1 py-0.5 rounded-full shrink-1 min-w-0 max-w-[110px] truncate"
-                                title={`ผู้ช่วย: ${activeAsts.map((a: any) => {
-                                  const m = assignees.find(as => as.id === a.assignee_id);
-                                  return `${m?.name || 'ผู้ช่วย'} (${a.percentage}%)`;
-                                }).join(', ')}`}
-                              >
-                                <Users size={9} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                <span className="truncate">+{activeAsts.length} {activeAsts.length === 1 && firstAst?.name ? `${firstAst.name} ` : ''}({totalPct}%)</span>
-                              </span>
+                              <div className="group/ast relative inline-flex">
+                                <span 
+                                  className="inline-flex items-center gap-0.5 text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/60 px-1 py-0.5 rounded-full shrink-1 min-w-0 max-w-[110px] truncate cursor-help"
+                                >
+                                  <Users size={9} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                  <span className="truncate">+{activeAsts.length} {activeAsts.length === 1 && firstAst?.name ? `${firstAst.name} ` : ''}({totalPct}%)</span>
+                                </span>
+                                {/* Dieter Rams Assistant Card */}
+                                <div className="hidden group-hover/ast:flex flex-col absolute left-0 bottom-full mb-1.5 z-50 whitespace-nowrap p-2.5 bg-neutral-950 text-white rounded-xl shadow-2xl border border-neutral-800 text-left pointer-events-none font-sans min-w-[160px]">
+                                  <span className="text-[8.5px] font-mono tracking-[0.2em] text-emerald-400 uppercase font-bold border-b border-neutral-800 pb-1 mb-1.5">TEAM • ASSISTANTS</span>
+                                  <div className="space-y-1 text-[10.5px]">
+                                    {activeAsts.map((a: any, i: number) => {
+                                      const m = assignees.find(as => as.id === a.assignee_id);
+                                      return (
+                                        <div key={i} className="flex items-center justify-between gap-3 text-neutral-200">
+                                          <span>{m?.name || 'ผู้ช่วย'}</span>
+                                          <span className="font-mono text-emerald-400 font-bold">{a.percentage}%</span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
                             );
                           })()}
                           {/* Satisfaction Rating / Survey Pill */}
@@ -2344,13 +2376,24 @@ export default function AssignmentsView() {
 
                             if (isEvaluated) {
                               return (
-                                <span 
-                                  className="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 px-1.5 py-0.5 rounded-full shrink-0"
-                                  title={brief.details?.satisfaction_scores?.comment ? `ข้อเสนอแนะ: "${brief.details.satisfaction_scores.comment}"` : `ประเมินแล้ว ${satPercent}%`}
-                                >
-                                  <Star size={9} className="fill-amber-400 text-amber-500" />
-                                  <span>{satPercent}%</span>
-                                </span>
+                                <div className="group/sat relative inline-flex">
+                                  <span 
+                                    className="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 px-1.5 py-0.5 rounded-full shrink-0 cursor-help"
+                                  >
+                                    <Star size={9} className="fill-amber-400 text-amber-500" />
+                                    <span>{satPercent}%</span>
+                                  </span>
+                                  {/* Dieter Rams Satisfaction Guide Card */}
+                                  <div className="hidden group-hover/sat:flex flex-col absolute left-0 bottom-full mb-1.5 z-50 p-2.5 bg-neutral-950 text-white rounded-xl shadow-2xl border border-neutral-800 text-left pointer-events-none font-sans min-w-[180px] max-w-[240px]">
+                                    <span className="text-[8.5px] font-mono tracking-[0.2em] text-amber-400 uppercase font-bold border-b border-neutral-800 pb-1 mb-1">EVALUATION • RATING</span>
+                                    <span className="text-[11px] font-bold text-white">ผลประเมินความพึงพอใจ: {satPercent}%</span>
+                                    {brief.details?.satisfaction_scores?.comment && (
+                                      <p className="text-[10px] text-neutral-300 mt-1 italic leading-relaxed border-t border-neutral-800/60 pt-1">
+                                        &ldquo;{brief.details.satisfaction_scores.comment}&rdquo;
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
                               );
                             }
 
@@ -2358,7 +2401,6 @@ export default function AssignmentsView() {
                               return (
                                 <span 
                                   className="inline-flex items-center gap-0.5 text-[9px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 px-1.5 py-0.5 rounded-full shrink-0"
-                                  title="งานภายใน บันทึกข้อมูลในระบบเรียบร้อย (ไม่ต้องทำแบบประเมิน/ส่งเมล)"
                                 >
                                   <span>บันทึกแล้ว</span>
                                 </span>
@@ -2373,7 +2415,6 @@ export default function AssignmentsView() {
                                   setPendingCompletedBrief(brief);
                                 }}
                                 className="inline-flex items-center gap-0.5 text-[9px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/60 px-1.5 py-0.5 rounded-full shrink-0 cursor-pointer shadow-2xs transition-colors"
-                                title="คลิกเพื่อเปิดส่งแบบประเมินใน Gmail หรือส่งมอบงาน"
                               >
                                 <Mail size={9} className="text-blue-600 dark:text-blue-400" />
                                 <span>ประเมิน</span>
@@ -2382,17 +2423,29 @@ export default function AssignmentsView() {
                           })()}
                         </div>
                         
-                        {/* Task Age Indicators */}
-                        <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-medium tracking-tight shrink-0 ml-auto">
-                          <span title="Days in Unassigned (รอมอบหมาย)" className="flex items-center gap-0.5">
+                        {/* Task Age Indicators (Dieter Rams Minimal Guide) */}
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-medium tracking-tight shrink-0 ml-auto select-none">
+                          <div className="group/age relative flex items-center gap-0.5 cursor-help">
                             <span className="w-2 h-2 rounded-full bg-slate-400 dark:bg-slate-500"></span> {ages.unassignedDays}d
-                          </span>
-                          <span title="Days in Pending (รอทำ)" className="flex items-center gap-0.5">
+                            <div className="hidden group-hover/age:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap px-2 py-1 bg-neutral-950 text-white rounded-lg shadow-xl border border-neutral-800 text-[10px] font-mono pointer-events-none">
+                              <span className="text-[8px] text-neutral-400 tracking-wider">UNASSIGNED AGE</span>
+                              <span>อยู่ในรอมอบหมาย: {ages.unassignedDays} วัน</span>
+                            </div>
+                          </div>
+                          <div className="group/age relative flex items-center gap-0.5 cursor-help">
                             <span className="w-2 h-2 rounded-full bg-[#f59e0b]"></span> {ages.pendingDays}d
-                          </span>
-                          <span title="Days in Progress (กำลังทำ)" className="flex items-center gap-0.5">
+                            <div className="hidden group-hover/age:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap px-2 py-1 bg-neutral-950 text-white rounded-lg shadow-xl border border-neutral-800 text-[10px] font-mono pointer-events-none">
+                              <span className="text-[8px] text-amber-400 tracking-wider">TO-DO LIST AGE</span>
+                              <span>อยู่ในรอทำ: {ages.pendingDays} วัน</span>
+                            </div>
+                          </div>
+                          <div className="group/age relative flex items-center gap-0.5 cursor-help">
                             <span className="w-2 h-2 rounded-full bg-[#3b82f6]"></span> {ages.inProgressDays}d
-                          </span>
+                            <div className="hidden group-hover/age:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap px-2 py-1 bg-neutral-950 text-white rounded-lg shadow-xl border border-neutral-800 text-[10px] font-mono pointer-events-none">
+                              <span className="text-[8px] text-blue-400 tracking-wider">IN-PROGRESS AGE</span>
+                              <span>อยู่ในกำลังทำ: {ages.inProgressDays} วัน</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>

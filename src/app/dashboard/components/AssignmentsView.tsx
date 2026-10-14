@@ -7,7 +7,7 @@ import {
   UserCircle2, CalendarDays, Tags, KanbanSquare, Flame, 
   CheckCircle2, XCircle, Trash2, Copy, Clock, ClockAlert, History, 
   Users, Star, MessageSquare, Undo2, Redo2, RotateCcw, AlertCircle, Mail,
-  LayoutList, ChevronDown, Check, Search, Eye, Bell, BellRing, BellOff
+  LayoutList, ChevronDown, Check, Search, Eye, Bell, BellRing, BellOff, Lock
 } from "lucide-react";
 import BriefDetailsModal from "./BriefDetailsModal";
 import TrashBinModal from "./TrashBinModal";
@@ -17,7 +17,7 @@ import DailyMissionModal from "@/components/DailyMissionModal";
 import { getStandardPriceForTask, shouldInternalTaskSkipEmail, shouldSkipEmailForInProgress, shouldSkipEmailForCompleted, getLeadTimeForTask } from "@/utils/pricing";
 import { globalHistoryManager } from "@/utils/historyManager";
 import { resolveTaskCode, generateNextTaskCode, getUnitPrefix } from "@/utils/taskCodeService";
-import { logActivity, getCurrentActor } from "@/utils/auditLogger";
+import { logActivity, getCurrentActor, getAuditLogs } from "@/utils/auditLogger";
 import { Assignee3DAvatarBadge } from "@/components/Assignee3DAvatarBadge";
 import { updateGlobalBriefsStatsCache } from "@/utils/avatarMemberStats";
 import { isOperationalAssignee } from "@/utils/memberProfile";
@@ -269,12 +269,51 @@ export default function AssignmentsView() {
         setIsNotifEnabled(perm === "granted");
       }
 
-      // Load notif history
-      const loadHistory = () => {
+      // Load notif history (merges local alerts + team-wide cloud mission acks)
+      const loadHistory = async () => {
         try {
-          const list = JSON.parse(localStorage.getItem("cc_recent_assignment_alerts") || "[]");
-          setNotifHistory(list);
-        } catch {}
+          const localList: any[] = JSON.parse(localStorage.getItem("cc_recent_assignment_alerts") || "[]");
+          const clearedBefore = parseInt(localStorage.getItem("cc_cleared_notifs_before") || "0", 10);
+
+          let cloudMissionAcks: any[] = [];
+          try {
+            const auditLogs = await getAuditLogs(60);
+            cloudMissionAcks = (auditLogs || [])
+              .filter(l => l.action === "DAILY_MISSION_ACK")
+              .map(l => {
+                const dateStr = l.timestamp?.split("T")[0] || new Date().toISOString().split("T")[0];
+                const actorName = l.actor_name || "ทีมงาน CC";
+                const headline = l.details?.headline || "ภารกิจประจำวัน";
+                return {
+                  id: `cloud_mission_${l.id || l.timestamp}`,
+                  projectName: `🎯 ภารกิจประจำวัน (${actorName}): ${headline}`,
+                  taskCode: "MISSION",
+                  deadline: dateStr,
+                  requesterName: `ระบบชี้แจงเป้าหมาย (${actorName})`,
+                  unit: l.actor_role === "admin" ? "Team Leader" : "Creative Specialist",
+                  alertType: "assigned",
+                  timestamp: new Date(l.timestamp).getTime(),
+                  actorName: actorName,
+                  details: l.details,
+                };
+              });
+          } catch (e) {
+            console.warn("Failed to fetch cloud audit logs for notif history:", e);
+          }
+
+          const combinedMap = new Map<string, any>();
+          cloudMissionAcks.forEach(item => combinedMap.set(item.id, item));
+          localList.forEach(item => combinedMap.set(item.id, item));
+
+          const merged = Array.from(combinedMap.values())
+            .filter(item => (item.timestamp || 0) > clearedBefore)
+            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+            .slice(0, 40);
+
+          setNotifHistory(merged);
+        } catch (err) {
+          console.warn("Failed to load notif history:", err);
+        }
       };
       loadHistory();
       window.addEventListener("cc_notif_history_updated", loadHistory);
@@ -463,6 +502,8 @@ export default function AssignmentsView() {
   };
 
   const isViewer = typeof window !== "undefined" && localStorage.getItem("cc_user_role") === "viewer";
+  const currentActor = getCurrentActor();
+  const isAdmin = currentActor.role === "admin" || currentActor.email.toLowerCase().includes("adchanapong") || currentActor.name.includes("จ๊อบ");
 
   const updateFieldInternal = async (id: string, updates: any) => {
     if (isViewer) {
@@ -1853,12 +1894,24 @@ export default function AssignmentsView() {
                         <button
                           type="button"
                           onClick={() => {
+                            if (!isAdmin) {
+                              alert("🔒 ขออภัย: ปุ่มล้างประวัติการแจ้งเตือนสามารถกดได้เฉพาะผู้ดูแลระบบ (Admin) เท่านั้น");
+                              return;
+                            }
+                            if (!confirm("คุณต้องการล้างประวัติการแจ้งเตือนทั้งหมดใช่หรือไม่?")) {
+                              return;
+                            }
                             localStorage.removeItem("cc_recent_assignment_alerts");
+                            localStorage.setItem("cc_cleared_notifs_before", String(Date.now()));
                             setNotifHistory([]);
                           }}
-                          className="text-[10px] text-rose-500 hover:text-rose-700 hover:underline cursor-pointer"
+                          className={`text-[10px] hover:underline cursor-pointer flex items-center gap-0.5 ${
+                            isAdmin ? "text-rose-500 hover:text-rose-700 font-semibold" : "text-zinc-400 hover:text-zinc-500"
+                          }`}
+                          title={isAdmin ? "ล้างประวัติการแจ้งเตือน (Admin)" : "เฉพาะ Admin เท่านั้นที่สามารถล้างประวัติได้"}
                         >
-                          ล้าง
+                          <span>ล้าง</span>
+                          {!isAdmin && <Lock size={9} className="text-zinc-400" />}
                         </button>
                       )}
                     </div>

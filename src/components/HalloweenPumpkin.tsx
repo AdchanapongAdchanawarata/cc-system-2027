@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Sparkles, Trophy, X, RotateCcw } from "lucide-react";
 
 interface HalloweenPumpkinProps {
   size?: number;
@@ -10,7 +9,7 @@ interface HalloweenPumpkinProps {
   glow?: boolean;
 }
 
-interface CandyParticle {
+interface VolcanoCandy {
   id: number;
   emoji: string;
   x: number;
@@ -20,18 +19,12 @@ interface CandyParticle {
   rotation: number;
   vRot: number;
   size: number;
-  collected: boolean;
+  opacity: number;
+  scale: number;
 }
 
-interface FloatScore {
-  id: number;
-  x: number;
-  y: number;
-  text: string;
-}
-
-// Pleasant Web Audio API sound effects (Zero external files needed)
-function playPopSound(freq = 550) {
+// Crisp pop sound effect synthesized via Web Audio API (Zero external assets)
+function playPopSound(freq = 520) {
   try {
     const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!AudioContextClass) return;
@@ -40,64 +33,23 @@ function playPopSound(freq = 550) {
     const gain = ctx.createGain();
     osc.type = "sine";
     osc.frequency.setValueAtTime(freq, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(freq * 1.6, ctx.currentTime + 0.12);
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+    osc.frequency.exponentialRampToValueAtTime(freq * 1.8, ctx.currentTime + 0.14);
+    gain.gain.setValueAtTime(0.35, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.18);
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.start();
-    osc.stop(ctx.currentTime + 0.16);
+    osc.stop(ctx.currentTime + 0.19);
   } catch {
-    // Ignore audio autoplay restrictions
+    // Ignore audio restrictions
   }
 }
 
-function playCollectSound(step = 0) {
-  try {
-    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (!AudioContextClass) return;
-    const ctx = new AudioContextClass();
-    const notes = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5]; // C5, D5, E5, G5, A5, C6
-    const freq = notes[step % notes.length];
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "triangle";
-    osc.frequency.setValueAtTime(freq, ctx.currentTime);
-    gain.gain.setValueAtTime(0.25, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.23);
-  } catch {
-    // Ignore audio autoplay restrictions
-  }
-}
-
-function playCelebrationFanfare() {
-  try {
-    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (!AudioContextClass) return;
-    const ctx = new AudioContextClass();
-    const melody = [523.25, 659.25, 783.99, 1046.5];
-    melody.forEach((freq, idx) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "triangle";
-      osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.1);
-      gain.gain.setValueAtTime(0.22, ctx.currentTime + idx * 0.1);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.1 + 0.25);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(ctx.currentTime + idx * 0.1);
-      osc.stop(ctx.currentTime + idx * 0.1 + 0.26);
-    });
-  } catch {
-    // Ignore
-  }
-}
-
-const CANDY_EMOJIS = ["🍬", "🍭", "🍫", "🍩", "🍪", "🧁", "🍡", "🎃", "⭐", "✨", "🍬", "🍭", "🍫", "🍬"];
+const VOLCANO_EMOJIS = [
+  "🍬", "🍭", "🍫", "🍩", "🍪", "🧁", "🍡", "🎃", "⭐", "✨", 
+  "🍬", "🍭", "🍫", "🍬", "🍭", "🎉", "🎃", "✨", "🍫", "🍬",
+  "🍡", "🍪", "🍩", "🧁", "⭐", "🍬", "🍭"
+];
 
 export default function HalloweenPumpkin({
   size,
@@ -105,16 +57,11 @@ export default function HalloweenPumpkin({
   glow = true,
 }: HalloweenPumpkinProps) {
   const [active, setActive] = useState(false);
-  const [isJiggling, setIsJiggling] = useState(false);
+  const [isBursting, setIsBursting] = useState(false);
   const [lit, setLit] = useState(true);
 
-  // Minigame & Candy Burst State
-  const [isMinigameActive, setIsMinigameActive] = useState(false);
-  const [candies, setCandies] = useState<CandyParticle[]>([]);
-  const [floatScores, setFloatScores] = useState<FloatScore[]>([]);
-  const [score, setScore] = useState(0);
-  const [collectedCount, setCollectedCount] = useState(0);
-  const [showCelebration, setShowCelebration] = useState(false);
+  // Volcano candy particles array
+  const [candies, setCandies] = useState<VolcanoCandy[]>([]);
 
   const pumpkinRef = useRef<HTMLDivElement>(null);
   const animFrameRef = useRef<number | null>(null);
@@ -125,125 +72,93 @@ export default function HalloweenPumpkin({
     setActive(now.getMonth() === 9 && now.getDate() <= 31);
   }, []);
 
-  // Spawn candy explosion burst
-  const spawnCandies = useCallback((count = 42) => {
+  // Erupt massive candy volcano explosion
+  const eruptVolcanoCandies = useCallback((count = 80) => {
     const rect = pumpkinRef.current?.getBoundingClientRect();
     const originX = rect ? rect.left + rect.width / 2 : window.innerWidth * 0.8;
-    const originY = rect ? rect.top + rect.height / 2 : window.innerHeight * 0.65;
+    const originY = rect ? rect.top + rect.height * 0.4 : window.innerHeight * 0.65;
 
-    const newParticles: CandyParticle[] = [];
+    const newParticles: VolcanoCandy[] = [];
+
     for (let i = 0; i < count; i++) {
-      // Upward spread angle (-160 deg to -20 deg)
-      const angle = -Math.PI * 0.88 + Math.random() * Math.PI * 0.76;
-      const speed = Math.random() * 17 + 13;
+      // Fan angle: spread from -165 deg to -15 deg (wide upward volcano cone)
+      const angle = -Math.PI * 0.92 + Math.random() * Math.PI * 0.84;
+      // High-power volcano eruption velocity: 16 to 36
+      const speed = Math.random() * 20 + 16;
+      // Horizontal boost for wide screen coverage
+      const vx = Math.cos(angle) * speed * (1.1 + Math.random() * 0.5);
+      const vy = Math.sin(angle) * speed;
+
       newParticles.push({
         id: Date.now() + i + Math.random(),
-        emoji: CANDY_EMOJIS[Math.floor(Math.random() * CANDY_EMOJIS.length)],
-        x: originX + (Math.random() - 0.5) * 20,
+        emoji: VOLCANO_EMOJIS[Math.floor(Math.random() * VOLCANO_EMOJIS.length)],
+        x: originX + (Math.random() - 0.5) * 30,
         y: originY + (Math.random() - 0.5) * 20,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
+        vx,
+        vy,
         rotation: Math.random() * 360,
-        vRot: (Math.random() - 0.5) * 12,
-        size: Math.floor(Math.random() * 14) + 28, // 28px - 42px
-        collected: false,
+        vRot: (Math.random() - 0.5) * 22,
+        size: Math.floor(Math.random() * 18) + 24, // 24px - 42px
+        opacity: 1,
+        scale: Math.random() * 0.4 + 0.85,
       });
     }
 
     setCandies((prev) => [...prev, ...newParticles]);
   }, []);
 
-  // Handle click on the pumpkin: trigger burst & launch minigame
+  // Handle click on the pumpkin: trigger burst & volcano eruption
   const handlePumpkinClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsJiggling(true);
+    setIsBursting(true);
     setLit(true);
     playPopSound(500);
 
-    // Launch minigame
-    setIsMinigameActive(true);
-    setShowCelebration(false);
-    spawnCandies(45);
+    // Erupt candies directly onto the normal page
+    eruptVolcanoCandies(85);
 
-    setTimeout(() => setIsJiggling(false), 700);
-  };
-
-  // Catch / Collect a candy
-  const handleCollectCandy = (e: React.MouseEvent, id: number) => {
-    e.stopPropagation();
-    const target = candies.find((c) => c.id === id);
-    if (!target || target.collected) return;
-
-    playCollectSound(collectedCount);
-
-    const scoreId = Date.now() + Math.random();
-    setFloatScores((prev) => [
-      ...prev,
-      { id: scoreId, x: target.x, y: target.y, text: "+10 🍬" },
-    ]);
-    setTimeout(() => {
-      setFloatScores((prev) => prev.filter((s) => s.id !== scoreId));
-    }, 800);
-
-    setScore((s) => s + 10);
-    const nextCount = collectedCount + 1;
-    setCollectedCount(nextCount);
-
-    setCandies((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, collected: true } : c))
-    );
-
-    // Trigger celebration when reaching 15+ candies
-    if (nextCount === 15) {
-      setShowCelebration(true);
-      playCelebrationFanfare();
-    }
+    setTimeout(() => setIsBursting(false), 600);
   };
 
   // Physics animation loop for candies
   useEffect(() => {
-    if (!isMinigameActive || candies.length === 0) return;
+    if (candies.length === 0) return;
 
-    const gravity = 0.42;
-    const friction = 0.99;
+    const gravity = 0.65;
+    const screenHeight = typeof window !== "undefined" ? window.innerHeight : 1000;
 
     const updatePhysics = () => {
-      const floorY = typeof window !== "undefined" ? window.innerHeight - 70 : 600;
-      const screenWidth = typeof window !== "undefined" ? window.innerWidth : 1000;
-
       setCandies((prev) => {
-        let hasActive = false;
-        const next = prev.map((c) => {
-          if (c.collected) return c;
-          hasActive = true;
-
-          let x = c.x + c.vx;
-          let y = c.y + c.vy;
-          let vy = c.vy + gravity;
-          let vx = c.vx * friction;
+        const next: VolcanoCandy[] = [];
+        for (let i = 0; i < prev.length; i++) {
+          const c = prev[i];
+          const x = c.x + c.vx;
+          const y = c.y + c.vy;
+          const vy = c.vy + gravity;
+          const vx = c.vx * 0.992;
           const rotation = c.rotation + c.vRot;
 
-          // Bounce off bottom floor
-          if (y > floorY) {
-            y = floorY;
-            vy = -vy * 0.52;
-            vx *= 0.88;
-            if (Math.abs(vy) < 1.2) vy = 0;
+          // Fade out as it nears or goes below the bottom of the screen
+          let opacity = c.opacity;
+          if (y > screenHeight * 0.72) {
+            opacity -= 0.024;
           }
 
-          // Bounce off side walls
-          if (x < 25) {
-            x = 25;
-            vx = -vx * 0.65;
-          } else if (x > screenWidth - 45) {
-            x = screenWidth - 45;
-            vx = -vx * 0.65;
+          // Keep alive until faded out or below screen
+          if (opacity > 0 && y < screenHeight + 80) {
+            next.push({
+              ...c,
+              x,
+              y,
+              vx,
+              vy,
+              rotation,
+              opacity,
+            });
           }
+        }
 
-          return { ...c, x, y, vx, vy, rotation };
-        });
-
-        if (hasActive) {
+        if (next.length > 0) {
           animFrameRef.current = requestAnimationFrame(updatePhysics);
         }
         return next;
@@ -255,7 +170,7 @@ export default function HalloweenPumpkin({
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [isMinigameActive, candies.length]);
+  }, [candies.length]);
 
   if (!active) return null;
 
@@ -264,7 +179,7 @@ export default function HalloweenPumpkin({
       ref={pumpkinRef}
       className={`group relative pointer-events-auto cursor-pointer select-none transition-transform duration-300 hover:scale-115 active:scale-95 ${className}`}
       onClick={handlePumpkinClick}
-      title="ฟักทองฮาโลวีนแจ็คโอแลนเทิร์น 🎃 (Trick or Treat! แตะเพื่อเล่นมินิเกมเสกขนมหวาน!)"
+      title="ฟักทองฮาโลวีนแจ็คโอแลนเทิร์น 🎃 (Trick or Treat! แตะเพื่อให้ลูกกวาดพุ่งทะลักเต็มจอ!)"
       style={
         size
           ? {
@@ -319,19 +234,19 @@ export default function HalloweenPumpkin({
             transform: rotate(0deg) scale(1);
           }
         }
-        @keyframes pumpkinJiggle {
-          0%, 100% { transform: rotate(0deg) scale(1); }
-          20% { transform: rotate(-12deg) scale(1.2, 0.92); }
-          40% { transform: rotate(12deg) scale(0.92, 1.18); }
-          60% { transform: rotate(-6deg) scale(1.1, 0.96); }
-          80% { transform: rotate(5deg) scale(0.98, 1.05); }
+        @keyframes pumpkinVolcanoBurst {
+          0% { transform: scale(1); }
+          25% { transform: scale(1.35, 0.75); }
+          50% { transform: scale(0.85, 1.3); }
+          75% { transform: scale(1.1, 0.95); }
+          100% { transform: scale(1); }
         }
-        @keyframes bubbleFloat {
+        @keyframes bubbleSideFloat {
           0%, 100% {
-            transform: translate(-50%, 0) scale(1);
+            transform: translateY(0) scale(1);
           }
           50% {
-            transform: translate(-50%, -7px) scale(1.06);
+            transform: translateY(-5px) scale(1.04);
           }
         }
         .pumpkin-glow {
@@ -341,27 +256,27 @@ export default function HalloweenPumpkin({
           animation: pumpkinAttentionShake 4.2s ease-in-out infinite;
           transform-origin: bottom center;
         }
-        .pumpkin-jiggle {
-          animation: pumpkinJiggle 0.65s ease-in-out;
+        .pumpkin-burst {
+          animation: pumpkinVolcanoBurst 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
           transform-origin: bottom center;
         }
-        .bubble-float {
-          animation: bubbleFloat 2.2s ease-in-out infinite;
+        .bubble-side-float {
+          animation: bubbleSideFloat 2.4s ease-in-out infinite;
         }
       `}</style>
 
-      {/* Attention-Seeking "Trick or Treat!" Speech Bubble (ลอยสั่นดึงดูดความสนใจ) */}
-      <div className="absolute bottom-[108%] left-1/2 z-30 pointer-events-none bubble-float">
-        <div className="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-gradient-to-r from-amber-400 via-orange-400 to-amber-300 text-slate-950 font-black text-[10px] sm:text-[11px] shadow-[0_4px_16px_rgba(245,158,11,0.6)] border border-amber-200/90 whitespace-nowrap flex items-center gap-1 sm:gap-1.5 ring-2 ring-white/90">
-          <span className="text-[11px] sm:text-[12px] animate-pulse">🎃</span>
+      {/* Attention-Seeking "Trick or Treat!" Speech Bubble - Positioned to the RIGHT of Pumpkin (ไม่บังหน้าน้อง CC) */}
+      <div className="absolute -top-3 left-[92%] sm:left-[96%] z-30 pointer-events-none bubble-side-float">
+        <div className="relative px-2.5 py-1 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-400 to-amber-300 text-slate-950 font-black text-[10px] sm:text-[11.5px] shadow-[0_4px_18px_rgba(245,158,11,0.65)] border border-amber-200 whitespace-nowrap flex items-center gap-1.5 ring-2 ring-white/90">
+          {/* Bubble tail pointing left towards the pumpkin */}
+          <div className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent border-r-[7px] border-r-amber-400 filter drop-shadow-xs" />
+          <span className="text-[12px] animate-pulse">🎃</span>
           <span className="tracking-tight leading-none">Trick or Treat!</span>
-          <span className="text-[11px] sm:text-[12px]">🍬</span>
+          <span className="text-[12px]">🍬</span>
         </div>
-        {/* Pointer Arrow */}
-        <div className="w-0 h-0 border-l-[4px] sm:border-l-[5px] border-l-transparent border-r-[4px] sm:border-r-[5px] border-r-transparent border-t-[5px] sm:border-t-[6px] border-t-orange-400 mx-auto -mt-0.5 filter drop-shadow-xs" />
       </div>
 
-      <div className={`w-full h-full relative ${isJiggling ? "pumpkin-jiggle" : "pumpkin-attention"}`}>
+      <div className={`w-full h-full relative ${isBursting ? "pumpkin-burst" : "pumpkin-attention"}`}>
         <svg
           viewBox="0 0 100 95"
           fill="none"
@@ -473,130 +388,25 @@ export default function HalloweenPumpkin({
         </svg>
       </div>
 
-      {/* FULL-SCREEN CANDY BURST MINIGAME OVERLAY (SURPRISE PORTAL) */}
-      {isMinigameActive && typeof document !== "undefined" && createPortal(
-        <div 
-          className="fixed inset-0 z-[100000] pointer-events-auto overflow-hidden bg-black/25 backdrop-blur-xs select-none animate-in fade-in duration-200"
-          onClick={() => {
-            // Click background spawns extra candies for endless fun!
-            spawnCandies(15);
-            playPopSound(620);
-          }}
-        >
-          {/* Top HUD: Score & Minigame Control Bar */}
-          <div 
-            onClick={(e) => e.stopPropagation()}
-            className="fixed top-4 left-1/2 -translate-x-1/2 z-[100010] flex items-center gap-2.5 sm:gap-4 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-2xl bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl border border-white/90 dark:border-white/20 shadow-[0_0_25px_rgba(255,255,255,0.9),0_12px_40px_rgba(0,0,0,0.18)] ring-1 ring-white/90 animate-in slide-in-from-top-4 duration-300"
-          >
-            {/* Treat Bag Badge */}
-            <div className="flex items-center gap-1.5 font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
-              <span className="text-base sm:text-lg animate-bounce">🍬</span>
-              <span>เก็บได้:</span>
-              <span className="font-mono text-orange-600 dark:text-orange-400 font-black">
-                {collectedCount}
-              </span>
-            </div>
-
-            <div className="h-4 w-px bg-slate-300 dark:bg-zinc-700" />
-
-            {/* Score Badge */}
-            <div className="flex items-center gap-1 text-xs sm:text-sm font-bold text-amber-600 dark:text-amber-400">
-              <Sparkles size={14} className="text-amber-500 animate-spin-slow" />
-              <span className="font-mono font-black">{score}</span>
-              <span className="text-[10px] sm:text-xs text-slate-500 dark:text-zinc-400 font-sans">PTS</span>
-            </div>
-
-            <div className="h-4 w-px bg-slate-300 dark:bg-zinc-700" />
-
-            {/* Button: Spawn More Treats */}
-            <button
-              type="button"
-              onClick={() => {
-                spawnCandies(25);
-                playPopSound(700);
-              }}
-              className="px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-xs transition-all cursor-pointer flex items-center gap-1 active:scale-95"
-              title="เสกลูกกวาดเพิ่ม"
-            >
-              <span>🎃 เสกเพิ่ม!</span>
-            </button>
-
-            {/* Button: Close Minigame */}
-            <button
-              type="button"
-              onClick={() => {
-                setIsMinigameActive(false);
-                setCandies([]);
-              }}
-              className="p-1 rounded-xl text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
-              title="ปิดมินิเกม"
-            >
-              <X size={17} />
-            </button>
-          </div>
-
-          {/* Celebratory Banner when reaching milestones */}
-          {showCelebration && (
-            <div 
-              onClick={(e) => e.stopPropagation()}
-              className="fixed top-20 sm:top-24 left-1/2 -translate-x-1/2 z-[100010] flex flex-col items-center px-6 py-4 rounded-3xl bg-gradient-to-b from-amber-400 via-orange-500 to-amber-500 text-slate-950 shadow-[0_0_40px_rgba(245,158,11,0.8)] border-2 border-white animate-in zoom-in-95 bounce-in duration-300"
-            >
-              <div className="flex items-center gap-2 text-base sm:text-lg font-black tracking-tight">
-                <Trophy size={20} className="text-yellow-200 animate-bounce" />
-                <span>HAPPY HALLOWEEN! ได้รับขนมหวานเต็มถุง 🍬🎉</span>
-              </div>
-              <p className="text-xs sm:text-sm font-bold text-amber-950 mt-1">
-                คลิกเก็บลูกกวาดที่เหลือบนหน้าจอ หรือกดเสกลูกกวาดเล่นต่อได้เลย!
-              </p>
-              <button
-                type="button"
-                onClick={() => setShowCelebration(false)}
-                className="mt-2 text-[11px] font-bold underline text-amber-950 hover:text-white cursor-pointer"
-              >
-                เล่นต่อ
-              </button>
-            </div>
-          )}
-
-          {/* Floating Score Indicators (+10 🍬) */}
-          {floatScores.map((fs) => (
+      {/* VOLCANO CANDY ERUPTION DIRECTLY ON NORMAL PAGE (NO OVERLAY, FULL SCREEN) */}
+      {candies.length > 0 && typeof document !== "undefined" && createPortal(
+        <div className="fixed inset-0 z-[99999] pointer-events-none overflow-hidden select-none">
+          {candies.map((candy) => (
             <div
-              key={fs.id}
+              key={candy.id}
               style={{
-                left: `${fs.x}px`,
-                top: `${fs.y}px`,
+                left: `${candy.x}px`,
+                top: `${candy.y}px`,
+                transform: `translate(-50%, -50%) rotate(${candy.rotation}deg) scale(${candy.scale})`,
+                fontSize: `${candy.size}px`,
+                opacity: candy.opacity,
+                lineHeight: 1,
               }}
-              className="fixed pointer-events-none text-base sm:text-lg font-black text-amber-500 font-mono drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] animate-out fade-out slide-out-to-top-8 duration-700 z-[100008]"
+              className="fixed pointer-events-none select-none drop-shadow-[0_4px_10px_rgba(0,0,0,0.25)]"
             >
-              {fs.text}
+              {candy.emoji}
             </div>
           ))}
-
-          {/* Interactive Flying & Floating Candies */}
-          {candies.map((candy) => {
-            if (candy.collected) return null;
-            return (
-              <div
-                key={candy.id}
-                onClick={(e) => handleCollectCandy(e, candy.id)}
-                style={{
-                  left: `${candy.x}px`,
-                  top: `${candy.y}px`,
-                  transform: `translate(-50%, -50%) rotate(${candy.rotation}deg)`,
-                  fontSize: `${candy.size}px`,
-                  lineHeight: 1,
-                }}
-                className="fixed z-[100005] cursor-pointer hover:scale-135 active:scale-75 transition-transform duration-75 select-none drop-shadow-[0_4px_12px_rgba(0,0,0,0.35)] hover:drop-shadow-[0_0_15px_rgba(251,191,36,0.9)]"
-              >
-                {candy.emoji}
-              </div>
-            );
-          })}
-
-          {/* Hint toast at the bottom */}
-          <div className="fixed bottom-5 left-1/2 -translate-x-1/2 pointer-events-none px-4 py-1.5 rounded-full bg-black/60 text-white text-xs font-medium tracking-wide shadow-lg border border-white/20">
-            🎯 แตะหรือคลิกที่ลูกกวาดบนหน้าจอเพื่อเก็บขนมหวาน! (หรือคลิกที่ว่างเพื่อเสกเพิ่ม)
-          </div>
         </div>,
         document.body
       )}

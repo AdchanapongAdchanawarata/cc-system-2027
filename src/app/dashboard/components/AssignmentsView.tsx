@@ -257,17 +257,21 @@ export default function AssignmentsView() {
     initialDate?: string;
   }>({ isOpen: false });
 
-  // Active Watch Surveillance Tooltip Portal State (Top Layer, Unclipped)
-  const [activeWatchTooltip, setActiveWatchTooltip] = useState<{
+  // Active Card Tooltip Portal State (Unclipped Top Layer - Frosted White Glass)
+  const [activeCardTooltip, setActiveCardTooltip] = useState<{
     top: number;
     left: number;
-    reasons: string[];
+    type: "watch" | "urgent" | "overdue";
+    reasons?: string[];
+    badgeHeader?: string;
+    badgeColorClass?: string;
+    bodyText?: string;
   } | null>(null);
 
-  // Close watch tooltip on scroll to prevent detached floating
+  // Close tooltip on scroll to prevent detached floating
   useEffect(() => {
     const handleScroll = () => {
-      setActiveWatchTooltip(null);
+      setActiveCardTooltip(null);
     };
     window.addEventListener("scroll", handleScroll, { capture: true, passive: true });
     return () => {
@@ -296,11 +300,53 @@ export default function AssignmentsView() {
       left = 12;
     }
 
-    setActiveWatchTooltip({ top, left, reasons });
+    setActiveCardTooltip({
+      top,
+      left,
+      type: "watch",
+      reasons,
+    });
   };
 
-  const handleWatchMouseLeave = () => {
-    setActiveWatchTooltip(null);
+  const handleCornerMouseEnter = (
+    e: React.MouseEvent<HTMLElement>,
+    type: "urgent" | "overdue",
+    badgeHeader: string,
+    badgeColorClass: string,
+    bodyText: string
+  ) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const popoverWidth = 230;
+    const estimatedHeight = 56;
+    const margin = 6;
+
+    let top = rect.top - estimatedHeight - margin;
+    // If near top of screen, flip below the icon
+    if (top < 12) {
+      top = rect.bottom + margin;
+    }
+
+    // Align right edge with icon's right edge
+    let left = rect.right - popoverWidth;
+    if (left < 12) {
+      left = 12;
+    }
+    if (left + popoverWidth > window.innerWidth - 12) {
+      left = window.innerWidth - popoverWidth - 12;
+    }
+
+    setActiveCardTooltip({
+      top,
+      left,
+      type,
+      badgeHeader,
+      badgeColorClass,
+      bodyText,
+    });
+  };
+
+  const handleCardTooltipMouseLeave = () => {
+    setActiveCardTooltip(null);
   };
 
   const supabase = createClient();
@@ -2198,32 +2244,36 @@ export default function AssignmentsView() {
                       onClick={() => setSelectedBrief(brief)}
                       className="bg-surface p-2.5 rounded-xl border border-surface-border shadow-2xs hover:shadow-md hover:border-slate-300 dark:hover:border-zinc-700 transition-all cursor-grab active:cursor-grabbing group flex flex-col justify-between relative min-h-[105px] select-none"
                     >
-                    {/* Corner Status Icons: Overdue or Urgent - Strictly anchored to top-right corner with zero-shadow Dieter Rams guide */}
+                    {/* Corner Status Icons: Overdue or Urgent - Rendered to Portal Top Layer (Unclipped, No Overlap with Quick Actions) */}
                     {isOverdue ? (
                       <div 
-                        className="absolute top-2.5 right-2.5 z-20 text-[#E03131] dark:text-rose-500 flex items-center justify-center animate-in zoom-in-75 duration-200 group/corner cursor-help"
+                        onMouseEnter={(e) => handleCornerMouseEnter(
+                          e,
+                          "overdue",
+                          "STATUS • OVERDUE",
+                          "text-rose-600 dark:text-rose-400",
+                          "เลยกำหนดส่งตามแผนงาน"
+                        )}
+                        onMouseLeave={handleCardTooltipMouseLeave}
+                        className="absolute top-2.5 right-2.5 z-20 text-[#E03131] dark:text-rose-500 flex items-center justify-center animate-in zoom-in-75 duration-200 cursor-help"
                       >
                         <OverdueClockIcon size={19} className="text-[#E03131] dark:text-rose-500" />
-                        <div className="hidden group-hover/corner:flex flex-col absolute right-0 top-full mt-1 z-50 whitespace-nowrap p-2 bg-[#EBECF0]/95 text-zinc-900 dark:bg-zinc-800/95 dark:text-zinc-100 rounded-xl border border-zinc-300/90 dark:border-zinc-700/80 backdrop-blur-md text-left pointer-events-none animate-in fade-in zoom-in-95 duration-100 font-sans shadow-xs">
-                          <span className="text-[8.5px] font-mono tracking-[0.2em] text-rose-600/90 dark:text-rose-400 uppercase font-bold">STATUS • OVERDUE</span>
-                          <span className="text-[11px] font-bold text-zinc-800/90 dark:text-zinc-100 mt-0.5">เลยกำหนดส่งตามแผนงาน</span>
-                        </div>
                       </div>
                     ) : isUrgent ? (
                       <div 
-                        className="absolute top-2.5 right-2.5 z-20 text-[#E03131] dark:text-rose-500 flex items-center justify-center animate-in zoom-in-75 duration-200 group/corner cursor-help"
+                        onMouseEnter={(e) => handleCornerMouseEnter(
+                          e,
+                          "urgent",
+                          isSlaUrgent ? "LEAD TIME CRITICAL" : "DEADLINE ALERT",
+                          "text-amber-600 dark:text-amber-400",
+                          isSlaUrgent 
+                            ? `มาตรฐาน ${slaLeadTime} วัน • เหลือ ${daysUntilDue === 0 ? "วันนี้" : `${daysUntilDue} วัน`}` 
+                            : `กำหนดส่งภายใน ${daysUntilDue === 0 ? "วันนี้" : `${daysUntilDue} วัน`}`
+                        )}
+                        onMouseLeave={handleCardTooltipMouseLeave}
+                        className="absolute top-2.5 right-2.5 z-20 text-[#E03131] dark:text-rose-500 flex items-center justify-center animate-in zoom-in-75 duration-200 cursor-help"
                       >
                         <Flame size={19} className="fill-[#E03131] dark:fill-rose-500 text-[#E03131] dark:text-rose-500" />
-                        <div className="hidden group-hover/corner:flex flex-col absolute right-0 top-full mt-1 z-50 whitespace-nowrap p-2 bg-[#EBECF0]/95 text-zinc-900 dark:bg-zinc-800/95 dark:text-zinc-100 rounded-xl border border-zinc-300/90 dark:border-zinc-700/80 backdrop-blur-md text-left pointer-events-none animate-in fade-in zoom-in-95 duration-100 font-sans shadow-xs">
-                          <span className="text-[8.5px] font-mono tracking-[0.2em] text-amber-600/90 dark:text-amber-400 uppercase font-bold">
-                            {isSlaUrgent ? "LEAD TIME CRITICAL" : "DEADLINE ALERT"}
-                          </span>
-                          <span className="text-[11px] font-bold text-zinc-800/90 dark:text-zinc-100 mt-0.5">
-                            {isSlaUrgent 
-                              ? `มาตรฐาน ${slaLeadTime} วัน • เหลือ ${daysUntilDue === 0 ? "วันนี้" : `${daysUntilDue} วัน`}` 
-                              : `กำหนดส่งภายใน ${daysUntilDue === 0 ? "วันนี้" : `${daysUntilDue} วัน`}`}
-                          </span>
-                        </div>
                       </div>
                     ) : null}
 
@@ -2244,7 +2294,7 @@ export default function AssignmentsView() {
                         <span 
                           onClick={(e) => e.stopPropagation()}
                           onMouseEnter={(e) => handleWatchMouseEnter(e, watchReasons)}
-                          onMouseLeave={handleWatchMouseLeave}
+                          onMouseLeave={handleCardTooltipMouseLeave}
                           className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10.5px] font-black bg-[#FFD43B] hover:bg-[#FCC419] text-black shadow-xs transition-all cursor-help relative select-none"
                         >
                           <span className="tracking-tight font-black text-black leading-none">เฝ้าระวัง</span>
@@ -2446,27 +2496,27 @@ export default function AssignmentsView() {
                           })()}
                         </div>
                         
-                        {/* Task Age Indicators (Dieter Rams Semi-transparent Zero Shadow Guide) */}
+                        {/* Task Age Indicators (Frosted White Glass Minimal Guide) */}
                         <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-medium tracking-tight shrink-0 ml-auto select-none">
                           <div className="group/age relative flex items-center gap-0.5 cursor-help">
                             <span className="w-2 h-2 rounded-full bg-slate-400 dark:bg-slate-500"></span> {ages.unassignedDays}d
-                            <div className="hidden group-hover/age:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap px-2 py-1 bg-neutral-900/90 backdrop-blur-md text-white rounded-lg border border-white/20 text-[10px] font-mono pointer-events-none shadow-none">
-                              <span className="text-[8px] text-neutral-400 tracking-wider">UNASSIGNED AGE</span>
-                              <span>อยู่ในรอมอบหมาย: {ages.unassignedDays} วัน</span>
+                            <div className="hidden group-hover/age:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap px-2.5 py-1.5 bg-white/85 dark:bg-zinc-900/85 backdrop-blur-xl text-slate-800 dark:text-white rounded-xl border border-white/80 dark:border-white/10 shadow-sm text-[10px] font-mono pointer-events-none">
+                              <span className="text-[8px] text-slate-500 dark:text-slate-400 tracking-wider font-bold">UNASSIGNED AGE</span>
+                              <span className="font-semibold">อยู่ในรอมอบหมาย: {ages.unassignedDays} วัน</span>
                             </div>
                           </div>
                           <div className="group/age relative flex items-center gap-0.5 cursor-help">
                             <span className="w-2 h-2 rounded-full bg-[#f59e0b]"></span> {ages.pendingDays}d
-                            <div className="hidden group-hover/age:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap px-2 py-1 bg-neutral-900/90 backdrop-blur-md text-white rounded-lg border border-white/20 text-[10px] font-mono pointer-events-none shadow-none">
-                              <span className="text-[8px] text-amber-400 tracking-wider">TO-DO LIST AGE</span>
-                              <span>อยู่ในรอทำ: {ages.pendingDays} วัน</span>
+                            <div className="hidden group-hover/age:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap px-2.5 py-1.5 bg-white/85 dark:bg-zinc-900/85 backdrop-blur-xl text-slate-800 dark:text-white rounded-xl border border-white/80 dark:border-white/10 shadow-sm text-[10px] font-mono pointer-events-none">
+                              <span className="text-[8px] text-amber-600 dark:text-amber-400 tracking-wider font-bold">TO-DO LIST AGE</span>
+                              <span className="font-semibold">อยู่ในรอทำ: {ages.pendingDays} วัน</span>
                             </div>
                           </div>
                           <div className="group/age relative flex items-center gap-0.5 cursor-help">
                             <span className="w-2 h-2 rounded-full bg-[#3b82f6]"></span> {ages.inProgressDays}d
-                            <div className="hidden group-hover/age:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap px-2 py-1 bg-neutral-900/90 backdrop-blur-md text-white rounded-lg border border-white/20 text-[10px] font-mono pointer-events-none shadow-none">
-                              <span className="text-[8px] text-blue-400 tracking-wider">IN-PROGRESS AGE</span>
-                              <span>อยู่ในกำลังทำ: {ages.inProgressDays} วัน</span>
+                            <div className="hidden group-hover/age:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap px-2.5 py-1.5 bg-white/85 dark:bg-zinc-900/85 backdrop-blur-xl text-slate-800 dark:text-white rounded-xl border border-white/80 dark:border-white/10 shadow-sm text-[10px] font-mono pointer-events-none">
+                              <span className="text-[8px] text-blue-600 dark:text-blue-400 tracking-wider font-bold">IN-PROGRESS AGE</span>
+                              <span className="font-semibold">อยู่ในกำลังทำ: {ages.inProgressDays} วัน</span>
                             </div>
                           </div>
                         </div>
@@ -2640,44 +2690,62 @@ export default function AssignmentsView() {
         />
       )}
 
-      {/* Top Layer Surveillance Watch Popover Portal (Dieter Rams Minimal - Light Grey + Dark Semi-transparent Text) */}
-      {activeWatchTooltip && typeof document !== "undefined" && createPortal(
-        <div
-          style={{
-            top: `${activeWatchTooltip.top}px`,
-            left: `${activeWatchTooltip.left}px`,
-            width: "300px",
-          }}
-          className="fixed z-[99999] pointer-events-none flex flex-col p-3.5 bg-[#EBECF0]/95 dark:bg-zinc-800/95 text-zinc-900 dark:text-zinc-100 rounded-2xl border border-zinc-300/90 dark:border-zinc-700/80 backdrop-blur-md shadow-md animate-in fade-in zoom-in-95 duration-150 font-sans select-none"
-        >
-          {/* Minimal Grid Header */}
-          <div className="flex items-center justify-between gap-2 pb-1.5 mb-2 border-b border-zinc-300/70 dark:border-zinc-700/70">
-            <span className="text-[9px] font-bold font-mono tracking-[0.2em] text-zinc-700/80 dark:text-zinc-400 uppercase">
-              MONITORING • CRITERIA
+      {/* Top Layer Card Tooltip Portal (Ultra-Modern Frosted White Glass - กระจกขาวขุ่น ใสโปร่ง) */}
+      {activeCardTooltip && typeof document !== "undefined" && createPortal(
+        activeCardTooltip.type === "watch" ? (
+          <div
+            style={{
+              top: `${activeCardTooltip.top}px`,
+              left: `${activeCardTooltip.left}px`,
+              width: "300px",
+            }}
+            className="fixed z-[99999] pointer-events-none flex flex-col p-3.5 bg-white/80 dark:bg-zinc-900/80 text-slate-800 dark:text-zinc-100 rounded-2xl border border-white/70 dark:border-white/10 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.04] dark:ring-white/[0.05] animate-in fade-in zoom-in-95 duration-150 font-sans select-none"
+          >
+            {/* Minimal Grid Header */}
+            <div className="flex items-center justify-between gap-2 pb-1.5 mb-2 border-b border-black/[0.06] dark:border-white/[0.08]">
+              <span className="text-[9px] font-bold font-mono tracking-[0.2em] text-slate-500 dark:text-zinc-400 uppercase">
+                MONITORING • CRITERIA
+              </span>
+              <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-slate-200/60 dark:bg-white/10 text-slate-700 dark:text-zinc-200 font-bold">
+                {activeCardTooltip.reasons?.length || 0} ITEMS
+              </span>
+            </div>
+
+            <div className="text-xs font-bold text-slate-900 dark:text-white mb-2 tracking-tight">
+              เหตุผลการเฝ้าระวังคุณภาพงาน
+            </div>
+
+            <div className="space-y-1.5">
+              {activeCardTooltip.reasons?.map((reason, idx) => (
+                <div key={idx} className="flex items-start gap-2 text-[11.5px] text-slate-700 dark:text-zinc-200 font-medium leading-relaxed">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0 mt-1.5" />
+                  <span className="flex-1">{reason}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-2.5 pt-2 border-t border-black/[0.06] dark:border-white/[0.08] flex items-center justify-between text-[9px] font-mono text-slate-400 dark:text-zinc-500 font-medium">
+              <span>CC QUALITY SYSTEM</span>
+              <span>ISO 9001:2015</span>
+            </div>
+          </div>
+        ) : (
+          <div
+            style={{
+              top: `${activeCardTooltip.top}px`,
+              left: `${activeCardTooltip.left}px`,
+              width: "230px",
+            }}
+            className="fixed z-[99999] pointer-events-none flex flex-col p-2.5 bg-white/85 dark:bg-zinc-900/85 text-slate-800 dark:text-zinc-100 rounded-xl border border-white/80 dark:border-white/10 backdrop-blur-2xl shadow-[0_10px_30px_rgba(0,0,0,0.08),0_2px_6px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.04] dark:ring-white/[0.05] animate-in fade-in zoom-in-95 duration-100 font-sans select-none text-left"
+          >
+            <span className={`text-[8.5px] font-mono tracking-[0.2em] uppercase font-bold ${activeCardTooltip.badgeColorClass || "text-slate-600"}`}>
+              {activeCardTooltip.badgeHeader}
             </span>
-            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-zinc-300/60 dark:bg-zinc-700/60 text-zinc-800/80 dark:text-zinc-200 font-bold">
-              {activeWatchTooltip.reasons.length} ITEMS
+            <span className="text-[11.5px] font-bold text-slate-800 dark:text-zinc-100 mt-0.5 leading-snug">
+              {activeCardTooltip.bodyText}
             </span>
           </div>
-
-          <div className="text-xs font-bold text-zinc-900/90 dark:text-zinc-100 mb-2 tracking-tight">
-            เหตุผลการเฝ้าระวังคุณภาพงาน
-          </div>
-
-          <div className="space-y-1.5">
-            {activeWatchTooltip.reasons.map((reason, idx) => (
-              <div key={idx} className="flex items-start gap-2 text-[11.5px] text-zinc-800/85 dark:text-zinc-200 font-medium leading-relaxed">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0 mt-1.5" />
-                <span className="flex-1">{reason}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-2.5 pt-2 border-t border-zinc-300/70 dark:border-zinc-700/70 flex items-center justify-between text-[9px] font-mono text-zinc-600/70 dark:text-zinc-400 font-medium">
-            <span>CC QUALITY SYSTEM</span>
-            <span>ISO 9001:2015</span>
-          </div>
-        </div>,
+        ),
         document.body
       )}
     </div>

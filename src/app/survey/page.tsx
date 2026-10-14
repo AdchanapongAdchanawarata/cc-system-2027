@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense, useRef } from "react";
 import { ArrowRight, CheckCircle2, Star, MessageSquare, Award, Sparkles, Building2, Briefcase, ChevronRight } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
+import { getSavedContact, saveContact } from "@/utils/contactMemory";
 
 interface DimensionItem {
   id: "accuracy" | "timeliness" | "quality" | "attentiveness" | "ownership";
@@ -253,8 +254,14 @@ function SurveyContent() {
   const [errorMsg, setErrorMsg] = useState("");
   const [alreadyEvaluated, setAlreadyEvaluated] = useState(false);
 
-  // Load project details if briefId or token is given
+  // Load project details if briefId or token is given, and load saved contact memory
   useEffect(() => {
+    const saved = getSavedContact();
+    if (saved) {
+      if (!paramBy) setEvaluatedBy(prev => prev || saved.fullName || saved.nickname);
+      if (!paramTeam) setTeam(prev => prev || saved.team);
+    }
+
     async function loadInfo() {
       if (!briefId && !token) {
         setIsLoading(false);

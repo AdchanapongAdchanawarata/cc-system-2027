@@ -9,6 +9,8 @@ import { getStandardPriceForTask } from "@/utils/pricing";
 import ModernDatePicker from "@/components/ModernDatePicker";
 import ModernSelect from "@/components/ModernSelect";
 import { generateNextTaskCode, getUnitPrefix } from "@/utils/taskCodeService";
+import { getSavedContact, saveContact, ContactProfile } from "@/utils/contactMemory";
+import ContactMemoryBanner from "@/components/ContactMemoryBanner";
 
 type UnitType = 'creative' | 'content' | 'pr';
 
@@ -296,6 +298,40 @@ function FormContent() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedContentCategory, setSelectedContentCategory] = useState("");
   const [selectedPRCategory, setSelectedPRCategory] = useState("");
+
+  // Contact Profile Memory States
+  const [coordinatorNickname, setCoordinatorNickname] = useState("");
+  const [requesterEmail, setRequesterEmail] = useState("");
+  const [requesterPhone, setRequesterPhone] = useState("");
+  const [savedProfile, setSavedProfile] = useState<ContactProfile | null>(null);
+
+  useEffect(() => {
+    const saved = getSavedContact();
+    if (saved) {
+      setSavedProfile(saved);
+      if (saved.nickname) setCoordinatorNickname(saved.nickname);
+      if (saved.team) setSelectedTeam(saved.team);
+      if (saved.email) setRequesterEmail(saved.email);
+      if (saved.phone) setRequesterPhone(saved.phone);
+    }
+  }, []);
+
+  const handleProfileSelect = (p: ContactProfile) => {
+    setSavedProfile(p);
+    setCoordinatorNickname(p.nickname || "");
+    setSelectedTeam(p.team || "");
+    setRequesterEmail(p.email || "");
+    setRequesterPhone(p.phone || "");
+    saveContact(p);
+  };
+
+  const handleProfileClear = () => {
+    setSavedProfile(null);
+    setCoordinatorNickname("");
+    setSelectedTeam("");
+    setRequesterEmail("");
+    setRequesterPhone("");
+  };
   
   // Modern Date states
   const [creativeDraftDate, setCreativeDraftDate] = useState("");
@@ -361,6 +397,14 @@ function FormContent() {
       const requester_phone = formData.get("requester_phone") as string;
       const project_name = formData.get("project_name") as string;
       const notes = formData.get("notes") as string;
+
+      // Automatically remember contact profile for future submissions across all forms
+      saveContact({
+        nickname: coordinator_nickname,
+        team: decision_maker,
+        email: requester_email,
+        phone: requester_phone
+      });
 
       // Determine category for standard pricing
       let chosenCategory = "";
@@ -672,23 +716,70 @@ function FormContent() {
 
         {/* 1. Shared Contact Info */}
         <div className="space-y-6">
+          <ContactMemoryBanner 
+            currentProfile={savedProfile}
+            onSelectProfile={handleProfileSelect}
+            onClear={handleProfileClear}
+          />
           <h2 className="text-sm font-bold tracking-widest uppercase text-zinc-500 border-b border-zinc-200 pb-3 mb-6">01 &nbsp; ข้อมูลผู้ติดต่อ</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label htmlFor="coordinator_nickname" className="text-sm font-medium">ชื่อเล่น (ภาษาไทย)</label>
-              <input required type="text" id="coordinator_nickname" name="coordinator_nickname" className="w-full px-4 py-3 text-sm border border-zinc-200 bg-[#f9f9fb] rounded-full focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]" placeholder="เช่น แชมป์" />
+              <input 
+                required 
+                type="text" 
+                id="coordinator_nickname" 
+                name="coordinator_nickname" 
+                value={coordinatorNickname}
+                onChange={(e) => {
+                  setCoordinatorNickname(e.target.value);
+                  saveContact({ nickname: e.target.value });
+                }}
+                className="w-full px-4 py-3 text-sm border border-zinc-200 bg-[#f9f9fb] rounded-full focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]" 
+                placeholder="เช่น แชมป์" 
+              />
             </div>
             <div className="space-y-2">
               <label htmlFor="decision_maker" className="text-sm font-medium">ทีม</label>
-              <TeamDropdown value={selectedTeam} onChange={setSelectedTeam} />
+              <TeamDropdown 
+                value={selectedTeam} 
+                onChange={(t) => {
+                  setSelectedTeam(t);
+                  saveContact({ team: t });
+                }} 
+              />
             </div>
             <div className="space-y-2">
               <label htmlFor="requester_email" className="text-sm font-medium">อีเมล (ใช้ Email STeP เท่านั้น)</label>
-              <input required type="email" id="requester_email" name="requester_email" className="w-full px-4 py-3 text-sm border border-zinc-200 bg-[#f9f9fb] rounded-full focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]" placeholder="name@step.cmu.ac.th" />
+              <input 
+                required 
+                type="email" 
+                id="requester_email" 
+                name="requester_email" 
+                value={requesterEmail}
+                onChange={(e) => {
+                  setRequesterEmail(e.target.value);
+                  saveContact({ email: e.target.value });
+                }}
+                className="w-full px-4 py-3 text-sm border border-zinc-200 bg-[#f9f9fb] rounded-full focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]" 
+                placeholder="name@step.cmu.ac.th" 
+              />
             </div>
             <div className="space-y-2">
               <label htmlFor="requester_phone" className="text-sm font-medium">เบอร์โทรศัพท์ (สำหรับติดต่อ)</label>
-              <input required type="tel" id="requester_phone" name="requester_phone" className="w-full px-4 py-3 text-sm border border-zinc-200 bg-[#f9f9fb] rounded-full focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]" placeholder="089xxxxxxx" />
+              <input 
+                required 
+                type="tel" 
+                id="requester_phone" 
+                name="requester_phone" 
+                value={requesterPhone}
+                onChange={(e) => {
+                  setRequesterPhone(e.target.value);
+                  saveContact({ phone: e.target.value });
+                }}
+                className="w-full px-4 py-3 text-sm border border-zinc-200 bg-[#f9f9fb] rounded-full focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]" 
+                placeholder="089xxxxxxx" 
+              />
             </div>
           </div>
         </div>

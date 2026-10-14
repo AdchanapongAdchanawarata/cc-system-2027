@@ -581,43 +581,24 @@ export default function AssignmentsView() {
         return;
       }
 
-      // 1. From 'pending': can only move to 'in_progress' or 'cancelled'
+      // 1. From 'pending' to unassigned
       if (currentStatus === 'pending') {
-        if (value === 'completed') {
-          alert(
-            "⚠️ ไม่สามารถย้ายงานจาก 'Pending (รอทำ)' หรือ 'Unassigned' ไปยังสถานะ 'Completed' ได้โดยตรง!\n\n" +
-            "📌 ขั้นตอนการทำงานที่ถูกต้อง:\n" +
-            "1. กำหนดผู้รับผิดชอบงาน (Assignee)\n" +
-            "2. ย้ายสถานะไปที่ 'In Progress (กำลังทำ)' เพื่อเริ่มงานและแจ้งผู้เกี่ยวข้อง\n" +
-            "3. ดำเนินการผลิตและตรวจแก้แต่ละดราฟจนส่งมอบงานสมบูรณ์ จึงจะเปลี่ยนสถานะเป็น 'Completed'"
-          );
-          return;
-        }
         if (value === 'unassigned') {
           updateField(brief.id, 'assignee_id', '');
           updateField(brief.id, 'status', 'pending');
           showToast(`ย้าย "${brief.project_name}" ไปที่ UNASSIGNED (รอมอบหมาย)`, "info");
           return;
         }
-        if (value !== 'in_progress' && value !== 'cancelled' && value !== 'pending') {
-          alert("⚠️ สามารถย้ายไปได้เฉพาะ UNASSIGNED, TO-DO LIST (รอทำ), In Progress (กำลังทำ) หรือ Cancelled (ยกเลิก)");
-          return;
-        }
       }
 
-      const skipEmailForInProgress = shouldInternalTaskSkipEmail(brief, 'in_progress');
-      const skipEmailForCompleted = shouldInternalTaskSkipEmail(brief, 'completed');
-
-      // 2. Intercept in_progress transition to require draft email modal (and allow assigning inside modal)
-      // EXCEPT: Internal tasks (except RSP) skip email
-      if (value === 'in_progress' && !bypassRevertCheck && !skipEmailForInProgress) {
+      // 2. Intercept in_progress transition to require draft email modal
+      if (value === 'in_progress' && !bypassRevertCheck) {
         setPendingInProgressBrief(brief);
         return;
       }
 
-      // 3. Intercept completed transition to require delivery & survey draft email modal (Option 1 via Gmail)
-      // EXCEPT: Internal tasks skip email (except IDC/Entrepreneur consultation and RSP)
-      if (value === 'completed' && !bypassRevertCheck && !skipEmailForCompleted) {
+      // 3. Intercept completed transition to require delivery & survey draft email modal
+      if (value === 'completed' && !bypassRevertCheck) {
         setPendingCompletedBrief(brief);
         return;
       }
@@ -816,9 +797,11 @@ export default function AssignmentsView() {
       ...(existingDetails.satisfaction_scores?.averagePercent ? { satisfaction_rate: existingDetails.satisfaction_scores.averagePercent } : {}),
     };
 
+    const targetAssigneeId = emailData.assigneeId || b.assignee_id;
     const updates: any = {
       status: "completed",
       completed_at: b.completed_at || now,
+      assignee_id: targetAssigneeId,
       requester_email: emailData.to || b.requester_email,
       details: updatedDetails,
     };
@@ -855,9 +838,10 @@ export default function AssignmentsView() {
           taskCode,
           projectName: b.project_name,
           unit: b.unit,
+          assigneeId: targetAssigneeId,
           requesterEmail: emailData.to,
           assigneeName:
-            assignees.find((a) => a.id === b.assignee_id)?.name || "ทีม CC",
+            assignees.find((a) => a.id === targetAssigneeId)?.name || "ทีม CC",
           requesterName: b.coordinator_nickname,
         }),
       });
@@ -978,36 +962,56 @@ export default function AssignmentsView() {
     const brief = briefs.find(b => b.id === activeDraggedId);
     if (!brief) return;
 
-    // Check status transition rules
-    if (columnId === 'completed' && brief.status === 'pending') {
-      alert(
-        "⚠️ ไม่สามารถย้ายงานจาก 'Pending (รอทำ)' หรือ 'Unassigned' ไปยังสถานะ 'Completed' ได้โดยตรง!\n\n" +
-        "📌 ขั้นตอนการทำงานที่ถูกต้อง:\n" +
-        "1. กำหนดผู้รับผิดชอบงาน (Assignee)\n" +
-        "2. ย้ายสถานะไปที่ 'In Progress (กำลังทำ)' เพื่อเริ่มงานและแจ้งผู้เกี่ยวข้อง\n" +
-        "3. ดำเนินงานจนส่งมอบสมบูรณ์ จึงจะเปลี่ยนสถานะเป็น 'Completed'"
-      );
-      return;
-    }
-
-    if ((columnId === 'pending' || columnId === 'in_progress') && !brief.assignee_id) {
+    if (columnId === 'pending' && !brief.assignee_id) {
       setSelectedBrief(brief);
-      showToast(
-        columnId === 'pending'
-          ? `กรุณากำหนดผู้รับผิดชอบงาน "${brief.project_name}" เพื่อย้ายเข้า Pending (รอทำ)`
-          : `กรุณากำหนดผู้รับผิดชอบงาน "${brief.project_name}" ก่อนเริ่มงาน (In Progress)`,
-        "info"
-      );
+      showToast(`กรุณากำหนดผู้รับผิดชอบงาน "${brief.project_name}" เพื่อย้ายเข้า TO-DO LIST (รอทำ)`, "info");
       return;
     }
 
     // Determine target status and assignee
+    const currentStatus = brief.status || 'pending';
     let newStatus = columnId;
     let newAssigneeId = brief.assignee_id;
     if (columnId === 'unassigned') {
       newAssigneeId = null;
       newStatus = 'pending';
       showToast(`ย้าย "${brief.project_name}" ไปที่ UNASSIGNED (รอมอบหมาย)`, "info");
+    }
+
+    // 1. Check if this is reverting / moving backwards
+    const isRevert =
+      (currentStatus === 'completed' && columnId !== 'completed') ||
+      (currentStatus === 'in_progress' && columnId === 'pending') ||
+      (currentStatus === 'in_progress' && columnId === 'unassigned') ||
+      (currentStatus === 'in_progress' && columnId === 'cancelled') ||
+      (currentStatus === 'cancelled' && (columnId === 'pending' || columnId === 'in_progress'));
+
+    if (isRevert) {
+      setRevertReason("");
+      setRevertConfirmData({
+        brief,
+        targetStatus: columnId === 'unassigned' ? 'pending' : columnId,
+        currentStatus
+      });
+      return;
+    }
+
+    // 2. Intercept in_progress transition to require draft email modal (and allow assigning inside modal)
+    if (columnId === 'in_progress' && currentStatus !== 'in_progress') {
+      setPendingInProgressBrief({
+        ...brief,
+        assignee_id: newAssigneeId || brief.assignee_id,
+      });
+      return;
+    }
+
+    // 3. Intercept completed transition to require delivery & survey draft email modal
+    if (columnId === 'completed' && currentStatus !== 'completed') {
+      setPendingCompletedBrief({
+        ...brief,
+        assignee_id: newAssigneeId || brief.assignee_id,
+      });
+      return;
     }
 
     // Compute reordering in destination column
@@ -1077,6 +1081,15 @@ export default function AssignmentsView() {
     });
 
     await updateFieldInternal(activeDraggedId, updates);
+
+    // Provide user feedback for tasks that skip email or move to pending
+    if (newStatus === 'in_progress' && currentStatus !== 'in_progress') {
+      showToast(`⚡ เริ่มงาน "${brief.project_name}" (บันทึกข้อมูลงานภายใน ไม่ต้องส่งอีเมล)`);
+    } else if (newStatus === 'completed' && currentStatus !== 'completed') {
+      showToast(`✅ ส่งมอบงาน "${brief.project_name}" (บันทึกข้อมูลงานภายใน ไม่ต้องส่งอีเมล)`);
+    } else if (newStatus === 'pending' && columnId !== 'unassigned' && currentStatus !== 'pending') {
+      showToast(`⏳ ย้าย "${brief.project_name}" ไป TO-DO LIST (รอทำ)`, "info");
+    }
 
     // Save siblings rank updates to Supabase in background
     try {

@@ -61,16 +61,18 @@ export default function CompletedEmailModal({
 
   const defaultToEmail = isRsp
     ? (brief?.requester_email || brief?.details?.reporter_contact || "")
-    : brief?.requester_email || (isInternal ? "adchanapong@step.cmu.ac.th" : "");
+    : isInternal || brief?.requester_email === "internal@step.cmu.ac.th"
+      ? "adchanapong@step.cmu.ac.th"
+      : (brief?.requester_email || "");
   const [toEmail, setToEmail] = useState(defaultToEmail);
 
   useEffect(() => {
     if (isRsp) {
       setToEmail(brief?.requester_email || brief?.details?.reporter_contact || "");
+    } else if (isInternal || brief?.requester_email === "internal@step.cmu.ac.th") {
+      setToEmail("adchanapong@step.cmu.ac.th");
     } else if (brief?.requester_email) {
       setToEmail(brief.requester_email);
-    } else if (isInternal) {
-      setToEmail("adchanapong@step.cmu.ac.th");
     }
   }, [brief, isInternal, isRsp]);
 

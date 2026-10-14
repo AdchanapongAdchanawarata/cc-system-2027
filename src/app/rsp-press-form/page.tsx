@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Newspaper,
   Calendar,
@@ -33,6 +33,8 @@ import {
   PressReleaseItem
 } from "@/app/dashboard/components/RspPressReport";
 import { getCloudJson, setCloudJson, CLOUD_KEYS } from "@/utils/cloudSyncService";
+import { getSavedContact, saveContact, ContactProfile } from "@/utils/contactMemory";
+import ContactMemoryBanner from "@/components/ContactMemoryBanner";
 
 // Assignee Oat (โอ๊ต CNB) ID
 const OAT_ASSIGNEE_ID = "e2c2672d-81c4-411d-89e9-bcbb6eb374f5";
@@ -60,6 +62,39 @@ export default function RspPressFormPage() {
     details: "",
     attachmentName: ""
   });
+
+  const [savedProfile, setSavedProfile] = useState<ContactProfile | null>(null);
+
+  useEffect(() => {
+    const saved = getSavedContact();
+    if (saved) {
+      setSavedProfile(saved);
+      setFormData(prev => ({
+        ...prev,
+        reporterName: prev.reporterName || saved.nickname || saved.fullName || "",
+        reporterContact: prev.reporterContact || saved.email || saved.phone || ""
+      }));
+    }
+  }, []);
+
+  const handleProfileSelect = (p: ContactProfile) => {
+    setSavedProfile(p);
+    setFormData(prev => ({
+      ...prev,
+      reporterName: p.nickname || p.fullName || "",
+      reporterContact: p.email || p.phone || ""
+    }));
+    saveContact(p);
+  };
+
+  const handleProfileClear = () => {
+    setSavedProfile(null);
+    setFormData(prev => ({
+      ...prev,
+      reporterName: "",
+      reporterContact: ""
+    }));
+  };
 
   const supabase = createClient();
 
@@ -180,6 +215,12 @@ export default function RspPressFormPage() {
       alert("กรุณากรอกอีเมลติดต่อ");
       return;
     }
+
+    // Automatically remember contact profile
+    saveContact({
+      nickname: formData.reporterName.trim(),
+      email: formData.reporterContact.trim()
+    });
 
     setSubmitting(true);
 
@@ -429,6 +470,12 @@ export default function RspPressFormPage() {
               {/* ส่วนที่ 1: ข้อมูลทั่วไป                      */}
               {/* ========================================== */}
               <div className="space-y-5">
+                <ContactMemoryBanner
+                  currentProfile={savedProfile}
+                  onSelectProfile={handleProfileSelect}
+                  onClear={handleProfileClear}
+                />
+
                 <h3 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
                   <span className="w-2 h-5 bg-[#E03131] rounded-full inline-block" />
                   <span>ส่วนที่ 1: ข้อมูลทั่วไป</span>

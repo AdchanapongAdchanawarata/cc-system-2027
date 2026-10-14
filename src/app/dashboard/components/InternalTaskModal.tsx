@@ -15,6 +15,7 @@ import CustomSelect from "./CustomSelect";
 import { OFFICIAL_STEP_TEAMS } from "@/utils/teamAnalytics";
 import StepQuotationModal, { StepQuotationData, formatCurrency } from "./StepQuotationModal";
 import { isOperationalAssignee } from "@/utils/memberProfile";
+import { getSavedContact, saveContact } from "@/utils/contactMemory";
 
 type OKR = { id: string; type: string; description: string };
 type Assignee = { id: string; name: string; unit: string; is_active?: boolean };
@@ -135,6 +136,20 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
         }
       } catch {
         setPricingList(getActivePricingList());
+      }
+
+      // 4. Auto-fill from Contact Memory if available
+      const saved = getSavedContact();
+      if (saved) {
+        if (saved.team) {
+          setFormData(prev => ({ ...prev, team: prev.team || saved.team }));
+        }
+        setIdcFormData(prev => ({
+          ...prev,
+          clientName: prev.clientName || saved.fullName || saved.nickname || "",
+          phone: prev.phone || saved.phone || "",
+          email: prev.email || saved.email || ""
+        }));
       }
     };
 
@@ -633,6 +648,18 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
       }]);
 
       if (error) throw error;
+
+      // Automatically remember contact
+      if (isConsultationProject) {
+        saveContact({
+          nickname: idcFormData.clientName.trim(),
+          fullName: idcFormData.clientName.trim(),
+          phone: idcFormData.phone.trim(),
+          email: idcFormData.email.trim()
+        });
+      } else if (formData.team) {
+        saveContact({ team: formData.team });
+      }
       
       // Reload page to display new internal task
       window.location.reload();

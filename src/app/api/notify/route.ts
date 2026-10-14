@@ -1370,49 +1370,45 @@ ${targetUrl}
     // 5. Satisfaction Survey / Task Completed (Branded in the name of CC TEAM without individual names)
     else if (action === 'task_completed' || action === 'satisfaction_survey_dispatch') {
       const { requesterEmail, requesterName, briefId, assigneeId } = body;
-      const targetEmail = requesterEmail || body.requester_email || 'requester@step.cmu.ac.th';
 
       let pName = projectName || '';
       let pTeam = body.department || body.team || '';
       let pCoordinator = requesterName || body.coordinator || '';
+      let targetEmail = requesterEmail || body.requester_email || '';
+      let targetAssigneeId = assigneeId || body.assignee_id || '';
 
       const supabase = getSupabase();
       if (supabase && briefId) {
         try {
-          const { data: b } = await supabase.from('briefs').select('project_name, decision_maker, coordinator_nickname, details, status, unit').eq('id', briefId).single();
+          const { data: b } = await supabase.from('briefs').select('project_name, decision_maker, coordinator_nickname, details, status, unit, requester_email, assignee_id').eq('id', briefId).single();
           if (b) {
-            // Internal tasks skip email unless IDC/Entrepreneur consultation or RSP
-            if (shouldInternalTaskSkipEmail(b, 'completed')) {
-              console.log(`[SURVEY EMAIL SKIPPED] Task ${briefId} (${b.project_name}) is an internal task without email requirement. Skipping.`);
-              return NextResponse.json({
-                success: true,
-                skipped: true,
-                message: 'งานภายในถูกบันทึกเชิงข้อมูลในระบบเรียบร้อยแล้ว โดยไม่ต้องจัดส่งอีเมล',
-              });
-            }
-
-            // Strict check: อีเมลแบบประเมินจะส่งอัตโนมัติเมื่องานอยู่ในสถานะ 'completed' เท่านั้น
+            // Auto-heal status check: If status is not yet 'completed', update it to 'completed' in Supabase to eliminate race conditions
             if (b.status && b.status !== 'completed') {
-              console.warn(`[SURVEY EMAIL REJECTED] Task ${briefId} is currently '${b.status}', not 'completed'. Aborting survey dispatch.`);
-              return NextResponse.json({
-                success: false,
-                message: `ไม่อนุญาตให้จัดส่งแบบประเมิน: อีเมลจะถูกจัดส่งเมื่อชิ้นงานเสร็จสิ้น (completed) เท่านั้น (สถานะปัจจุบัน: ${b.status})`,
-                currentStatus: b.status
-              }, { status: 400 });
+              console.log(`[SURVEY EMAIL AUTO-HEAL] Task ${briefId} status was '${b.status}'. Updating status to 'completed' to guarantee email delivery.`);
+              await supabase.from('briefs').update({
+                status: 'completed',
+                completed_at: new Date().toISOString()
+              }).eq('id', briefId);
             }
 
             if (!pName) pName = b.project_name || '';
             if (!pTeam) pTeam = b.decision_maker || b.details?.team || '';
             if (!pCoordinator) pCoordinator = b.coordinator_nickname || '';
+            if (!targetEmail) targetEmail = b.requester_email || b.details?.requester_email || '';
+            if (!targetAssigneeId) targetAssigneeId = b.assignee_id || '';
           }
         } catch (e) {}
+      }
+
+      if (!targetEmail || targetEmail === 'internal@step.cmu.ac.th' || targetEmail === 'requester@step.cmu.ac.th') {
+        targetEmail = 'adchanapong@step.cmu.ac.th';
       }
       
       // Obfuscated survey URL with pre-filled parameters so PM does not need to retype anything
       const host = request.headers.get('host') || 'localhost:3000';
       const protocol = host.includes('localhost') ? 'http' : 'https';
       const origin = `${protocol}://${host}`;
-      const baseSurveyUrl = getTaskSurveyUrl(briefId || '', assigneeId || '', origin);
+      const baseSurveyUrl = getTaskSurveyUrl(briefId || '', targetAssigneeId, origin);
       const urlObj = new URL(baseSurveyUrl);
       if (pName) urlObj.searchParams.set('p', pName);
       if (pTeam) urlObj.searchParams.set('team', pTeam);
@@ -1437,6 +1433,73 @@ ${surveyUrl}
 ทีมงานสร้างสรรค์และการสื่อสาร (CC TEAM)
 อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (CMU STeP)`;
 
+      // Backend Email Dispatch via Nodemailer (if SMTP configured)
+      const smtpHost = process.env.SMTP_HOST;
+      const smtpUser = process.env.SMTP_USER;
+      const smtpPass = process.env.SMTP_PASS;
+      const smtpPort = Number(process.env.SMTP_PORT) || 587;
+      let emailSendResult: { simulated: boolean; messageId?: string; error?: string } = { simulated: true };
+
+      if (smtpHost && smtpUser && smtpPass && targetEmail && targetEmail.includes('@') && !targetEmail.includes('requester@step.cmu.ac.th')) {
+        try {
+          const transporter = nodemailer.createTransport({
+            host: smtpHost,
+            port: smtpPort,
+            secure: smtpPort === 465,
+            auth: { user: smtpUser, pass: smtpPass },
+          });
+
+          const formattedText = (emailBody || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\n/g, '<br/>');
+
+          const emailHtmlBody = `
+<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #1e293b; max-width: 650px; margin: 0 auto; padding: 24px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px;">
+  <div style="margin-bottom: 24px;">
+    ${formattedText}
+  </div>
+  <div style="margin: 28px 0; text-align: center;">
+    <a href="${surveyUrl}" style="display: inline-block; background-color: #2563eb; color: #ffffff; padding: 12px 28px; font-weight: bold; font-size: 15px; text-decoration: none; border-radius: 9999px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+      ⭐ ทำแบบประเมินความพึงพอใจ 5 มิติ (ใช้เวลา 1 นาที)
+    </a>
+  </div>
+  <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+  <table cellpadding="0" cellspacing="0" border="0" style="width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px;">
+    <tr>
+      <td style="width: 58px; vertical-align: middle; padding-right: 14px;">
+        <div style="width: 52px; height: 52px; border-radius: 50%; background: #2563eb; color: #ffffff; font-weight: bold; font-size: 18px; line-height: 52px; text-align: center; border: 2px solid #ffffff; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
+          CC
+        </div>
+      </td>
+      <td style="vertical-align: middle;">
+        <div style="font-weight: bold; font-size: 14px; color: #0f172a;">ทีมสร้างสรรค์และการสื่อสาร (CC TEAM)</div>
+        <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Creative &amp; Communication Team</div>
+        <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">อุทยานวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ (CMU STeP)</div>
+      </td>
+    </tr>
+  </table>
+</div>`;
+
+          const sendInfo = await transporter.sendMail({
+            from: `"CC TEAM (ทีมสร้างสรรค์และการสื่อสาร CMU STeP)" <${smtpUser}>`,
+            replyTo: 'adchanapong@step.cmu.ac.th',
+            to: targetEmail,
+            cc: ccEmails,
+            subject: emailSubject,
+            text: emailBody,
+            html: emailHtmlBody,
+          });
+
+          emailSendResult = { simulated: false, messageId: sendInfo.messageId };
+          console.log(`[COMPLETED & SURVEY EMAIL LIVE SENT] Message ID: ${sendInfo.messageId}`);
+        } catch (mailErr: any) {
+          console.error(`[COMPLETED & SURVEY EMAIL SMTP ERROR]`, mailErr);
+          emailSendResult = { simulated: false, error: mailErr.message };
+        }
+      }
+
       // Update brief survey status in Supabase if briefId exists
       if (supabase && briefId) {
         try {
@@ -1444,8 +1507,11 @@ ${surveyUrl}
           if (b) {
             const updatedDetails = {
               ...(b.details || {}),
-              survey_status: b.details?.survey_status || 'sent',
-              survey_sent_at: new Date().toISOString()
+              survey_status: 'sent',
+              survey_sent_at: new Date().toISOString(),
+              completed_email_to: targetEmail,
+              completed_email_simulated: emailSendResult.simulated,
+              ...(emailSendResult.messageId ? { completed_email_msg_id: emailSendResult.messageId } : {})
             };
             await supabase.from('briefs').update({ details: updatedDetails }).eq('id', briefId);
           }
@@ -1469,6 +1535,7 @@ Survey URL: ${surveyUrl}`);
         recipient: targetEmail,
         cc: ccEmails,
         surveyUrl,
+        emailResult: emailSendResult,
         dispatchTime: new Date().toISOString()
       });
     }
@@ -1476,30 +1543,16 @@ Survey URL: ${surveyUrl}`);
     // 5.1 Kickoff & In Progress Email Dispatch (Sent to PM, Assignee, Team Lead, and Assistant Lead)
     else if (action === 'kickoff_in_progress_email') {
       const { to, cc, subject, body: emailBodyText, briefId, taskCode, assigneeName, from, senderName } = body;
-
-      // Check if internal task that skips email
-      if (briefId) {
-        const supabase = getSupabase();
-        if (supabase) {
-          try {
-            const { data: b } = await supabase.from('briefs').select('unit, project_name, details').eq('id', briefId).single();
-            if (b && shouldInternalTaskSkipEmail(b, 'in_progress')) {
-              console.log(`[KICKOFF EMAIL SKIPPED] Task ${briefId} (${b.project_name}) is an internal task without email requirement. Skipping.`);
-              return NextResponse.json({
-                success: true,
-                skipped: true,
-                message: 'งานภายในถูกบันทึกเชิงข้อมูลในระบบเรียบร้อยแล้ว โดยไม่ต้องจัดส่งอีเมลแจ้งเริ่มงาน',
-              });
-            }
-          } catch (e) {}
-        }
+      let targetTo = to;
+      if (!targetTo || targetTo === 'internal@step.cmu.ac.th' || targetTo === 'requester@step.cmu.ac.th') {
+        targetTo = 'adchanapong@step.cmu.ac.th';
       }
 
       console.log(`=========================================`);
       console.log(`[KICKOFF IN-PROGRESS EMAIL DISPATCH]`);
       console.log(`Task Code: ${taskCode || 'CC-TASK'}`);
       console.log(`From: ${senderName || assigneeName || 'ผู้รับผิดชอบงาน CC'} <${from || 'cc@step.cmu.ac.th'}>`);
-      console.log(`To: ${to}`);
+      console.log(`To: ${targetTo}`);
       console.log(`CC: ${Array.isArray(cc) ? cc.join(', ') : cc}`);
       console.log(`Subject: ${subject}`);
       console.log(`Assignee: ${assigneeName || 'ทีม CC'}`);
@@ -1552,7 +1605,7 @@ Survey URL: ${surveyUrl}`);
           const sendInfo = await transporter.sendMail({
             from: `"${senderName || assigneeName || 'ทีม CC'} via CC TEAM" <${smtpUser}>`,
             replyTo: from || `${(assigneeName || '').toLowerCase().replace(/\s+/g, '')}@step.cmu.ac.th`,
-            to,
+            to: targetTo,
             cc: Array.isArray(cc) && cc.length > 0 ? cc : undefined,
             subject,
             text: emailBodyText,
@@ -1576,7 +1629,7 @@ Survey URL: ${surveyUrl}`);
             const updatedDetails = {
               ...(b.details || {}),
               kickoff_email_sent_at: new Date().toISOString(),
-              kickoff_email_to: to,
+              kickoff_email_to: targetTo,
               kickoff_email_from: from,
               kickoff_email_sender: senderName || assigneeName,
               kickoff_email_simulated: emailSendResult.simulated,

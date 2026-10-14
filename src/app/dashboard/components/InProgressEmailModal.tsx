@@ -90,11 +90,15 @@ export default function InProgressEmailModal({
   // 4. Default To & CC recipients
   // In case of RSP tasks: PM is the network reporter/coordinator (brief.requester_email)
   // In case of internal tasks: PM is Team Lead (คุณจ๊อบ AA - adchanapong@step.cmu.ac.th)
-  const defaultToEmail = isRsp
-    ? (brief.requester_email || brief.details?.reporter_contact || "")
-    : isInternal 
-      ? teamLead.email 
-      : (brief.requester_email || "");
+  const defaultToEmail = useMemo(() => {
+    if (isRsp) {
+      return brief?.requester_email || brief?.details?.reporter_contact || "";
+    }
+    if (isInternal || brief?.requester_email === "internal@step.cmu.ac.th" || !brief?.requester_email) {
+      return teamLead.email;
+    }
+    return brief.requester_email;
+  }, [brief, isInternal, isRsp]);
 
   // Resolve CC recipients with clean nicknames (e.g. จ๊อบ, วา)
   const defaultCcRecipients = useMemo(() => {
@@ -202,6 +206,10 @@ export default function InProgressEmailModal({
   const [isSending, setIsSending] = useState(false);
   const [copied, setCopied] = useState(false);
   const [hasEditedBody, setHasEditedBody] = useState(false);
+
+  useEffect(() => {
+    setToEmail(defaultToEmail);
+  }, [defaultToEmail]);
 
   // Generate Email Subject - Clean & Full
   const emailSubject = useMemo(() => {

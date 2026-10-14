@@ -351,6 +351,7 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
         body: JSON.stringify({
           action: 'task_completed',
           briefId: brief.id,
+          assigneeId: targetAssigneeId,
           taskCode,
           projectName: brief.project_name,
           assigneeName: assignee?.name || 'ทีม CC',
@@ -947,50 +948,12 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                             return;
                           }
 
-                          if (val === "in_progress" && !brief.assignee_id) {
-                            alert("⚠️ กรุณากำหนดผู้รับผิดชอบงาน (Assignee) ก่อนเปลี่ยนสถานะเป็น 'IN PROGRESS (กำลังทำ)' ครับ");
-                            return;
-                          }
-
-                          const skipEmailForInProgress = shouldInternalTaskSkipEmail(brief, 'in_progress');
-                          const skipEmailForCompleted = shouldInternalTaskSkipEmail(brief, 'completed');
-
                           if (val === "in_progress") {
-                            if (skipEmailForInProgress) {
-                              const now = new Date().toISOString();
-                              try {
-                                const supabase = createClient();
-                                supabase.from("briefs").update({
-                                  status: "in_progress",
-                                  in_progress_at: brief.in_progress_at || now,
-                                }).eq("id", brief.id);
-                              } catch (e) {}
-                              onUpdateField(brief.id, "status", "in_progress", true, true);
-                              if (!brief.in_progress_at) {
-                                onUpdateField(brief.id, "in_progress_at", now, false, true);
-                              }
-                              setSurveyNotifySuccess("⚡ เริ่มงานสำเร็จ (IN PROGRESS)");
-                              return;
-                            }
                             setShowInProgressEmailModal(true);
                             return;
                           }
 
                           if (val === "completed") {
-                            if (skipEmailForCompleted) {
-                              const now = new Date().toISOString();
-                              try {
-                                const supabase = createClient();
-                                supabase.from("briefs").update({
-                                  status: "completed",
-                                  completed_at: now,
-                                }).eq("id", brief.id);
-                              } catch (e) {}
-                              onUpdateField(brief.id, "status", "completed", true, true);
-                              onUpdateField(brief.id, "completed_at", now, false, true);
-                              setSurveyNotifySuccess("✅ ส่งมอบงานสำเร็จ (COMPLETED)");
-                              return;
-                            }
                             setShowCompletedEmailModal(true);
                             return;
                           }

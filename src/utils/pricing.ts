@@ -272,6 +272,9 @@ export function isInternalTask(brief: {
 }): boolean {
   if (!brief) return false;
   const unit = (brief.unit || brief.details?.unit || '').toLowerCase().trim();
+  // External service units are strictly NEVER internal
+  if (['creative', 'content', 'pr', 'design'].includes(unit)) return false;
+
   if (unit === 'internal') return true;
   if (brief.details?.source === 'internal' || brief.details?.is_internal === true) return true;
   const taskCode = (brief.details?.task_code || brief.details?.project_code || brief.details?.job_code || '').toString().toUpperCase();
@@ -290,28 +293,39 @@ export function isIdcOrEntrepreneurTask(brief: {
   details?: any;
 }): boolean {
   if (!brief) return false;
+  const details = brief.details || {};
   const taskCode = (
-    brief.details?.task_code ||
-    brief.details?.idc_code ||
-    brief.details?.job_code ||
-    brief.details?.project_code ||
+    details.task_code ||
+    details.idc_code ||
+    details.job_code ||
+    details.project_code ||
     ''
   ).toString().toUpperCase().trim();
 
-  // รหัสงาน IT ทั่วไป (เช่น IT70-x) เป็นงานภายใน ไม่ใช่รหัสงาน IDC เด็ดขาด
-  if (taskCode.startsWith('IT')) return false;
-
   const projectName = (brief.project_name || '').toString().toUpperCase();
-  const source = (brief.details?.source || '').toString().toLowerCase();
+  const source = (details.source || '').toString().toLowerCase();
+  const category = (details.category || details.service_category || details.service_type || '').toString().toLowerCase();
 
-  return (
-    Boolean(brief.details?.idc_code) ||
+  const isExplicitIdc = (
+    Boolean(details.idc_code) ||
     taskCode.startsWith('IDC') ||
     projectName.startsWith('[IDC]') ||
     projectName.startsWith('IDC') ||
     source === 'idc_form' ||
-    source === 'idc-form'
+    source === 'idc-form' ||
+    details.is_idc === true
   );
+
+  const isEntrepreneurConsultation = (
+    category.includes('ปรึกษา') ||
+    category.includes('รับโจทย์') ||
+    category.includes('ผู้ประกอบการ') ||
+    Boolean(details.entrepreneur_name) ||
+    Boolean(details.company_name) ||
+    Boolean(details.consultation_topic)
+  );
+
+  return isExplicitIdc || isEntrepreneurConsultation;
 }
 
 /**
@@ -324,84 +338,80 @@ export function isRspTask(brief: {
   details?: any;
 }): boolean {
   if (!brief) return false;
+  const details = brief.details || {};
   const taskCode = (
-    brief.details?.task_code ||
-    brief.details?.rsp_code ||
-    brief.details?.job_code ||
-    brief.details?.project_code ||
+    details.task_code ||
+    details.rsp_code ||
+    details.job_code ||
+    details.project_code ||
     ''
   ).toString().toUpperCase().trim();
 
-  // รหัสงาน IT ทั่วไป (เช่น IT70-x) เป็นงานภายใน ไม่ใช่รหัสงาน RSP เด็ดขาด
-  if (taskCode.startsWith('IT')) return false;
-
   const projectName = (brief.project_name || '').toString().toUpperCase();
-  const source = (brief.details?.source || '').toString().toLowerCase();
+  const source = (details.source || '').toString().toLowerCase();
+  const category = (details.category || details.service_category || '').toString().toLowerCase();
 
   return (
-    Boolean(brief.details?.rsp_code) ||
+    Boolean(details.rsp_code) ||
     taskCode.startsWith('RSP') ||
     projectName.startsWith('[RSP]') ||
     projectName.startsWith('RSP') ||
     source === 'rsp_press_form' ||
-    source === 'rsp-press-form'
+    source === 'rsp-press-form' ||
+    category.includes('rsp') ||
+    category.includes('press release')
   );
 }
 
 /**
  * กฎเหล็กการส่งอีเมลสำหรับขั้นตอน IN PROGRESS:
- * ทุกประเภทงานใน internal task ไม่ต้องส่งอีเมลในขั้นตอน IN PROGRESS
- * ยกเว้นรหัส RSP เท่านั้นที่ให้ส่งอีเมลในขั้นตอน IN PROGRESS
+ * - ทุกงานที่ย้ายเข้า IN PROGRESS ต้องเด้งหน้าต่างดราฟต์อีเมล InProgressEmailModal เสมอ
+ * - เพื่อให้ผู้รับผิดชอบงานสามารถตรวจทาน/มอบหมายงานและเปิดส่งใน Gmail หรือส่งผ่านระบบได้อย่างแม่นยำ
  */
 export function shouldSkipEmailForInProgress(brief: {
   unit?: string | null;
   project_name?: string | null;
   details?: any;
 }): boolean {
-  if (!isInternalTask(brief)) return false; // งานภายนอก (Creative, Content, PR) ส่งอีเมลตามปกติ
-  // ข้อยกเว้นพิเศษ: รหัส RSP ให้ส่งอีเมลทั้ง IN PROGRESS และ COMPLETED
-  if (isRspTask(brief)) return false;
-  // งาน internal อื่นๆ ทั้งหมด (รวมถึง IDC และงานทั่วไป) ข้ามการส่งเมล IN PROGRESS เด็ดขาด
-  return true;
+  if (!brief) return true;
+  if (brief.details?.is_deleted || brief.details?.is_permanently_deleted || (brief as any).status === 'purged') {
+    return true;
+  }
+  return false;
 }
 
 /**
  * กฎเหล็กการส่งอีเมลสำหรับขั้นตอน COMPLETED:
- * ทุกประเภทงานใน internal task ไม่ต้องส่งอีเมลในขั้นตอน COMPLETED
- * ยกเว้น:
- * 1. ประเภทงาน ให้คำปรึกษา / รับโจทย์ ผู้ประกอบการ, ประเภทงานที่มีรหัส IDC -> ส่งแบบประเมินความพึงพอใจ
- * 2. งานรหัส RSP -> ส่งอีเมล COMPLETED
+ * - ทุกงานที่ย้ายเข้า COMPLETED ต้องเด้งหน้าต่างดราฟต์อีเมล CompletedEmailModal เสมอ
+ * - เพื่อส่งมอบงานและแนบแบบประเมินความพึงพอใจการให้บริการ 5 มิติ
  */
 export function shouldSkipEmailForCompleted(brief: {
   unit?: string | null;
   project_name?: string | null;
   details?: any;
 }): boolean {
-  if (!isInternalTask(brief)) return false; // งานภายนอกส่งอีเมลตามปกติ
-  // ข้อยกเว้นพิเศษ 1: ให้คำปรึกษา / รับโจทย์ ผู้ประกอบการ, ประเภทงานที่มีรหัส IDC -> ส่งอีเมลแบบประเมิน
-  if (isIdcOrEntrepreneurTask(brief)) return false;
-  // ข้อยกเว้นพิเศษ 2: รหัส RSP -> ส่งอีเมล COMPLETED
-  if (isRspTask(brief)) return false;
-  // งาน internal อื่นๆ ทั้งหมด ข้ามการส่งเมล COMPLETED เด็ดขาด
-  return true;
+  if (!brief) return true;
+  if (brief.details?.is_deleted || brief.details?.is_permanently_deleted || (brief as any).status === 'purged') {
+    return true;
+  }
+  return false;
 }
 
 /**
  * ตรวจสอบว่างานภายในชิ้นนี้ มีขั้นตอนที่ต้องส่งอีเมลหรือไม่
- * (ข้อยกเว้น: ให้คำปรึกษา/รับโจทย์ ผู้ประกอบการ, IDC, หรือ RSP)
  */
 export function isInternalTaskRequiringEmail(brief: {
   unit?: string | null;
   project_name?: string | null;
   details?: any;
 }): boolean {
-  if (!isInternalTask(brief)) return false;
-  return isIdcOrEntrepreneurTask(brief) || isRspTask(brief);
+  return true;
 }
 
 /**
  * ฟังก์ชันกลางสำหรับตรวจสอบการข้ามอีเมลของงานภายใน:
  * รองรับการระบุ status ('in_progress' | 'completed')
+ * กฎเด็ดขาด: ต้องเด้งโมดอลส่งอีเมลเสมอเมื่อเข้าสถานะ in_progress หรือ completed
  */
 export function shouldInternalTaskSkipEmail(
   brief: {
@@ -411,18 +421,17 @@ export function shouldInternalTaskSkipEmail(
   },
   status?: 'in_progress' | 'completed' | string
 ): boolean {
-  if (!isInternalTask(brief)) return false;
-  if (status === 'in_progress') return shouldSkipEmailForInProgress(brief);
-  if (status === 'completed') return shouldSkipEmailForCompleted(brief);
-  // หากไม่ระบุสถานะ ให้ยึดตาม in_progress เป็นค่าตั้งต้น
-  return shouldSkipEmailForInProgress(brief);
+  if (!brief) return true;
+  if (brief.details?.is_deleted || brief.details?.is_permanently_deleted || (brief as any).status === 'purged') {
+    return true;
+  }
+  return false;
 }
 
 /**
  * ตรวจสอบว่างานภายใน (Internal Task) เป็นกรณีพิเศษที่ยังคงต้องถูกประเมินความพึงพอใจหรือไม่
  * ข้อตกลงกรณีพิเศษ:
- * - รหัสงาน RSP หรือ IDC เท่านั้น (เช่น RSP70-x, IDC70-x)
- * - หากเป็นรหัสงาน IT ทั่วไป (เช่น IT70-x) ถือเป็นงานภายในทั่วไป ไม่ต้องถูกประเมินเด็ดขาด
+ * - รหัสงาน RSP หรือ IDC หรือ ให้คำปรึกษา/รับโจทย์ผู้ประกอบการ
  */
 export function isInternalTaskRequiringEvaluation(brief: {
   unit?: string | null;
@@ -431,17 +440,17 @@ export function isInternalTaskRequiringEvaluation(brief: {
 }): boolean {
   if (!isInternalTask(brief)) return true; // งานภายนอก (Creative, Content, PR) ต้องประเมินตามปกติ
   
+  // ตรวจสอบกรณีพิเศษ IDC หรือ RSP ก่อน
+  if (isRspTask(brief) || isIdcOrEntrepreneurTask(brief)) {
+    return true;
+  }
+
   const taskCode = (
     brief.details?.task_code ||
     brief.details?.job_code ||
     brief.details?.project_code ||
     ''
   ).toString().toUpperCase().trim();
-
-  // รหัสงาน IT ทั่วไป (เช่น IT70-10) เป็นงานภายในทั่วไป ไม่ใช่กรณีพิเศษ ไม่ต้องประเมินเด็ดขาด
-  if (taskCode.startsWith('IT')) {
-    return false;
-  }
 
   // กรณีพิเศษตามข้อตกลง: รหัสงาน RSP หรือ IDC เท่านั้น
   const isSpecialTaskCode =
@@ -452,7 +461,7 @@ export function isInternalTaskRequiringEvaluation(brief: {
 
   if (isSpecialTaskCode) return true;
 
-  return isRspTask(brief) || isIdcOrEntrepreneurTask(brief);
+  return false;
 }
 
 /**

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Building2, 
   Layers, 
@@ -20,6 +20,8 @@ import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import ModernSelect, { ModernSelectOption } from "@/components/ModernSelect";
 import { generateNextTaskCode } from "@/utils/taskCodeService";
+import { getSavedContact, saveContact, ContactProfile } from "@/utils/contactMemory";
+import ContactMemoryBanner from "@/components/ContactMemoryBanner";
 
 // Assignee Pim (พิม AC) ID
 const PIM_ASSIGNEE_ID = "47adfbc2-8d0e-4dc7-87ad-98895be82026";
@@ -84,6 +86,42 @@ export default function IDCFormPage() {
     projectBrief: ""
   });
 
+  const [savedProfile, setSavedProfile] = useState<ContactProfile | null>(null);
+
+  useEffect(() => {
+    const saved = getSavedContact();
+    if (saved) {
+      setSavedProfile(saved);
+      setFormData(prev => ({
+        ...prev,
+        clientName: prev.clientName || saved.fullName || saved.nickname || "",
+        phone: prev.phone || saved.phone || "",
+        email: prev.email || saved.email || ""
+      }));
+    }
+  }, []);
+
+  const handleProfileSelect = (p: ContactProfile) => {
+    setSavedProfile(p);
+    setFormData(prev => ({
+      ...prev,
+      clientName: p.fullName || p.nickname || "",
+      phone: p.phone || "",
+      email: p.email || ""
+    }));
+    saveContact(p);
+  };
+
+  const handleProfileClear = () => {
+    setSavedProfile(null);
+    setFormData(prev => ({
+      ...prev,
+      clientName: "",
+      phone: "",
+      email: ""
+    }));
+  };
+
   const [serviceQuantities, setServiceQuantities] = useState<Record<string, number>>({
     product_design: 1
   });
@@ -137,6 +175,14 @@ export default function IDCFormPage() {
       const today = new Date().toISOString().split("T")[0];
       const nowTimestamp = Date.now();
       const token = `survey-${nowTimestamp.toString(36)}`;
+
+      // Automatically remember contact profile
+      saveContact({
+        nickname: formData.clientName.trim(),
+        fullName: formData.clientName.trim(),
+        phone: formData.phone.trim(),
+        email: formData.email.trim()
+      });
 
       const supabase = createClient();
 
@@ -385,6 +431,12 @@ export default function IDCFormPage() {
           <form onSubmit={handleSubmit} className="bg-white p-4 sm:p-8 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-xs space-y-6">
             {/* Section 1: ข้อมูลผู้รับบริการ & สถานประกอบการ */}
             <div className="space-y-4">
+              <ContactMemoryBanner
+                currentProfile={savedProfile}
+                onSelectProfile={handleProfileSelect}
+                onClear={handleProfileClear}
+              />
+
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-2">
                 <Building2 size={16} className="text-orange-500" />
                 <span>1. ข้อมูลผู้รับบริการ &amp; สถานประกอบการ</span>

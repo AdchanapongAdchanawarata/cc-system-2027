@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { getAuditLogs, AuditLogEntry, getCurrentActor } from "@/utils/auditLogger";
 import { executeSystemBackup, triggerBackupDownload, BackupMetadata } from "@/utils/backupService";
+import DailyMissionModal from "@/components/DailyMissionModal";
 
 export default function AuditLogsAndBackupHub() {
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
@@ -17,6 +18,7 @@ export default function AuditLogsAndBackupHub() {
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [backupMessage, setBackupMessage] = useState<string | null>(null);
   const [lastBackupMeta, setLastBackupMeta] = useState<BackupMetadata | null>(null);
+  const [selectedMissionLog, setSelectedMissionLog] = useState<AuditLogEntry | null>(null);
 
   const loadLogs = async () => {
     setLoadingLogs(true);
@@ -272,10 +274,21 @@ export default function AuditLogsAndBackupHub() {
                     )}
 
                     {log.action === "DAILY_MISSION_ACK" && log.details?.headline && (
-                      <div className="text-[11.5px] text-indigo-700 bg-indigo-50/80 p-2 rounded-xl border border-indigo-100 space-y-1">
-                        <div className="font-bold">🎯 {log.details.headline}</div>
+                      <div 
+                        onClick={() => setSelectedMissionLog(log)}
+                        className="text-[11.5px] text-indigo-800 bg-indigo-50/80 hover:bg-indigo-100/90 p-2.5 rounded-xl border border-indigo-200/80 space-y-1.5 cursor-pointer transition-all hover:shadow-xs group"
+                        title="คลิกเพื่อเปิดดูรายละเอียดภารกิจประจำวันฉบับเต็ม"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="font-bold flex items-center gap-1.5 text-indigo-950 group-hover:text-indigo-600">
+                            <span>🎯 {log.details.headline}</span>
+                          </div>
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-white border border-indigo-200 text-indigo-700 shrink-0 shadow-2xs group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                            🔍 ดูรายละเอียดภารกิจ
+                          </span>
+                        </div>
                         {log.details.missions && Array.isArray(log.details.missions) && (
-                          <div className="text-[11px] text-indigo-900 list-disc list-inside space-y-0.5">
+                          <div className="text-[11px] text-indigo-900/90 list-disc list-inside space-y-0.5 line-clamp-2">
                             {log.details.missions.map((m: string, i: number) => (
                               <div key={i}>• {m}</div>
                             ))}
@@ -298,6 +311,17 @@ export default function AuditLogsAndBackupHub() {
           )}
         </div>
       </div>
+
+      {/* Daily Mission Viewer Modal for Historical Audit Log */}
+      {selectedMissionLog && (
+        <DailyMissionModal
+          isViewMode={true}
+          historicalLog={selectedMissionLog}
+          initialMemberName={selectedMissionLog.actor_name}
+          initialDate={selectedMissionLog.timestamp?.split("T")[0]}
+          onClose={() => setSelectedMissionLog(null)}
+        />
+      )}
     </div>
   );
 }

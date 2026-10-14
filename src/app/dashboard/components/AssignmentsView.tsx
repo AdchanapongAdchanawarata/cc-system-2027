@@ -13,6 +13,7 @@ import BriefDetailsModal from "./BriefDetailsModal";
 import TrashBinModal from "./TrashBinModal";
 import InProgressEmailModal from "./InProgressEmailModal";
 import CompletedEmailModal from "./CompletedEmailModal";
+import DailyMissionModal from "@/components/DailyMissionModal";
 import { getStandardPriceForTask, shouldInternalTaskSkipEmail, shouldSkipEmailForInProgress, shouldSkipEmailForCompleted, getLeadTimeForTask } from "@/utils/pricing";
 import { globalHistoryManager } from "@/utils/historyManager";
 import { resolveTaskCode, generateNextTaskCode, getUnitPrefix } from "@/utils/taskCodeService";
@@ -249,6 +250,11 @@ export default function AssignmentsView() {
   const [isNotifEnabled, setIsNotifEnabled] = useState<boolean>(true);
   const [notifHistory, setNotifHistory] = useState<any[]>([]);
   const [isNotifHistoryOpen, setIsNotifHistoryOpen] = useState(false);
+  const [dailyMissionViewer, setDailyMissionViewer] = useState<{
+    isOpen: boolean;
+    initialMemberName?: string;
+    initialDate?: string;
+  }>({ isOpen: false });
 
   const supabase = createClient();
 
@@ -1787,6 +1793,17 @@ export default function AssignmentsView() {
               )}
             </button>
 
+            {/* Daily Mission Direct Button */}
+            <button
+              type="button"
+              onClick={() => setDailyMissionViewer({ isOpen: true })}
+              className="h-8 px-2.5 rounded-xl border border-orange-200/90 dark:border-orange-900/60 bg-orange-50/80 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/60 flex items-center gap-1.5 text-[11px] font-semibold transition-all cursor-pointer shadow-2xs select-none"
+              title="คลิกเพื่อดูรายละเอียดภารกิจประจำวันของทีมงานทุกคน (ปัจจุบัน & ย้อนหลัง)"
+            >
+              <Flame size={13} className="text-[#FF6200]" />
+              <span className="hidden sm:inline">ภารกิจประจำวัน</span>
+            </button>
+
             {/* Notification History Popover Button */}
             <button
               type="button"
@@ -1819,18 +1836,32 @@ export default function AssignmentsView() {
                       <BellRing size={14} className="text-[#f97316]" />
                       <span>ประวัติการแจ้งเตือนงาน (Notification History)</span>
                     </div>
-                    {notifHistory.length > 0 && (
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => {
-                          localStorage.removeItem("cc_recent_assignment_alerts");
-                          setNotifHistory([]);
+                          setIsNotifHistoryOpen(false);
+                          setDailyMissionViewer({ isOpen: true });
                         }}
-                        className="text-[10px] text-rose-500 hover:text-rose-700 hover:underline cursor-pointer"
+                        className="text-[10px] text-orange-600 hover:text-orange-700 hover:underline cursor-pointer font-semibold flex items-center gap-0.5"
+                        title="ดูภารกิจประจำวันของทีม"
                       >
-                        ล้างประวัติ
+                        <Flame size={11} className="text-[#FF6200]" />
+                        <span>ภารกิจ</span>
                       </button>
-                    )}
+                      {notifHistory.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            localStorage.removeItem("cc_recent_assignment_alerts");
+                            setNotifHistory([]);
+                          }}
+                          className="text-[10px] text-rose-500 hover:text-rose-700 hover:underline cursor-pointer"
+                        >
+                          ล้าง
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <div className="max-h-72 overflow-y-auto space-y-2 custom-scrollbar pr-1">
@@ -1844,6 +1875,14 @@ export default function AssignmentsView() {
                           key={item.id || idx}
                           onClick={() => {
                             setIsNotifHistoryOpen(false);
+                            if (item.taskCode === "MISSION" || item.id?.startsWith("mission_")) {
+                              setDailyMissionViewer({
+                                isOpen: true,
+                                initialDate: item.deadline || (item.timestamp ? new Date(item.timestamp).toISOString().split("T")[0] : undefined),
+                                initialMemberName: item.actorName || undefined,
+                              });
+                              return;
+                            }
                             const brief = briefs.find(b => b.id === item.id);
                             if (brief) setSelectedBrief(brief);
                           }}
@@ -2459,6 +2498,18 @@ export default function AssignmentsView() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Daily Mission Inspector & History Modal */}
+      {dailyMissionViewer.isOpen && (
+        <DailyMissionModal
+          isViewMode={true}
+          initialMemberName={dailyMissionViewer.initialMemberName}
+          initialDate={dailyMissionViewer.initialDate}
+          briefs={briefs}
+          assignees={assignees}
+          onClose={() => setDailyMissionViewer({ isOpen: false })}
+        />
       )}
     </div>
   );

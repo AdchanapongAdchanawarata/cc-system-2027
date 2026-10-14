@@ -687,6 +687,16 @@ export default function DashboardPage() {
                 unit: dailyMission.roleTitle,
                 alertType: "assigned",
                 timestamp: Date.now(),
+                actorName: actor.name,
+                details: {
+                  headline: dailyMission.headline,
+                  missions: dailyMission.missions,
+                  urgentTasksCount: dailyMission.urgentTasksCount,
+                  unassignedCount: dailyMission.unassignedCount,
+                  overdueCount: dailyMission.overdueCount,
+                  positiveImpact: dailyMission.positiveImpact,
+                  riskImpact: dailyMission.riskImpact,
+                },
               };
               const updated = [missionAlert, ...notifHistory.filter((h: any) => h.id !== missionAlert.id)].slice(0, 30);
               localStorage.setItem("cc_recent_assignment_alerts", JSON.stringify(updated));
@@ -696,6 +706,7 @@ export default function DashboardPage() {
             }
             setDailyMission(null);
           }}
+          onClose={() => setDailyMission(null)}
         />
       )}
       {/* Floating Admin Switcher: Only visible when an authentic Admin is simulating Assignee view */}

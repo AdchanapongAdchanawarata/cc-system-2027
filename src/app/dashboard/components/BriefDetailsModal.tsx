@@ -14,7 +14,7 @@ import {
   Check, Sparkles, PiggyBank, Star, MessageSquare, Minus, Building2,
   Landmark, Network, Globe, Link2, Copy, Loader2, ExternalLink, Newspaper
 } from "lucide-react";
-import { getStandardPriceForTask, shouldInternalTaskSkipEmail, getLeadTimeForTask } from "@/utils/pricing";
+import { getStandardPriceForTask, shouldInternalTaskSkipEmail, shouldSkipEmailForInProgress, shouldSkipEmailForCompleted, getLeadTimeForTask } from "@/utils/pricing";
 import SatisfactionSurveyModal from "./SatisfactionSurveyModal";
 import { SatisfactionScores } from "@/utils/okrSettings";
 import { OFFICIAL_STEP_TEAMS } from "@/utils/teamAnalytics";
@@ -949,12 +949,22 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                           }
 
                           if (val === "in_progress") {
-                            setShowInProgressEmailModal(true);
+                            if (!shouldSkipEmailForInProgress(brief)) {
+                              setShowInProgressEmailModal(true);
+                              return;
+                            }
+                            onUpdateField(brief.id, "status", "in_progress");
+                            setSurveyNotifySuccess("⚡ เริ่มงาน IN PROGRESS (บันทึกข้อมูลงานภายใน ไม่ต้องส่งอีเมล)");
                             return;
                           }
 
                           if (val === "completed") {
-                            setShowCompletedEmailModal(true);
+                            if (!shouldSkipEmailForCompleted(brief)) {
+                              setShowCompletedEmailModal(true);
+                              return;
+                            }
+                            onUpdateField(brief.id, "status", "completed");
+                            setSurveyNotifySuccess("✅ ส่งมอบงาน COMPLETED (บันทึกข้อมูลงานภายใน ไม่ต้องส่งอีเมล)");
                             return;
                           }
 

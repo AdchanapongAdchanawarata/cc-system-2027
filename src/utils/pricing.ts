@@ -365,8 +365,10 @@ export function isRspTask(brief: {
 
 /**
  * กฎเหล็กการส่งอีเมลสำหรับขั้นตอน IN PROGRESS:
- * - ทุกงานที่ย้ายเข้า IN PROGRESS ต้องเด้งหน้าต่างดราฟต์อีเมล InProgressEmailModal เสมอ
- * - เพื่อให้ผู้รับผิดชอบงานสามารถตรวจทาน/มอบหมายงานและเปิดส่งใน Gmail หรือส่งผ่านระบบได้อย่างแม่นยำ
+ * - งานภายนอก (Creative, Content, PR) -> ส่งอีเมลแจ้งเริ่มงาน (Kickoff) เสมอ 100% (return false)
+ * - งานภายใน (Internal Tasks):
+ *   - ข้อยกเว้นพิเศษ: งานรหัส RSP -> ให้ส่งอีเมล IN PROGRESS (return false)
+ *   - งาน Internal อื่นๆ ทั้งหมด (IT ทั่วไป และ IDC) -> ข้ามการส่งเมล IN PROGRESS (return true)
  */
 export function shouldSkipEmailForInProgress(brief: {
   unit?: string | null;
@@ -377,13 +379,23 @@ export function shouldSkipEmailForInProgress(brief: {
   if (brief.details?.is_deleted || brief.details?.is_permanently_deleted || (brief as any).status === 'purged') {
     return true;
   }
-  return false;
+  // ถ้าไม่ใช่งานภายใน (เช่น Creative, Content, PR) ต้องส่งอีเมลเริ่มงานเสมอ
+  if (!isInternalTask(brief)) return false;
+
+  // สำหรับงานภายใน: มีเพียงงานเครือข่าย RSP เท่านั้นที่ให้ส่งอีเมล IN PROGRESS
+  if (isRspTask(brief)) return false;
+
+  // งาน Internal อื่นๆ ทั้งหมด (IT ทั่วไป, IDC) ข้ามการส่งเมล IN PROGRESS
+  return true;
 }
 
 /**
  * กฎเหล็กการส่งอีเมลสำหรับขั้นตอน COMPLETED:
- * - ทุกงานที่ย้ายเข้า COMPLETED ต้องเด้งหน้าต่างดราฟต์อีเมล CompletedEmailModal เสมอ
- * - เพื่อส่งมอบงานและแนบแบบประเมินความพึงพอใจการให้บริการ 5 มิติ
+ * - งานภายนอก (Creative, Content, PR) -> ส่งอีเมลส่งมอบงาน + ลิงก์แบบประเมินความพึงพอใจ 5 มิติเสมอ (return false)
+ * - งานภายใน (Internal Tasks):
+ *   - ข้อยกเว้นพิเศษ 1: งานให้คำปรึกษา / รับโจทย์ ผู้ประกอบการ, งานรหัส IDC -> ส่งแบบประเมินความพึงพอใจ (return false)
+ *   - ข้อยกเว้นพิเศษ 2: งานรหัส RSP -> ส่งอีเมลส่งมอบงาน COMPLETED (return false)
+ *   - งาน Internal ทั่วไปอื่นๆ ทั้งหมด (เช่น IT70-x) -> ข้ามการส่งเมล COMPLETED (return true)
  */
 export function shouldSkipEmailForCompleted(brief: {
   unit?: string | null;
@@ -394,7 +406,17 @@ export function shouldSkipEmailForCompleted(brief: {
   if (brief.details?.is_deleted || brief.details?.is_permanently_deleted || (brief as any).status === 'purged') {
     return true;
   }
-  return false;
+  // ถ้าไม่ใช่งานภายใน (เช่น Creative, Content, PR) ต้องส่งอีเมลส่งมอบงานและแบบประเมินเสมอ
+  if (!isInternalTask(brief)) return false;
+
+  // ข้อยกเว้นพิเศษ 1: งานให้คำปรึกษา / รับโจทย์ ผู้ประกอบการ, งานรหัส IDC
+  if (isIdcOrEntrepreneurTask(brief)) return false;
+
+  // ข้อยกเว้นพิเศษ 2: งานเครือข่าย RSP
+  if (isRspTask(brief)) return false;
+
+  // งาน Internal ทั่วไปอื่นๆ (เช่น IT70-x) ข้ามการส่งเมล COMPLETED
+  return true;
 }
 
 /**
@@ -405,13 +427,13 @@ export function isInternalTaskRequiringEmail(brief: {
   project_name?: string | null;
   details?: any;
 }): boolean {
-  return true;
+  if (!isInternalTask(brief)) return true;
+  return isIdcOrEntrepreneurTask(brief) || isRspTask(brief);
 }
 
 /**
  * ฟังก์ชันกลางสำหรับตรวจสอบการข้ามอีเมลของงานภายใน:
  * รองรับการระบุ status ('in_progress' | 'completed')
- * กฎเด็ดขาด: ต้องเด้งโมดอลส่งอีเมลเสมอเมื่อเข้าสถานะ in_progress หรือ completed
  */
 export function shouldInternalTaskSkipEmail(
   brief: {
@@ -425,7 +447,10 @@ export function shouldInternalTaskSkipEmail(
   if (brief.details?.is_deleted || brief.details?.is_permanently_deleted || (brief as any).status === 'purged') {
     return true;
   }
-  return false;
+  if (!isInternalTask(brief)) return false;
+  if (status === 'in_progress') return shouldSkipEmailForInProgress(brief);
+  if (status === 'completed') return shouldSkipEmailForCompleted(brief);
+  return shouldSkipEmailForInProgress(brief);
 }
 
 /**

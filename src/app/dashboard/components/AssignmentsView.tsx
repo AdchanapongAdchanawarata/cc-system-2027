@@ -13,7 +13,7 @@ import BriefDetailsModal from "./BriefDetailsModal";
 import TrashBinModal from "./TrashBinModal";
 import InProgressEmailModal from "./InProgressEmailModal";
 import CompletedEmailModal from "./CompletedEmailModal";
-import { getStandardPriceForTask, shouldInternalTaskSkipEmail, getLeadTimeForTask } from "@/utils/pricing";
+import { getStandardPriceForTask, shouldInternalTaskSkipEmail, shouldSkipEmailForInProgress, shouldSkipEmailForCompleted, getLeadTimeForTask } from "@/utils/pricing";
 import { globalHistoryManager } from "@/utils/historyManager";
 import { resolveTaskCode, generateNextTaskCode, getUnitPrefix } from "@/utils/taskCodeService";
 import { logActivity, getCurrentActor } from "@/utils/auditLogger";
@@ -591,16 +591,20 @@ export default function AssignmentsView() {
         }
       }
 
-      // 2. Intercept in_progress transition to require draft email modal
+      // 2. Intercept in_progress transition to require draft email modal (if not skipped)
       if (value === 'in_progress' && !bypassRevertCheck) {
-        setPendingInProgressBrief(brief);
-        return;
+        if (!shouldSkipEmailForInProgress(brief)) {
+          setPendingInProgressBrief(brief);
+          return;
+        }
       }
 
-      // 3. Intercept completed transition to require delivery & survey draft email modal
+      // 3. Intercept completed transition to require delivery & survey draft email modal (if not skipped)
       if (value === 'completed' && !bypassRevertCheck) {
-        setPendingCompletedBrief(brief);
-        return;
+        if (!shouldSkipEmailForCompleted(brief)) {
+          setPendingCompletedBrief(brief);
+          return;
+        }
       }
     }
 
@@ -996,22 +1000,26 @@ export default function AssignmentsView() {
       return;
     }
 
-    // 2. Intercept in_progress transition to require draft email modal (and allow assigning inside modal)
+    // 2. Intercept in_progress transition to require draft email modal (if not skipped)
     if (columnId === 'in_progress' && currentStatus !== 'in_progress') {
-      setPendingInProgressBrief({
-        ...brief,
-        assignee_id: newAssigneeId || brief.assignee_id,
-      });
-      return;
+      if (!shouldSkipEmailForInProgress(brief)) {
+        setPendingInProgressBrief({
+          ...brief,
+          assignee_id: newAssigneeId || brief.assignee_id,
+        });
+        return;
+      }
     }
 
-    // 3. Intercept completed transition to require delivery & survey draft email modal
+    // 3. Intercept completed transition to require delivery & survey draft email modal (if not skipped)
     if (columnId === 'completed' && currentStatus !== 'completed') {
-      setPendingCompletedBrief({
-        ...brief,
-        assignee_id: newAssigneeId || brief.assignee_id,
-      });
-      return;
+      if (!shouldSkipEmailForCompleted(brief)) {
+        setPendingCompletedBrief({
+          ...brief,
+          assignee_id: newAssigneeId || brief.assignee_id,
+        });
+        return;
+      }
     }
 
     // Compute reordering in destination column

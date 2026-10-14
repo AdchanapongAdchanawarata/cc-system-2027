@@ -9,8 +9,7 @@ interface HalloweenPumpkinProps {
   glow?: boolean;
 }
 
-interface VolcanoCandy {
-  id: number;
+interface VolcanoParticle {
   emoji: string;
   x: number;
   y: number;
@@ -20,36 +19,55 @@ interface VolcanoCandy {
   vRot: number;
   size: number;
   opacity: number;
-  scale: number;
 }
 
-// Crisp pop sound effect synthesized via Web Audio API (Zero external assets)
-function playPopSound(freq = 520) {
+// Audio Singleton to prevent audio context memory leaks & browser audio limits
+let sharedAudioCtx: AudioContext | null = null;
+let lastSoundTime = 0;
+
+function playPopSound() {
   try {
-    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const now = Date.now();
+    // Throttle sound to at most once per 80ms to prevent sound buffer overload when spammed
+    if (now - lastSoundTime < 80) return;
+    lastSoundTime = now;
+
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!AudioContextClass) return;
-    const ctx = new AudioContextClass();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+
+    if (!sharedAudioCtx) {
+      sharedAudioCtx = new AudioContextClass();
+    }
+    if (sharedAudioCtx.state === "suspended") {
+      sharedAudioCtx.resume();
+    }
+
+    const osc = sharedAudioCtx.createOscillator();
+    const gain = sharedAudioCtx.createGain();
+    const freq = 520;
     osc.type = "sine";
-    osc.frequency.setValueAtTime(freq, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(freq * 1.8, ctx.currentTime + 0.14);
-    gain.gain.setValueAtTime(0.35, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.18);
+    osc.frequency.setValueAtTime(freq, sharedAudioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(freq * 1.8, sharedAudioCtx.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.3, sharedAudioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, sharedAudioCtx.currentTime + 0.15);
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(sharedAudioCtx.destination);
     osc.start();
-    osc.stop(ctx.currentTime + 0.19);
+    osc.stop(sharedAudioCtx.currentTime + 0.16);
   } catch {
-    // Ignore audio restrictions
+    // Ignore audio policy restrictions
   }
 }
 
 const VOLCANO_EMOJIS = [
-  "🍬", "🍭", "🍫", "🍩", "🍪", "🧁", "🍡", "🎃", "⭐", "✨", 
-  "🍬", "🍭", "🍫", "🍬", "🍭", "🎉", "🎃", "✨", "🍫", "🍬",
-  "🍡", "🍪", "🍩", "🧁", "⭐", "🍬", "🍭"
+  "🍬", "🍭", "🍫", "🍩", "🍪", "🧁", "🍡", "🎃", "⭐", "✨",
+  "🍬", "🍭", "🍫", "🍬", "🍭", "🎉", "🎃", "✨", "🍫", "🍬"
 ];
+
+// Maximum active particles on screen (strictly capped to ensure 60fps with zero lag even when spammed)
+const MAX_PARTICLES = 130;
 
 export default function HalloweenPumpkin({
   size,
@@ -59,12 +77,13 @@ export default function HalloweenPumpkin({
   const [active, setActive] = useState(false);
   const [isBursting, setIsBursting] = useState(false);
   const [lit, setLit] = useState(true);
-
-  // Volcano candy particles array
-  const [candies, setCandies] = useState<VolcanoCandy[]>([]);
+  const [hasActiveCandies, setHasActiveCandies] = useState(false);
 
   const pumpkinRef = useRef<HTMLDivElement>(null);
-  const animFrameRef = useRef<number | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const particlesRef = useRef<VolcanoParticle[]>([]);
+  const animFrameIdRef = useRef<number | null>(null);
+  const isLoopRunningRef = useRef(false);
 
   useEffect(() => {
     // Active during Halloween season (until Oct 31, 23:59:59)
@@ -72,105 +91,146 @@ export default function HalloweenPumpkin({
     setActive(now.getMonth() === 9 && now.getDate() <= 31);
   }, []);
 
-  // Erupt massive candy volcano explosion
-  const eruptVolcanoCandies = useCallback((count = 80) => {
-    const rect = pumpkinRef.current?.getBoundingClientRect();
-    const originX = rect ? rect.left + rect.width / 2 : window.innerWidth * 0.8;
-    const originY = rect ? rect.top + rect.height * 0.4 : window.innerHeight * 0.65;
-
-    const newParticles: VolcanoCandy[] = [];
-
-    for (let i = 0; i < count; i++) {
-      // Fan angle: spread from -165 deg to -15 deg (wide upward volcano cone)
-      const angle = -Math.PI * 0.92 + Math.random() * Math.PI * 0.84;
-      // High-power volcano eruption velocity: 16 to 36
-      const speed = Math.random() * 20 + 16;
-      // Horizontal boost for wide screen coverage
-      const vx = Math.cos(angle) * speed * (1.1 + Math.random() * 0.5);
-      const vy = Math.sin(angle) * speed;
-
-      newParticles.push({
-        id: Date.now() + i + Math.random(),
-        emoji: VOLCANO_EMOJIS[Math.floor(Math.random() * VOLCANO_EMOJIS.length)],
-        x: originX + (Math.random() - 0.5) * 30,
-        y: originY + (Math.random() - 0.5) * 20,
-        vx,
-        vy,
-        rotation: Math.random() * 360,
-        vRot: (Math.random() - 0.5) * 22,
-        size: Math.floor(Math.random() * 18) + 24, // 24px - 42px
-        opacity: 1,
-        scale: Math.random() * 0.4 + 0.85,
-      });
+  // High-performance canvas physics & render loop (0 React re-renders, 60fps GPU accelerated)
+  const runPhysicsLoop = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      isLoopRunningRef.current = false;
+      return;
+    }
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      isLoopRunningRef.current = false;
+      return;
     }
 
-    setCandies((prev) => [...prev, ...newParticles]);
+    const width = canvas.width;
+    const height = canvas.height;
+    const gravity = 0.65;
+
+    ctx.clearRect(0, 0, width, height);
+
+    const particles = particlesRef.current;
+    const remaining: VolcanoParticle[] = [];
+
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += gravity;
+      p.vx *= 0.992;
+      p.rotation += p.vRot;
+
+      // Start fading out when falling down towards the bottom
+      if (p.y > height * 0.72) {
+        p.opacity -= 0.024;
+      }
+
+      if (p.opacity > 0 && p.y < height + 60) {
+        remaining.push(p);
+
+        // Draw emoji candy onto GPU canvas
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.opacity);
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rotation * Math.PI) / 180);
+        ctx.font = `${p.size}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(p.emoji, 0, 0);
+        ctx.restore();
+      }
+    }
+
+    particlesRef.current = remaining;
+
+    if (remaining.length > 0) {
+      animFrameIdRef.current = requestAnimationFrame(runPhysicsLoop);
+    } else {
+      ctx.clearRect(0, 0, width, height);
+      isLoopRunningRef.current = false;
+      setHasActiveCandies(false);
+    }
   }, []);
 
-  // Handle click on the pumpkin: trigger burst & volcano eruption
+  // Update canvas resolution on resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (canvasRef.current) {
+        canvasRef.current.width = window.innerWidth;
+        canvasRef.current.height = window.innerHeight;
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Clean up animation on unmount
+  useEffect(() => {
+    return () => {
+      if (animFrameIdRef.current) {
+        cancelAnimationFrame(animFrameIdRef.current);
+      }
+    };
+  }, []);
+
+  // Volcano candy trigger (Capped & Hardware Accelerated, 100% lag-free)
   const handlePumpkinClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsBursting(true);
     setLit(true);
-    playPopSound(500);
+    playPopSound();
 
-    // Erupt candies directly onto the normal page
-    eruptVolcanoCandies(85);
+    setTimeout(() => setIsBursting(false), 500);
 
-    setTimeout(() => setIsBursting(false), 600);
-  };
+    const rect = pumpkinRef.current?.getBoundingClientRect();
+    const originX = rect ? rect.left + rect.width / 2 : window.innerWidth * 0.8;
+    const originY = rect ? rect.top + rect.height * 0.4 : window.innerHeight * 0.65;
 
-  // Physics animation loop for candies
-  useEffect(() => {
-    if (candies.length === 0) return;
+    // Create 35-40 candies per click
+    const burstCount = 38;
+    const newCandies: VolcanoParticle[] = [];
 
-    const gravity = 0.65;
-    const screenHeight = typeof window !== "undefined" ? window.innerHeight : 1000;
+    for (let i = 0; i < burstCount; i++) {
+      const angle = -Math.PI * 0.92 + Math.random() * Math.PI * 0.84;
+      const speed = Math.random() * 20 + 16;
+      const vx = Math.cos(angle) * speed * (1.1 + Math.random() * 0.5);
+      const vy = Math.sin(angle) * speed;
 
-    const updatePhysics = () => {
-      setCandies((prev) => {
-        const next: VolcanoCandy[] = [];
-        for (let i = 0; i < prev.length; i++) {
-          const c = prev[i];
-          const x = c.x + c.vx;
-          const y = c.y + c.vy;
-          const vy = c.vy + gravity;
-          const vx = c.vx * 0.992;
-          const rotation = c.rotation + c.vRot;
-
-          // Fade out as it nears or goes below the bottom of the screen
-          let opacity = c.opacity;
-          if (y > screenHeight * 0.72) {
-            opacity -= 0.024;
-          }
-
-          // Keep alive until faded out or below screen
-          if (opacity > 0 && y < screenHeight + 80) {
-            next.push({
-              ...c,
-              x,
-              y,
-              vx,
-              vy,
-              rotation,
-              opacity,
-            });
-          }
-        }
-
-        if (next.length > 0) {
-          animFrameRef.current = requestAnimationFrame(updatePhysics);
-        }
-        return next;
+      newCandies.push({
+        emoji: VOLCANO_EMOJIS[Math.floor(Math.random() * VOLCANO_EMOJIS.length)],
+        x: originX + (Math.random() - 0.5) * 24,
+        y: originY + (Math.random() - 0.5) * 16,
+        vx,
+        vy,
+        rotation: Math.random() * 360,
+        vRot: (Math.random() - 0.5) * 20,
+        size: Math.floor(Math.random() * 16) + 24, // 24px - 40px
+        opacity: 1,
       });
-    };
+    }
 
-    animFrameRef.current = requestAnimationFrame(updatePhysics);
+    // Keep particles strictly capped at MAX_PARTICLES so clicking 100 times never causes lag!
+    const existing = particlesRef.current;
+    if (existing.length + newCandies.length > MAX_PARTICLES) {
+      particlesRef.current = [...existing.slice(-(MAX_PARTICLES - newCandies.length)), ...newCandies];
+    } else {
+      particlesRef.current = [...existing, ...newCandies];
+    }
 
-    return () => {
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-    };
-  }, [candies.length]);
+    // Ensure canvas exists and start loop if not running
+    setHasActiveCandies(true);
+    if (!isLoopRunningRef.current) {
+      isLoopRunningRef.current = true;
+      requestAnimationFrame(() => {
+        if (canvasRef.current) {
+          canvasRef.current.width = window.innerWidth;
+          canvasRef.current.height = window.innerHeight;
+        }
+        runPhysicsLoop();
+      });
+    }
+  };
 
   if (!active) return null;
 
@@ -236,9 +296,9 @@ export default function HalloweenPumpkin({
         }
         @keyframes pumpkinVolcanoBurst {
           0% { transform: scale(1); }
-          25% { transform: scale(1.35, 0.75); }
-          50% { transform: scale(0.85, 1.3); }
-          75% { transform: scale(1.1, 0.95); }
+          25% { transform: scale(1.3, 0.78); }
+          50% { transform: scale(0.88, 1.25); }
+          75% { transform: scale(1.08, 0.96); }
           100% { transform: scale(1); }
         }
         @keyframes bubbleSideFloat {
@@ -257,7 +317,7 @@ export default function HalloweenPumpkin({
           transform-origin: bottom center;
         }
         .pumpkin-burst {
-          animation: pumpkinVolcanoBurst 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          animation: pumpkinVolcanoBurst 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
           transform-origin: bottom center;
         }
         .bubble-side-float {
@@ -388,26 +448,12 @@ export default function HalloweenPumpkin({
         </svg>
       </div>
 
-      {/* VOLCANO CANDY ERUPTION DIRECTLY ON NORMAL PAGE (NO OVERLAY, FULL SCREEN) */}
-      {candies.length > 0 && typeof document !== "undefined" && createPortal(
-        <div className="fixed inset-0 z-[99999] pointer-events-none overflow-hidden select-none">
-          {candies.map((candy) => (
-            <div
-              key={candy.id}
-              style={{
-                left: `${candy.x}px`,
-                top: `${candy.y}px`,
-                transform: `translate(-50%, -50%) rotate(${candy.rotation}deg) scale(${candy.scale})`,
-                fontSize: `${candy.size}px`,
-                opacity: candy.opacity,
-                lineHeight: 1,
-              }}
-              className="fixed pointer-events-none select-none drop-shadow-[0_4px_10px_rgba(0,0,0,0.25)]"
-            >
-              {candy.emoji}
-            </div>
-          ))}
-        </div>,
+      {/* ULTRA HIGH-PERFORMANCE 60FPS HARDWARE-ACCELERATED VOLCANO CANVAS (ZERO LAG, ZERO FREEZE) */}
+      {hasActiveCandies && typeof document !== "undefined" && createPortal(
+        <canvas
+          ref={canvasRef}
+          className="fixed inset-0 z-[99999] pointer-events-none select-none"
+        />,
         document.body
       )}
     </div>

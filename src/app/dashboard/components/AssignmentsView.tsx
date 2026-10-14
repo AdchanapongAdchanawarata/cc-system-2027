@@ -2496,25 +2496,25 @@ export default function AssignmentsView() {
                           })()}
                         </div>
                         
-                        {/* Task Age Indicators (Frosted White Glass Minimal Guide) */}
+                        {/* Task Age Indicators (Luminous Glowing Border + Translucent Glass Guide) */}
                         <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-medium tracking-tight shrink-0 ml-auto select-none">
                           <div className="group/age relative flex items-center gap-0.5 cursor-help">
                             <span className="w-2 h-2 rounded-full bg-slate-400 dark:bg-slate-500"></span> {ages.unassignedDays}d
-                            <div className="hidden group-hover/age:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap px-2.5 py-1.5 bg-white/85 dark:bg-zinc-900/85 backdrop-blur-xl text-slate-800 dark:text-white rounded-xl border border-white/80 dark:border-white/10 shadow-sm text-[10px] font-mono pointer-events-none">
-                              <span className="text-[8px] text-slate-500 dark:text-slate-400 tracking-wider font-bold">UNASSIGNED AGE</span>
+                            <div className="hidden group-hover/age:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap px-2.5 py-1.5 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-md text-slate-900 dark:text-white rounded-xl border border-white/90 dark:border-white/30 shadow-[0_0_15px_rgba(255,255,255,0.9),0_6px_20px_rgba(0,0,0,0.1)] ring-1 ring-white/90 dark:ring-white/20 text-[10px] font-mono pointer-events-none">
+                              <span className="text-[8px] text-slate-600 dark:text-slate-300 tracking-wider font-bold">UNASSIGNED AGE</span>
                               <span className="font-semibold">อยู่ในรอมอบหมาย: {ages.unassignedDays} วัน</span>
                             </div>
                           </div>
                           <div className="group/age relative flex items-center gap-0.5 cursor-help">
                             <span className="w-2 h-2 rounded-full bg-[#f59e0b]"></span> {ages.pendingDays}d
-                            <div className="hidden group-hover/age:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap px-2.5 py-1.5 bg-white/85 dark:bg-zinc-900/85 backdrop-blur-xl text-slate-800 dark:text-white rounded-xl border border-white/80 dark:border-white/10 shadow-sm text-[10px] font-mono pointer-events-none">
+                            <div className="hidden group-hover/age:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap px-2.5 py-1.5 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-md text-slate-900 dark:text-white rounded-xl border border-white/90 dark:border-white/30 shadow-[0_0_15px_rgba(255,255,255,0.9),0_6px_20px_rgba(0,0,0,0.1)] ring-1 ring-white/90 dark:ring-white/20 text-[10px] font-mono pointer-events-none">
                               <span className="text-[8px] text-amber-600 dark:text-amber-400 tracking-wider font-bold">TO-DO LIST AGE</span>
                               <span className="font-semibold">อยู่ในรอทำ: {ages.pendingDays} วัน</span>
                             </div>
                           </div>
                           <div className="group/age relative flex items-center gap-0.5 cursor-help">
                             <span className="w-2 h-2 rounded-full bg-[#3b82f6]"></span> {ages.inProgressDays}d
-                            <div className="hidden group-hover/age:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap px-2.5 py-1.5 bg-white/85 dark:bg-zinc-900/85 backdrop-blur-xl text-slate-800 dark:text-white rounded-xl border border-white/80 dark:border-white/10 shadow-sm text-[10px] font-mono pointer-events-none">
+                            <div className="hidden group-hover/age:flex flex-col absolute right-0 bottom-full mb-1.5 z-50 whitespace-nowrap px-2.5 py-1.5 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-md text-slate-900 dark:text-white rounded-xl border border-white/90 dark:border-white/30 shadow-[0_0_15px_rgba(255,255,255,0.9),0_6px_20px_rgba(0,0,0,0.1)] ring-1 ring-white/90 dark:ring-white/20 text-[10px] font-mono pointer-events-none">
                               <span className="text-[8px] text-blue-600 dark:text-blue-400 tracking-wider font-bold">IN-PROGRESS AGE</span>
                               <span className="font-semibold">อยู่ในกำลังทำ: {ages.inProgressDays} วัน</span>
                             </div>
@@ -2690,41 +2690,41 @@ export default function AssignmentsView() {
         />
       )}
 
-      {/* Top Layer Card Tooltip Portal (Ultra-Modern Frosted White Glass - กระจกขาวขุ่น ใสโปร่ง) */}
+      {/* Top Layer Card Tooltip Portal (Luminous Glowing Border + Translucent See-through Glass Popup) */}
       {activeCardTooltip && typeof document !== "undefined" && createPortal(
         activeCardTooltip.type === "watch" ? (
           <div
             style={{
               top: `${activeCardTooltip.top}px`,
               left: `${activeCardTooltip.left}px`,
-              width: "300px",
+              width: "305px",
             }}
-            className="fixed z-[99999] pointer-events-none flex flex-col p-3.5 bg-white/80 dark:bg-zinc-900/80 text-slate-800 dark:text-zinc-100 rounded-2xl border border-white/70 dark:border-white/10 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.08),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.04] dark:ring-white/[0.05] animate-in fade-in zoom-in-95 duration-150 font-sans select-none"
+            className="fixed z-[99999] pointer-events-none flex flex-col p-3.5 bg-white/45 dark:bg-zinc-950/50 text-slate-900 dark:text-zinc-100 rounded-2xl border border-white/90 dark:border-white/30 backdrop-blur-md shadow-[0_0_22px_rgba(255,255,255,0.95),0_0_35px_rgba(251,191,36,0.25),0_14px_40px_rgba(0,0,0,0.14)] ring-1 ring-white/90 dark:ring-white/20 animate-in fade-in zoom-in-95 duration-150 font-sans select-none"
           >
             {/* Minimal Grid Header */}
-            <div className="flex items-center justify-between gap-2 pb-1.5 mb-2 border-b border-black/[0.06] dark:border-white/[0.08]">
-              <span className="text-[9px] font-bold font-mono tracking-[0.2em] text-slate-500 dark:text-zinc-400 uppercase">
+            <div className="flex items-center justify-between gap-2 pb-1.5 mb-2 border-b border-black/[0.08] dark:border-white/[0.1]">
+              <span className="text-[9px] font-bold font-mono tracking-[0.2em] text-slate-600 dark:text-zinc-300 uppercase">
                 MONITORING • CRITERIA
               </span>
-              <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-slate-200/60 dark:bg-white/10 text-slate-700 dark:text-zinc-200 font-bold">
+              <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-white/70 dark:bg-white/10 border border-white/80 dark:border-white/10 text-slate-800 dark:text-zinc-100 font-bold shadow-2xs">
                 {activeCardTooltip.reasons?.length || 0} ITEMS
               </span>
             </div>
 
-            <div className="text-xs font-bold text-slate-900 dark:text-white mb-2 tracking-tight">
+            <div className="text-xs font-bold text-slate-950 dark:text-white mb-2 tracking-tight">
               เหตุผลการเฝ้าระวังคุณภาพงาน
             </div>
 
             <div className="space-y-1.5">
               {activeCardTooltip.reasons?.map((reason, idx) => (
-                <div key={idx} className="flex items-start gap-2 text-[11.5px] text-slate-700 dark:text-zinc-200 font-medium leading-relaxed">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0 mt-1.5" />
+                <div key={idx} className="flex items-start gap-2 text-[11.5px] text-slate-900 dark:text-zinc-100 font-medium leading-relaxed">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.6)] shrink-0 mt-1.5" />
                   <span className="flex-1">{reason}</span>
                 </div>
               ))}
             </div>
 
-            <div className="mt-2.5 pt-2 border-t border-black/[0.06] dark:border-white/[0.08] flex items-center justify-between text-[9px] font-mono text-slate-400 dark:text-zinc-500 font-medium">
+            <div className="mt-2.5 pt-2 border-t border-black/[0.08] dark:border-white/[0.1] flex items-center justify-between text-[9px] font-mono text-slate-500 dark:text-zinc-400 font-medium tracking-wide">
               <span>CC QUALITY SYSTEM</span>
               <span>ISO 9001:2015</span>
             </div>
@@ -2736,12 +2736,12 @@ export default function AssignmentsView() {
               left: `${activeCardTooltip.left}px`,
               width: "230px",
             }}
-            className="fixed z-[99999] pointer-events-none flex flex-col p-2.5 bg-white/85 dark:bg-zinc-900/85 text-slate-800 dark:text-zinc-100 rounded-xl border border-white/80 dark:border-white/10 backdrop-blur-2xl shadow-[0_10px_30px_rgba(0,0,0,0.08),0_2px_6px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.04] dark:ring-white/[0.05] animate-in fade-in zoom-in-95 duration-100 font-sans select-none text-left"
+            className="fixed z-[99999] pointer-events-none flex flex-col p-2.5 bg-white/50 dark:bg-zinc-950/50 text-slate-900 dark:text-zinc-100 rounded-xl border border-white/90 dark:border-white/30 backdrop-blur-md shadow-[0_0_18px_rgba(255,255,255,0.95),0_0_30px_rgba(239,68,68,0.22),0_10px_30px_rgba(0,0,0,0.12)] ring-1 ring-white/90 dark:ring-white/20 animate-in fade-in zoom-in-95 duration-100 font-sans select-none text-left"
           >
-            <span className={`text-[8.5px] font-mono tracking-[0.2em] uppercase font-bold ${activeCardTooltip.badgeColorClass || "text-slate-600"}`}>
+            <span className={`text-[8.5px] font-mono tracking-[0.2em] uppercase font-bold ${activeCardTooltip.badgeColorClass || "text-slate-700"}`}>
               {activeCardTooltip.badgeHeader}
             </span>
-            <span className="text-[11.5px] font-bold text-slate-800 dark:text-zinc-100 mt-0.5 leading-snug">
+            <span className="text-[11.5px] font-bold text-slate-900 dark:text-zinc-100 mt-0.5 leading-snug">
               {activeCardTooltip.bodyText}
             </span>
           </div>

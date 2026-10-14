@@ -315,7 +315,7 @@ export default function DailyMissionModal({
                 {teamMembers.length} สมาชิก
               </span>
             </div>
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 custom-scrollbar">
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
               {teamMembers.map((m) => {
                 const isSelected = matchMember(m.name, currentMember.name);
                 return (
@@ -326,11 +326,12 @@ export default function DailyMissionModal({
                       setSelectedMemberName(m.name);
                       setSelectedHistoryLogId(null);
                     }}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all cursor-pointer ${
+                    className={`flex items-center gap-1.5 px-2 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer min-w-0 ${
                       isSelected
                         ? "bg-neutral-900 text-white shadow-xs"
                         : "bg-neutral-100/80 hover:bg-neutral-200/70 text-neutral-700 border border-neutral-200/60"
                     }`}
+                    title={m.name}
                   >
                     <div className="w-5 h-5 rounded-full overflow-hidden bg-neutral-200 shrink-0 pointer-events-none">
                       <Assignee3DAvatarBadge
@@ -341,7 +342,7 @@ export default function DailyMissionModal({
                         disableHoverPreview={true}
                       />
                     </div>
-                    <span className="truncate max-w-[100px]">{m.name}</span>
+                    <span className="truncate min-w-0 text-left">{m.name}</span>
                   </button>
                 );
               })}

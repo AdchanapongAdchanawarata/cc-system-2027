@@ -292,7 +292,7 @@ export default function HalloweenPumpkin({
       {/* Organic Hand-Drawn Comic "Trick or Treat! 🕹️ CLICK TO PLAY!" Speech Bubble */}
       <div 
         onClick={handlePumpkinClick}
-        className="absolute -top-16 sm:-top-20 md:-top-24 left-[70%] sm:left-[74%] md:left-[78%] z-30 pointer-events-auto cursor-pointer bubble-side-float w-[88px] sm:w-[102px] md:w-[116px] aspect-[352/278] filter drop-shadow-[0_3px_8px_rgba(0,0,0,0.14)] hover:scale-105 transition-transform"
+        className="absolute -top-7 sm:-top-9 md:-top-11 left-[84%] sm:left-[88%] md:left-[92%] z-30 pointer-events-auto cursor-pointer bubble-side-float w-[88px] sm:w-[102px] md:w-[116px] aspect-[352/278] filter drop-shadow-[0_3px_8px_rgba(0,0,0,0.14)] hover:scale-105 transition-transform"
         title="Click to play!"
       >
         <svg viewBox="0 35 352 278" className="w-full h-full overflow-visible">

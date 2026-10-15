@@ -16,17 +16,6 @@ interface HalloweenMinigameArenaProps {
   pumpkinOrigin?: { x: number; y: number };
 }
 
-interface CandyTypeDef {
-  emoji: string;
-  name: string;
-  points: number;
-  isRare: boolean;
-  weight: number;
-  bgGradTop: string;
-  bgGradBottom: string;
-  rimColor: string;
-}
-
 interface CandyParticle {
   id: number;
   emoji: string;
@@ -42,9 +31,6 @@ interface CandyParticle {
   settled: boolean;
   opacity: number;
   bounceCount: number;
-  bgGradTop: string;
-  bgGradBottom: string;
-  rimColor: string;
 }
 
 interface FloatingScoreText {
@@ -68,97 +54,123 @@ interface CatchSparkle {
   opacity: number;
 }
 
-// Fierce Fiery-Eyed Jack-o'-Lantern Emblem (ฟักทองตาไฟดุดัน)
-function FiercePumpkinEmblem({ className = "w-24 h-20" }: { className?: string }) {
+// Fierce Fiery-Eyed Jack-o'-Lantern Emblem (ฟักทองตาไฟดุดัน คมชัด เปล่งแสงอลังการ)
+function FiercePumpkinEmblem({ className = "w-32 h-26" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 120 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 130 110" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <radialGradient id="fpBody" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#FF7A00" />
-          <stop offset="65%" stopColor="#EA580C" />
-          <stop offset="100%" stopColor="#9A3412" />
+        {/* Bright Glowing Aura behind pumpkin */}
+        <radialGradient id="fpAura" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#FFA000" stopOpacity="0.85" />
+          <stop offset="60%" stopColor="#FF6200" stopOpacity="0.45" />
+          <stop offset="100%" stopColor="#FF3D00" stopOpacity="0" />
         </radialGradient>
+
+        {/* Vibrant Pumpkin Body Gradient */}
+        <radialGradient id="fpBody" cx="50%" cy="38%" r="62%">
+          <stop offset="0%" stopColor="#FFC107" />
+          <stop offset="35%" stopColor="#FF8F00" />
+          <stop offset="70%" stopColor="#FF5722" />
+          <stop offset="100%" stopColor="#C62828" />
+        </radialGradient>
+
+        {/* Side Lobes Deeper Gradient */}
+        <radialGradient id="fpSideBody" cx="50%" cy="40%" r="60%">
+          <stop offset="0%" stopColor="#FFA000" />
+          <stop offset="50%" stopColor="#F4511E" />
+          <stop offset="100%" stopColor="#B71C1C" />
+        </radialGradient>
+
+        {/* Intense Blazing Fire for Eyes & Mouth */}
         <linearGradient id="fpFire" x1="0%" y1="100%" x2="0%" y2="0%">
-          <stop offset="0%" stopColor="#EF4444" />
-          <stop offset="35%" stopColor="#F97316" />
-          <stop offset="70%" stopColor="#FBBF24" />
-          <stop offset="100%" stopColor="#FEF08A" />
+          <stop offset="0%" stopColor="#DC2626" />
+          <stop offset="30%" stopColor="#FF5722" />
+          <stop offset="65%" stopColor="#FFC107" />
+          <stop offset="100%" stopColor="#FFFFFF" />
         </linearGradient>
+
         <radialGradient id="fpFireCore" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#FFFFFF" />
-          <stop offset="40%" stopColor="#FEF08A" />
-          <stop offset="75%" stopColor="#F97316" />
-          <stop offset="100%" stopColor="#DC2626" />
+          <stop offset="45%" stopColor="#FFF9C4" />
+          <stop offset="80%" stopColor="#FFD54F" />
+          <stop offset="100%" stopColor="#FF6F00" />
         </radialGradient>
+
         <filter id="flameGlow" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="3.5" result="blur" />
+          <feGaussianBlur stdDeviation="4" result="blur" />
           <feComposite in="SourceGraphic" in2="blur" operator="over" />
         </filter>
       </defs>
 
-      {/* Pumpkin Stem */}
-      <path d="M 57 26 C 55 12, 65 6, 74 8 C 72 16, 65 24, 63 26 Z" fill="#365314" stroke="#14532D" strokeWidth="2" />
-      <path d="M 62 10 Q 75 14, 70 24" stroke="#84CC16" strokeWidth="1.5" fill="none" />
+      {/* Fiery Radiant Aura Circle */}
+      <circle cx="65" cy="58" r="50" fill="url(#fpAura)" filter="url(#flameGlow)" />
+
+      {/* Pumpkin Green Vine Stem */}
+      <path d="M 61 24 C 59 10, 71 4, 80 6 C 78 15, 70 23, 67 25 Z" fill="#65A30D" stroke="#365314" strokeWidth="2.5" />
+      <path d="M 66 8 Q 80 12, 75 22" stroke="#BEF264" strokeWidth="2" fill="none" />
 
       {/* Outer Lobes Shadow */}
-      <ellipse cx="28" cy="58" rx="18" ry="28" fill="#7C2D12" />
-      <ellipse cx="92" cy="58" rx="18" ry="28" fill="#7C2D12" />
+      <ellipse cx="30" cy="62" rx="20" ry="32" fill="#7C2D12" />
+      <ellipse cx="100" cy="62" rx="20" ry="32" fill="#7C2D12" />
 
-      {/* Secondary Lobes */}
-      <ellipse cx="36" cy="59" rx="20" ry="32" fill="url(#fpBody)" stroke="#431407" strokeWidth="2.5" />
-      <ellipse cx="84" cy="59" rx="20" ry="32" fill="url(#fpBody)" stroke="#431407" strokeWidth="2.5" />
+      {/* Secondary Lobes with Golden Edge Light */}
+      <ellipse cx="38" cy="63" rx="22" ry="36" fill="url(#fpSideBody)" stroke="#FFE082" strokeWidth="2.5" />
+      <ellipse cx="92" cy="63" rx="22" ry="36" fill="url(#fpSideBody)" stroke="#FFE082" strokeWidth="2.5" />
 
-      {/* Center Lobes */}
-      <ellipse cx="48" cy="60" rx="20" ry="34" fill="url(#fpBody)" stroke="#431407" strokeWidth="2.5" />
-      <ellipse cx="72" cy="60" rx="20" ry="34" fill="url(#fpBody)" stroke="#431407" strokeWidth="2.5" />
-      <ellipse cx="60" cy="61" rx="20" ry="35" fill="url(#fpBody)" stroke="#431407" strokeWidth="2.5" />
+      {/* Center Lobes with Golden Edge Light */}
+      <ellipse cx="52" cy="64" rx="22" ry="38" fill="url(#fpBody)" stroke="#FFE082" strokeWidth="2.5" />
+      <ellipse cx="78" cy="64" rx="22" ry="38" fill="url(#fpBody)" stroke="#FFE082" strokeWidth="2.5" />
+      <ellipse cx="65" cy="65" rx="22" ry="39" fill="url(#fpBody)" stroke="#FFE082" strokeWidth="2.5" />
 
-      {/* FIERCE MENACING SLANTED EYES (ตาไฟดุดัน) */}
-      <polygon points="26,45 52,49 43,58" fill="#DC2626" opacity="0.8" filter="url(#flameGlow)" />
-      <polygon points="94,45 68,49 77,58" fill="#DC2626" opacity="0.8" filter="url(#flameGlow)" />
+      {/* FIERCE MENACING SLANTED EYES (ตาไฟดุดัน เปล่งแสงชัดเจน) */}
+      <polygon points="26,48 56,53 46,63" fill="#FF5722" opacity="0.9" filter="url(#flameGlow)" />
+      <polygon points="104,48 74,53 84,63" fill="#FF5722" opacity="0.9" filter="url(#flameGlow)" />
 
       {/* Left Fierce Eye */}
-      <polygon points="28,47 50,50 42,57" fill="url(#fpFire)" stroke="#431407" strokeWidth="2" strokeLinejoin="round" />
-      <polygon points="32,48 48,51 43,55" fill="url(#fpFireCore)" />
+      <polygon points="28,50 54,54 45,62" fill="url(#fpFire)" stroke="#3E1A05" strokeWidth="2" strokeLinejoin="round" />
+      <polygon points="33,51 51,54 46,59" fill="url(#fpFireCore)" />
 
       {/* Right Fierce Eye */}
-      <polygon points="92,47 70,50 78,57" fill="url(#fpFire)" stroke="#431407" strokeWidth="2" strokeLinejoin="round" />
-      <polygon points="88,48 72,51 77,55" fill="url(#fpFireCore)" />
+      <polygon points="102,50 76,54 85,62" fill="url(#fpFire)" stroke="#3E1A05" strokeWidth="2" strokeLinejoin="round" />
+      <polygon points="97,51 79,54 84,59" fill="url(#fpFireCore)" />
 
       {/* Sharp Menacing Nose */}
-      <polygon points="60,56 65,65 55,65" fill="url(#fpFire)" stroke="#431407" strokeWidth="1.8" />
+      <polygon points="65,60 71,70 59,70" fill="url(#fpFireCore)" stroke="#3E1A05" strokeWidth="2" />
 
       {/* WICKED JAGGED SHARP FANGED MOUTH */}
-      <path d="M 28 68 Q 60 98, 92 68 Q 80 84, 60 86 Q 40 84, 28 68 Z" fill="#DC2626" opacity="0.85" filter="url(#flameGlow)" />
-      <path d="M 28 69 Q 60 96, 92 69 Q 80 85, 60 87 Q 40 85, 28 69 Z" fill="#431407" stroke="#431407" strokeWidth="3" strokeLinejoin="round" />
-      <path d="M 32 72 Q 60 93, 88 72 Q 78 83, 60 85 Q 42 83, 32 72 Z" fill="url(#fpFire)" />
-      <polygon points="40,71 44,78 48,72" fill="#431407" />
-      <polygon points="54,73 58,82 62,73" fill="#431407" />
-      <polygon points="68,73 72,82 76,73" fill="#431407" />
-      <polygon points="46,84 50,77 54,84" fill="#431407" />
-      <polygon points="62,85 66,78 70,85" fill="#431407" />
-      <polygon points="78,81 81,75 84,80" fill="#431407" />
+      <path d="M 28 73 Q 65 106, 102 73 Q 88 92, 65 94 Q 42 92, 28 73 Z" fill="#FF5722" opacity="0.9" filter="url(#flameGlow)" />
+      <path d="M 28 74 Q 65 104, 102 74 Q 88 93, 65 95 Q 42 93, 28 74 Z" fill="#200600" stroke="#3E1A05" strokeWidth="3" strokeLinejoin="round" />
+      <path d="M 32 77 Q 65 101, 98 77 Q 86 90, 65 92 Q 44 90, 32 77 Z" fill="url(#fpFire)" />
+      
+      {/* Sharp Teeth Fangs */}
+      <polygon points="41,76 46,84 51,77" fill="#200600" />
+      <polygon points="57,78 62,88 67,78" fill="#200600" />
+      <polygon points="73,78 78,88 83,78" fill="#200600" />
+      <polygon points="89,76 94,83 97,76" fill="#200600" />
+      <polygon points="48,91 53,83 58,91" fill="#200600" />
+      <polygon points="66,92 71,84 76,92" fill="#200600" />
+      <polygon points="82,88 86,81 90,88" fill="#200600" />
     </svg>
   );
 }
 
-// Country Friends Harvest Candies & Produce Palette
-const CANDY_TYPES: CandyTypeDef[] = [
-  { emoji: "🍬", name: "ทอฟฟี่สตรอว์เบอร์รี่", points: 10, isRare: false, weight: 30, bgGradTop: "#F472B6", bgGradBottom: "#DB2777", rimColor: "#FDF2F8" },
-  { emoji: "🍭", name: "โลลี่ป๊อปสายรุ้ง", points: 20, isRare: false, weight: 25, bgGradTop: "#FB923C", bgGradBottom: "#EA580C", rimColor: "#FFF7ED" },
-  { emoji: "🍫", name: "ช็อกโกแลตฟาร์ม", points: 30, isRare: false, weight: 20, bgGradTop: "#B45309", bgGradBottom: "#78350F", rimColor: "#FEF3C7" },
-  { emoji: "🍩", name: "โดนัทเคลือบหวาน", points: 25, isRare: false, weight: 15, bgGradTop: "#FB7185", bgGradBottom: "#E11D48", rimColor: "#FFE4E6" },
-  { emoji: "🎃", name: "ฟักทองทองคำ", points: 50, isRare: true, weight: 12, bgGradTop: "#FBBF24", bgGradBottom: "#D97706", rimColor: "#FEF9C3" },
-  { emoji: "👻", name: "กุ๊กกู๋นำโชค", points: 100, isRare: true, weight: 8, bgGradTop: "#38BDF8", bgGradBottom: "#0284C7", rimColor: "#F0F9FF" },
-  { emoji: "⭐", name: "ดาวฟาร์มมิ่ง", points: 75, isRare: true, weight: 10, bgGradTop: "#FDE047", bgGradBottom: "#CA8A04", rimColor: "#FEF08A" },
-  { emoji: "🍪", name: "คุกกี้เนยสด", points: 20, isRare: false, weight: 15, bgGradTop: "#F59E0B", bgGradBottom: "#B45309", rimColor: "#FFFBEB" },
-  { emoji: "🧁", name: "คัพเค้กแฟนซี", points: 35, isRare: false, weight: 12, bgGradTop: "#C084FC", bgGradBottom: "#9333EA", rimColor: "#FAF5FF" },
-  { emoji: "🕷️", name: "แมงมุมฮาโลวีน", points: 40, isRare: false, weight: 8, bgGradTop: "#A78BFA", bgGradBottom: "#6D28D9", rimColor: "#EDE9FE" },
+// Original Candy Graphics Definition
+const CANDY_TYPES = [
+  { emoji: "🍬", points: 10, isRare: false, weight: 30 },
+  { emoji: "🍭", points: 20, isRare: false, weight: 25 },
+  { emoji: "🍫", points: 30, isRare: false, weight: 20 },
+  { emoji: "🍩", points: 25, isRare: false, weight: 15 },
+  { emoji: "🎃", points: 50, isRare: true, weight: 12 },
+  { emoji: "👻", points: 100, isRare: true, weight: 8 },
+  { emoji: "⭐", points: 75, isRare: true, weight: 10 },
+  { emoji: "🍪", points: 20, isRare: false, weight: 15 },
+  { emoji: "🧁", points: 35, isRare: false, weight: 12 },
+  { emoji: "🕷️", points: 40, isRare: false, weight: 8 },
 ];
 
 // Round duration set to 10 seconds per user request
 const ROUND_DURATION_SECONDS = 10;
-const MAX_PARTICLES = 160;
+const MAX_PARTICLES = 180;
 
 export default function HalloweenMinigameArena({
   isOpen,
@@ -210,6 +222,7 @@ export default function HalloweenMinigameArena({
   const roundTimerRef = useRef<NodeJS.Timeout | null>(null);
   const waveTimer1Ref = useRef<NodeJS.Timeout | null>(null);
   const waveTimer2Ref = useRef<NodeJS.Timeout | null>(null);
+  const waveTimer3Ref = useRef<NodeJS.Timeout | null>(null);
 
   // Basket coordinate tracker
   const basketPosRef = useRef({
@@ -307,8 +320,8 @@ export default function HalloweenMinigameArena({
     }
   }, []);
 
-  // Spectacular Candy Volcano Burst from pumpkin
-  const triggerVolcanoBurst = useCallback((count = 38) => {
+  // Spectacular Candy Volcano Burst from pumpkin (พุ่งแบบอลังการกระจายเต็มจอ!)
+  const triggerVolcanoBurst = useCallback((count = 46) => {
     if (typeof window === "undefined") return;
     playSound("volcano");
 
@@ -332,30 +345,43 @@ export default function HalloweenMinigameArena({
         rand -= t.weight;
       }
 
-      // Volcano explosion angle: Arcs high up and fans left towards the center and sky
-      const angle = -Math.PI * 0.88 + Math.random() * Math.PI * 0.72;
-      const speed = Math.random() * 12 + 18;
-      const vx = Math.cos(angle) * speed * (1.1 + Math.random() * 0.5);
+      // Volcano explosion angle: Arcs high up and fans wide across the entire upper screen!
+      const angle = -Math.PI * 0.90 + Math.random() * Math.PI * 0.80;
+      const speed = Math.random() * 15 + 21;
+      const vx = Math.cos(angle) * speed * (1.15 + Math.random() * 0.55);
       const vy = Math.sin(angle) * speed;
 
       newItems.push({
         id: Math.random() + Date.now(),
         emoji: selected.emoji,
-        x: originX + (Math.random() - 0.5) * 26,
-        y: originY + (Math.random() - 0.5) * 16,
+        x: originX + (Math.random() - 0.5) * 32,
+        y: originY + (Math.random() - 0.5) * 20,
         vx,
         vy,
         rotation: Math.random() * 360,
-        vRot: (Math.random() - 0.5) * 20,
-        size: selected.isRare ? 42 : Math.floor(Math.random() * 10) + 32,
+        vRot: (Math.random() - 0.5) * 24,
+        size: selected.isRare ? 48 : Math.floor(Math.random() * 14) + 36,
         points: selected.points,
         isRare: selected.isRare,
         settled: false,
         opacity: 1,
         bounceCount: 0,
-        bgGradTop: selected.bgGradTop,
-        bgGradBottom: selected.bgGradBottom,
-        rimColor: selected.rimColor,
+      });
+    }
+
+    // Launch explosive fiery embers and sparkles alongside candies!
+    for (let sp = 0; sp < 20; sp++) {
+      const angle = -Math.PI * 0.95 + Math.random() * Math.PI * 0.90;
+      const spd = Math.random() * 18 + 10;
+      sparklesRef.current.push({
+        id: Math.random(),
+        x: originX,
+        y: originY,
+        vx: Math.cos(angle) * spd,
+        vy: Math.sin(angle) * spd,
+        size: 3 + Math.random() * 4,
+        color: ["#FBBF24", "#FF6200", "#EF4444", "#FDE047", "#A855F7"][Math.floor(Math.random() * 5)],
+        opacity: 1,
       });
     }
 
@@ -372,6 +398,7 @@ export default function HalloweenMinigameArena({
     if (roundTimerRef.current) clearInterval(roundTimerRef.current);
     if (waveTimer1Ref.current) clearTimeout(waveTimer1Ref.current);
     if (waveTimer2Ref.current) clearTimeout(waveTimer2Ref.current);
+    if (waveTimer3Ref.current) clearTimeout(waveTimer3Ref.current);
 
     isPlayingRef.current = false;
     isGameOverRef.current = true;
@@ -414,26 +441,34 @@ export default function HalloweenMinigameArena({
     sparklesRef.current = [];
     floatingTextsRef.current = [];
 
-    // Wave 1: Immediate massive volcanic explosion!
+    // Wave 1: Immediate massive volcanic explosion! (พุ่งทะยาน 50 ชิ้น)
     setTimeout(() => {
-      triggerVolcanoBurst(45);
+      triggerVolcanoBurst(50);
     }, 100);
 
-    // Wave 2: Mid-game eruption at 3.5s!
+    // Wave 2: Mid-game eruption at 2.8s!
     if (waveTimer1Ref.current) clearTimeout(waveTimer1Ref.current);
     waveTimer1Ref.current = setTimeout(() => {
       if (isPlayingRef.current) {
-        triggerVolcanoBurst(32);
+        triggerVolcanoBurst(36);
       }
-    }, 3500);
+    }, 2800);
 
-    // Wave 3: Late-game eruption at 7.0s!
+    // Wave 3: Eruption at 5.5s!
     if (waveTimer2Ref.current) clearTimeout(waveTimer2Ref.current);
     waveTimer2Ref.current = setTimeout(() => {
       if (isPlayingRef.current) {
-        triggerVolcanoBurst(30);
+        triggerVolcanoBurst(36);
       }
-    }, 7000);
+    }, 5500);
+
+    // Wave 4: Late-game final eruption frenzy at 8.0s!
+    if (waveTimer3Ref.current) clearTimeout(waveTimer3Ref.current);
+    waveTimer3Ref.current = setTimeout(() => {
+      if (isPlayingRef.current) {
+        triggerVolcanoBurst(32);
+      }
+    }, 8000);
 
     // 10-Second Countdown Timer
     if (roundTimerRef.current) clearInterval(roundTimerRef.current);
@@ -457,6 +492,7 @@ export default function HalloweenMinigameArena({
       if (roundTimerRef.current) clearInterval(roundTimerRef.current);
       if (waveTimer1Ref.current) clearTimeout(waveTimer1Ref.current);
       if (waveTimer2Ref.current) clearTimeout(waveTimer2Ref.current);
+      if (waveTimer3Ref.current) clearTimeout(waveTimer3Ref.current);
     };
   }, []);
 
@@ -504,307 +540,270 @@ export default function HalloweenMinigameArena({
     const loop = () => {
       if (!isRunning) return;
 
-      const canvas = canvasRef.current;
-      if (!canvas) {
-        animFrameIdRef.current = requestAnimationFrame(loop);
-        return;
-      }
+      try {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
 
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        animFrameIdRef.current = requestAnimationFrame(loop);
-        return;
-      }
-
-      const width = canvas.width;
-      const height = canvas.height;
-      const gravity = 0.58;
-      const floorY = height - 25;
-
-      // Pumpkin bucket dimensions
-      const basketW = Math.min(270, Math.max(190, width * 0.32));
-      const basketH = Math.round(basketW * 0.54);
-      const basketY = height - basketH - 18;
-      const catchY = basketY + basketH * 0.44;
-
-      // Smooth basket lerp tracking & tilt
-      const basket = basketPosRef.current;
-      const dx = basket.targetX - basket.x;
-      basket.x += dx * 0.28;
-      const tilt = Math.max(-14, Math.min(14, dx * 0.08));
-
-      if (basketDomRef.current) {
-        basketDomRef.current.style.transform = `translate3d(${basket.x - basketW / 2}px, ${basketY}px, 0) rotate(${tilt}deg)`;
-        basketDomRef.current.style.width = `${basketW}px`;
-        basketDomRef.current.style.height = `${basketH}px`;
-      }
-
-      ctx.clearRect(0, 0, width, height);
-
-      const particles = particlesRef.current;
-      const remaining: CandyParticle[] = [];
-
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-
-        if (!p.settled) {
-          p.x += p.vx;
-          p.y += p.vy;
-          p.vy += gravity;
-          p.vx *= 0.994;
-          p.rotation += p.vRot;
-
-          // Wall bouncing
-          if (p.x <= p.size / 2) {
-            p.x = p.size / 2;
-            p.vx = -p.vx * 0.55;
-          } else if (p.x >= width - p.size / 2) {
-            p.x = width - p.size / 2;
-            p.vx = -p.vx * 0.55;
-          }
-
-          // Pumpkin Bucket Catch Zone
-          const catchSpan = basketW * 0.43;
-          const inBasketX = p.x >= basket.x - catchSpan && p.x <= basket.x + catchSpan;
-          const inBasketY = p.y >= catchY - 18 && p.y <= catchY + 28;
-          const isFalling = p.vy > 0;
-
-          if (inBasketX && inBasketY && isFalling && isPlayingRef.current && !isGameOverRef.current) {
-            // CAUGHT!
-            playSound(p.isRare ? "rare" : "catch");
-
-            // Basket bounce animation
-            if (basketDomRef.current) {
-              basketDomRef.current.style.transform = `translate3d(${basket.x - basketW / 2}px, ${basketY + 5}px, 0) scale(1.06, 0.94) rotate(${tilt}deg)`;
-              setTimeout(() => {
-                if (basketDomRef.current) {
-                  basketDomRef.current.style.transform = `translate3d(${basket.x - basketW / 2}px, ${basketY}px, 0) scale(1, 1) rotate(${tilt}deg)`;
-                }
-              }, 90);
-            }
-
-            // Burst juicy arcade sparkles on catch!
-            for (let s = 0; s < 8; s++) {
-              const angle = Math.random() * Math.PI * 2;
-              const spd = 2 + Math.random() * 4.5;
-              sparklesRef.current.push({
-                id: Math.random(),
-                x: p.x,
-                y: catchY,
-                vx: Math.cos(angle) * spd,
-                vy: Math.sin(angle) * spd - 1.8,
-                size: 2.5 + Math.random() * 3,
-                color: p.isRare
-                  ? "#FDE047"
-                  : ["#FF6200", "#F59E0B", "#10B981", "#EC4899", "#8B5CF6"][Math.floor(Math.random() * 5)],
-                opacity: 1,
-              });
-            }
-
-            // Visible candy inside basket: Add candy emoji to the bucket pile!
-            setCaughtCandiesDisplay((prev) => {
-              if (prev.length >= 22) return prev;
-              return [...prev, p.emoji];
-            });
-
-            // Combo & Score
-            comboRef.current += 1;
-            if (comboRef.current > maxComboRef.current) {
-              maxComboRef.current = comboRef.current;
-            }
-
-            const multiplier = comboRef.current >= 5 ? 2.5 : comboRef.current >= 3 ? 1.8 : 1.0;
-            const pointsAwarded = Math.round(p.points * multiplier);
-            scoreRef.current += pointsAwarded;
-            candiesCaughtRef.current += 1;
-
-            // Direct HUD updates without React re-render lag
-            if (scoreDomRef.current) scoreDomRef.current.innerText = String(scoreRef.current);
-            if (caughtDomRef.current) caughtDomRef.current.innerText = `${candiesCaughtRef.current} ชิ้น`;
-            if (comboDomRef.current) {
-              if (comboRef.current >= 2) {
-                comboDomRef.current.innerText = `🔥 COMBO x${comboRef.current}`;
-                comboDomRef.current.style.display = "inline-flex";
-              } else {
-                comboDomRef.current.style.display = "none";
-              }
-            }
-
-            // Floating Score text
-            floatingTextsRef.current.push({
-              id: Math.random(),
-              text: `+${pointsAwarded}${p.isRare ? " ⭐" : ""}`,
-              x: p.x,
-              y: catchY - 15,
-              opacity: 1,
-              color: p.isRare ? "#FBBF24" : multiplier > 1 ? "#FF6200" : "#10B981",
-              scale: p.isRare ? 1.35 : multiplier > 1 ? 1.2 : 1.0,
-            });
-
-            continue;
-          }
-
-          // Floor Bouncing
-          if (p.y >= floorY - p.size / 2) {
-            p.y = floorY - p.size / 2;
-            p.vy = -p.vy * 0.35;
-            p.vx *= 0.85;
-            p.bounceCount += 1;
-
-            if (Math.abs(p.vy) < 1.0 && Math.abs(p.vx) < 0.6) {
-              p.settled = true;
-              p.vy = 0;
-              p.vx = 0;
-            }
-          }
-        } else {
-          p.opacity -= 0.015;
+        if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
         }
 
-        if (p.opacity > 0) {
-          remaining.push(p);
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
 
-          const r = p.size * 0.52;
-          ctx.save();
-          ctx.globalAlpha = Math.max(0, p.opacity);
-          ctx.translate(p.x, p.y);
-          ctx.rotate((p.rotation * Math.PI) / 180);
+        const width = canvas.width;
+        const height = canvas.height;
+        const gravity = 0.54;
+        const floorY = height - 25;
 
-          // 1. Rare golden sunburst aura
-          if (p.isRare) {
+        // Pumpkin bucket dimensions
+        const basketW = Math.min(270, Math.max(190, width * 0.32));
+        const basketH = Math.round(basketW * 0.54);
+        const basketY = height - basketH - 18;
+        const catchY = basketY + basketH * 0.44;
+
+        // Smooth basket lerp tracking & tilt
+        const basket = basketPosRef.current;
+        const dx = basket.targetX - basket.x;
+        basket.x += dx * 0.28;
+        const tilt = Math.max(-14, Math.min(14, dx * 0.08));
+
+        if (basketDomRef.current) {
+          basketDomRef.current.style.transform = `translate3d(${basket.x - basketW / 2}px, ${basketY}px, 0) rotate(${tilt}deg)`;
+          basketDomRef.current.style.width = `${basketW}px`;
+          basketDomRef.current.style.height = `${basketH}px`;
+        }
+
+        ctx.clearRect(0, 0, width, height);
+
+        const particles = particlesRef.current;
+        const remaining: CandyParticle[] = [];
+
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+
+          if (!p.settled) {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += gravity;
+            p.vx *= 0.994;
+            p.rotation += p.vRot;
+
+            // Wall bouncing
+            if (p.x <= p.size / 2) {
+              p.x = p.size / 2;
+              p.vx = -p.vx * 0.55;
+            } else if (p.x >= width - p.size / 2) {
+              p.x = width - p.size / 2;
+              p.vx = -p.vx * 0.55;
+            }
+
+            // Pumpkin Bucket Catch Zone
+            const catchSpan = basketW * 0.43;
+            const inBasketX = p.x >= basket.x - catchSpan && p.x <= basket.x + catchSpan;
+            const inBasketY = p.y >= catchY - 18 && p.y <= catchY + 28;
+            const isFalling = p.vy > 0;
+
+            if (inBasketX && inBasketY && isFalling && isPlayingRef.current && !isGameOverRef.current) {
+              // CAUGHT!
+              playSound(p.isRare ? "rare" : "catch");
+
+              // Basket bounce animation
+              if (basketDomRef.current) {
+                basketDomRef.current.style.transform = `translate3d(${basket.x - basketW / 2}px, ${basketY + 5}px, 0) scale(1.06, 0.94) rotate(${tilt}deg)`;
+                setTimeout(() => {
+                  if (basketDomRef.current) {
+                    basketDomRef.current.style.transform = `translate3d(${basket.x - basketW / 2}px, ${basketY}px, 0) scale(1, 1) rotate(${tilt}deg)`;
+                  }
+                }, 90);
+              }
+
+              // Burst juicy arcade sparkles on catch!
+              for (let s = 0; s < 8; s++) {
+                const angle = Math.random() * Math.PI * 2;
+                const spd = 2 + Math.random() * 4.5;
+                sparklesRef.current.push({
+                  id: Math.random(),
+                  x: p.x,
+                  y: catchY,
+                  vx: Math.cos(angle) * spd,
+                  vy: Math.sin(angle) * spd - 1.8,
+                  size: 2.5 + Math.random() * 3,
+                  color: p.isRare
+                    ? "#FDE047"
+                    : ["#FF6200", "#F59E0B", "#10B981", "#EC4899", "#8B5CF6"][Math.floor(Math.random() * 5)],
+                  opacity: 1,
+                });
+              }
+
+              // Visible candy inside basket: Add candy emoji to the bucket pile!
+              setCaughtCandiesDisplay((prev) => {
+                if (prev.length >= 22) return prev;
+                return [...prev, p.emoji];
+              });
+
+              // Combo & Score
+              comboRef.current += 1;
+              if (comboRef.current > maxComboRef.current) {
+                maxComboRef.current = comboRef.current;
+              }
+
+              const multiplier = comboRef.current >= 5 ? 2.5 : comboRef.current >= 3 ? 1.8 : 1.0;
+              const pointsAwarded = Math.round(p.points * multiplier);
+              scoreRef.current += pointsAwarded;
+              candiesCaughtRef.current += 1;
+
+              // Direct HUD updates without React re-render lag
+              if (scoreDomRef.current) scoreDomRef.current.innerText = String(scoreRef.current);
+              if (caughtDomRef.current) caughtDomRef.current.innerText = `${candiesCaughtRef.current} ชิ้น`;
+              if (comboDomRef.current) {
+                if (comboRef.current >= 2) {
+                  comboDomRef.current.innerText = `🔥 COMBO x${comboRef.current}`;
+                  comboDomRef.current.style.display = "inline-flex";
+                } else {
+                  comboDomRef.current.style.display = "none";
+                }
+              }
+
+              // Floating Score text
+              floatingTextsRef.current.push({
+                id: Math.random(),
+                text: `+${pointsAwarded}${p.isRare ? " ⭐" : ""}`,
+                x: p.x,
+                y: catchY - 15,
+                opacity: 1,
+                color: p.isRare ? "#FBBF24" : multiplier > 1 ? "#FF6200" : "#10B981",
+                scale: p.isRare ? 1.35 : multiplier > 1 ? 1.2 : 1.0,
+              });
+
+              continue;
+            }
+
+            // Floor Bouncing
+            if (p.y >= floorY - p.size / 2) {
+              p.y = floorY - p.size / 2;
+              p.vy = -p.vy * 0.35;
+              p.vx *= 0.85;
+              p.bounceCount += 1;
+
+              if (Math.abs(p.vy) < 1.0 && Math.abs(p.vx) < 0.6) {
+                p.settled = true;
+                p.vy = 0;
+                p.vx = 0;
+              }
+            }
+          } else {
+            p.opacity -= 0.02;
+          }
+
+          if (p.opacity > 0) {
+            remaining.push(p);
+
+            // Rare item glowing aura
+            if (p.isRare) {
+              ctx.save();
+              ctx.globalAlpha = Math.max(0, p.opacity * 0.45);
+              ctx.fillStyle = "#F59E0B";
+              ctx.shadowColor = "#FBBF24";
+              ctx.shadowBlur = 18;
+              ctx.beginPath();
+              ctx.arc(p.x, p.y, p.size * 0.7, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.restore();
+            }
+
+            // Original Candy Graphic Style: Large Emoji with crisp drop shadow
             ctx.save();
-            ctx.fillStyle = "rgba(245, 158, 11, 0.45)";
-            ctx.shadowColor = "#FBBF24";
-            ctx.shadowBlur = 18;
+            ctx.globalAlpha = Math.max(0, p.opacity);
+            ctx.translate(p.x, p.y);
+            ctx.rotate((p.rotation * Math.PI) / 180);
+
+            // Soft drop shadow
+            ctx.shadowColor = "rgba(0, 0, 0, 0.45)";
+            ctx.shadowBlur = 8;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 4;
+
+            ctx.font = `${p.size}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(p.emoji, 0, 0);
+            ctx.restore();
+          }
+        }
+
+        particlesRef.current = remaining;
+
+        // Arcade Sparkles Rendering & Physics
+        const sRemaining: CatchSparkle[] = [];
+        for (let s = 0; s < sparklesRef.current.length; s++) {
+          const sp = sparklesRef.current[s];
+          sp.x += sp.vx;
+          sp.y += sp.vy;
+          sp.vy += 0.2;
+          sp.vx *= 0.98;
+          sp.opacity -= 0.04;
+
+          if (sp.opacity > 0) {
+            sRemaining.push(sp);
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, sp.opacity);
+            ctx.fillStyle = sp.color;
+            ctx.shadowColor = sp.color;
+            ctx.shadowBlur = 8;
+
+            // 4-pointed golden sparkle star
+            const sz = sp.size;
             ctx.beginPath();
-            ctx.arc(0, 0, r * 1.35, 0, Math.PI * 2);
+            ctx.moveTo(sp.x, sp.y - sz * 1.5);
+            ctx.quadraticCurveTo(sp.x, sp.y, sp.x + sz * 1.5, sp.y);
+            ctx.quadraticCurveTo(sp.x, sp.y, sp.x, sp.y + sz * 1.5);
+            ctx.quadraticCurveTo(sp.x, sp.y, sp.x - sz * 1.5, sp.y);
+            ctx.quadraticCurveTo(sp.x, sp.y, sp.x, sp.y - sz * 1.5);
+            ctx.closePath();
             ctx.fill();
             ctx.restore();
           }
+        }
+        sparklesRef.current = sRemaining;
 
-          // 2. Soft 3D ground drop shadow
-          ctx.save();
-          ctx.fillStyle = "rgba(0, 0, 0, 0.28)";
-          ctx.beginPath();
-          ctx.ellipse(0, r * 0.42, r * 0.95, r * 0.4, 0, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
+        // Floating Score Texts with thick cartoon chocolate outline
+        const fRemaining: FloatingScoreText[] = [];
+        for (let j = 0; j < floatingTextsRef.current.length; j++) {
+          const ft = floatingTextsRef.current[j];
+          ft.y -= 1.8;
+          ft.opacity -= 0.028;
 
-          // 3. Outer 3D Gold/Bronze Token Rim Bevel
-          ctx.save();
-          const rimGrad = ctx.createLinearGradient(0, -r, 0, r);
-          if (p.isRare) {
-            rimGrad.addColorStop(0, "#FEF08A");
-            rimGrad.addColorStop(0.35, "#F59E0B");
-            rimGrad.addColorStop(1, "#78350F");
-          } else {
-            rimGrad.addColorStop(0, "#FFFBEB");
-            rimGrad.addColorStop(0.35, "#D97706");
-            rimGrad.addColorStop(1, "#451A03");
+          if (ft.opacity > 0) {
+            fRemaining.push(ft);
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, ft.opacity);
+            const fontSize = Math.round(22 * ft.scale);
+            ctx.font = `900 ${fontSize}px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            // Dark warm chocolate outline
+            ctx.lineWidth = 4.5;
+            ctx.strokeStyle = "#2A0E00";
+            ctx.lineJoin = "round";
+            ctx.strokeText(ft.text, ft.x, ft.y);
+
+            // Bright glossy fill
+            ctx.fillStyle = ft.color;
+            ctx.fillText(ft.text, ft.x, ft.y);
+            ctx.restore();
           }
-          ctx.fillStyle = rimGrad;
-          ctx.beginPath();
-          ctx.arc(0, 0, r, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Outer stroke for rim
-          ctx.lineWidth = 1.6;
-          ctx.strokeStyle = p.isRare ? "#FEF08A" : "#F59E0B";
-          ctx.stroke();
-
-          // 4. Inner Glossy Enamel Color Fill
-          const innerR = r * 0.82;
-          const coreGrad = ctx.createLinearGradient(0, -innerR, 0, innerR);
-          coreGrad.addColorStop(0, p.bgGradTop || "#F97316");
-          coreGrad.addColorStop(1, p.bgGradBottom || "#C2410C");
-          ctx.fillStyle = coreGrad;
-          ctx.beginPath();
-          ctx.arc(0, 0, innerR, 0, Math.PI * 2);
-          ctx.fill();
-
-          // 5. Country Friends Signature Specular Crescent Highlight
-          ctx.save();
-          ctx.fillStyle = "rgba(255, 255, 255, 0.58)";
-          ctx.beginPath();
-          ctx.ellipse(0, -innerR * 0.42, innerR * 0.62, innerR * 0.26, 0, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
-
-          // 6. Centered Emoji / Icon inside Token
-          ctx.font = `${Math.round(p.size * 0.56)}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillText(p.emoji, 0, 2);
-
-          ctx.restore();
+        }
+        floatingTextsRef.current = fRemaining;
+      } catch (err) {
+        console.error("Physics loop error:", err);
+      } finally {
+        if (isRunning) {
+          animFrameIdRef.current = requestAnimationFrame(loop);
         }
       }
-
-      particlesRef.current = remaining;
-
-      // Country Friends Harvest Stardust & Sparkles (4-pointed golden stars)
-      const sRemaining: CatchSparkle[] = [];
-      for (let s = 0; s < sparklesRef.current.length; s++) {
-        const sp = sparklesRef.current[s];
-        sp.x += sp.vx;
-        sp.y += sp.vy;
-        sp.vy += 0.16;
-        sp.opacity -= 0.045;
-
-        if (sp.opacity > 0) {
-          sRemaining.push(sp);
-          ctx.save();
-          ctx.globalAlpha = Math.max(0, sp.opacity);
-          ctx.fillStyle = sp.color;
-          ctx.shadowColor = sp.color;
-          ctx.shadowBlur = 8;
-
-          // 4-pointed golden sparkle star
-          const sz = sp.size;
-          ctx.beginPath();
-          ctx.moveTo(sp.x, sp.y - sz * 1.5);
-          ctx.quadraticCurveTo(sp.x, sp.y, sp.x + sz * 1.5, sp.y);
-          ctx.quadraticCurveTo(sp.x, sp.y, sp.x, sp.y + sz * 1.5);
-          ctx.quadraticCurveTo(sp.x, sp.y, sp.x - sz * 1.5, sp.y);
-          ctx.quadraticCurveTo(sp.x, sp.y, sp.x, sp.y - sz * 1.5);
-          ctx.closePath();
-          ctx.fill();
-          ctx.restore();
-        }
-      }
-      sparklesRef.current = sRemaining;
-
-      // Floating Score Texts with thick cartoon chocolate outline (Country Friends arcade look)
-      const fRemaining: FloatingScoreText[] = [];
-      for (let j = 0; j < floatingTextsRef.current.length; j++) {
-        const ft = floatingTextsRef.current[j];
-        ft.y -= 1.8;
-        ft.opacity -= 0.028;
-
-        if (ft.opacity > 0) {
-          fRemaining.push(ft);
-          ctx.save();
-          ctx.globalAlpha = Math.max(0, ft.opacity);
-          const fontSize = Math.round(22 * ft.scale);
-          ctx.font = `900 ${fontSize}px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-
-          // Dark warm chocolate outline
-          ctx.lineWidth = 4.5;
-          ctx.strokeStyle = "#2A0E00";
-          ctx.lineJoin = "round";
-          ctx.strokeText(ft.text, ft.x, ft.y);
-
-          // Bright glossy fill
-          ctx.fillStyle = ft.color;
-          ctx.fillText(ft.text, ft.x, ft.y);
-          ctx.restore();
-        }
-      }
-      floatingTextsRef.current = fRemaining;
-
-      animFrameIdRef.current = requestAnimationFrame(loop);
     };
 
     const handleResize = () => {
@@ -1298,173 +1297,180 @@ export default function HalloweenMinigameArena({
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in zoom-in-95 duration-200"
           onClick={(e) => e.stopPropagation()}
         >
-          <div 
-            className="relative max-w-md w-full rounded-3xl bg-gradient-to-b from-[#3D1A06] via-[#2A1003] to-[#170701] border-[3px] border-[#F59E0B] p-6 sm:p-7 text-center shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_50px_rgba(245,158,11,0.4)] max-h-[90vh] overflow-y-auto custom-scrollbar"
-            onClick={(e) => e.stopPropagation()}
-          >
+          {/* Outer Unclipped Modal Wrapper */}
+          <div className="relative max-w-md w-full pt-16">
             
-            {/* Top Fierce Fiery-Eyed Jack-o'-Lantern Emblem (ฟักทองตาไฟดุดัน) */}
-            <div className="relative mx-auto -mt-16 flex items-center justify-center filter drop-shadow-[0_12px_28px_rgba(234,88,12,0.9)] animate-bounce" style={{ animationDuration: "2.4s" }}>
-              <FiercePumpkinEmblem className="w-24 h-20 sm:w-28 sm:h-24" />
+            {/* Top Fierce Fiery-Eyed Jack-o'-Lantern Emblem (ฟักทองตาไฟดุดัน คมชัด 100% ไม่โดนตัดขอบเด็ดขาด) */}
+            <div 
+              className="absolute top-0 left-1/2 -translate-x-1/2 z-30 flex items-center justify-center filter drop-shadow-[0_10px_35px_rgba(255,102,0,0.95)] animate-bounce" 
+              style={{ animationDuration: "2.4s" }}
+            >
+              <FiercePumpkinEmblem className="w-32 h-26 sm:w-36 sm:h-28" />
             </div>
 
-            <div className="mt-3">
-              <span className="text-[11px] font-black text-amber-400 uppercase tracking-[0.2em] font-mono">
-                🌾 CC HALLOWEEN HARVEST FESTIVAL 🌾
-              </span>
-              <h2 className="text-2xl font-black text-white mt-1 filter drop-shadow-xs">
-                🎉 หมดเวลา 10 วินาทีสุดมันส์!
-              </h2>
-              <p className="text-xs font-bold text-amber-200 mt-1">
-                {getPlayerTitle(finalScore)}
-              </p>
-            </div>
-
-            {/* Score Highlight Plaque (Country Friends Golden Parchment Award Plaque) */}
-            <div className="my-4 p-4 rounded-2xl bg-gradient-to-b from-[#FFFDF7] to-[#FEF3C7] border-2 border-[#D97706] text-[#451A03] shadow-[inset_0_2px_4px_rgba(255,255,255,0.8),0_8px_20px_rgba(0,0,0,0.3)]">
-              <span className="text-[10px] font-bold text-[#92400E] uppercase tracking-widest font-mono">
-                คะแนนรวมที่คุณทำได้
-              </span>
-              <div className="text-4xl font-black font-mono text-transparent bg-clip-text bg-gradient-to-b from-[#EA580C] via-[#D97706] to-[#B45309] mt-1 filter drop-shadow-xs">
-                ⭐ {finalScore}
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-[#D97706]/30 text-xs font-mono">
-                <div>
-                  <span className="text-[#78350F] block text-[10px]">เก็บผลผลิตได้</span>
-                  <span className="font-bold text-[#451A03] text-sm">🍬 {finalCandies} ชิ้น</span>
-                </div>
-                <div>
-                  <span className="text-[#78350F] block text-[10px]">คอมโบสูงสุด</span>
-                  <span className="font-bold text-[#EA580C] text-sm">🔥 x{finalMaxCombo}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Top 10 Leaderboard Preview inside Game Over */}
-            <div className="my-3 text-left">
-              <div className="flex items-center justify-between mb-1.5 px-1">
-                <span className="text-xs font-black text-amber-300 flex items-center gap-1 font-mono">
-                  <Trophy size={13} className="text-amber-400" />
-                  <span>10 อันดับผู้นำสูงสุด (Top 10):</span>
+            {/* Inner Content Card (Scrollable if screen is small, emblem never clipped) */}
+            <div 
+              className="relative w-full rounded-3xl bg-gradient-to-b from-[#3D1A06] via-[#2A1003] to-[#170701] border-[3px] border-[#F59E0B] pt-14 p-6 sm:p-7 text-center shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_50px_rgba(245,158,11,0.4)] max-h-[85vh] overflow-y-auto custom-scrollbar"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div>
+                <span className="text-[11px] font-black text-amber-400 uppercase tracking-[0.2em] font-mono">
+                  🌾 CC HALLOWEEN HARVEST FESTIVAL 🌾
                 </span>
-                <span className="text-[10px] text-amber-200/60 font-mono">อัปเดตสด</span>
+                <h2 className="text-2xl font-black text-white mt-1 filter drop-shadow-xs">
+                  🎉 หมดเวลา 10 วินาทีสุดมันส์!
+                </h2>
+                <p className="text-xs font-bold text-amber-200 mt-1">
+                  {getPlayerTitle(finalScore)}
+                </p>
               </div>
-              <div className="max-h-36 overflow-y-auto space-y-1 rounded-xl bg-[#1C0901] p-2 border border-amber-600/30 custom-scrollbar">
-                {leaderboard.slice(0, 10).map((entry, idx) => (
-                  <div key={entry.id || idx} className="flex items-center justify-between text-xs py-1 px-1.5 rounded-lg hover:bg-white/5 transition-colors">
-                    <div className="flex items-center gap-1.5 truncate">
-                      <span className="font-mono font-bold text-[11px] text-amber-400 w-4">
-                        {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `${idx + 1}.`}
-                      </span>
-                      <span className="text-amber-100 font-semibold truncate max-w-[140px]">
-                        {entry.playerName}
+
+              {/* Score Highlight Plaque (Country Friends Golden Parchment Award Plaque) */}
+              <div className="my-4 p-4 rounded-2xl bg-gradient-to-b from-[#FFFDF7] to-[#FEF3C7] border-2 border-[#D97706] text-[#451A03] shadow-[inset_0_2px_4px_rgba(255,255,255,0.8),0_8px_20px_rgba(0,0,0,0.3)]">
+                <span className="text-[10px] font-bold text-[#92400E] uppercase tracking-widest font-mono">
+                  คะแนนรวมที่คุณทำได้
+                </span>
+                <div className="text-4xl font-black font-mono text-transparent bg-clip-text bg-gradient-to-b from-[#EA580C] via-[#D97706] to-[#B45309] mt-1 filter drop-shadow-xs">
+                  ⭐ {finalScore}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-[#D97706]/30 text-xs font-mono">
+                  <div>
+                    <span className="text-[#78350F] block text-[10px]">เก็บผลผลิตได้</span>
+                    <span className="font-bold text-[#451A03] text-sm">🍬 {finalCandies} ชิ้น</span>
+                  </div>
+                  <div>
+                    <span className="text-[#78350F] block text-[10px]">คอมโบสูงสุด</span>
+                    <span className="font-bold text-[#EA580C] text-sm">🔥 x{finalMaxCombo}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Top 10 Leaderboard Preview inside Game Over */}
+              <div className="my-3 text-left">
+                <div className="flex items-center justify-between mb-1.5 px-1">
+                  <span className="text-xs font-black text-amber-300 flex items-center gap-1 font-mono">
+                    <Trophy size={13} className="text-amber-400" />
+                    <span>10 อันดับผู้นำสูงสุด (Top 10):</span>
+                  </span>
+                  <span className="text-[10px] text-amber-200/60 font-mono">อัปเดตสด</span>
+                </div>
+                <div className="max-h-36 overflow-y-auto space-y-1 rounded-xl bg-[#1C0901] p-2 border border-amber-600/30 custom-scrollbar">
+                  {leaderboard.slice(0, 10).map((entry, idx) => (
+                    <div key={entry.id || idx} className="flex items-center justify-between text-xs py-1 px-1.5 rounded-lg hover:bg-white/5 transition-colors">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="font-mono font-bold text-[11px] text-amber-400 w-4">
+                          {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `${idx + 1}.`}
+                        </span>
+                        <span className="text-amber-100 font-semibold truncate max-w-[140px]">
+                          {entry.playerName}
+                        </span>
+                      </div>
+                      <span className="font-mono font-black text-amber-300 text-xs shrink-0">
+                        {entry.score}
                       </span>
                     </div>
-                    <span className="font-mono font-black text-amber-300 text-xs shrink-0">
-                      {entry.score}
+                  ))}
+                </div>
+              </div>
+
+              {/* Rank Announcement Banner (เมื่อกดบันทึกแล้ว จะขึ้นอันดับที่ได้ทันที) */}
+              {rankAchieved !== null ? (
+                <div className="my-3.5 p-4 rounded-2xl bg-gradient-to-r from-amber-500/30 via-orange-500/40 to-amber-500/30 border-2 border-amber-400 text-center shadow-[0_0_35px_rgba(245,158,11,0.55)] animate-in zoom-in-95 duration-200">
+                  <div className="flex items-center justify-center gap-2">
+                    <Trophy size={22} className="text-amber-300 animate-bounce" />
+                    <span className="text-lg font-black text-amber-200 font-mono tracking-wide filter drop-shadow-xs">
+                      คุณคว้าอันดับที่ #{rankAchieved}!
                     </span>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Rank Announcement Banner (เมื่อกดบันทึกแล้ว จะขึ้นอันดับที่ได้ทันที) */}
-            {rankAchieved !== null ? (
-              <div className="my-3.5 p-4 rounded-2xl bg-gradient-to-r from-amber-500/30 via-orange-500/40 to-amber-500/30 border-2 border-amber-400 text-center shadow-[0_0_35px_rgba(245,158,11,0.55)] animate-in zoom-in-95 duration-200">
-                <div className="flex items-center justify-center gap-2">
-                  <Trophy size={22} className="text-amber-300 animate-bounce" />
-                  <span className="text-lg font-black text-amber-200 font-mono tracking-wide filter drop-shadow-xs">
-                    คุณคว้าอันดับที่ #{rankAchieved}!
-                  </span>
+                  <p className="text-xs font-bold text-white mt-1">
+                    {rankAchieved === 1
+                      ? "👑 สุดยอดแชมป์อันดับ 1 แห่งงานเทศกาล!"
+                      : rankAchieved <= 3
+                      ? "🥈 ยอดฝีมือระดับท็อป 3 ฮาโลวีน!"
+                      : rankAchieved <= 10
+                      ? "🔥 ติดทำเนียบ Top 10 Hall of Fame!"
+                      : "👏 ยอดเยี่ยมมาก! ร่วมท้าชิงอันดับใหม่ได้เรื่อยๆ"}
+                  </p>
+                  <div className="mt-3 flex items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onClose();
+                      }}
+                      className="px-5 py-2.5 rounded-xl bg-gradient-to-b from-amber-400 to-orange-500 hover:brightness-110 border-b-4 border-amber-800 active:border-b-0 active:translate-y-1 text-slate-950 text-xs font-black shadow-lg cursor-pointer transition-all flex items-center gap-1.5"
+                    >
+                      <span>กลับสู่หน้าหลัก</span>
+                      {closingCountdown !== null && (
+                        <span className="bg-black/20 px-1.5 py-0.5 rounded text-[10px] font-mono">
+                          {closingCountdown}s
+                        </span>
+                      )}
+                    </button>
+                  </div>
                 </div>
-                <p className="text-xs font-bold text-white mt-1">
-                  {rankAchieved === 1
-                    ? "👑 สุดยอดแชมป์อันดับ 1 แห่งงานเทศกาล!"
-                    : rankAchieved <= 3
-                    ? "🥈 ยอดฝีมือระดับท็อป 3 ฮาโลวีน!"
-                    : rankAchieved <= 10
-                    ? "🔥 ติดทำเนียบ Top 10 Hall of Fame!"
-                    : "👏 ยอดเยี่ยมมาก! ร่วมท้าชิงอันดับใหม่ได้เรื่อยๆ"}
-                </p>
-                <div className="mt-3 flex items-center justify-center gap-2">
+              ) : (
+                /* Name Input & Tactile Submit Button to Return to Normal Screen */
+                <form onSubmit={handleSubmitAndFinish} className="space-y-3 mt-3">
+                  <div className="text-left">
+                    <label className="text-xs font-bold text-amber-200 block mb-1">
+                      ✨ ใส่ชื่อของคุณเพื่อชิงอันดับ:
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      autoFocus
+                      maxLength={24}
+                      value={playerName}
+                      onChange={(e) => setPlayerName(e.target.value)}
+                      placeholder="ใส่ชื่อหรือฉายาของคุณ..."
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#1C0901] border-2 border-amber-400/70 focus:border-amber-300 focus:outline-none text-white text-sm font-semibold placeholder:text-amber-200/40 font-sans shadow-inner"
+                    />
+                  </div>
+
+                  {/* Big Tactile 3D Button: Saves and exits immediately to normal page */}
                   <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onClose();
-                    }}
-                    className="px-5 py-2.5 rounded-xl bg-gradient-to-b from-amber-400 to-orange-500 hover:brightness-110 border-b-4 border-amber-800 active:border-b-0 active:translate-y-1 text-slate-950 text-xs font-black shadow-lg cursor-pointer transition-all flex items-center gap-1.5"
+                    type="submit"
+                    disabled={isSubmittingScore || !playerName.trim()}
+                    className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-b from-[#FF7A00] via-[#FF6200] to-[#E65100] hover:brightness-110 border-b-4 border-[#9A3412] active:border-b-0 active:translate-y-1 text-white text-sm font-black shadow-[0_6px_22px_rgba(255,98,0,0.45)] flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50"
                   >
-                    <span>กลับสู่หน้าหลัก</span>
-                    {closingCountdown !== null && (
-                      <span className="bg-black/20 px-1.5 py-0.5 rounded text-[10px] font-mono">
-                        {closingCountdown}s
-                      </span>
-                    )}
+                    <Send size={16} />
+                    <span>
+                      {isSubmittingScore ? "กำลังบันทึก..." : hasSubmitted ? "✅ บันทึกแล้ว!" : "🏆 บันทึกคะแนน & ออกจากเกม"}
+                    </span>
                   </button>
-                </div>
-              </div>
-            ) : (
-              /* Name Input & Tactile Submit Button to Return to Normal Screen */
-              <form onSubmit={handleSubmitAndFinish} className="space-y-3 mt-3">
-                <div className="text-left">
-                  <label className="text-xs font-bold text-amber-200 block mb-1">
-                    ✨ ใส่ชื่อของคุณเพื่อชิงอันดับ:
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    autoFocus
-                    maxLength={24}
-                    value={playerName}
-                    onChange={(e) => setPlayerName(e.target.value)}
-                    placeholder="ใส่ชื่อหรือฉายาของคุณ..."
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#1C0901] border-2 border-amber-400/70 focus:border-amber-300 focus:outline-none text-white text-sm font-semibold placeholder:text-amber-200/40 font-sans shadow-inner"
-                  />
-                </div>
+                </form>
+              )}
 
-                {/* Big Tactile 3D Button: Saves and exits immediately to normal page */}
+              {/* Quick Action Footer Buttons */}
+              <div className="flex items-center gap-2 mt-4 pt-3 border-t border-amber-600/30">
                 <button
-                  type="submit"
-                  disabled={isSubmittingScore || !playerName.trim()}
-                  className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-b from-[#FF7A00] via-[#FF6200] to-[#E65100] hover:brightness-110 border-b-4 border-[#9A3412] active:border-b-0 active:translate-y-1 text-white text-sm font-black shadow-[0_6px_22px_rgba(255,98,0,0.45)] flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50"
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    startGame();
+                  }}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-b from-[#5C2B09] to-[#3E1B05] hover:brightness-120 border-b-3 border-[#2A1003] active:border-b-0 active:translate-y-0.5 text-amber-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                 >
-                  <Send size={16} />
-                  <span>
-                    {isSubmittingScore ? "กำลังบันทึก..." : hasSubmitted ? "✅ บันทึกแล้ว!" : "🏆 บันทึกคะแนน & ออกจากเกม"}
-                  </span>
+                  <RefreshCw size={13} />
+                  <span>🕹️ เล่นอีกรอบ (10 วิ)</span>
                 </button>
-              </form>
-            )}
 
-            {/* Quick Action Footer Buttons */}
-            <div className="flex items-center gap-2 mt-4 pt-3 border-t border-amber-600/30">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  startGame();
-                }}
-                className="flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-b from-[#5C2B09] to-[#3E1B05] hover:brightness-120 border-b-3 border-[#2A1003] active:border-b-0 active:translate-y-0.5 text-amber-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-              >
-                <RefreshCw size={13} />
-                <span>🕹️ เล่นอีกรอบ (10 วิ)</span>
-              </button>
+                {/* Explicit Exit Game Button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClose();
+                  }}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-[#2A1003]/80 hover:bg-rose-900/60 hover:text-rose-200 active:translate-y-0.5 text-amber-100/70 text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer border border-amber-600/20"
+                >
+                  <span>ออกจากเกม</span>
+                </button>
+              </div>
 
-              {/* Explicit Exit Game Button */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onClose();
-                }}
-                className="flex-1 py-2.5 px-3 rounded-xl bg-[#2A1003]/80 hover:bg-rose-900/60 hover:text-rose-200 active:translate-y-0.5 text-amber-100/70 text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer border border-amber-600/20"
-              >
-                <span>ออกจากเกม</span>
-              </button>
             </div>
-
           </div>
         </div>
       )}

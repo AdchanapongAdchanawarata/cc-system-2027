@@ -13,6 +13,9 @@ export interface DailyMissionResult {
   unassignedCount: number;
   overdueCount: number;
   inProgressCount: number;
+  dueTodayCount?: number;
+  todoCount?: number;
+  myTasksCount?: number;
   missions: string[];
   positiveImpact: string;
   riskImpact: string;
@@ -32,7 +35,8 @@ const ENCOURAGEMENT_QUOTES = [
 export function computeDailyMission(
   briefs: BriefTaskLike[],
   memberName: string,
-  memberEmail: string
+  memberEmail: string,
+  assignees?: { id: string; name: string; email?: string }[]
 ): DailyMissionResult {
   const normName = (memberName || "").toLowerCase().trim();
   const normEmail = (memberEmail || "").toLowerCase().trim();
@@ -81,13 +85,47 @@ export function computeDailyMission(
     return isNotDone && d && new Date(d).getTime() < today.getTime();
   });
 
+  // Build matched assignee IDs for accurate personal task lookup
+  const matchedAssigneeIds = new Set<string>();
+  if (assignees && assignees.length > 0) {
+    assignees.forEach((a) => {
+      const aName = (a.name || "").toLowerCase().trim();
+      const aEmail = (a.email || "").toLowerCase().trim();
+      if (
+        (normName && (aName.includes(normName) || normName.includes(aName))) ||
+        (normEmail && aEmail && (aEmail.includes(normEmail) || normEmail.includes(aEmail)))
+      ) {
+        matchedAssigneeIds.add(a.id);
+      }
+    });
+  }
+
   // Tasks assigned to this specific member
-  const myTasks = activeBriefs.filter((b) => {
-    const isPrimary = (b.assignee_name || "").toLowerCase().includes(normName) ||
-                      (b.details?.assignee_name || "").toLowerCase().includes(normName);
-    const isAssist = Array.isArray(b.details?.assistants) &&
-                     b.details.assistants.some((ast: any) => (ast.name || "").toLowerCase().includes(normName));
-    return isPrimary || isAssist;
+  const myTasks = activeBriefs.filter((b: any) => {
+    if (b.assignee_id && matchedAssigneeIds.has(b.assignee_id)) return true;
+
+    const bAssigneeName = (
+      b.assignees?.name ||
+      b.assignee_name ||
+      b.details?.assignee_name ||
+      b.details?.assignee ||
+      ""
+    ).toLowerCase().trim();
+    const bAssigneeEmail = (b.assignees?.email || b.details?.assignee_email || "").toLowerCase().trim();
+
+    if (normName && bAssigneeName && (bAssigneeName.includes(normName) || normName.includes(bAssigneeName))) return true;
+    if (normEmail && bAssigneeEmail && (bAssigneeEmail.includes(normEmail) || normEmail.includes(bAssigneeEmail))) return true;
+
+    if (Array.isArray(b.details?.assistants)) {
+      const isAst = b.details.assistants.some((ast: any) => {
+        if (ast.assignee_id && matchedAssigneeIds.has(ast.assignee_id)) return true;
+        const astName = (ast.name || "").toLowerCase().trim();
+        return normName && (astName.includes(normName) || normName.includes(astName));
+      });
+      if (isAst) return true;
+    }
+
+    return false;
   });
 
   const myOverdue = myTasks.filter((b) => {
@@ -106,9 +144,16 @@ export function computeDailyMission(
   });
 
   const myInProgress = myTasks.filter((b) => b.status === "in_progress");
+  const myTodo = myTasks.filter((b) => b.status === "pending");
 
   const customMemberQuote = getMemberCustomQuote(memberName);
   const quote = customMemberQuote || ENCOURAGEMENT_QUOTES[Math.floor(Math.random() * ENCOURAGEMENT_QUOTES.length)];
+
+  const formatTaskNames = (tasks: any[], max: number = 2) => {
+    const names = tasks.slice(0, max).map((t) => `"${t.project_name || t.details?.project_name || 'งานที่ได้รับมอบหมาย'}"`).join(", ");
+    const more = tasks.length > max ? ` และอีก ${tasks.length - max} งาน` : "";
+    return names + more;
+  };
 
   // Case 1: Design Supervisor / Leads (วา WK, ก้อง)
   if (isDesignLead) {
@@ -121,6 +166,9 @@ export function computeDailyMission(
     }
     if (inProgressDesign.length > 0) {
       missions.push(`👀 ติดตามความคืบหน้านักออกแบบในยูนิตที่กำลังดำเนินการอยู่ ${inProgressDesign.length} งาน เพื่อให้ส่งดราฟต์แรกตามแผน`);
+    }
+    if (myTasks.length > 0) {
+      missions.push(`📌 ภารกิจรับผิดชอบส่วนตัวของคุณ: มีงานในความดูแล ${myTasks.length} งาน (กำลังทำ ${myInProgress.length} งาน • รอเริ่ม ${myTodo.length} งาน)`);
     }
     if (missions.length === 0) {
       missions.push(`✨ ยูนิต Creative & Design จัดสรรคิวงานได้ยอดเยี่ยม ไม่มีงานค้างใน UNASSIGNED ตรวจสอบความเรียบร้อยของชิ้นงานตามกำหนด`);
@@ -138,6 +186,9 @@ export function computeDailyMission(
       unassignedCount: unassignedDesign.length,
       overdueCount: overdueDesign.length,
       inProgressCount: inProgressDesign.length,
+      dueTodayCount: myDueToday.length,
+      todoCount: myTodo.length,
+      myTasksCount: myTasks.length,
       missions,
       positiveImpact: "💡 ผลลัพธ์เชิงบวก: เมื่อแจกแจงงานรวดเร็ว งานจะไม่คั่งค้าง หนุนตัวชี้วัด KR2/R3 ด้านงานผลิต และสร้างระดับความพึงพอใจของผู้รับบริการสูงกว่าเกณฑ์เป้าหมาย (≥ 85%)",
       riskImpact: "⚠️ ความเสี่ยงหากละเลย: งานใน UNASSIGNED ที่ไม่ถูกมอบหมายจะทำให้เวลาผลิตหดสั้นลง เกิดงานเร่งกระชั้นชิด งานเกินกำหนดส่ง และฉุดคะแนนประสิทธิภาพของยูนิต Creative",
@@ -156,6 +207,9 @@ export function computeDailyMission(
     if (allOverdue.length > 0) {
       missions.push(`⚠️ มีงานค้างเกินกำหนดส่งในระบบรวม ${allOverdue.length} งาน ติดตามเพื่อประเมินความเสี่ยงและสนับสนุนข้ามยูนิต`);
     }
+    if (myTasks.length > 0) {
+      missions.push(`💼 งานโปรเจกต์และบรีฟที่คุณดูแลโดยตรง: รวม ${myTasks.length} งาน (กำลังดำเนินการ ${myInProgress.length} งาน)`);
+    }
     missions.push(`📊 ตรวจสอบภาพรวมตัวชี้วัด OKRs & Financial Save Cost และบริหารโควต้าการส่งสรุปประจำวัน`);
 
     return {
@@ -170,6 +224,9 @@ export function computeDailyMission(
       unassignedCount: allUnassigned.length,
       overdueCount: allOverdue.length,
       inProgressCount: activeBriefs.filter((b) => b.status === "in_progress").length,
+      dueTodayCount: myDueToday.length,
+      todoCount: myTodo.length,
+      myTasksCount: myTasks.length,
       missions,
       positiveImpact: "💡 ผลลัพธ์เชิงบวก: ควบคุมภาพรวมงานได้ราบรื่น หนุนเป้าหมาย KR2/KR3/KR4 สร้างความพึงพอใจของผู้รับบริการ และรักษาเสถียรภาพของทีม",
       riskImpact: "⚠️ ความเสี่ยงหากละเลย: งานที่คอขวดอาจไม่ได้รับการกระจายความช่วยเหลือทันท่วงที ส่งผลต่อกำหนดส่งขององค์กร",
@@ -179,19 +236,23 @@ export function computeDailyMission(
     };
   }
 
-  // Case 3: Team Specialists & Operational Members
+  // Case 3: Team Specialists & Operational Members (Personal Focus)
   const missions: string[] = [];
   if (myOverdue.length > 0) {
-    missions.push(`🚨 คุณมีงานที่เกินกำหนดส่ง ${myOverdue.length} งาน เร่งประสานหรือส่งดราฟต์เพื่อปิดงาน`);
+    missions.push(`🚨 คุณมีงานเกินกำหนดส่ง ${myOverdue.length} งาน (${formatTaskNames(myOverdue)}) เร่งประสานงานหรือส่งดราฟต์เพื่อปิดงาน`);
   }
   if (myDueToday.length > 0) {
-    missions.push(`🗓️ มีงานที่มีกำหนดส่งมอบในวันนี้ ${myDueToday.length} งาน ตรวจเช็คความถูกต้องและส่งมอบ`);
+    missions.push(`🗓️ มีงานต้องส่งมอบในวันนี้ ${myDueToday.length} งาน (${formatTaskNames(myDueToday)}) ตรวจเช็คความถูกต้องและส่งมอบตามนัด`);
   }
   if (myInProgress.length > 0) {
-    missions.push(`⚡ เดินหน้าทำงานที่กำลังดำเนินการ ${myInProgress.length} งาน เพื่อให้พร้อมส่งตรวจตามกรอบเวลา`);
+    missions.push(`⚡ เดินหน้าทำงานที่กำลังดำเนินการ ${myInProgress.length} งาน (${formatTaskNames(myInProgress)}) เพื่อให้พร้อมส่งตรวจตามกรอบเวลา`);
+  }
+  if (myTodo.length > 0) {
+    missions.push(`📋 มีงานในคิวรอเริ่ม (To-Do) ของคุณ ${myTodo.length} งาน (${formatTaskNames(myTodo)}) ศึกษาบรีฟและเตรียมทรัพยากรล่วงหน้า`);
   }
   if (missions.length === 0) {
-    missions.push(`✨ ปัจจุบันไม่มีงานคั่งค้างหรือเกินกำหนด ตรวจสอบบรีฟใน TO-DO LIST หรือสนับสนุนเพื่อนร่วมทีม`);
+    missions.push(`✨ ยอดเยี่ยมมาก! ปัจจุบันคุณไม่มีงานคั่งค้างหรือเกินกำหนด พร้อมเริ่มบรีฟใหม่ใน TO-DO LIST หรือสนับสนุนเพื่อนร่วมทีม`);
+    missions.push(`💡 วันนี้แนะนำศึกษา CI ต่อยอดไอเดียสร้างสรรค์ หรือช่วยงาน Cross-Skilling เพื่อผลักดันเป้าหมายภาพรวมทีม`);
   }
 
   return {
@@ -206,11 +267,14 @@ export function computeDailyMission(
     unassignedCount: 0,
     overdueCount: myOverdue.length,
     inProgressCount: myInProgress.length,
+    dueTodayCount: myDueToday.length,
+    todoCount: myTodo.length,
+    myTasksCount: myTasks.length,
     missions,
     positiveImpact: "💡 ผลลัพธ์เชิงบวก: การส่งมอบตรงเวลาช่วยสร้างประวัติการทำงานที่ดีเด่น หนุนค่า R ในตัวชี้วัดบุคคล และสร้างความพึงพอใจของผู้รับบริการในระดับยอดเยี่ยม",
     riskImpact: "⚠️ ความเสี่ยงหากล่าช้า: ส่งผลต่อแผนการประชาสัมพันธ์ของหน่วยงานผู้ขอ และกระทบอัตราส่งมอบตรงเวลา (On-Time Delivery)",
     encouragementQuote: quote,
-    suggestedActionLabel: "เข้าเริ่มปฏิบัติงานใน To-Do List",
+    suggestedActionLabel: myInProgress.length > 0 ? "เข้าสู่หน้ารายการงานของคุณ" : "เข้าเริ่มปฏิบัติงานใน To-Do List",
     timestamp: new Date().toISOString(),
   };
 }

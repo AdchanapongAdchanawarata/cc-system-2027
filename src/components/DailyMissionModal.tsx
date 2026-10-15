@@ -18,6 +18,7 @@ export interface DailyMissionModalProps {
   onAcknowledge?: () => void;
   onClose?: () => void;
   isViewMode?: boolean;
+  isPersonalExclusive?: boolean;
   initialMemberName?: string;
   initialDate?: string;
   historicalLog?: AuditLogEntry | null;
@@ -65,12 +66,14 @@ export default function DailyMissionModal({
   onAcknowledge,
   onClose,
   isViewMode = false,
+  isPersonalExclusive,
   initialMemberName,
   initialDate,
   historicalLog,
   briefs: passedBriefs,
   assignees: passedAssignees,
 }: DailyMissionModalProps) {
+  const isPersonal = isPersonalExclusive !== undefined ? isPersonalExclusive : !isViewMode;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<"current" | "history">("current");
   const [selectedMemberName, setSelectedMemberName] = useState<string>(
@@ -227,8 +230,15 @@ export default function DailyMissionModal({
       return initialMission;
     }
 
-    return computeDailyMission(allBriefs, currentMember.name, currentMember.email);
-  }, [activeTab, activeHistoryLog, currentMember, initialMission, allBriefs]);
+    return computeDailyMission(allBriefs, currentMember.name, currentMember.email, teamMembers);
+  }, [activeTab, activeHistoryLog, currentMember, initialMission, allBriefs, teamMembers]);
+
+  const greetingTime = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "สวัสดีตอนเช้า";
+    if (hour < 17) return "สวัสดีตอนบ่าย";
+    return "สวัสดีตอนเย็น";
+  }, []);
 
   const handleConfirm = () => {
     setIsSubmitting(true);
@@ -280,17 +290,31 @@ export default function DailyMissionModal({
           {/* Top Category Tag & Controls */}
           <div className="flex items-center justify-between gap-3 mb-3.5">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-neutral-400 uppercase font-mono">
-                MISSION BRIEFING • DAILY FOCUS
-              </span>
-              {activeTab === "history" ? (
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold font-mono">
-                  HISTORICAL SNAPSHOT
-                </span>
+              {isPersonal ? (
+                <>
+                  <span className="text-[10px] sm:text-[11px] font-black tracking-[0.18em] text-[#FF6200] uppercase font-mono flex items-center gap-1.5">
+                    <Sparkles size={13} className="text-[#FF6200] animate-pulse" />
+                    PERSONAL DAILY BRIEFING
+                  </span>
+                  <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/30 text-amber-700 font-bold font-mono">
+                    ⭐ เฉพาะสำหรับคุณ
+                  </span>
+                </>
               ) : (
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold font-mono">
-                  LIVE REALTIME
-                </span>
+                <>
+                  <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-neutral-400 uppercase font-mono">
+                    MISSION BRIEFING • DAILY FOCUS
+                  </span>
+                  {activeTab === "history" ? (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold font-mono">
+                      HISTORICAL SNAPSHOT
+                    </span>
+                  ) : (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold font-mono">
+                      LIVE REALTIME
+                    </span>
+                  )}
+                </>
               )}
             </div>
 
@@ -307,108 +331,112 @@ export default function DailyMissionModal({
             )}
           </div>
 
-          {/* Member Selector Bar (ดูภารกิจของแต่ละคน) */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between text-[11px] font-bold text-neutral-500 mb-1.5 uppercase font-mono tracking-wider">
-              <span>เลือกผู้ปฏิบัติงานในทีม (TEAM MEMBER)</span>
-              <span className="text-[10px] text-neutral-400 font-normal">
-                {teamMembers.length} สมาชิก
-              </span>
-            </div>
-            <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
-              {teamMembers.map((m) => {
-                const isSelected = matchMember(m.name, currentMember.name);
-                return (
-                  <button
-                    key={m.id || m.name}
-                    type="button"
-                    onClick={() => {
-                      setSelectedMemberName(m.name);
-                      setSelectedHistoryLogId(null);
-                    }}
-                    className={`flex items-center gap-1.5 px-2 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer min-w-0 ${
-                      isSelected
-                        ? "bg-neutral-900 text-white shadow-xs"
-                        : "bg-neutral-100/80 hover:bg-neutral-200/70 text-neutral-700 border border-neutral-200/60"
-                    }`}
-                    title={m.name}
-                  >
-                    <div className="w-5 h-5 rounded-full overflow-hidden bg-neutral-200 shrink-0 pointer-events-none">
-                      <Assignee3DAvatarBadge
-                        name={m.name}
-                        size={20}
-                        showName={false}
-                        showBorder={false}
-                        disableHoverPreview={true}
-                      />
-                    </div>
-                    <span className="truncate min-w-0 text-left">{m.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Timeline & Snapshot Switcher: Current vs History */}
-          <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-2xl bg-neutral-50 border border-neutral-200/70 mb-4">
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setActiveTab("current")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                  activeTab === "current"
-                    ? "bg-white text-neutral-900 shadow-xs border border-neutral-200"
-                    : "text-neutral-500 hover:text-neutral-800"
-                }`}
-              >
-                <Flame size={13} className="text-[#FF6200]" />
-                <span>ภารกิจปัจจุบัน (วันนี้)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab("history");
-                  if (!selectedHistoryLogId && memberHistoryLogs.length > 0) {
-                    setSelectedHistoryLogId(memberHistoryLogs[0].id);
-                  }
-                }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                  activeTab === "history"
-                    ? "bg-white text-indigo-900 shadow-xs border border-neutral-200"
-                    : "text-neutral-500 hover:text-neutral-800"
-                }`}
-              >
-                <History size={13} className="text-indigo-600" />
-                <span>ประวัติย้อนหลัง ({memberHistoryLogs.length})</span>
-              </button>
-            </div>
-
-            {/* History Date Dropdown */}
-            {activeTab === "history" && memberHistoryLogs.length > 0 && (
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] text-neutral-400 font-mono">รอบบันทึก:</span>
-                <select
-                  value={activeHistoryLog?.id || ""}
-                  onChange={(e) => setSelectedHistoryLogId(e.target.value)}
-                  className="text-xs font-semibold py-1 px-2.5 rounded-lg border border-neutral-300 bg-white text-neutral-800 focus:outline-none focus:border-neutral-900"
-                >
-                  {memberHistoryLogs.map((log) => {
-                    const d = new Date(log.timestamp);
-                    const label = `${d.toLocaleDateString("th-TH", { day: "numeric", month: "short" })} • ${d.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })} น.`;
-                    return (
-                      <option key={log.id} value={log.id}>
-                        {label}
-                      </option>
-                    );
-                  })}
-                </select>
+          {/* Member Selector Bar (ดูภารกิจของแต่ละคน - เฉพาะ View/Admin Mode) */}
+          {!isPersonal && (
+            <div className="mb-4">
+              <div className="flex items-center justify-between text-[11px] font-bold text-neutral-500 mb-1.5 uppercase font-mono tracking-wider">
+                <span>เลือกผู้ปฏิบัติงานในทีม (TEAM MEMBER)</span>
+                <span className="text-[10px] text-neutral-400 font-normal">
+                  {teamMembers.length} สมาชิก
+                </span>
               </div>
-            )}
-          </div>
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
+                {teamMembers.map((m) => {
+                  const isSelected = matchMember(m.name, currentMember.name);
+                  return (
+                    <button
+                      key={m.id || m.name}
+                      type="button"
+                      onClick={() => {
+                        setSelectedMemberName(m.name);
+                        setSelectedHistoryLogId(null);
+                      }}
+                      className={`flex items-center gap-1.5 px-2 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer min-w-0 ${
+                        isSelected
+                          ? "bg-neutral-900 text-white shadow-xs"
+                          : "bg-neutral-100/80 hover:bg-neutral-200/70 text-neutral-700 border border-neutral-200/60"
+                      }`}
+                      title={m.name}
+                    >
+                      <div className="w-5 h-5 rounded-full overflow-hidden bg-neutral-200 shrink-0 pointer-events-none">
+                        <Assignee3DAvatarBadge
+                          name={m.name}
+                          size={20}
+                          showName={false}
+                          showBorder={false}
+                          disableHoverPreview={true}
+                        />
+                      </div>
+                      <span className="truncate min-w-0 text-left">{m.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Timeline & Snapshot Switcher: Current vs History (เฉพาะ View/Admin Mode) */}
+          {!isPersonal && (
+            <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-2xl bg-neutral-50 border border-neutral-200/70 mb-4">
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("current")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    activeTab === "current"
+                      ? "bg-white text-neutral-900 shadow-xs border border-neutral-200"
+                      : "text-neutral-500 hover:text-neutral-800"
+                  }`}
+                >
+                  <Flame size={13} className="text-[#FF6200]" />
+                  <span>ภารกิจปัจจุบัน (วันนี้)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab("history");
+                    if (!selectedHistoryLogId && memberHistoryLogs.length > 0) {
+                      setSelectedHistoryLogId(memberHistoryLogs[0].id);
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    activeTab === "history"
+                      ? "bg-white text-indigo-900 shadow-xs border border-neutral-200"
+                      : "text-neutral-500 hover:text-neutral-800"
+                  }`}
+                >
+                  <History size={13} className="text-indigo-600" />
+                  <span>ประวัติย้อนหลัง ({memberHistoryLogs.length})</span>
+                </button>
+              </div>
+
+              {/* History Date Dropdown */}
+              {activeTab === "history" && memberHistoryLogs.length > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-neutral-400 font-mono">รอบบันทึก:</span>
+                  <select
+                    value={activeHistoryLog?.id || ""}
+                    onChange={(e) => setSelectedHistoryLogId(e.target.value)}
+                    className="text-xs font-semibold py-1 px-2.5 rounded-lg border border-neutral-300 bg-white text-neutral-800 focus:outline-none focus:border-neutral-900"
+                  >
+                    {memberHistoryLogs.map((log) => {
+                      const d = new Date(log.timestamp);
+                      const label = `${d.toLocaleDateString("th-TH", { day: "numeric", month: "short" })} • ${d.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })} น.`;
+                      return (
+                        <option key={log.id} value={log.id}>
+                          {label}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Historical notice banner */}
-          {activeTab === "history" && (
+          {!isPersonal && activeTab === "history" && (
             <div className="mb-4 p-2.5 rounded-xl bg-indigo-50/80 border border-indigo-100 text-indigo-900 text-xs flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <CheckCircle2 size={14} className="text-indigo-600 shrink-0" />
@@ -431,11 +459,15 @@ export default function DailyMissionModal({
           )}
 
           {/* User Profile Row: Enlarged Avatar & Bold Typography */}
-          <div className="flex items-center gap-4 sm:gap-5">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden bg-neutral-100 ring-2 ring-neutral-200/90 shadow-sm flex items-center justify-center shrink-0">
+          <div className="flex items-start sm:items-center gap-4 sm:gap-5">
+            <div className={`relative rounded-2xl overflow-hidden shrink-0 flex items-center justify-center transition-all ${
+              isPersonal 
+                ? "w-18 h-18 sm:w-22 sm:h-22 bg-gradient-to-tr from-amber-50 to-orange-100 ring-4 ring-[#FF6200]/30 shadow-md"
+                : "w-16 h-16 sm:w-20 sm:h-20 bg-neutral-100 ring-2 ring-neutral-200/90 shadow-sm"
+            }`}>
               <Assignee3DAvatarBadge
                 name={displayMission.memberName}
-                size={80}
+                size={isPersonal ? 88 : 80}
                 showName={false}
                 showBorder={false}
                 disableHoverPreview={true}
@@ -445,13 +477,25 @@ export default function DailyMissionModal({
             </div>
 
             <div className="min-w-0 flex-1">
+              {isPersonal && (
+                <div className="text-xs font-bold text-[#FF6200] flex items-center gap-1.5 mb-1">
+                  <span>{greetingTime}, คุณ{displayMission.memberName} 👋 • ยินดีต้อนรับสู่การเริ่มงานวันใหม่</span>
+                </div>
+              )}
+
               <div className="flex items-center gap-2.5 flex-wrap">
                 <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight truncate">
                   {displayMission.memberName}
                 </h1>
-                <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-neutral-100 border border-neutral-200 text-neutral-600 font-semibold font-mono">
-                  {activeTab === "history" ? "ARCHIVED" : "ACTIVE"}
-                </span>
+                {isPersonal ? (
+                  <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-orange-50 border border-orange-200 text-[#FF6200] font-bold font-mono">
+                    FOCUS TODAY
+                  </span>
+                ) : (
+                  <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-neutral-100 border border-neutral-200 text-neutral-600 font-semibold font-mono">
+                    {activeTab === "history" ? "ARCHIVED" : "ACTIVE"}
+                  </span>
+                )}
               </div>
 
               <p className="text-xs sm:text-sm font-semibold text-neutral-500 mt-1 truncate">
@@ -461,7 +505,7 @@ export default function DailyMissionModal({
               <div className="flex items-center gap-2 mt-1.5 text-xs text-neutral-500 font-mono flex-wrap">
                 <span className="inline-flex items-center gap-1 font-semibold text-neutral-800">
                   <Flame size={13} className="text-[#FF6200]" />
-                  {displayMission.urgentTasksCount > 0 ? `${displayMission.urgentTasksCount} งานที่ต้องโฟกัส` : "คิวงานพร้อมเริ่ม"}
+                  {displayMission.urgentTasksCount > 0 ? `${displayMission.urgentTasksCount} งานที่ต้องโฟกัสเร่งด่วน` : "ภารกิจพร้อมลุย"}
                 </span>
                 <span>•</span>
                 <span className="font-sans text-neutral-500">
@@ -470,6 +514,36 @@ export default function DailyMissionModal({
               </div>
             </div>
           </div>
+
+          {/* Personal Workload Quick-Bar (เฉพาะโหมดส่วนตัว) */}
+          {isPersonal && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-4">
+              <div className="p-2.5 rounded-xl bg-orange-50/70 border border-orange-200/70 text-center">
+                <span className="block text-[10px] font-bold text-orange-800 uppercase font-mono">ส่งมอบวันนี้</span>
+                <span className="text-lg font-black text-orange-950 font-mono">
+                  {displayMission.dueTodayCount ?? 0}
+                </span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-blue-50/70 border border-blue-200/70 text-center">
+                <span className="block text-[10px] font-bold text-blue-800 uppercase font-mono">กำลังดำเนินการ</span>
+                <span className="text-lg font-black text-blue-950 font-mono">
+                  {displayMission.inProgressCount ?? 0}
+                </span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-neutral-50 border border-neutral-200/80 text-center">
+                <span className="block text-[10px] font-bold text-neutral-600 uppercase font-mono">คิวรอเริ่ม (To-Do)</span>
+                <span className="text-lg font-black text-neutral-900 font-mono">
+                  {displayMission.todoCount ?? 0}
+                </span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-rose-50/70 border border-rose-200/70 text-center">
+                <span className="block text-[10px] font-bold text-rose-800 uppercase font-mono">เกินกำหนด</span>
+                <span className="text-lg font-black text-rose-950 font-mono">
+                  {displayMission.overdueCount ?? 0}
+                </span>
+              </div>
+            </div>
+          )}
 
         </div>
 
@@ -542,7 +616,17 @@ export default function DailyMissionModal({
 
         {/* Action Footer */}
         <div className="p-5 sm:p-7 pt-1 flex items-center gap-3">
-          {isViewMode || onClose ? (
+          {isPersonal ? (
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={handleConfirm}
+              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-[#FF6200] to-[#EE5500] hover:from-[#EE5500] hover:to-[#D94400] active:scale-[0.99] text-white font-extrabold text-sm sm:text-base tracking-wide transition-all shadow-[0_8px_20px_rgba(255,98,0,0.28)] hover:shadow-[0_10px_25px_rgba(255,98,0,0.38)] flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-50 select-none"
+            >
+              <span>🚀 รับทราบและเริ่มภารกิจของฉันวันนี้</span>
+              <ArrowRight size={18} />
+            </button>
+          ) : isViewMode || onClose ? (
             <>
               <button
                 type="button"

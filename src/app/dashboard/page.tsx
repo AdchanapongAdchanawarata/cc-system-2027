@@ -94,13 +94,6 @@ export default function DashboardPage() {
 
     // Load assignees list & sync custom quotes & avatars
     const supabase = createClient();
-    supabase.from("assignees").select("id, name, unit").then(({ data }) => {
-      if (data && data.length > 0) {
-        setAssigneesList(data.map((d: any) => ({ id: d.id, name: d.name })));
-        syncCustomQuotesFromAssignees(data);
-        syncAvatarsFromAssignees(data);
-      }
-    });
 
     // Check Mission of the Day (First visit of the day or forced reset)
     const todayStr = new Date().toISOString().split("T")[0];
@@ -117,20 +110,35 @@ export default function DashboardPage() {
 
     const alreadySeen = !isResetRequested && localStorage.getItem(missionKey);
 
-    if (!alreadySeen) {
-      supabase
-        .from("briefs")
-        .select("*")
-        .neq("status", "purged")
-        .then(({ data: briefsData }) => {
-          if (briefsData && briefsData.length > 0) {
-            const currentName = savedName || "";
-            const currentEmail = savedEmail || "";
-            const calculatedMission = computeDailyMission(briefsData, currentName, currentEmail);
-            setDailyMission(calculatedMission);
-          }
-        });
-    }
+    Promise.all([
+      supabase.from("assignees").select("id, name, email, unit"),
+      !alreadySeen
+        ? supabase.from("briefs").select("*, assignees(id, name, email)").neq("status", "purged")
+        : Promise.resolve({ data: null, error: null }),
+    ]).then(([assigneesRes, briefsRes]) => {
+      const assigneesData = assigneesRes.data;
+      if (assigneesData && assigneesData.length > 0) {
+        setAssigneesList(assigneesData.map((d: any) => ({ id: d.id, name: d.name, email: d.email, unit: d.unit })));
+        syncCustomQuotesFromAssignees(assigneesData);
+        syncAvatarsFromAssignees(assigneesData);
+      }
+
+      const briefsData = briefsRes?.data;
+      if (briefsData && briefsData.length > 0) {
+        const validBriefs = briefsData.filter(
+          (b: any) => !b.details?.is_deleted && !b.details?.is_permanently_deleted
+        );
+        const currentName = savedName || "";
+        const currentEmail = savedEmail || "";
+        const calculatedMission = computeDailyMission(
+          validBriefs,
+          currentName,
+          currentEmail,
+          assigneesData || []
+        );
+        setDailyMission(calculatedMission);
+      }
+    });
 
     // Read view from URL query if present
     if (typeof window !== "undefined") {
@@ -651,6 +659,8 @@ export default function DashboardPage() {
       {dailyMission && (
         <DailyMissionModal
           mission={dailyMission}
+          isPersonalExclusive={true}
+          assignees={assigneesList}
           onAcknowledge={async () => {
             const todayStr = new Date().toISOString().split("T")[0];
             const missionKey = `cc_mission_ack_${todayStr}`;

@@ -39,6 +39,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 6. **ตัวชี้วัด OKRs & R Metrics:**
    - ใช้ `computeRealtimeMetrics` และ `isR3Task` จาก `@/utils/okrSettings`
+   - **งานของ NMCO คืองานของ RSP เสมอ:** งานใดที่สั่งโดยทีม NMCO หรือระบุหน่วยงานเป็น NMCO/RSP ต้องนับเข้าตัวชี้วัด **KR2** (ผลงานภายนอก มช. & RSP) และ **R3 / R4** เสมอ ห้ามนับตกหล่นหรือคิดเป็น R1 ภายในองค์กรเด็ดขาด
    - ดึงเป้าหมายจาก `CONFIG_OKR_STATE_JSON` ในตาราง `okr_settings` แบบไดนามิก
 
 7. **กฎเหล็กการคิดโควต้า LINE OA และการเกลี่ย Morning Brief (LINE Quota & Member Integrity):**

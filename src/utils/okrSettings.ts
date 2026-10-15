@@ -760,7 +760,19 @@ export function isR3Task(b: any): boolean {
   const team = (b.decision_maker || details.decision_maker || details.team || b.team || "").toString().trim().toUpperCase();
   const unit = (b.unit || "").toString().trim().toUpperCase();
 
-  // 2. ตรวจสอบหมวดหน่วยงานเฉพาะที่เป็น CMU, RSP หรือ อุทยานวิทยาศาสตร์ภาคเหนือ หรือ มช. หรือ NMCO
+  // 2. งานของ NMCO คืองานของ RSP เสมอ (นับใน KR2 และ R3 ด้วย)
+  if (
+    team === "NMCO" || 
+    team.includes("NMCO") || 
+    org === "NMCO" || 
+    org.includes("NMCO") || 
+    orgKey === "NMCO" ||
+    orgKey.includes("NMCO")
+  ) {
+    return true;
+  }
+
+  // 3. ตรวจสอบหมวดหน่วยงานเฉพาะที่เป็น CMU, RSP หรือ อุทยานวิทยาศาสตร์ภาคเหนือ หรือ มช.
   if (
     org === "CMU" || org === "RSP" ||
     orgKey === "CMU" || orgKey === "RSP" ||
@@ -768,7 +780,7 @@ export function isR3Task(b: any): boolean {
     unit === "RSP" ||
     org.includes("CMU") || org.includes("RSP") || org.includes("มช") || 
     org.includes("มหาวิทยาลัยเชียงใหม่") || org.includes("อุทยานวิทยาศาสตร์ภาคเหนือ") ||
-    team === "CMU" || team === "RSP" || team === "NMCO" ||
+    team === "CMU" || team === "RSP" ||
     team.includes("CMU") || team.includes("RSP") || team.includes("มช")
   ) {
     return true;

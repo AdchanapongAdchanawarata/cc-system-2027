@@ -434,10 +434,22 @@ function FormContent() {
         }
       }
 
-      // Rule: ถ้ามาจากใบบรีฟฟอร์ม 3 อันหลักแล้วทีมที่สั่งงานไม่ใช่ NMCO ประเภทหน่วยงานจะเป็น STeP ทั้งหมด (ถ้าเป็น NMCO จะเป็น RSP)
-      const organization = (decision_maker || "").toUpperCase() === "NMCO" ? "RSP" : "STeP";
+      // Rule: งานของ NMCO คืองานของ RSP เสมอ ซึ่งเชื่อมโยงเข้า KR2 และ R3/R4 อัตโนมัติ (หากไม่ใช่ NMCO จะเป็น STeP ภายใน R1)
+      const isNmco = (decision_maker || "").toUpperCase().includes("NMCO");
+      const organization = isNmco ? "RSP" : "STeP";
       details.organization = organization;
       details.team = decision_maker;
+      if (isNmco) {
+        details.selected_okr = "KR2";
+        details.okr_kr = "KR2";
+        details.r_metrics = ["R3", "R4"];
+        details.client_sector = "government";
+        details.organization_type = "government";
+      } else {
+        details.selected_okr = "KR1";
+        details.okr_kr = "KR1";
+        details.r_metrics = ["R1", "R2"];
+      }
 
       // Upload files (with automatic client-side compression for large images)
       const uploadedFileUrls: string[] = [];
@@ -512,6 +524,7 @@ function FormContent() {
         requester_phone,
         project_name,
         details,
+        okr_links: isNmco ? ['KR2', 'R3', 'R4'] : ['KR1', 'R1', 'R2'],
         deadline: computedDeadline,
         status: 'pending'
       });

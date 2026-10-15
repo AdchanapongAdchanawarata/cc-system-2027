@@ -1274,13 +1274,28 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                             value={selectedValue}
                             onChange={(val) => {
                               const isMain3 = ['creative', 'content', 'pr'].includes((brief.unit || '').toLowerCase());
-                              const newOrg = isMain3 ? (val.toUpperCase() === 'NMCO' ? 'RSP' : 'STeP') : (brief.details?.organization || 'STeP');
+                              const isNmco = val.toUpperCase().includes('NMCO');
+                              const newOrg = isNmco ? 'RSP' : (isMain3 ? 'STeP' : (brief.details?.organization || 'STeP'));
                               onUpdateField(brief.id, "decision_maker", val);
-                              onUpdateField(brief.id, "details", { 
-                                ...brief.details, 
-                                team: val,
-                                organization: newOrg
-                              });
+                              if (isNmco) {
+                                onUpdateField(brief.id, "details", { 
+                                  ...brief.details, 
+                                  team: val,
+                                  organization: 'RSP',
+                                  organization_type: 'government',
+                                  client_sector: 'government',
+                                  selected_okr: 'KR2',
+                                  okr_kr: 'KR2',
+                                  r_metrics: ['R3', 'R4']
+                                });
+                                onUpdateField(brief.id, "okr_links", ['KR2', 'R3', 'R4']);
+                              } else {
+                                onUpdateField(brief.id, "details", { 
+                                  ...brief.details, 
+                                  team: val,
+                                  organization: newOrg
+                                });
+                              }
                             }}
                             options={teamSelectOptions}
                             accentColor="orange"

@@ -491,21 +491,17 @@ export default function DailyMissionModal({
             </div>
           )}
 
-          {/* User Profile Row: Enlarged Avatar & Bold Typography */}
+          {/* User Profile Row: Avatar & Bold Typography */}
           <div className="flex items-start sm:items-center gap-4 sm:gap-5">
-            <div className={`relative rounded-2xl overflow-hidden shrink-0 flex items-center justify-center transition-all ${
-              isPersonal 
-                ? "w-18 h-18 sm:w-22 sm:h-22 bg-gradient-to-tr from-amber-50 to-orange-100 ring-4 ring-[#FF6200]/30 shadow-md"
-                : "w-16 h-16 sm:w-20 sm:h-20 bg-neutral-100 ring-2 ring-neutral-200/90 shadow-sm"
-            }`}>
+            <div className="relative shrink-0 flex items-center justify-center">
               <Assignee3DAvatarBadge
                 name={displayMission.memberName}
-                size={isPersonal ? 88 : 80}
+                size={isPersonal ? 80 : 72}
                 showName={false}
                 showBorder={false}
                 disableHoverPreview={true}
                 title=""
-                className="w-full h-full flex items-center justify-center pointer-events-none"
+                className="pointer-events-none drop-shadow-sm"
               />
             </div>
 

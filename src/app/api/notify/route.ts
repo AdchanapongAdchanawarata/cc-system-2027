@@ -1071,7 +1071,7 @@ ${targetUrl}
         lineMsg += `• **R2 (ร้อยละความพึงพอใจภายใน):** ${r2Desc}\n\n`;
 
         lineMsg += `🔹 **KR2: จำนวนผลงานภายนอก มช. และ RSP (น้ำหนัก 10%)**\n`;
-        lineMsg += `• **R3 (ผลงานภายนอก มช./RSP):** สัปดาห์นี้ 0 งาน | สะสม ${okrSummary.totalExternalTasks} / ${targetR3.toLocaleString()} งาน (0.0%)\n`;
+        lineMsg += `• **R3 (ผลงานภายนอก มช./RSP):** สัปดาห์นี้ ${completedThisWeek.filter((b: any) => isR3Task(b)).length} งาน | สะสม ${okrSummary.totalExternalTasks} / ${targetR3.toLocaleString()} งาน (${targetR3 > 0 ? ((okrSummary.totalExternalTasks / targetR3) * 100).toFixed(1) : '0.0'}%)\n`;
         const r4Pct = okrSummary.avgExternalSatisfaction || 0;
         const r4Cnt = okrSummary.totalExternalEvaluated || 0;
         const r4Desc = r4Cnt > 0
@@ -1083,10 +1083,12 @@ ${targetUrl}
         lineMsg += `• **R5 (จำนวน Reach สะสม):** 0 / ${targetR5.toLocaleString()} Reach (0.0%)\n`;
         lineMsg += `• **R6 (จำนวน Engagement สะสม):** 0 / ${targetR6.toLocaleString()} Engagements (0.0%)\n\n`;
 
+        const realizedProfit = (okrSummary.totalProfitGov || 0) + (okrSummary.totalProfitPrivate || 0);
+        const pipelineProfit = (okrSummary.pipelineProfitGov || 0) + (okrSummary.pipelineProfitPrivate || 0);
         lineMsg += `🔹 **KR4: กำไรที่เกิดจากการให้บริการของทีม (เป้าหมายรวม ฿${totalKR4Target.toLocaleString()} บาท • น้ำหนัก 20%)**\n`;
-        lineMsg += `• **ผลงานรับรู้จริงสะสม:** ฿0 / ฿${totalKR4Target.toLocaleString()} บาท (กำลังดำเนินงาน Pipeline ฿${totalPmProfit.toLocaleString()} บาท จาก 2 โครงการ PM)\n`;
-        lineMsg += `• **R7 (กำไรบริการภาครัฐ):** ฿0 / ฿${targetR7.toLocaleString()} บาท (อยู่ระหว่างดำเนินงาน ฿${totalPmProfit.toLocaleString()} บาท)\n`;
-        lineMsg += `• **R8 (กำไรบริการภาคเอกชน):** ฿0 / ฿${targetR8.toLocaleString()} บาท\n`;
+        lineMsg += `• **ผลงานรับรู้จริงสะสม:** ฿${realizedProfit.toLocaleString()} / ฿${totalKR4Target.toLocaleString()} บาท${pipelineProfit > 0 ? ` (กำลังดำเนินงาน Pipeline ฿${pipelineProfit.toLocaleString()} บาท จาก ${pmProjects.length} โครงการ PM)` : ''}\n`;
+        lineMsg += `• **R7 (กำไรบริการภาครัฐ):** ฿${(okrSummary.totalProfitGov || 0).toLocaleString()} / ฿${targetR7.toLocaleString()} บาท${(okrSummary.pipelineProfitGov || 0) > 0 ? ` (อยู่ระหว่างดำเนินงาน ฿${(okrSummary.pipelineProfitGov || 0).toLocaleString()} บาท)` : ''}\n`;
+        lineMsg += `• **R8 (กำไรบริการภาคเอกชน):** ฿${(okrSummary.totalProfitPrivate || 0).toLocaleString()} / ฿${targetR8.toLocaleString()} บาท${(okrSummary.pipelineProfitPrivate || 0) > 0 ? ` (อยู่ระหว่างดำเนินงาน ฿${(okrSummary.pipelineProfitPrivate || 0).toLocaleString()} บาท)` : ''}\n`;
         const r9Pct = okrSummary.avgServiceSatisfaction || 0;
         const r9Cnt = okrSummary.totalServiceEvaluated || 0;
         const r9Desc = r9Cnt > 0
@@ -1342,7 +1344,7 @@ ${targetUrl}
         lineMsg += `• **R2 (ร้อยละความพึงพอใจภายใน):** ${monthR2Desc}\n\n`;
 
         lineMsg += `🔹 **KR2: จำนวนผลงานภายนอก มช. และ RSP (น้ำหนัก 10%)**\n`;
-        lineMsg += `• **R3 (ผลงานภายนอก มช./RSP):** เดือนนี้ 0 งาน | สะสม ${okrSummary.totalExternalTasks} / ${targetR3.toLocaleString()} งาน (0.0%)\n`;
+        lineMsg += `• **R3 (ผลงานภายนอก มช./RSP):** เดือนนี้ ${completedThisMonth.filter((b: any) => isR3Task(b)).length} งาน | สะสม ${okrSummary.totalExternalTasks} / ${targetR3.toLocaleString()} งาน (${targetR3 > 0 ? ((okrSummary.totalExternalTasks / targetR3) * 100).toFixed(1) : '0.0'}%)\n`;
         const monthR4Pct = okrSummary.avgExternalSatisfaction || 0;
         const monthR4Cnt = okrSummary.totalExternalEvaluated || 0;
         const monthR4Desc = monthR4Cnt > 0
@@ -1354,10 +1356,12 @@ ${targetUrl}
         lineMsg += `• **R5 (จำนวน Reach สะสม):** 0 / ${targetR5.toLocaleString()} Reach (0.0%)\n`;
         lineMsg += `• **R6 (จำนวน Engagement สะสม):** 0 / ${targetR6.toLocaleString()} Engagements (0.0%)\n\n`;
 
+        const monthRealizedProfit = (okrSummary.totalProfitGov || 0) + (okrSummary.totalProfitPrivate || 0);
+        const monthPipelineProfit = (okrSummary.pipelineProfitGov || 0) + (okrSummary.pipelineProfitPrivate || 0);
         lineMsg += `🔹 **KR4: กำไรที่เกิดจากการให้บริการของทีม (เป้าหมายรวม ฿${totalKR4Target.toLocaleString()} บาท • น้ำหนัก 20%)**\n`;
-        lineMsg += `• **ผลงานรับรู้จริงสะสม:** ฿0 / ฿${totalKR4Target.toLocaleString()} บาท (กำลังดำเนินงาน Pipeline ฿${totalPmProfit.toLocaleString()} บาท จาก 2 โครงการ PM)\n`;
-        lineMsg += `• **R7 (กำไรบริการภาครัฐ):** ฿0 / ฿${targetR7.toLocaleString()} บาท (อยู่ระหว่างดำเนินงาน ฿${totalPmProfit.toLocaleString()} บาท)\n`;
-        lineMsg += `• **R8 (กำไรบริการภาคเอกชน):** ฿0 / ฿${targetR8.toLocaleString()} บาท\n`;
+        lineMsg += `• **ผลงานรับรู้จริงสะสม:** ฿${monthRealizedProfit.toLocaleString()} / ฿${totalKR4Target.toLocaleString()} บาท${monthPipelineProfit > 0 ? ` (กำลังดำเนินงาน Pipeline ฿${monthPipelineProfit.toLocaleString()} บาท จาก ${pmProjects.length} โครงการ PM)` : ''}\n`;
+        lineMsg += `• **R7 (กำไรบริการภาครัฐ):** ฿${(okrSummary.totalProfitGov || 0).toLocaleString()} / ฿${targetR7.toLocaleString()} บาท${(okrSummary.pipelineProfitGov || 0) > 0 ? ` (อยู่ระหว่างดำเนินงาน ฿${(okrSummary.pipelineProfitGov || 0).toLocaleString()} บาท)` : ''}\n`;
+        lineMsg += `• **R8 (กำไรบริการภาคเอกชน):** ฿${(okrSummary.totalProfitPrivate || 0).toLocaleString()} / ฿${targetR8.toLocaleString()} บาท${(okrSummary.pipelineProfitPrivate || 0) > 0 ? ` (อยู่ระหว่างดำเนินงาน ฿${(okrSummary.pipelineProfitPrivate || 0).toLocaleString()} บาท)` : ''}\n`;
         const monthR9Pct = okrSummary.avgServiceSatisfaction || 0;
         const monthR9Cnt = okrSummary.totalServiceEvaluated || 0;
         const monthR9Desc = monthR9Cnt > 0

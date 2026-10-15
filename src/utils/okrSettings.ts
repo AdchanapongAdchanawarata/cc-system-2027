@@ -739,17 +739,7 @@ export function isR3Task(b: any): boolean {
   if (!b) return false;
   const details = b.details || {};
 
-  const org = (details.organization || b.organization || details.work_organization || "").toString().trim().toUpperCase();
-  const orgKey = (details.organization_key || "").toString().trim().toUpperCase();
-  const clientSector = (details.client_sector || "").toString().trim().toUpperCase();
-  const team = (b.decision_maker || details.team || b.team || "").toString().trim().toUpperCase();
-
-  // 1. หากระบุเป็น STeP ชัดเจน -> ไม่ใช่ R3 (จะนับเป็น R1 ภายในองค์กรเสมอ)
-  if (org === "STEP" || orgKey === "STEP" || clientSector === "STEP") {
-    return false;
-  }
-
-  // 2. ตรวจสอบจาก OKR Tags โดยตรง (KR2, R3, R4)
+  // 1. ตรวจสอบจาก OKR Tags โดยตรง (KR2, R3, R4) เป็นลำดับแรก
   const okrLinks = Array.isArray(b.okr_links) ? b.okr_links : (Array.isArray(details.okr_links) ? details.okr_links : []);
   const selectedOkr = (details.selected_okr || details.okr_kr || "").toString().trim().toUpperCase();
   const rMetrics = Array.isArray(details.r_metrics) ? details.r_metrics : [];
@@ -764,23 +754,27 @@ export function isR3Task(b: any): boolean {
     return true;
   }
 
-  // 3. ตรวจสอบหมวดหน่วยงานเฉพาะที่เป็น CMU, RSP หรือ อุทยานวิทยาศาสตร์ภาคเหนือ เท่านั้น (ไม่นับ "อื่นๆ" / "OTHER")
+  const org = (details.organization || b.organization || details.work_organization || "").toString().trim().toUpperCase();
+  const orgKey = (details.organization_key || "").toString().trim().toUpperCase();
+  const clientSector = (details.client_sector || "").toString().trim().toUpperCase();
+  const team = (b.decision_maker || details.decision_maker || details.team || b.team || "").toString().trim().toUpperCase();
+  const unit = (b.unit || "").toString().trim().toUpperCase();
+
+  // 2. ตรวจสอบหมวดหน่วยงานเฉพาะที่เป็น CMU, RSP หรือ อุทยานวิทยาศาสตร์ภาคเหนือ หรือ มช. หรือ NMCO
   if (
     org === "CMU" || org === "RSP" ||
     orgKey === "CMU" || orgKey === "RSP" ||
     clientSector === "CMU" || clientSector === "RSP" ||
+    unit === "RSP" ||
     org.includes("CMU") || org.includes("RSP") || org.includes("มช") || 
-    org.includes("มหาวิทยาลัยเชียงใหม่") || org.includes("อุทยานวิทยาศาสตร์ภาคเหนือ")
+    org.includes("มหาวิทยาลัยเชียงใหม่") || org.includes("อุทยานวิทยาศาสตร์ภาคเหนือ") ||
+    team === "CMU" || team === "RSP" || team === "NMCO" ||
+    team.includes("CMU") || team.includes("RSP") || team.includes("มช")
   ) {
     return true;
   }
 
-  // 4. งานจากทีม NMCO (ไม่ว่าจะส่งผ่านระบบใด)
-  if (team === "NMCO") {
-    return true;
-  }
-
-  // นอกเหนือจากนี้จัดเป็น R1 ภายในองค์กรทั้งหมด (ห้ามทึกทักงานอื่นๆ เป็น มช./RSP เด็ดขาด)
+  // นอกเหนือจากนี้จัดเป็น R1 ภายในองค์กรทั้งหมด (STeP ภายใน)
   return false;
 }
 

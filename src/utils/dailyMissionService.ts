@@ -1,5 +1,6 @@
 import { BriefTaskLike } from "@/utils/stats";
 import { getMemberCustomQuote } from "@/utils/memberQuote";
+import { isExecutive } from "@/utils/memberProfile";
 
 export interface DailyMissionResult {
   hasMission: boolean;
@@ -38,6 +39,32 @@ export function computeDailyMission(
   memberEmail: string,
   assignees?: { id: string; name: string; email?: string }[]
 ): DailyMissionResult {
+  // If the member is an Executive/Director, do NOT generate operational daily mission cards
+  if (isExecutive(memberName) || isExecutive(memberEmail)) {
+    return {
+      hasMission: false,
+      memberName: memberName || "ผู้บริหาร",
+      memberEmail: memberEmail || "",
+      roleTitle: "ผู้บริหาร (Executive / Advisory)",
+      isDesignLead: false,
+      isGeneralLead: false,
+      headline: "ผู้บริหาร (ไม่มีภารกิจการผลิตประจำวัน)",
+      urgentTasksCount: 0,
+      unassignedCount: 0,
+      overdueCount: 0,
+      inProgressCount: 0,
+      dueTodayCount: 0,
+      todoCount: 0,
+      myTasksCount: 0,
+      missions: [],
+      positiveImpact: "",
+      riskImpact: "",
+      encouragementQuote: "",
+      suggestedActionLabel: "",
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   const normName = (memberName || "").toLowerCase().trim();
   const normEmail = (memberEmail || "").toLowerCase().trim();
 

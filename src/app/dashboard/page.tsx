@@ -21,6 +21,7 @@ import { syncAvatarsFromAssignees } from "@/utils/avatar3dPresets";
 import ActiveAssignmentNotifier from "@/components/ActiveAssignmentNotifier";
 import DailyMissionModal from "@/components/DailyMissionModal";
 import { computeDailyMission, DailyMissionResult } from "@/utils/dailyMissionService";
+import { isExecutive } from "@/utils/memberProfile";
 import { logActivity, getCurrentActor } from "@/utils/auditLogger";
 import HalloweenBats from "@/components/HalloweenBats";
 
@@ -130,13 +131,22 @@ export default function DashboardPage() {
         );
         const currentName = savedName || "";
         const currentEmail = savedEmail || "";
+
+        // Strictly do NOT pop up daily mission card for executives
+        if (isExecutive(currentName) || isExecutive(currentEmail)) {
+          setDailyMission(null);
+          return;
+        }
+
         const calculatedMission = computeDailyMission(
           validBriefs,
           currentName,
           currentEmail,
           assigneesData || []
         );
-        setDailyMission(calculatedMission);
+        if (calculatedMission.hasMission) {
+          setDailyMission(calculatedMission);
+        }
       }
     });
 

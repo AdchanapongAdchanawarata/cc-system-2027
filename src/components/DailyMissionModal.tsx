@@ -11,7 +11,7 @@ import { Assignee3DAvatarBadge } from "./Assignee3DAvatarBadge";
 import { getAuditLogs, AuditLogEntry, getCurrentActor } from "@/utils/auditLogger";
 import { createClient } from "@/utils/supabase/client";
 import { getMemberCustomQuote } from "@/utils/memberQuote";
-import { DEFAULT_MEMBER_METADATA } from "@/utils/memberProfile";
+import { DEFAULT_MEMBER_METADATA, isExecutive } from "@/utils/memberProfile";
 
 export interface DailyMissionModalProps {
   mission?: DailyMissionResult | null;
@@ -33,6 +33,7 @@ interface TeamMemberItem {
   roleTitle?: string;
 }
 
+// Operational Creative Team Members Only (Excludes Executives & Directors)
 const FALLBACK_MEMBERS: TeamMemberItem[] = [
   { id: "job", name: "จ๊อบ AA", email: "adchanapong@step.cmu.ac.th", roleTitle: "หัวหน้าทีม (Team Leader)" },
   { id: "wah", name: "วา WK", email: "wasita@step.cmu.ac.th", roleTitle: "ผู้ช่วยหัวหน้าทีม & ควบคุมงานออกแบบ (Design Lead)" },
@@ -46,7 +47,6 @@ const FALLBACK_MEMBERS: TeamMemberItem[] = [
   { id: "oat", name: "โอ๊ต CNB", email: "chonnikarn@step.cmu.ac.th", roleTitle: "PR (Unit PR)" },
   { id: "kaew", name: "แก้ว KYK", email: "kanyakorn@step.cmu.ac.th", roleTitle: "Content Creator (Unit Content)" },
   { id: "tah", name: "ต้า TTY", email: "thitiya@step.cmu.ac.th", roleTitle: "PR (Unit PR)" },
-  { id: "bao", name: "อ.บ่าว ST", email: "suriyah@step.cmu.ac.th", roleTitle: "รองผู้อำนวยการ (Deputy Director) • ผู้บริหาร" },
 ];
 
 function matchMember(nameA: string, nameB: string): boolean {
@@ -76,13 +76,15 @@ export default function DailyMissionModal({
   const isPersonal = isPersonalExclusive !== undefined ? isPersonalExclusive : !isViewMode;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<"current" | "history">("current");
-  const [selectedMemberName, setSelectedMemberName] = useState<string>(
-    initialMemberName ||
-    historicalLog?.actor_name ||
-    initialMission?.memberName ||
-    getCurrentActor().name ||
-    "จ๊อบ AA"
-  );
+  const [selectedMemberName, setSelectedMemberName] = useState<string>(() => {
+    const candidate =
+      initialMemberName ||
+      historicalLog?.actor_name ||
+      initialMission?.memberName ||
+      getCurrentActor().name ||
+      "จ๊อบ AA";
+    return isExecutive(candidate) ? "จ๊อบ AA" : candidate;
+  });
   const [selectedHistoryLogId, setSelectedHistoryLogId] = useState<string | null>(historicalLog?.id || null);
 
   const [allBriefs, setAllBriefs] = useState<any[]>(passedBriefs || []);
@@ -90,10 +92,11 @@ export default function DailyMissionModal({
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
 
-  // Load team members
+  // Load team members (Filter out Executives & Directors strictly)
   useEffect(() => {
     if (passedAssignees && passedAssignees.length > 0) {
-      const mapped = passedAssignees.map((a) => ({
+      const operational = passedAssignees.filter((a) => !isExecutive(a));
+      const mapped = operational.map((a) => ({
         id: a.id || a.name,
         name: a.name,
         email: a.email || "",
@@ -101,7 +104,7 @@ export default function DailyMissionModal({
       }));
       setTeamMembers(mapped);
     } else {
-      setTeamMembers(FALLBACK_MEMBERS);
+      setTeamMembers(FALLBACK_MEMBERS.filter((m) => !isExecutive(m)));
       const supabase = createClient();
       supabase
         .from("assignees")
@@ -109,8 +112,9 @@ export default function DailyMissionModal({
         .eq("is_active", true)
         .then(({ data }) => {
           if (data && data.length > 0) {
+            const operational = data.filter((a) => !isExecutive(a));
             setTeamMembers(
-              data.map((a) => ({
+              operational.map((a) => ({
                 id: a.id,
                 name: a.name,
                 email: a.email || "",
@@ -165,15 +169,18 @@ export default function DailyMissionModal({
       .finally(() => setIsLoadingLogs(false));
   }, [historicalLog, initialDate, initialMemberName]);
 
-  // Current selected member object
+  // Current selected member object (Operational team member only)
   const currentMember = useMemo(() => {
     const found = teamMembers.find((m) => matchMember(m.name, selectedMemberName));
-    return found || {
-      id: "unknown",
-      name: selectedMemberName,
-      email: "",
-      roleTitle: DEFAULT_MEMBER_METADATA[selectedMemberName]?.position || "ผู้ปฏิบัติงานทีมสร้างสรรค์และการสื่อสาร",
-    };
+    if (found && !isExecutive(found.name)) return found;
+    return (
+      teamMembers[0] || {
+        id: "job",
+        name: "จ๊อบ AA",
+        email: "adchanapong@step.cmu.ac.th",
+        roleTitle: "หัวหน้าทีม (Team Leader)",
+      }
+    );
   }, [teamMembers, selectedMemberName]);
 
   // Historical logs filtered for selected member
@@ -200,6 +207,32 @@ export default function DailyMissionModal({
 
   // Displayed Mission computation
   const displayMission: DailyMissionResult = useMemo(() => {
+    // Case 0: Executive Guard (No daily operational mission)
+    if (isExecutive(currentMember.name) || isExecutive(currentMember)) {
+      return {
+        hasMission: false,
+        memberName: currentMember.name,
+        memberEmail: currentMember.email,
+        roleTitle: "ผู้บริหาร (Executive / Advisory)",
+        isDesignLead: false,
+        isGeneralLead: false,
+        headline: "ผู้บริหาร (ไม่มีภารกิจการผลิตประจำวัน)",
+        urgentTasksCount: 0,
+        unassignedCount: 0,
+        overdueCount: 0,
+        inProgressCount: 0,
+        dueTodayCount: 0,
+        todoCount: 0,
+        myTasksCount: 0,
+        missions: [],
+        positiveImpact: "",
+        riskImpact: "",
+        encouragementQuote: "",
+        suggestedActionLabel: "",
+        timestamp: new Date().toISOString(),
+      };
+    }
+
     // Case A: Historical Snapshot
     if (activeTab === "history" && activeHistoryLog) {
       const d = activeHistoryLog.details || {};

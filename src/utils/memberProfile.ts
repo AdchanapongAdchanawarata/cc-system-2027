@@ -41,6 +41,30 @@ export const DEFAULT_MEMBER_METADATA: Record<string, {
     cmuEmail: "suriyah@step.cmu.ac.th",
     isExecutive: true
   },
+  "อ.วิน": {
+    fullName: "อาจารย์วิน (PW)",
+    position: "ผู้บริหาร (Executive)",
+    phone: "-",
+    isExecutive: true
+  },
+  "อ.อ้วน": {
+    fullName: "ผศ.ดร.ธัญญานุภาพ อานันทนะ (TY)",
+    position: "ผู้อำนวยการ (Director) • ผู้บริหาร",
+    phone: "-",
+    isExecutive: true
+  },
+  "อ.กอล์ฟ": {
+    fullName: "อาจารย์กอล์ฟ (CS)",
+    position: "ผู้ช่วยผู้อำนวยการ (Assistant Director) • ผู้บริหาร",
+    phone: "-",
+    isExecutive: true
+  },
+  "พี่หนึ่ง": {
+    fullName: "พี่หนึ่ง (Supervisor)",
+    position: "ผู้บริหาร (Executive / Supervisor)",
+    phone: "-",
+    isExecutive: true
+  },
   "จ๊อบ AA": {
     fullName: "นายอัจชนะพงษ์ อัจชนะวราทา",
     position: "หัวหน้าทีม (Team Leader)",
@@ -305,33 +329,52 @@ export function encodeMemberUnit(
  */
 export function isExecutive(memberOrUnit: MemberProfile | { unit?: string; role?: string; name?: string; email?: string } | string | null | undefined): boolean {
   if (!memberOrUnit) return false;
-  if (typeof memberOrUnit === 'string') {
-    const s = memberOrUnit.toLowerCase();
-    return s === 'executive' || 
-           s.includes('|executive') || 
-           s.includes('บ่าว') || 
-           s.includes('suriyah') ||
-           s.includes('สุริยะ') ||
-           s.includes('pitiwat') ||
-           s.includes('ปิติวัฒน์');
+
+  const textToCheck = typeof memberOrUnit === 'string'
+    ? memberOrUnit
+    : [
+        ('role' in memberOrUnit && memberOrUnit.role) || '',
+        ('unit' in memberOrUnit && memberOrUnit.unit) || '',
+        ('name' in memberOrUnit && memberOrUnit.name) || '',
+        ('fullName' in memberOrUnit && (memberOrUnit as any).fullName) || '',
+        ('email' in memberOrUnit && memberOrUnit.email) || '',
+      ].join(' ');
+
+  const s = textToCheck.toLowerCase();
+
+  // 1. Executive keywords in unit/role/position (Do not match 'ผู้บริหารระบบ' which is CC Team Leader)
+  if (
+    s.includes('executive') ||
+    s.includes('|executive') ||
+    s.includes('management') ||
+    s.includes('director') ||
+    s.includes('ผู้อำนวยการ') ||
+    s.includes('รองผู้อำนวยการ') ||
+    s.includes('ผู้ช่วยผู้อำนวยการ') ||
+    (s.includes('ผู้บริหาร') && !s.includes('ผู้บริหารระบบ'))
+  ) {
+    return true;
   }
-  if ('role' in memberOrUnit && memberOrUnit.role === 'executive') return true;
-  if ('unit' in memberOrUnit && memberOrUnit.unit) {
-    const u = memberOrUnit.unit.toLowerCase();
-    if (u.includes('|executive') || u === 'executive' || u === 'management') return true;
-  }
-  if ('name' in memberOrUnit && memberOrUnit.name) {
-    const n = memberOrUnit.name;
-    if (n.includes('บ่าว') || n.includes('สุริยะ') || n.includes('ปิติวัฒน์') || n.includes('STeP Director')) return true;
-  }
-  if ('fullName' in memberOrUnit && (memberOrUnit as any).fullName) {
-    const fn = (memberOrUnit as any).fullName;
-    if (fn.includes('สุริยะ') || fn.includes('ปิติวัฒน์')) return true;
-  }
-  if ('email' in memberOrUnit && memberOrUnit.email) {
-    const e = memberOrUnit.email.toLowerCase();
-    if (e.includes('suriyah') || e.includes('pitiwat')) return true;
-  }
+
+  // 2. Specific executive identities:
+  // - อ.บ่าว ST (สุริยะ / suriyah)
+  if (s.includes('บ่าว') || s.includes('สุริยะ') || s.includes('suriyah')) return true;
+
+  // - อ.วิน (วรพจน์ / witty win / pw)
+  if (s.includes('อ.วิน') || s.includes('อาจารย์วิน') || s.includes('วรพจน์') || s.includes('witty win')) return true;
+
+  // - อ.อ้วน (tanya / tanyanuparb / ty / ob-oon)
+  if (s.includes('อ.อ้วน') || s.includes('อาจารย์อ้วน') || s.includes('tanya') || s.includes('tanyanuparb') || s.includes('ob-oon')) return true;
+
+  // - อ.กอล์ฟ (choncharoen / golf / cs)
+  if (s.includes('อ.กอล์ฟ') || s.includes('อาจารย์กอล์ฟ') || s.includes('choncharoen') || (s.includes('กอล์ฟ') && !s.includes('ก้อง'))) return true;
+
+  // - พี่หนึ่ง (3536b2e1-4a69-47c4-a943-79409d8b741f)
+  if (s.includes('พี่หนึ่ง') || s.includes('หนึ่ง') || s.includes('3536b2e1-4a69-47c4-a943-79409d8b741f')) return true;
+
+  // - Other director references
+  if (s.includes('pitiwat') || s.includes('ปิติวัฒน์') || s.includes('step director')) return true;
+
   return false;
 }
 

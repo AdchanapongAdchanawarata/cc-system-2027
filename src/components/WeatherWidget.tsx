@@ -365,8 +365,8 @@ export default function WeatherWidget({
             <HalloweenPumpkin className="w-[36px] h-[33px] sm:w-[48px] sm:h-[44px] md:w-[62px] md:h-[57px]" />
           </div>
 
-          {/* Desktop & Tablet Top 5 Leaderboard (Directly to the right of the CC character) */}
-          <div className="hidden sm:block absolute left-[102%] md:left-[105%] top-1 md:top-2 w-[185px] md:w-[215px] z-30 pointer-events-auto">
+          {/* Desktop & Tablet Top 5 Leaderboard (Moved to the right to clear speech bubble, white minimal card) */}
+          <div className="hidden sm:block absolute left-[136%] md:left-[142%] lg:left-[146%] top-0 md:top-1 w-[195px] md:w-[225px] z-30 pointer-events-auto">
             <HalloweenTop5Leaderboard />
           </div>
         </div>

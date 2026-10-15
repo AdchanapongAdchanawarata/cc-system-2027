@@ -44,31 +44,50 @@ export default function HalloweenTop5Leaderboard() {
   return (
     <div 
       onClick={handlePlayClick}
-      className="group cursor-pointer select-none rounded-2xl bg-slate-900/85 hover:bg-slate-900/95 dark:bg-slate-950/90 border border-amber-500/40 hover:border-amber-400 backdrop-blur-md shadow-[0_8px_25px_rgba(0,0,0,0.35),0_0_15px_rgba(245,158,11,0.12)] p-2.5 sm:p-3 transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_12px_30px_rgba(245,158,11,0.25)]"
-      title="คลิกเพื่อเล่นมินิเกมเก็บขนมฮาโลวีน ท้าชิงอันดับ!"
+      className="group cursor-pointer select-none rounded-2xl bg-white/95 hover:bg-white border border-slate-200/90 hover:border-amber-400/80 shadow-[0_10px_28px_rgba(0,0,0,0.07),0_2px_6px_rgba(0,0,0,0.03)] hover:shadow-[0_16px_36px_rgba(255,98,0,0.14)] p-3 sm:p-3.5 transition-all duration-300 hover:scale-[1.02] font-sans text-left"
+      title="คลิกเพื่อประลองมินิเกมเก็บขนมฮาโลวีน ท้าชิงอันดับ!"
     >
-      {/* Header */}
-      <div className="flex items-center justify-between gap-1.5 pb-2 mb-2 border-b border-white/10">
+      {/* 1. ข้างบนชวนมาประลองเกมส์ (Top Challenge Invitation) */}
+      <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-slate-100">
         <div className="flex items-center gap-1.5">
-          <span className="text-base animate-pulse">🎃</span>
-          <div className="flex flex-col text-left">
-            <span className="text-[10px] font-black text-amber-300 uppercase tracking-wider font-mono flex items-center gap-1">
-              <Trophy size={11} className="text-amber-400" />
-              <span>TOP 5 ผู้นำ</span>
+          <span className="flex h-2 w-2 relative">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF6200] opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#FF6200]"></span>
+          </span>
+          <span className="text-[10px] font-black text-[#FF6200] tracking-wide font-mono">
+            🎮 ชวนมาประลองเกมส์!
+          </span>
+        </div>
+
+        <span className="text-[9px] font-bold text-amber-900 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-full flex items-center gap-0.5 font-mono shadow-2xs">
+          <Zap size={9} className="text-[#FF6200]" />
+          <span>ไว 10 วิ</span>
+        </span>
+      </div>
+
+      {/* 2. ตรงหัวขึ้นชื่อเกมส์ (Game Title & Subtitle) */}
+      <div className="flex items-center justify-between gap-1.5 mb-2.5">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-xl bg-orange-50 border border-orange-200/70 flex items-center justify-center text-sm shadow-2xs group-hover:scale-110 transition-transform">
+            🎃
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs font-black text-slate-900 tracking-tight leading-none flex items-center gap-1">
+              <span>CANDY CATCH</span>
             </span>
-            <span className="text-[9px] font-semibold text-slate-400 leading-none">
-              ยอดฝีมือฮาโลวีน
+            <span className="text-[10px] font-bold text-slate-400 tracking-wider font-mono mt-0.5 flex items-center gap-1">
+              <Trophy size={10} className="text-amber-500" />
+              <span>TOP 5 ผู้นำ</span>
             </span>
           </div>
         </div>
 
-        <span className="text-[9px] font-black font-mono text-[#FF6200] bg-orange-500/15 border border-orange-500/30 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
-          <Zap size={9} />
-          <span>10 วิ</span>
+        <span className="text-[9px] font-semibold text-slate-400 font-mono">
+          คะแนน
         </span>
       </div>
 
-      {/* Top 5 Rows */}
+      {/* 3. Top 5 Rows (White Minimal Style) */}
       <div className="space-y-1">
         {loading ? (
           <div className="py-3 text-center text-[10px] text-slate-400 font-mono animate-pulse">
@@ -87,26 +106,26 @@ export default function HalloweenTop5Leaderboard() {
             return (
               <div 
                 key={entry.id || idx}
-                className={`flex items-center justify-between px-1.5 py-0.5 rounded-lg text-left transition-colors ${
+                className={`flex items-center justify-between px-2 py-1 rounded-xl text-left transition-colors ${
                   isTop1 
-                    ? "bg-gradient-to-r from-amber-500/20 to-orange-500/15 border border-amber-400/40" 
+                    ? "bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 shadow-2xs" 
                     : isTop2 
-                    ? "bg-slate-800/60" 
+                    ? "bg-slate-50/80 border border-slate-100" 
                     : isTop3 
-                    ? "bg-slate-800/40" 
-                    : "hover:bg-white/5"
+                    ? "bg-slate-50/50 border border-slate-100" 
+                    : "hover:bg-slate-50 border border-transparent"
                 }`}
               >
                 <div className="flex items-center gap-1.5 min-w-0 pr-1">
-                  <span className="font-mono font-black text-[10px] w-3.5 text-center shrink-0">
-                    {isTop1 ? "🥇" : isTop2 ? "🥈" : isTop3 ? "🥉" : `${idx + 1}`}
+                  <span className="font-mono font-black text-[10px] w-4 text-center shrink-0">
+                    {isTop1 ? "🥇" : isTop2 ? "🥈" : isTop3 ? "🥉" : `${idx + 1}.`}
                   </span>
-                  <span className={`text-[11px] truncate ${isTop1 ? "font-bold text-amber-200" : "font-medium text-slate-300"}`}>
+                  <span className={`text-[11px] truncate ${isTop1 ? "font-bold text-amber-950" : "font-medium text-slate-700"}`}>
                     {entry.playerName}
                   </span>
                 </div>
 
-                <span className="font-mono font-black text-[11px] text-amber-300 shrink-0">
+                <span className={`font-mono font-black text-[11px] shrink-0 ${isTop1 ? "text-[#FF6200]" : "text-slate-800"}`}>
                   {entry.score}
                 </span>
               </div>
@@ -115,13 +134,13 @@ export default function HalloweenTop5Leaderboard() {
         )}
       </div>
 
-      {/* Call to action footer */}
-      <div className="mt-2 pt-1.5 border-t border-white/10 flex items-center justify-between text-[9px] font-black text-amber-400 group-hover:text-amber-300 transition-colors">
-        <span className="flex items-center gap-0.5">
-          <Sparkles size={10} className="text-amber-400" />
-          <span>คลิกเพื่อท้าชิงอันดับ!</span>
+      {/* 4. Call to action footer */}
+      <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-bold text-[#FF6200] group-hover:text-[#EE5500] transition-colors">
+        <span className="flex items-center gap-1">
+          <Sparkles size={11} className="text-[#FF6200]" />
+          <span>คลิกเพื่อเข้าประลองทันที!</span>
         </span>
-        <ChevronRight size={12} className="transform group-hover:translate-x-0.5 transition-transform" />
+        <ChevronRight size={13} className="transform group-hover:translate-x-1 transition-transform text-[#FF6200]" />
       </div>
     </div>
   );

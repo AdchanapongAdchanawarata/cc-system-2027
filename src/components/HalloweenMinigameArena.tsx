@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Volume2, VolumeX, X, RefreshCw, Send, Zap } from "lucide-react";
+import { Volume2, VolumeX, X, RefreshCw, Send, Zap, Trophy, ChevronRight, ChevronLeft } from "lucide-react";
 import {
+  HalloweenScoreEntry,
+  fetchHalloweenLeaderboard,
   submitHalloweenScore,
   getPlayerTitle
 } from "@/utils/halloweenLeaderboardService";
@@ -54,8 +56,9 @@ const CANDY_TYPES = [
   { emoji: "🕷️", points: 40, isRare: false, weight: 8 },
 ];
 
-const ROUND_DURATION_SECONDS = 5;
-const MAX_PARTICLES = 130;
+// Round duration set to 10 seconds per user request
+const ROUND_DURATION_SECONDS = 10;
+const MAX_PARTICLES = 160;
 
 export default function HalloweenMinigameArena({
   isOpen,
@@ -69,6 +72,11 @@ export default function HalloweenMinigameArena({
   const [playerName, setPlayerName] = useState("");
   const [isSubmittingScore, setIsSubmittingScore] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [leaderboard, setLeaderboard] = useState<HalloweenScoreEntry[]>([]);
+
+  // Visible candies accumulated inside the pumpkin bucket!
+  const [caughtCandiesDisplay, setCaughtCandiesDisplay] = useState<string[]>([]);
 
   // Final stats for game over modal
   const [finalScore, setFinalScore] = useState(0);
@@ -97,7 +105,8 @@ export default function HalloweenMinigameArena({
   const floatingTextsRef = useRef<FloatingScoreText[]>([]);
   const animFrameIdRef = useRef<number | null>(null);
   const roundTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const waveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const waveTimer1Ref = useRef<NodeJS.Timeout | null>(null);
+  const waveTimer2Ref = useRef<NodeJS.Timeout | null>(null);
 
   // Basket coordinate tracker
   const basketPosRef = useRef({
@@ -114,7 +123,7 @@ export default function HalloweenMinigameArena({
     if (!soundEnabled) return;
     try {
       const now = Date.now();
-      if (type === "volcano" && now - lastSoundTimeRef.current < 80) return;
+      if (type === "volcano" && now - lastSoundTimeRef.current < 75) return;
       lastSoundTimeRef.current = now;
 
       const AudioClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
@@ -183,7 +192,7 @@ export default function HalloweenMinigameArena({
     }
   }, [soundEnabled]);
 
-  // Initial Player Name
+  // Initial Player Name & Leaderboard retrieval
   useEffect(() => {
     if (typeof window !== "undefined") {
       const saved =
@@ -191,18 +200,18 @@ export default function HalloweenMinigameArena({
         localStorage.getItem("cc_user_name") ||
         "ผู้เล่นนิรนาม";
       setPlayerName(saved);
+      fetchHalloweenLeaderboard().then(setLeaderboard);
     }
   }, []);
 
-  // Spectacular Candy Volcano Eruption: Explodes out of the pumpkin in a high-energy fountain arc
-  const triggerVolcanoBurst = useCallback((count = 36) => {
+  // Spectacular Candy Volcano Burst from pumpkin
+  const triggerVolcanoBurst = useCallback((count = 38) => {
     if (typeof window === "undefined") return;
     playSound("volcano");
 
     const width = window.innerWidth;
     const height = window.innerHeight;
 
-    // Use pumpkin origin on the grass
     const originX = pumpkinOrigin?.x || width * 0.78;
     const originY = pumpkinOrigin?.y || height * 0.65;
 
@@ -221,22 +230,20 @@ export default function HalloweenMinigameArena({
       }
 
       // Volcano explosion angle: Arcs high up and fans left towards the center and sky
-      // Angle between -155 deg and -35 deg
-      const angle = -Math.PI * 0.86 + Math.random() * Math.PI * 0.66;
-      // High upward burst velocity
+      const angle = -Math.PI * 0.88 + Math.random() * Math.PI * 0.72;
       const speed = Math.random() * 12 + 18;
-      const vx = Math.cos(angle) * speed * (1.1 + Math.random() * 0.4);
+      const vx = Math.cos(angle) * speed * (1.1 + Math.random() * 0.5);
       const vy = Math.sin(angle) * speed;
 
       newItems.push({
         id: Math.random() + Date.now(),
         emoji: selected.emoji,
-        x: originX + (Math.random() - 0.5) * 24,
+        x: originX + (Math.random() - 0.5) * 26,
         y: originY + (Math.random() - 0.5) * 16,
         vx,
         vy,
         rotation: Math.random() * 360,
-        vRot: (Math.random() - 0.5) * 22,
+        vRot: (Math.random() - 0.5) * 24,
         size: selected.isRare ? 38 : Math.floor(Math.random() * 12) + 26,
         points: selected.points,
         isRare: selected.isRare,
@@ -256,9 +263,9 @@ export default function HalloweenMinigameArena({
 
   // Clean finish function
   const finishGame = useCallback(() => {
-    // Clear all timers
     if (roundTimerRef.current) clearInterval(roundTimerRef.current);
-    if (waveTimerRef.current) clearTimeout(waveTimerRef.current);
+    if (waveTimer1Ref.current) clearTimeout(waveTimer1Ref.current);
+    if (waveTimer2Ref.current) clearTimeout(waveTimer2Ref.current);
 
     isPlayingRef.current = false;
     isGameOverRef.current = true;
@@ -267,15 +274,16 @@ export default function HalloweenMinigameArena({
     setIsGameOver(true);
     playSound("gameover");
 
-    // Capture final scores
     setFinalScore(scoreRef.current);
     setFinalCandies(candiesCaughtRef.current);
     setFinalMaxCombo(maxComboRef.current);
+
+    // Refresh leaderboard
+    fetchHalloweenLeaderboard().then(setLeaderboard);
   }, [playSound]);
 
-  // Start / Restart 5-Second Blitz Game
+  // Start / Restart 10-Second Blitz Game
   const startGame = useCallback(() => {
-    // Reset flags
     isPlayingRef.current = true;
     isGameOverRef.current = false;
     setIsPlaying(true);
@@ -287,8 +295,8 @@ export default function HalloweenMinigameArena({
     comboRef.current = 0;
     maxComboRef.current = 0;
     timeLeftRef.current = ROUND_DURATION_SECONDS;
+    setCaughtCandiesDisplay([]);
 
-    // Reset DOM HUD
     if (scoreDomRef.current) scoreDomRef.current.innerText = "0";
     if (timerDomRef.current) timerDomRef.current.innerText = `${ROUND_DURATION_SECONDS}s`;
     if (caughtDomRef.current) caughtDomRef.current.innerText = "0 ชิ้น";
@@ -297,20 +305,28 @@ export default function HalloweenMinigameArena({
     particlesRef.current = [];
     floatingTextsRef.current = [];
 
-    // Wave 1: Immediate massive volcanic eruption!
+    // Wave 1: Immediate massive volcanic explosion!
     setTimeout(() => {
-      triggerVolcanoBurst(38);
+      triggerVolcanoBurst(45);
     }, 100);
 
-    // Wave 2: Mid-game eruption at 2.5s for peak excitement!
-    if (waveTimerRef.current) clearTimeout(waveTimerRef.current);
-    waveTimerRef.current = setTimeout(() => {
+    // Wave 2: Mid-game eruption at 3.5s!
+    if (waveTimer1Ref.current) clearTimeout(waveTimer1Ref.current);
+    waveTimer1Ref.current = setTimeout(() => {
       if (isPlayingRef.current) {
-        triggerVolcanoBurst(28);
+        triggerVolcanoBurst(32);
       }
-    }, 2400);
+    }, 3500);
 
-    // 5-Second Strict Countdown Timer
+    // Wave 3: Late-game eruption at 7.0s!
+    if (waveTimer2Ref.current) clearTimeout(waveTimer2Ref.current);
+    waveTimer2Ref.current = setTimeout(() => {
+      if (isPlayingRef.current) {
+        triggerVolcanoBurst(30);
+      }
+    }, 7000);
+
+    // 10-Second Countdown Timer
     if (roundTimerRef.current) clearInterval(roundTimerRef.current);
     roundTimerRef.current = setInterval(() => {
       timeLeftRef.current -= 1;
@@ -330,7 +346,8 @@ export default function HalloweenMinigameArena({
   useEffect(() => {
     return () => {
       if (roundTimerRef.current) clearInterval(roundTimerRef.current);
-      if (waveTimerRef.current) clearTimeout(waveTimerRef.current);
+      if (waveTimer1Ref.current) clearTimeout(waveTimer1Ref.current);
+      if (waveTimer2Ref.current) clearTimeout(waveTimer2Ref.current);
     };
   }, []);
 
@@ -369,7 +386,7 @@ export default function HalloweenMinigameArena({
     };
   }, [isOpen, onClose]);
 
-  // 60FPS Physics & Catch Loop (Independent from React re-renders)
+  // 60FPS Physics & Catch Loop
   useEffect(() => {
     if (!isOpen) return;
 
@@ -395,11 +412,11 @@ export default function HalloweenMinigameArena({
       const gravity = 0.58;
       const floorY = height - 25;
 
-      // Big realistic basket dimensions
-      const basketW = Math.min(280, Math.max(190, width * 0.32));
-      const basketH = Math.round(basketW * 0.53);
+      // Pumpkin bucket dimensions
+      const basketW = Math.min(270, Math.max(190, width * 0.32));
+      const basketH = Math.round(basketW * 0.54);
       const basketY = height - basketH - 18;
-      const catchY = basketY + basketH * 0.43;
+      const catchY = basketY + basketH * 0.44;
 
       // Smooth basket lerp tracking
       const basket = basketPosRef.current;
@@ -435,10 +452,10 @@ export default function HalloweenMinigameArena({
             p.vx = -p.vx * 0.55;
           }
 
-          // Generous Basket Catch Zone
-          const catchSpan = basketW * 0.42;
+          // Pumpkin Bucket Catch Zone
+          const catchSpan = basketW * 0.43;
           const inBasketX = p.x >= basket.x - catchSpan && p.x <= basket.x + catchSpan;
-          const inBasketY = p.y >= catchY - 18 && p.y <= catchY + 26;
+          const inBasketY = p.y >= catchY - 18 && p.y <= catchY + 28;
           const isFalling = p.vy > 0;
 
           if (inBasketX && inBasketY && isFalling && isPlayingRef.current && !isGameOverRef.current) {
@@ -454,6 +471,12 @@ export default function HalloweenMinigameArena({
                 }
               }, 90);
             }
+
+            // Visible candy inside basket: Add candy emoji to the bucket pile!
+            setCaughtCandiesDisplay((prev) => {
+              if (prev.length >= 22) return prev;
+              return [...prev, p.emoji];
+            });
 
             // Combo & Score
             comboRef.current += 1;
@@ -512,7 +535,6 @@ export default function HalloweenMinigameArena({
         if (p.opacity > 0) {
           remaining.push(p);
 
-          // Fast GPU rendering
           ctx.save();
           ctx.globalAlpha = Math.max(0, p.opacity);
           ctx.translate(p.x, p.y);
@@ -550,7 +572,6 @@ export default function HalloweenMinigameArena({
       animFrameIdRef.current = requestAnimationFrame(loop);
     };
 
-    // Canvas resolution setup
     const handleResize = () => {
       if (canvasRef.current) {
         canvasRef.current.width = window.innerWidth;
@@ -560,7 +581,6 @@ export default function HalloweenMinigameArena({
     handleResize();
     window.addEventListener("resize", handleResize);
 
-    // Start 60fps loop
     animFrameIdRef.current = requestAnimationFrame(loop);
 
     return () => {
@@ -574,7 +594,7 @@ export default function HalloweenMinigameArena({
   useEffect(() => {
     if (!isOpen) return;
     startGame();
-  }, [isOpen]); // Only triggers when arena opens! Never restarts on score/gameover state!
+  }, [isOpen]);
 
   // Submit Score & Finish Game
   const handleSubmitAndFinish = async (e: React.FormEvent) => {
@@ -586,19 +606,20 @@ export default function HalloweenMinigameArena({
       if (typeof window !== "undefined") {
         localStorage.setItem("cc_halloween_last_player_name", playerName.trim());
       }
-      await submitHalloweenScore({
+      const updated = await submitHalloweenScore({
         playerName: playerName.trim(),
         score: finalScore,
         candiesCaught: finalCandies,
         maxCombo: finalMaxCombo,
       });
+      setLeaderboard(updated);
       setHasSubmitted(true);
       playSound("rare");
       
-      // Close modal and return smoothly to normal workspace page
+      // Auto exit after a pleasant celebratory moment
       setTimeout(() => {
         onClose();
-      }, 300);
+      }, 500);
     } catch (err) {
       console.error("Failed to submit score:", err);
       onClose();
@@ -610,21 +631,41 @@ export default function HalloweenMinigameArena({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[99999] pointer-events-auto select-none font-sans overflow-hidden animate-in fade-in duration-200">
+    <div 
+      className="fixed inset-0 z-[99999] pointer-events-auto select-none font-sans overflow-hidden animate-in fade-in duration-200"
+      onClick={(e) => {
+        // Stop bubbling so it never reaches parent pumpkin div!
+        e.stopPropagation();
+      }}
+    >
       
-      {/* Translucent Spooky Ambience over Workspace */}
+      {/* Deep Spooky Halloween Ambience & Flying Bats/Fog */}
       <div 
-        className="absolute inset-0 bg-slate-950/30 backdrop-blur-[1.5px] transition-all cursor-pointer"
-        onClick={() => {
+        className="absolute inset-0 bg-gradient-to-b from-purple-950/40 via-slate-950/50 to-black/60 backdrop-blur-[1.5px] transition-all cursor-pointer"
+        onClick={(e) => {
+          e.stopPropagation();
           if (isPlayingRef.current && !isGameOverRef.current) {
-            triggerVolcanoBurst(20);
+            triggerVolcanoBurst(24);
           }
         }}
-        title="แตะหน้าจอเพื่อยิงลูกกวาดภูเขาไฟเพิ่ม!"
-      />
+        title="แตะหน้าจอเพื่อระเบิดลูกกวาดภูเขาไฟเพิ่ม!"
+      >
+        {/* Animated Spooky Bats 🦇 */}
+        <div className="absolute top-12 left-10 text-2xl animate-pulse opacity-70">🦇</div>
+        <div className="absolute top-20 right-16 text-3xl animate-bounce opacity-65" style={{ animationDuration: "3.5s" }}>🦇</div>
+        <div className="absolute top-36 left-1/4 text-xl opacity-60 animate-pulse">🦇</div>
+        <div className="absolute top-28 right-1/3 text-2xl opacity-60 animate-pulse" style={{ animationDuration: "4s" }}>🦇</div>
+
+        {/* Floating Spooky Ghosts 👻 */}
+        <div className="absolute top-16 right-1/4 text-2xl animate-bounce opacity-50" style={{ animationDuration: "5s" }}>👻</div>
+        <div className="absolute top-32 left-16 text-xl opacity-45 animate-pulse" style={{ animationDuration: "4.5s" }}>👻</div>
+
+        {/* Eerie Mist Glow at Bottom */}
+        <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-purple-900/30 to-transparent pointer-events-none" />
+      </div>
 
       {/* Screen Edge Ambient Neon Glow */}
-      <div className="absolute inset-0 pointer-events-none border-[3px] border-[#FF6200]/30 shadow-[inset_0_0_80px_rgba(255,98,0,0.18)]" />
+      <div className="absolute inset-0 pointer-events-none border-[3px] border-[#FF6200]/40 shadow-[inset_0_0_90px_rgba(168,85,247,0.25)]" />
 
       {/* 60FPS Hardware Accelerated Particle Canvas */}
       <canvas
@@ -632,69 +673,114 @@ export default function HalloweenMinigameArena({
         className="absolute inset-0 pointer-events-none"
       />
 
-      {/* BIG AUTHENTIC HALLOWEEN WICKER BASKET */}
+      {/* REAL JACK-O'-LANTERN PUMPKIN BUCKET (With Caught Candies Visible Inside!) */}
       <div
         ref={basketDomRef}
-        className="fixed top-0 left-0 pointer-events-none z-30 transition-transform duration-75 will-change-transform filter drop-shadow-[0_14px_28px_rgba(0,0,0,0.5)]"
+        className="fixed top-0 left-0 pointer-events-none z-30 transition-transform duration-75 will-change-transform filter drop-shadow-[0_16px_32px_rgba(0,0,0,0.6)]"
       >
         <div className="relative w-full h-full">
+          {/* Pumpkin Bucket SVG Illustration */}
           <svg viewBox="0 0 280 150" className="w-full h-full overflow-visible" fill="none">
             <defs>
-              <linearGradient id="basketBodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#EA580C" />
-                <stop offset="45%" stopColor="#D97706" />
-                <stop offset="100%" stopColor="#9A3412" />
+              {/* Pumpkin Body Vibrant Gradient */}
+              <linearGradient id="pumpkinBodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#FFA000" />
+                <stop offset="30%" stopColor="#FF6A00" />
+                <stop offset="70%" stopColor="#E65100" />
+                <stop offset="100%" stopColor="#BF360C" />
               </linearGradient>
-              <linearGradient id="rimGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#FDE047" />
-                <stop offset="50%" stopColor="#F59E0B" />
-                <stop offset="100%" stopColor="#D97706" />
+
+              {/* Bucket Rim Lip */}
+              <linearGradient id="pumpkinRimGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#FFD54F" />
+                <stop offset="50%" stopColor="#FF8F00" />
+                <stop offset="100%" stopColor="#E65100" />
               </linearGradient>
-              <linearGradient id="handleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#78350F" />
-                <stop offset="50%" stopColor="#B45309" />
-                <stop offset="100%" stopColor="#78350F" />
+
+              {/* Handle Metal Gradient */}
+              <linearGradient id="handleMetalGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#1E293B" />
+                <stop offset="50%" stopColor="#475569" />
+                <stop offset="100%" stopColor="#1E293B" />
               </linearGradient>
+
+              {/* Face Candlelight Glow */}
+              <radialGradient id="candleGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#FFF9C4" />
+                <stop offset="60%" stopColor="#FFD54F" />
+                <stop offset="100%" stopColor="#FF8F00" />
+              </radialGradient>
             </defs>
 
-            {/* Ground shadow beneath basket */}
-            <ellipse cx="140" cy="142" rx="105" ry="7" fill="rgba(0,0,0,0.35)" />
+            {/* Ground Shadow */}
+            <ellipse cx="140" cy="144" rx="105" ry="8" fill="rgba(0,0,0,0.4)" />
 
-            {/* High Sturdy Arched Handle */}
-            <path d="M 46 68 C 46 2, 234 2, 234 68" stroke="url(#handleGrad)" strokeWidth="12" strokeLinecap="round" fill="none" />
-            <path d="M 46 68 C 46 2, 234 2, 234 68" stroke="#FDE047" strokeWidth="3" strokeLinecap="round" fill="none" strokeDasharray="10 8" />
+            {/* Arched Black Metal Handle */}
+            <path d="M 40 70 C 40 -8, 240 -8, 240 70" stroke="url(#handleMetalGrad)" strokeWidth="11" strokeLinecap="round" fill="none" />
+            <path d="M 40 70 C 40 -8, 240 -8, 240 70" stroke="#94A3B8" strokeWidth="2.5" strokeLinecap="round" fill="none" strokeDasharray="12 8" />
+            {/* Handle Side Bolts */}
+            <circle cx="40" cy="70" r="6" fill="#0F172A" stroke="#94A3B8" strokeWidth="2" />
+            <circle cx="240" cy="70" r="6" fill="#0F172A" stroke="#94A3B8" strokeWidth="2" />
 
-            {/* Deep Interior Cavity where candies actually fall */}
-            <ellipse cx="140" cy="65" rx="116" ry="24" fill="#200B02" stroke="#581C87" strokeWidth="2" />
-            <ellipse cx="140" cy="65" rx="108" ry="19" fill="#140501" />
+            {/* Deep Dark Pumpkin Cavity (Where caught candies collect!) */}
+            <ellipse cx="140" cy="64" rx="116" ry="24" fill="#1C0600" stroke="#78350F" strokeWidth="3" />
+            <ellipse cx="140" cy="64" rx="108" ry="19" fill="#0F0300" />
 
-            {/* Outer Wicker Basket Body */}
-            <path d="M 24 65 Q 16 112, 58 136 Q 140 146, 222 136 Q 264 112, 256 65 Z" fill="url(#basketBodyGrad)" stroke="#451A03" strokeWidth="5" strokeLinejoin="round" />
+            {/* Volumetric Pumpkin Outer Lobes / Shell */}
+            <path
+              d="M 22 66 Q 10 115, 60 140 Q 140 152, 220 140 Q 270 115, 258 66 Z"
+              fill="url(#pumpkinBodyGrad)"
+              stroke="#5C1D02"
+              strokeWidth="5"
+              strokeLinejoin="round"
+            />
 
-            {/* Wicker Horizontal Weave Lines */}
-            <path d="M 30 84 Q 140 100, 250 84" stroke="#7C2D12" strokeWidth="4" fill="none" strokeLinecap="round" />
-            <path d="M 40 105 Q 140 120, 240 105" stroke="#7C2D12" strokeWidth="4" fill="none" strokeLinecap="round" />
-            <path d="M 54 124 Q 140 136, 226 124" stroke="#7C2D12" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+            {/* Vertical Pumpkin Segment Ribs */}
+            <path d="M 68 66 Q 52 108, 76 138" stroke="#7C2D12" strokeWidth="4.5" fill="none" strokeLinecap="round" opacity="0.85" />
+            <path d="M 104 68 Q 96 112, 108 144" stroke="#7C2D12" strokeWidth="5" fill="none" strokeLinecap="round" opacity="0.85" />
+            <path d="M 140 68 Q 140 114, 140 146" stroke="#7C2D12" strokeWidth="5.5" fill="none" strokeLinecap="round" opacity="0.85" />
+            <path d="M 176 68 Q 184 112, 172 144" stroke="#7C2D12" strokeWidth="5" fill="none" strokeLinecap="round" opacity="0.85" />
+            <path d="M 212 66 Q 228 108, 204 138" stroke="#7C2D12" strokeWidth="4.5" fill="none" strokeLinecap="round" opacity="0.85" />
 
-            {/* Wicker Vertical Texture Ribs */}
-            <path d="M 76 68 Q 72 104, 82 135" stroke="#FDBA74" strokeWidth="3" fill="none" strokeDasharray="7 6" opacity="0.85" />
-            <path d="M 112 70 Q 110 105, 116 140" stroke="#FDBA74" strokeWidth="3" fill="none" strokeDasharray="7 6" opacity="0.85" />
-            <path d="M 140 70 Q 140 106, 140 142" stroke="#FDBA74" strokeWidth="3.5" fill="none" strokeDasharray="7 6" opacity="0.85" />
-            <path d="M 168 70 Q 170 105, 164 140" stroke="#FDBA74" strokeWidth="3" fill="none" strokeDasharray="7 6" opacity="0.85" />
-            <path d="M 204 68 Q 208 104, 198 135" stroke="#FDBA74" strokeWidth="3" fill="none" strokeDasharray="7 6" opacity="0.85" />
+            {/* Front Pumpkin Lip / Rim Overlap */}
+            <path d="M 22 64 C 22 80, 258 80, 258 64 C 258 57, 22 57, 22 64 Z" fill="url(#pumpkinRimGrad)" stroke="#78350F" strokeWidth="4" />
 
-            {/* Front 3D Rim Lip */}
-            <path d="M 24 65 C 24 80, 256 80, 256 65 C 256 59, 24 59, 24 65 Z" fill="url(#rimGrad)" stroke="#78350F" strokeWidth="4" />
-
-            {/* Cute Glowing Jack-o'-Lantern Face */}
-            <polygon points="106,96 122,86 122,96" fill="#FEF08A" stroke="#451A03" strokeWidth="2" />
-            <polygon points="174,96 158,86 158,96" fill="#FEF08A" stroke="#451A03" strokeWidth="2" />
-            <polygon points="140,98 146,106 134,106" fill="#FEF08A" stroke="#451A03" strokeWidth="1.5" />
-            <path d="M 100,109 Q 140,131 180,109 Q 168,121 140,123 Q 112,121 100,109 Z" fill="#FEF08A" stroke="#451A03" strokeWidth="2" />
+            {/* Glowing Carved Jack-o'-Lantern Face */}
+            {/* Eyes */}
+            <polygon points="104,98 122,86 122,98" fill="url(#candleGlow)" stroke="#451A03" strokeWidth="2.5" />
+            <polygon points="176,98 158,86 158,98" fill="url(#candleGlow)" stroke="#451A03" strokeWidth="2.5" />
+            {/* Nose */}
+            <polygon points="140,100 146,108 134,108" fill="url(#candleGlow)" stroke="#451A03" strokeWidth="2" />
+            {/* Wide Jagged Smiling Mouth */}
+            <path
+              d="M 96,112 Q 140,136 184,112 Q 170,128 140,129 Q 110,128 96,112 Z"
+              fill="url(#candleGlow)"
+              stroke="#451A03"
+              strokeWidth="2.5"
+            />
+            {/* Carved Teeth */}
+            <polygon points="124,115 130,122 136,115" fill="#BF360C" />
+            <polygon points="144,115 150,122 156,115" fill="#BF360C" />
+            <polygon points="134,127 140,120 146,127" fill="#BF360C" />
           </svg>
 
-          {/* Caught Candies Badge on Basket */}
-          <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-slate-950/85 border border-amber-400/70 shadow-md flex items-center gap-1.5 whitespace-nowrap pointer-events-none">
+          {/* REAL COLLECTED CANDIES SITTING INSIDE THE PUMPKIN BUCKET! */}
+          <div className="absolute top-[40px] left-[32px] right-[32px] h-[32px] flex items-center justify-center flex-wrap gap-0.5 overflow-hidden pointer-events-none z-10 px-2">
+            {caughtCandiesDisplay.slice(-18).map((emoji, idx) => (
+              <span
+                key={idx}
+                className="text-[15px] sm:text-[17px] filter drop-shadow-xs transition-all animate-in zoom-in duration-100"
+                style={{
+                  transform: `rotate(${(idx * 43) % 46 - 23}deg) translateY(${((idx * 17) % 6) - 3}px)`,
+                }}
+              >
+                {emoji}
+              </span>
+            ))}
+          </div>
+
+          {/* Caught Candies Count Badge on Pumpkin Front */}
+          <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-slate-950/85 border border-amber-400/80 shadow-md flex items-center gap-1.5 whitespace-nowrap pointer-events-none z-20">
             <span className="text-[12px] animate-bounce">🍬</span>
             <span
               ref={caughtDomRef}
@@ -707,7 +793,10 @@ export default function HalloweenMinigameArena({
       </div>
 
       {/* TOP ARCADE HUD */}
-      <header className="absolute top-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 sm:gap-3 px-4 py-2.5 rounded-full bg-slate-900/90 backdrop-blur-md border-2 border-amber-400/50 shadow-[0_12px_35px_rgba(0,0,0,0.5)] text-white pointer-events-auto">
+      <header 
+        className="absolute top-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 sm:gap-3 px-4 py-2.5 rounded-full bg-slate-900/90 backdrop-blur-md border-2 border-amber-400/60 shadow-[0_12px_35px_rgba(0,0,0,0.6)] text-white pointer-events-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Game Title Badge */}
         <div className="flex items-center gap-1.5 pr-2 border-r border-white/20">
           <span className="text-xl animate-pulse">🎃</span>
@@ -727,14 +816,14 @@ export default function HalloweenMinigameArena({
           </span>
         </div>
 
-        {/* 5-Second Blitz Countdown */}
+        {/* 10-Second Countdown Timer */}
         <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/25 border border-rose-400/70 shadow-inner">
           <span className="animate-spin" style={{ animationDuration: "3s" }}>⏳</span>
           <span
             ref={timerDomRef}
-            className="text-base sm:text-lg font-black font-mono text-rose-300 min-w-[32px] text-center animate-pulse"
+            className="text-base sm:text-lg font-black font-mono text-rose-300 min-w-[34px] text-center animate-pulse"
           >
-            5s
+            10s
           </span>
         </div>
 
@@ -747,22 +836,44 @@ export default function HalloweenMinigameArena({
           🔥 COMBO
         </div>
 
-        {/* Burst More Candies Button */}
+        {/* Burst More Button */}
         <button
           type="button"
-          onClick={() => triggerVolcanoBurst(24)}
+          onClick={(e) => {
+            e.stopPropagation();
+            triggerVolcanoBurst(28);
+          }}
           disabled={isGameOver}
           className="hidden sm:flex items-center gap-1 px-3 py-1 rounded-full bg-[#FF6200] hover:bg-[#EE5500] active:scale-95 text-white text-xs font-black shadow-[0_2px_10px_rgba(255,98,0,0.4)] transition-all cursor-pointer disabled:opacity-40"
-          title="ยิงลูกกวาดภูเขาไฟเพิ่ม!"
+          title="ระเบิดลูกกวาดภูเขาไฟเพิ่ม!"
         >
           <Zap size={13} />
           <span>พุ่งเพิ่ม!</span>
         </button>
 
+        {/* Top 10 Leaderboard Toggle Button */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowLeaderboard((v) => !v);
+          }}
+          className={`px-3 py-1 rounded-full text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+            showLeaderboard ? "bg-amber-500 text-slate-950 font-black shadow-md" : "bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-400/50"
+          }`}
+          title="ดู 10 อันดับผู้นำสูงสุด"
+        >
+          <Trophy size={13} />
+          <span>10 อันดับ</span>
+        </button>
+
         {/* Sound Toggle */}
         <button
           type="button"
-          onClick={() => setSoundEnabled((v) => !v)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setSoundEnabled((v) => !v);
+          }}
           className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer"
           title={soundEnabled ? "ปิดเสียง" : "เปิดเสียง"}
         >
@@ -772,7 +883,10 @@ export default function HalloweenMinigameArena({
         {/* Close Button: Instantly exits to normal screen */}
         <button
           type="button"
-          onClick={onClose}
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
           className="w-8 h-8 rounded-full bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 hover:text-rose-100 flex items-center justify-center transition-colors cursor-pointer"
           title="ออกจากมินิเกม (ESC)"
         >
@@ -780,10 +894,92 @@ export default function HalloweenMinigameArena({
         </button>
       </header>
 
+      {/* TOP 10 LEADERBOARD SIDE PANEL (When toggled from HUD) */}
+      {showLeaderboard && (
+        <aside 
+          className="absolute right-4 top-20 bottom-24 w-72 sm:w-80 z-40 pointer-events-auto flex flex-col rounded-3xl bg-slate-900/95 backdrop-blur-md border-2 border-amber-500/50 shadow-[0_16px_45px_rgba(0,0,0,0.7)] overflow-hidden animate-in slide-in-from-right duration-200"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="p-3.5 pb-2.5 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-amber-950/60 to-purple-950/60">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🏆</span>
+              <div>
+                <h3 className="text-xs font-black text-amber-300 uppercase tracking-wider font-mono">
+                  TOP 10 HALL OF FAME
+                </h3>
+                <p className="text-[10px] text-slate-300 font-sans">
+                  10 อันดับผู้ทำคะแนนสูงสุด
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowLeaderboard(false);
+              }}
+              className="text-slate-400 hover:text-slate-200 p-1 cursor-pointer"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+
+          <div className="flex-1 p-2.5 space-y-1.5 overflow-y-auto custom-scrollbar">
+            {leaderboard.slice(0, 10).map((item, idx) => {
+              const isTop1 = idx === 0;
+              const isTop2 = idx === 1;
+              const isTop3 = idx === 2;
+
+              return (
+                <div
+                  key={item.id || idx}
+                  className={`p-2 rounded-2xl flex items-center gap-2 ${
+                    isTop1
+                      ? "bg-gradient-to-r from-amber-500/25 to-orange-500/20 border border-amber-400/60 shadow-xs"
+                      : isTop2
+                      ? "bg-slate-800/80 border border-slate-600/60"
+                      : isTop3
+                      ? "bg-slate-800/60 border border-amber-700/40"
+                      : "bg-slate-900/70 border border-white/5"
+                  }`}
+                >
+                  <div className="w-6 h-6 rounded-lg flex items-center justify-center font-black font-mono text-xs shrink-0">
+                    {isTop1 ? "🥇" : isTop2 ? "🥈" : isTop3 ? "🥉" : (
+                      <span className="text-slate-400 font-bold">{idx + 1}</span>
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-xs font-bold text-slate-100 truncate">
+                        {item.playerName}
+                      </span>
+                      <span className="text-xs font-black font-mono text-amber-300 shrink-0">
+                        {item.score}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[10px] text-slate-400 mt-0.5 font-mono">
+                      <span className="truncate">{item.titleEarned || "นักล่าขนม"}</span>
+                      <span>🍬 {item.candiesCaught} ชิ้น</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </aside>
+      )}
+
       {/* GAME OVER & CONGRATULATIONS CELEBRATION MODAL */}
       {isGameOver && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md animate-in zoom-in-95 duration-200">
-          <div className="relative max-w-md w-full rounded-3xl bg-gradient-to-b from-[#241142] via-[#1a0b30] to-[#110521] border-2 border-amber-400/80 p-6 sm:p-7 text-center shadow-[0_25px_60px_rgba(0,0,0,0.7),0_0_40px_rgba(245,158,11,0.35)]">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in zoom-in-95 duration-200"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div 
+            className="relative max-w-md w-full rounded-3xl bg-gradient-to-b from-[#241142] via-[#1a0b30] to-[#110521] border-2 border-amber-400/80 p-6 sm:p-7 text-center shadow-[0_25px_60px_rgba(0,0,0,0.8),0_0_40px_rgba(245,158,11,0.35)] max-h-[90vh] overflow-y-auto custom-scrollbar"
+            onClick={(e) => e.stopPropagation()}
+          >
             
             {/* Top Bouncing Halloween Emblem */}
             <div className="w-18 h-18 mx-auto -mt-14 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-300 border-2 border-white shadow-[0_8px_25px_rgba(245,158,11,0.6)] flex items-center justify-center text-3xl animate-bounce">
@@ -792,10 +988,10 @@ export default function HalloweenMinigameArena({
 
             <div className="mt-3">
               <span className="text-[11px] font-black text-[#FF6200] uppercase tracking-[0.2em] font-mono">
-                ⚡ 5-SECOND BLITZ FINISHED!
+                ⚡ 10-SECOND VOLCANO FINISHED!
               </span>
               <h2 className="text-2xl font-black text-white mt-1">
-                🎉 หมดเวลา 5 วินาทีสุดมันส์!
+                🎉 หมดเวลา 10 วินาทีสุดมันส์!
               </h2>
               <p className="text-xs font-bold text-amber-200 mt-1">
                 {getPlayerTitle(finalScore)}
@@ -823,11 +1019,39 @@ export default function HalloweenMinigameArena({
               </div>
             </div>
 
+            {/* Top 10 Leaderboard Preview inside Game Over */}
+            <div className="my-3 text-left">
+              <div className="flex items-center justify-between mb-1.5 px-1">
+                <span className="text-xs font-black text-amber-300 flex items-center gap-1 font-mono">
+                  <Trophy size={13} className="text-amber-400" />
+                  <span>10 อันดับผู้นำสูงสุด (Top 10):</span>
+                </span>
+                <span className="text-[10px] text-slate-400 font-mono">อัปเดตสด</span>
+              </div>
+              <div className="max-h-36 overflow-y-auto space-y-1 rounded-xl bg-slate-900/80 p-2 border border-white/10 custom-scrollbar">
+                {leaderboard.slice(0, 10).map((entry, idx) => (
+                  <div key={entry.id || idx} className="flex items-center justify-between text-xs py-0.5 px-1 rounded hover:bg-white/5">
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="font-mono font-bold text-[11px] text-amber-400 w-4">
+                        {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `${idx + 1}.`}
+                      </span>
+                      <span className="text-slate-200 font-semibold truncate max-w-[140px]">
+                        {entry.playerName}
+                      </span>
+                    </div>
+                    <span className="font-mono font-black text-amber-300 text-xs shrink-0">
+                      {entry.score}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Name Input & Submit to Return to Normal Screen */}
-            <form onSubmit={handleSubmitAndFinish} className="space-y-3">
+            <form onSubmit={handleSubmitAndFinish} className="space-y-3 mt-3">
               <div className="text-left">
                 <label className="text-xs font-bold text-amber-200 block mb-1">
-                  ✨ ใส่ชื่อของคุณเพื่อบันทึกสถิติ:
+                  ✨ ใส่ชื่อของคุณเพื่อชิงอันดับ:
                 </label>
                 <input
                   type="text"
@@ -836,7 +1060,7 @@ export default function HalloweenMinigameArena({
                   maxLength={24}
                   value={playerName}
                   onChange={(e) => setPlayerName(e.target.value)}
-                  placeholder="ใส่ชื่อหรือฉายา..."
+                  placeholder="ใส่ชื่อหรือฉายาของคุณ..."
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border-2 border-amber-400/60 focus:border-amber-300 focus:outline-none text-white text-sm font-semibold placeholder:text-slate-500 font-sans shadow-inner"
                 />
               </div>
@@ -858,17 +1082,24 @@ export default function HalloweenMinigameArena({
             <div className="flex items-center gap-2 mt-4 pt-3 border-t border-white/10">
               <button
                 type="button"
-                onClick={startGame}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  startGame();
+                }}
                 className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               >
                 <RefreshCw size={13} />
-                <span>🕹️ เล่นอีกรอบ (5 วิ)</span>
+                <span>🕹️ เล่นอีกรอบ (10 วิ)</span>
               </button>
 
+              {/* Explicit Exit Game Button */}
               <button
                 type="button"
-                onClick={onClose}
-                className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClose();
+                }}
+                className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800/90 hover:bg-rose-900/50 hover:text-rose-200 active:scale-95 text-slate-300 text-xs font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer border border-white/10"
               >
                 <span>ออกจากเกม</span>
               </button>

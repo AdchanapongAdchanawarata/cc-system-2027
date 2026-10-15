@@ -16,7 +16,98 @@ export interface HalloweenScoreEntry {
 const LOCAL_STORAGE_KEY = "cc_halloween_leaderboard_v1";
 const SUPABASE_CONFIG_KEY = "CONFIG_HALLOWEEN_LEADERBOARD_JSON";
 
-const INITIAL_SEED_SCORES: HalloweenScoreEntry[] = [];
+const INITIAL_SEED_SCORES: HalloweenScoreEntry[] = [
+  {
+    id: "spooky-1",
+    playerName: "🎃 ราชาฟักทองฮาโลวีน",
+    score: 850,
+    candiesCaught: 38,
+    maxCombo: 12,
+    titleEarned: "🎃 ตำนานเจ้าแห่งภูเขาไฟฮาโลวีน",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "spooky-2",
+    playerName: "🧙‍♀️ แม่มดน้อยลูกกวาด",
+    score: 680,
+    candiesCaught: 31,
+    maxCombo: 10,
+    titleEarned: "🧙‍♂️ จอมเวทขนมหวานระดับปรมาจารย์",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "spooky-3",
+    playerName: "👻 ปีศาจน้อยแคสเปอร์",
+    score: 540,
+    candiesCaught: 25,
+    maxCombo: 8,
+    titleEarned: "👻 นักล่าลูกอมทองคำ",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "spooky-4",
+    playerName: "🦇 แวมไพร์ดูดลูกอม",
+    score: 460,
+    candiesCaught: 21,
+    maxCombo: 7,
+    titleEarned: "👻 นักล่าลูกอมทองคำ",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "spooky-5",
+    playerName: "🐱 แมวดำเจ้าเล่ห์",
+    score: 380,
+    candiesCaught: 18,
+    maxCombo: 6,
+    titleEarned: "🍬 นักสะสมขนมฮาโลวีน",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "spooky-6",
+    playerName: "🕷️ แมงมุมทอสายรุ้ง",
+    score: 310,
+    candiesCaught: 15,
+    maxCombo: 5,
+    titleEarned: "🍬 นักสะสมขนมฮาโลวีน",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "spooky-7",
+    playerName: "🧟 ซอมบี้หิวกระหายขนม",
+    score: 260,
+    candiesCaught: 13,
+    maxCombo: 4,
+    titleEarned: "🍬 นักสะสมขนมฮาโลวีน",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "spooky-8",
+    playerName: "🦴 โครงกระดูกดุ๊กดิ๊ก",
+    score: 210,
+    candiesCaught: 11,
+    maxCombo: 3,
+    titleEarned: "🍬 นักสะสมขนมฮาโลวีน",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "spooky-9",
+    playerName: "🐺 มนุษย์หมาป่าฟันหวาน",
+    score: 180,
+    candiesCaught: 9,
+    maxCombo: 2,
+    titleEarned: "🧁 ผู้เริ่มต้นชิมขนม",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "spooky-10",
+    playerName: "🍬 มือใหม่หัดชิม",
+    score: 140,
+    candiesCaught: 7,
+    maxCombo: 2,
+    titleEarned: "🧁 ผู้เริ่มต้นชิมขนม",
+    createdAt: new Date().toISOString(),
+  },
+];
 
 export function getPlayerTitle(score: number): string {
   if (score >= 600) return "🎃 ตำนานเจ้าแห่งภูเขาไฟฮาโลวีน";

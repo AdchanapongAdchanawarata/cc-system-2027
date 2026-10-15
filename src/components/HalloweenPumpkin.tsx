@@ -198,7 +198,8 @@ export default function HalloweenPumpkin({
   if (!active) return null;
 
   return (
-    <div
+    <>
+      <div
       ref={pumpkinRef}
       className={`group relative pointer-events-auto cursor-pointer select-none transition-transform duration-300 hover:scale-115 active:scale-95 ${className}`}
       onClick={handlePumpkinClick}
@@ -433,24 +434,25 @@ export default function HalloweenPumpkin({
           <ellipse cx="77" cy="63" rx="4" ry="2.5" fill="#DC2626" opacity="0.4" />
         </svg>
       </div>
-
-      {/* IN-SITU FULL-WORKSPACE HALLOWEEN MINIGAME ARENA & LEADERBOARD */}
-      {isArenaOpen && (
-        <HalloweenMinigameArena
-          isOpen={isArenaOpen}
-          onClose={() => setIsArenaOpen(false)}
-          pumpkinOrigin={originCoord}
-        />
-      )}
-
-      {/* Fallback fast canvas if arena is not open */}
-      {hasActiveCandies && !isArenaOpen && typeof document !== "undefined" && createPortal(
-        <canvas
-          ref={canvasRef}
-          className="fixed inset-0 z-[99999] pointer-events-none select-none"
-        />,
-        document.body
-      )}
     </div>
-  );
+
+    {/* IN-SITU FULL-WORKSPACE HALLOWEEN MINIGAME ARENA & LEADERBOARD (Rendered outside pumpkin div so portal clicks never bubble to handlePumpkinClick) */}
+    {isArenaOpen && (
+      <HalloweenMinigameArena
+        isOpen={isArenaOpen}
+        onClose={() => setIsArenaOpen(false)}
+        pumpkinOrigin={originCoord}
+      />
+    )}
+
+    {/* Fallback fast canvas if arena is not open */}
+    {hasActiveCandies && !isArenaOpen && typeof document !== "undefined" && createPortal(
+      <canvas
+        ref={canvasRef}
+        className="fixed inset-0 z-[99999] pointer-events-none select-none"
+      />,
+      document.body
+    )}
+  </>
+);
 }

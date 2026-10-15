@@ -695,10 +695,17 @@ export interface RealtimeOKRSummary {
   overallTIPScore: number;
   totalEvaluatedBriefs: number;
   averageSatisfactionRate: number;
+  avgInternalSatisfaction?: number;
+  avgExternalSatisfaction?: number;
+  avgServiceSatisfaction?: number;
+  totalInternalEvaluated?: number;
+  totalExternalEvaluated?: number;
+  totalServiceEvaluated?: number;
   totalProfitGov: number;
   totalProfitPrivate: number;
   pipelineProfitGov: number;
   pipelineProfitPrivate: number;
+  pipelinePmCount?: number;
   totalInternalTasks: number;
   totalExternalTasks: number;
   externalPipelineCount?: number;
@@ -732,7 +739,17 @@ export function isR3Task(b: any): boolean {
   if (!b) return false;
   const details = b.details || {};
 
-  // 1. ตรวจสอบจาก OKR Tags โดยตรง (KR2, R3, R4)
+  const org = (details.organization || b.organization || details.work_organization || "").toString().trim().toUpperCase();
+  const orgKey = (details.organization_key || "").toString().trim().toUpperCase();
+  const clientSector = (details.client_sector || "").toString().trim().toUpperCase();
+  const team = (b.decision_maker || details.team || b.team || "").toString().trim().toUpperCase();
+
+  // 1. หากระบุเป็น STeP ชัดเจน -> ไม่ใช่ R3 (จะนับเป็น R1 ภายในองค์กรเสมอ)
+  if (org === "STEP" || orgKey === "STEP" || clientSector === "STEP") {
+    return false;
+  }
+
+  // 2. ตรวจสอบจาก OKR Tags โดยตรง (KR2, R3, R4)
   const okrLinks = Array.isArray(b.okr_links) ? b.okr_links : (Array.isArray(details.okr_links) ? details.okr_links : []);
   const selectedOkr = (details.selected_okr || details.okr_kr || "").toString().trim().toUpperCase();
   const rMetrics = Array.isArray(details.r_metrics) ? details.r_metrics : [];
@@ -747,15 +764,10 @@ export function isR3Task(b: any): boolean {
     return true;
   }
 
-  const org = (details.organization || b.organization || details.work_organization || "").toString().trim().toUpperCase();
-  const orgKey = (details.organization_key || "").toString().trim().toUpperCase();
-  const clientSector = (details.client_sector || "").toString().trim().toUpperCase();
-  const team = (b.decision_maker || details.team || b.team || "").toString().trim().toUpperCase();
-
-  // 2. ตรวจสอบหมวดหน่วยงาน (CMU, RSP, อื่นๆ)
+  // 3. ตรวจสอบหมวดหน่วยงานเฉพาะที่เป็น CMU, RSP หรือ อุทยานวิทยาศาสตร์ภาคเหนือ เท่านั้น (ไม่นับ "อื่นๆ" / "OTHER")
   if (
-    org === "CMU" || org === "RSP" || org === "OTHER" || org === "OTHERS" || org === "อื่นๆ" ||
-    orgKey === "CMU" || orgKey === "RSP" || orgKey === "OTHER" ||
+    org === "CMU" || org === "RSP" ||
+    orgKey === "CMU" || orgKey === "RSP" ||
     clientSector === "CMU" || clientSector === "RSP" ||
     org.includes("CMU") || org.includes("RSP") || org.includes("มช") || 
     org.includes("มหาวิทยาลัยเชียงใหม่") || org.includes("อุทยานวิทยาศาสตร์ภาคเหนือ")
@@ -763,28 +775,13 @@ export function isR3Task(b: any): boolean {
     return true;
   }
 
-  // 3. งานจากทีม NMCO (ไม่ว่าจะหน่วยงานใด หรือส่งผ่านระบบ task)
+  // 4. งานจากทีม NMCO (ไม่ว่าจะส่งผ่านระบบใด)
   if (team === "NMCO") {
     return true;
   }
 
-  // 4. หากเลือกเป็น STeP ชัดเจน -> ไม่ใช่ R3 (จะนับเป็น R1)
-  if (org === "STEP" || orgKey === "STEP" || clientSector === "STEP") {
-    return false;
-  }
-
-  // 5. หากมาจากใบบรีฟฟอร์ม 3 อันหลัก (creative, content, pr)
-  const unit = (b.unit || "").toLowerCase();
-  const isMain3 = unit === "creative" || unit === "content" || unit === "pr";
-  if (isMain3) {
-    // ถ้ามาจาก 3 ฟอร์มหลัก และทีมที่สั่งงานไม่ใช่ NMCO -> เป็น STeP ทั้งหมด (R1 ภายใน)
-    return team === "NMCO";
-  }
-
-  const serviceName = details.service || details.type || "";
-  const isInternal = unit === "internal" || serviceName.includes("STeP") || details.is_internal;
-
-  return !isInternal;
+  // นอกเหนือจากนี้จัดเป็น R1 ภายในองค์กรทั้งหมด (ห้ามทึกทักงานอื่นๆ เป็น มช./RSP เด็ดขาด)
+  return false;
 }
 
 /**
@@ -825,6 +822,7 @@ export function computeRealtimeMetrics(
   let totalPrivateProfit = 0;
   let pipelineGovProfit = 0;
   let pipelinePrivateProfit = 0;
+  let pipelinePmCount = 0;
 
   let internalSatisfactionSum = 0;
   let internalSatisfactionCount = 0;
@@ -864,6 +862,7 @@ export function computeRealtimeMetrics(
         }
       } else {
         // งานที่อยู่ระหว่างดำเนินการ (In Progress) จัดเป็น Pipeline ยังไม่รับรู้เป็นผลสำเร็จจริง
+        pipelinePmCount++;
         if (isPrivate) {
           pipelinePrivateProfit += profitVal;
         } else {
@@ -898,7 +897,7 @@ export function computeRealtimeMetrics(
           externalSatisfactionCount += 1;
         }
 
-        if (profitVal > 0 || sector === "government" || sector === "private") {
+        if (isPM && profitVal > 0) {
           serviceSatisfactionSum += realSatScore;
           serviceSatisfactionCount += 1;
         }
@@ -922,7 +921,7 @@ export function computeRealtimeMetrics(
     }
   });
 
-  // Calculate satisfaction averages (0 if none evaluated yet)
+  // Calculate satisfaction averages (0% if none evaluated yet)
   const avgOverallSatisfaction = allSatisfactionCount > 0 
     ? Math.round((allSatisfactionSum / allSatisfactionCount) * 10) / 10 
     : 0;
@@ -975,19 +974,21 @@ export function computeRealtimeMetrics(
     breakdownDetail: `สำเร็จแล้ว ${internalCompletedCount} งาน จากเป้าหมายทีม ${targetR1} งาน`
   };
 
-  // R2: ความพึงพอใจภายใน
+  // R2: ความพึงพอใจภายใน (0% หากไม่มีการประเมินจริง)
   const baseR2 = r2Config?.targetValue ?? 85.0;
   const progR2: RealtimeMetricProgress = {
     code: "R2",
     name: r2Config?.name || "ร้อยละความพึงพอใจ (ภายในองค์กร)",
-    actual: avgInternalSatisfaction,
+    actual: internalSatisfactionCount > 0 ? avgInternalSatisfaction : 0,
     target: baseR2,
     activeTarget: baseR2,
     percentage: internalSatisfactionCount > 0 ? Math.min(100, Math.round((avgInternalSatisfaction / baseR2) * 100)) : 0,
     unit: "%",
     isPercentage: true,
     status: internalSatisfactionCount === 0 ? "behind" : (avgInternalSatisfaction >= baseR2 ? "on_track" : "warning"),
-    breakdownDetail: `ประเมินแล้ว ${internalSatisfactionCount} งาน (เฉลี่ย ${avgInternalSatisfaction}%)`
+    breakdownDetail: internalSatisfactionCount > 0 
+      ? `ประเมินแล้ว ${internalSatisfactionCount} งาน (เฉลี่ย ${avgInternalSatisfaction}%)`
+      : `รอผลประเมินเมื่อส่งมอบงาน (0% • ยังไม่มีการประเมินจริง • เป้าหมาย ≥ ${baseR2}%)`
   };
 
   // R3: งานภายนอก มช. / RSP
@@ -1005,12 +1006,12 @@ export function computeRealtimeMetrics(
     breakdownDetail: `ส่งมอบสำเร็จ ${externalCompletedCount} งาน | อยู่ระหว่างดำเนินงาน (Pipeline) ${externalPipelineCount} งาน (เป้าหมายทีม ${targetR3} งาน)`
   };
 
-  // R4: ความพึงพอใจภายนอก
+  // R4: ความพึงพอใจภายนอก มช./RSP (0% หากไม่มีการประเมินจริง)
   const baseR4 = r4Config?.targetValue ?? 85.0;
   const progR4: RealtimeMetricProgress = {
     code: "R4",
     name: r4Config?.name || "ร้อยละความพึงพอใจ (ภายนอก มช./RSP)",
-    actual: avgExternalSatisfaction,
+    actual: externalSatisfactionCount > 0 ? avgExternalSatisfaction : 0,
     target: baseR4,
     activeTarget: baseR4,
     percentage: externalSatisfactionCount > 0 ? Math.min(100, Math.round((avgExternalSatisfaction / baseR4) * 100)) : 0,
@@ -1019,7 +1020,7 @@ export function computeRealtimeMetrics(
     status: externalSatisfactionCount === 0 ? "behind" : (avgExternalSatisfaction >= baseR4 ? "on_track" : "warning"),
     breakdownDetail: externalSatisfactionCount > 0 
       ? `ประเมินแล้ว ${externalSatisfactionCount} งาน (เฉลี่ย ${avgExternalSatisfaction}% • เป้าหมาย ≥ ${baseR4}%)`
-      : `รอผลประเมินเมื่อส่งมอบงาน (เป้าหมาย ≥ ${baseR4}% • ยังไม่มีงานส่งแบบประเมิน)`
+      : `รอผลประเมินเมื่อส่งมอบงาน มช./RSP (0% • ยังไม่มีการประเมินจริง • เป้าหมาย ≥ ${baseR4}%)`
   };
 
   // R5 & R6: Reach & Engagement
@@ -1057,7 +1058,7 @@ export function computeRealtimeMetrics(
     breakdownDetail: `สะสม ${manualR6.toLocaleString()} Engagements (แบ่ง Content 50%: ${Math.round(manualR6 * 0.5).toLocaleString()} | PR 50%: ${Math.round(manualR6 * 0.5).toLocaleString()}) คิดเป็นมูลค่า ฿${engagementValueBaht.toLocaleString()} (สูตร: Eng. × ${engageRate.toFixed(2)} ฿)`
   };
 
-  // R7: กำไร PM ภาครัฐ
+  // R7: กำไร PM ภาครัฐ (รับรู้เฉพาะงานส่งมอบแล้วเท่านั้น)
   const baseR7 = r7Config?.targetValue ?? 1000000;
   const targetR7 = scaleTarget(baseR7);
   const progR7: RealtimeMetricProgress = {
@@ -1071,11 +1072,11 @@ export function computeRealtimeMetrics(
     isCurrency: true,
     status: totalGovProfit >= targetR7 ? "on_track" : (totalGovProfit / targetR7 > 0.5 ? "warning" : "behind"),
     breakdownDetail: pipelineGovProfit > 0
-      ? `กำไรเสร็จจริง ฿${totalGovProfit.toLocaleString()} | กำลังทำ ฿${pipelineGovProfit.toLocaleString()} (เป้าหมาย ฿${targetR7.toLocaleString()})`
-      : `กำไรจริง ฿${totalGovProfit.toLocaleString()} จากเป้าหมาย ฿${targetR7.toLocaleString()}`
+      ? `ส่งมอบเสร็จจริง ฿${totalGovProfit.toLocaleString()} | อยู่ระหว่างดำเนินงาน (Pipeline) ฿${pipelineGovProfit.toLocaleString()} (เป้าหมาย ฿${targetR7.toLocaleString()})`
+      : `ส่งมอบเสร็จจริง ฿${totalGovProfit.toLocaleString()} จากเป้าหมาย ฿${targetR7.toLocaleString()}`
   };
 
-  // R8: กำไร PM ภาคเอกชน
+  // R8: กำไร PM ภาคเอกชน (รับรู้เฉพาะงานส่งมอบแล้วเท่านั้น)
   const baseR8 = r8Config?.targetValue ?? 500000;
   const targetR8 = scaleTarget(baseR8);
   const progR8: RealtimeMetricProgress = {
@@ -1089,23 +1090,25 @@ export function computeRealtimeMetrics(
     isCurrency: true,
     status: totalPrivateProfit >= targetR8 ? "on_track" : (totalPrivateProfit / targetR8 > 0.5 ? "warning" : "behind"),
     breakdownDetail: pipelinePrivateProfit > 0
-      ? `กำไรเสร็จจริง ฿${totalPrivateProfit.toLocaleString()} | กำลังทำ ฿${pipelinePrivateProfit.toLocaleString()} (เป้าหมาย ฿${targetR8.toLocaleString()})`
-      : `กำไรจริง ฿${totalPrivateProfit.toLocaleString()} จากเป้าหมาย ฿${targetR8.toLocaleString()}`
+      ? `ส่งมอบเสร็จจริง ฿${totalPrivateProfit.toLocaleString()} | อยู่ระหว่างดำเนินงาน (Pipeline) ฿${pipelinePrivateProfit.toLocaleString()} (เป้าหมาย ฿${targetR8.toLocaleString()})`
+      : `ส่งมอบเสร็จจริง ฿${totalPrivateProfit.toLocaleString()} จากเป้าหมาย ฿${targetR8.toLocaleString()}`
   };
 
-  // R9: ความพึงพอใจงานบริการสร้างรายได้
+  // R9: ความพึงพอใจงานบริการสร้างรายได้ (0% หากไม่มีการประเมินจริง)
   const baseR9 = r9Config?.targetValue ?? 85.0;
   const progR9: RealtimeMetricProgress = {
     code: "R9",
     name: r9Config?.name || "ร้อยละความพึงพอใจ (งานบริการสร้างรายได้)",
-    actual: avgServiceSatisfaction,
+    actual: serviceSatisfactionCount > 0 ? avgServiceSatisfaction : 0,
     target: baseR9,
     activeTarget: baseR9,
     percentage: serviceSatisfactionCount > 0 ? Math.min(100, Math.round((avgServiceSatisfaction / baseR9) * 100)) : 0,
     unit: "%",
     isPercentage: true,
     status: serviceSatisfactionCount === 0 ? "behind" : (avgServiceSatisfaction >= baseR9 ? "on_track" : "warning"),
-    breakdownDetail: `ประเมินแล้ว ${serviceSatisfactionCount} งาน (เฉลี่ย ${avgServiceSatisfaction}%)`
+    breakdownDetail: serviceSatisfactionCount > 0 
+      ? `ประเมินแล้ว ${serviceSatisfactionCount} งาน (เฉลี่ย ${avgServiceSatisfaction}%)`
+      : `รอผลประเมินงานสร้างรายได้ (0% • ยังไม่มีการประเมินจริง • เป้าหมาย ≥ ${baseR9}%)`
   };
 
   // -------------------------------------------------------------
@@ -1256,10 +1259,17 @@ export function computeRealtimeMetrics(
     overallTIPScore,
     totalEvaluatedBriefs: allSatisfactionCount,
     averageSatisfactionRate: avgOverallSatisfaction,
+    avgInternalSatisfaction,
+    avgExternalSatisfaction,
+    avgServiceSatisfaction,
+    totalInternalEvaluated: internalSatisfactionCount,
+    totalExternalEvaluated: externalSatisfactionCount,
+    totalServiceEvaluated: serviceSatisfactionCount,
     totalProfitGov: totalGovProfit,
     totalProfitPrivate: totalPrivateProfit,
     pipelineProfitGov: pipelineGovProfit,
     pipelineProfitPrivate: pipelinePrivateProfit,
+    pipelinePmCount,
     totalInternalTasks: internalCompletedCount,
     totalExternalTasks: externalCompletedCount,
     externalPipelineCount,
@@ -1668,10 +1678,16 @@ export function computeMemberPacingAlerts(
       actualThisMonth = Math.round(actualAchieved / 3);
       actualThisWeek = Math.round(actualAchieved / 13);
     } else if (r.code === "R7") {
-      const calcSaveCost = (tasks: any[]) => {
+      const calcGovProfit = (tasks: any[]) => {
         let val = 0;
         tasks.forEach(b => {
+          if (b.status !== "completed") return;
+          if (!isCcPmProject(b)) return;
           const details = b.details || {};
+          const sec = (details.client_sector || details.sector || "").toLowerCase().trim();
+          const isPrivate = sec === "private" || sec === "เอกชน" || sec === "ภาคเอกชน";
+          if (isPrivate) return;
+
           const isOwner = b.assignee_id === memberId;
           const assistants = (details.assistants || []).filter((a: any) => a.assignee_id && Number(a.percentage) > 0);
           let memberSharePct = 100;
@@ -1683,39 +1699,47 @@ export function computeMemberPacingAlerts(
               const ast = assistants.find((a: any) => a.assignee_id === memberId);
               memberSharePct = Number(ast?.percentage) || 0;
             }
+          } else if (!isOwner) {
+            memberSharePct = 0;
           }
-          const isPM = (details.category || b.category) === "PM โครงการของ CC";
-          const profit = Number(details.profit) || (Number(details.revenue || 0) - Number(details.cost || 0));
-          const baseV = isPM && profit > 0
-            ? profit
-            : (Number(details.save_cost || details.revenue) || 0);
-          val += Math.round((baseV * (memberSharePct / 100) * allocPct) / 100);
+          const profit = Number(details.profit) || (Number(details.revenue || 0) - Number(details.cost || 0)) || 0;
+          if (profit > 0) {
+            val += Math.round((profit * (memberSharePct / 100) * allocPct) / 100);
+          }
         });
         return val;
       };
-      actualAchieved = calcSaveCost(completedMemberTasks);
-      actualThisWeek = calcSaveCost(tasksThisWeek);
-      actualThisMonth = calcSaveCost(tasksThisMonth);
-      actualThisQuarter = calcSaveCost(tasksThisQuarter);
+      actualAchieved = calcGovProfit(completedMemberTasks);
+      actualThisWeek = calcGovProfit(tasksThisWeek);
+      actualThisMonth = calcGovProfit(tasksThisMonth);
+      actualThisQuarter = calcGovProfit(tasksThisQuarter);
     } else if (r.code === "R8") {
       const calcPrivateProfit = (tasks: any[]) => {
         let val = 0;
         tasks.forEach(b => {
+          if (b.status !== "completed") return;
+          if (!isCcPmProject(b)) return;
           const details = b.details || {};
-          if (details.client_sector === "private" || details.sector === "private") {
-            const isOwner = b.assignee_id === memberId;
-            const assistants = (details.assistants || []).filter((a: any) => a.assignee_id && Number(a.percentage) > 0);
-            let memberSharePct = 100;
-            if (assistants.length > 0) {
-              if (isOwner) {
-                const totalAst = assistants.reduce((s: number, a: any) => s + (Number(a.percentage) || 0), 0);
-                memberSharePct = Math.max(0, 100 - totalAst);
-              } else {
-                const ast = assistants.find((a: any) => a.assignee_id === memberId);
-                memberSharePct = Number(ast?.percentage) || 0;
-              }
+          const sec = (details.client_sector || details.sector || "").toLowerCase().trim();
+          const isPrivate = sec === "private" || sec === "เอกชน" || sec === "ภาคเอกชน";
+          if (!isPrivate) return;
+
+          const isOwner = b.assignee_id === memberId;
+          const assistants = (details.assistants || []).filter((a: any) => a.assignee_id && Number(a.percentage) > 0);
+          let memberSharePct = 100;
+          if (assistants.length > 0) {
+            if (isOwner) {
+              const totalAst = assistants.reduce((s: number, a: any) => s + (Number(a.percentage) || 0), 0);
+              memberSharePct = Math.max(0, 100 - totalAst);
+            } else {
+              const ast = assistants.find((a: any) => a.assignee_id === memberId);
+              memberSharePct = Number(ast?.percentage) || 0;
             }
-            const profit = Number(details.profit) || (Number(details.revenue || 0) - Number(details.cost || 0)) || 0;
+          } else if (!isOwner) {
+            memberSharePct = 0;
+          }
+          const profit = Number(details.profit) || (Number(details.revenue || 0) - Number(details.cost || 0)) || 0;
+          if (profit > 0) {
             val += Math.round((profit * (memberSharePct / 100) * allocPct) / 100);
           }
         });
@@ -1758,26 +1782,39 @@ export function computeMemberPacingAlerts(
       monthlyPacingPct = 100;
       quarterlyPacingPct = 100;
     } else if (isSat) {
-      if (actualAchieved >= 85.0) {
+      if (actualAchieved === 0) {
+        weeklyStatus = "behind";
+        monthlyStatus = "behind";
+        quarterlyStatus = "behind";
+        weeklyPacingPct = 0;
+        monthlyPacingPct = 0;
+        quarterlyPacingPct = 0;
+      } else if (actualAchieved >= 85.0) {
         weeklyStatus = "on_track";
         monthlyStatus = "on_track";
         quarterlyStatus = "on_track";
+        weeklyPacingPct = Math.round((actualAchieved / 85.0) * 100);
+        monthlyPacingPct = weeklyPacingPct;
+        quarterlyPacingPct = weeklyPacingPct;
       } else if (actualAchieved >= 80.0) {
         weeklyStatus = "at_risk";
         monthlyStatus = "at_risk";
         quarterlyStatus = "at_risk";
         monthlyAtRiskCount++;
         quarterlyAtRiskCount++;
+        weeklyPacingPct = Math.round((actualAchieved / 85.0) * 100);
+        monthlyPacingPct = weeklyPacingPct;
+        quarterlyPacingPct = weeklyPacingPct;
       } else {
         weeklyStatus = "behind";
         monthlyStatus = "behind";
         quarterlyStatus = "behind";
         monthlyBehindCount++;
         quarterlyBehindCount++;
+        weeklyPacingPct = Math.round((actualAchieved / 85.0) * 100);
+        monthlyPacingPct = weeklyPacingPct;
+        quarterlyPacingPct = weeklyPacingPct;
       }
-      weeklyPacingPct = Math.round((actualAchieved / 85.0) * 100);
-      monthlyPacingPct = weeklyPacingPct;
-      quarterlyPacingPct = weeklyPacingPct;
     } else {
       weeklyPacingPct = weeklyExpected > 0 ? Math.round((actualAchieved / weeklyExpected) * 100) : 100;
       monthlyPacingPct = monthlyExpected > 0 ? Math.round((actualAchieved / monthlyExpected) * 100) : 100;
@@ -1861,10 +1898,16 @@ export function computeMemberPacingAlerts(
     const calcProfit = (tasks: any[], privateOnly: boolean = false) => {
       let p = 0;
       tasks.forEach(b => {
+        if (b.status !== "completed") return;
+        if (!isCcPmProject(b)) return;
         const details = b.details || {};
-        if (!privateOnly || details.client_sector === "private" || details.sector === "private") {
-          const profit = Number(details.profit) || 0;
-          p += Math.round((profit * allocPct) / 100);
+        const sec = (details.client_sector || details.sector || "").toLowerCase().trim();
+        const isPrivate = sec === "private" || sec === "เอกชน" || sec === "ภาคเอกชน";
+        if (!privateOnly || isPrivate) {
+          const profit = Number(details.profit) || (Number(details.revenue || 0) - Number(details.cost || 0)) || 0;
+          if (profit > 0) {
+            p += Math.round((profit * allocPct) / 100);
+          }
         }
       });
       return p;

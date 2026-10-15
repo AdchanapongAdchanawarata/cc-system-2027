@@ -777,24 +777,32 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
       // R3: งานบริการภายนอก มช. และ RSP (สอดคล้องกับ KR2 รวมทีม)
       const r3Tasks = completedUnitBriefs.filter((b) => isR3Task(b)).length;
 
-      // R7 & R8: PM Profit (สอดคล้องกับ KR4 และ TIP1 รวมทีม)
+      // R7 & R8: PM Profit (สอดคล้องกับ KR4 และ TIP1 รวมทีม - คิดเฉพาะงานส่งมอบแล้วจริง ส่วนงานกำลังทำเป็น Pipeline)
       let pmGovProfit = 0;
       let pmPrivProfit = 0;
+      let pmPipelineGov = 0;
+      let pmPipelinePriv = 0;
       let pmTasksCount = 0;
-      const activeUnitBriefs = unitBriefs.filter((b) => b.status !== "cancelled");
-      activeUnitBriefs.forEach((b) => {
+      let pmPipelineCount = 0;
+
+      unitBriefs.forEach((b) => {
+        if (b.status === "cancelled") return;
+        if (!isCcPmProject(b)) return;
         const details = b.details || {};
-        const profitVal = Number(details.profit) || (Number(details.revenue || 0) - Number(details.cost || 0)) || 0;
+        const profitVal = Number(details.profit) !== undefined && details.profit !== null
+          ? Number(details.profit)
+          : (Number(details.revenue || 0) - Number(details.cost || 0));
         if (profitVal > 0) {
-          pmTasksCount++;
-          const sector = details.client_sector || details.sector || "";
-          if (sector === "private") {
-            pmPrivProfit += profitVal;
-          } else if (sector === "government") {
-            pmGovProfit += profitVal;
+          const sec = (details.client_sector || details.sector || "").toLowerCase().trim();
+          const isPrivate = sec === "private" || sec === "เอกชน" || sec === "ภาคเอกชน";
+          if (b.status === "completed") {
+            pmTasksCount++;
+            if (isPrivate) pmPrivProfit += profitVal;
+            else pmGovProfit += profitVal;
           } else {
-            pmGovProfit += Math.round(profitVal * 0.7);
-            pmPrivProfit += Math.round(profitVal * 0.3);
+            pmPipelineCount++;
+            if (isPrivate) pmPipelinePriv += profitVal;
+            else pmPipelineGov += profitVal;
           }
         }
       });
@@ -836,6 +844,9 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
         pmTasksCount,
         pmGovProfit,
         pmPrivProfit,
+        pmPipelineGov,
+        pmPipelinePriv,
+        pmPipelineCount,
         totalPmProfit: pmGovProfit + pmPrivProfit,
         avgSatisfaction,
         evaluatedCount: satCount,
@@ -865,14 +876,18 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
       // R3 tasks (สอดคล้องกับ KR2 รวมทีม)
       const r3Count = completed.filter((b) => isR3Task(b)).length;
 
-      // PM Profit Share (คำนวณตามสัดส่วน Owner/Assistant จากงานที่มีกำไร/PM สอดคล้องกับ KR4)
+      // PM Profit Share (คำนวณเฉพาะโครงการ PM ที่ส่งมอบเสร็จสิ้นจริง สอดคล้องกับ KR4)
       let pmProfitShare = 0;
-      let pmCount = 0;
+      let pmPipelineShare = 0;
+      let pmCompletedCount = 0;
+      let pmPipelineCount = 0;
       memberTasks.forEach((b) => {
+        if (!isCcPmProject(b)) return;
         const details = b.details || {};
-        const profit = Number(details.profit) || (Number(details.revenue || 0) - Number(details.cost || 0)) || 0;
+        const profit = Number(details.profit) !== undefined && details.profit !== null
+          ? Number(details.profit)
+          : (Number(details.revenue || 0) - Number(details.cost || 0));
         if (profit > 0) {
-          pmCount++;
           const isOwner = b.assignee_id === member.assignee_id;
           const assistants = (details.assistants || []).filter((a: any) => a.assignee_id && Number(a.percentage) > 0);
           let sharePct = 100;
@@ -887,7 +902,14 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
           } else if (!isOwner) {
             sharePct = 0;
           }
-          pmProfitShare += Math.round((profit * sharePct) / 100);
+          const shareVal = Math.round((profit * sharePct) / 100);
+          if (b.status === "completed") {
+            pmCompletedCount++;
+            pmProfitShare += shareVal;
+          } else {
+            pmPipelineCount++;
+            pmPipelineShare += shareVal;
+          }
         }
       });
 
@@ -907,15 +929,17 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
       });
       const avgSat = satCnt > 0 ? Math.round(satSum / satCnt) : 0;
 
-      // Total goal-aligned tasks
-      const totalGoalTasks = r1Count + r3Count + pmCount;
+      // Total goal-aligned tasks (completed tasks only)
+      const totalGoalTasks = r1Count + r3Count + pmCompletedCount;
 
       return {
         ...member,
         r1Count,
         r3Count,
-        pmCount,
+        pmCount: pmCompletedCount,
         pmProfitShare,
+        pmPipelineShare,
+        pmPipelineCount,
         avgSat,
         evaluatedSatCount: satCnt,
         totalGoalTasks,
@@ -3469,6 +3493,26 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
                             </div>
                           )}
 
+                          {/* Special KR4: PM Projects Realized vs Pipeline Profit Notice */}
+                          {kr.code === "KR4" && (
+                            <div className="p-3 bg-emerald-50/70 dark:bg-emerald-950/40 rounded-2xl border border-emerald-200/80 dark:border-emerald-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                              <div className="text-xs text-emerald-950 dark:text-emerald-200">
+                                <div className="font-bold flex items-center gap-1.5">
+                                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                  <span>สถานะโครงการบริหารจัดการ (CC PM Projects)</span>
+                                </div>
+                                <div className="text-[11px] text-emerald-800 dark:text-emerald-300 font-medium mt-0.5">
+                                  กำไรรับรู้จริง (ส่งมอบเสร็จ) <strong className="font-mono text-emerald-700 dark:text-emerald-400">฿{actualAchieved.toLocaleString()}</strong>
+                                  {" "}• อยู่ระหว่างดำเนินงาน (Pipeline) <strong className="font-mono text-indigo-700 dark:text-indigo-300">฿{((realtimeMetrics.pipelineProfitGov || 0) + (realtimeMetrics.pipelineProfitPrivate || 0)).toLocaleString()}</strong>
+                                  {" "}({realtimeMetrics.pipelinePmCount || 0} โครงการ)
+                                </div>
+                              </div>
+                              <div className="px-2.5 py-1 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-700/60 text-[11px] font-mono font-bold text-emerald-800 dark:text-emerald-300 shrink-0 self-start sm:self-auto">
+                                รวมมูลค่าโครงการ ฿{(actualAchieved + (realtimeMetrics.pipelineProfitGov || 0) + (realtimeMetrics.pipelineProfitPrivate || 0)).toLocaleString()}
+                              </div>
+                            </div>
+                          )}
+
                           {/* Nested R-Metrics Breakdown */}
                           <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 space-y-2">
                             <div className="text-[11px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wide">
@@ -3488,13 +3532,20 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
                                     key={r.code}
                                     className="p-3 rounded-2xl bg-white dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700/80 hover:border-slate-300 dark:hover:border-zinc-600 transition-all text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-2xs"
                                   >
-                                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                                      <span className="px-2 py-0.5 rounded-lg bg-blue-100 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-700/60 font-mono font-black text-xs text-blue-800 dark:text-blue-300 shrink-0">
-                                        {r.code}
-                                      </span>
-                                      <span className="font-bold text-slate-800 dark:text-zinc-100 text-xs sm:text-sm leading-snug whitespace-normal" title={r.name}>
-                                        {displayName}
-                                      </span>
+                                    <div className="flex flex-col min-w-0 flex-1">
+                                      <div className="flex items-center gap-2.5">
+                                        <span className="px-2 py-0.5 rounded-lg bg-blue-100 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-700/60 font-mono font-black text-xs text-blue-800 dark:text-blue-300 shrink-0">
+                                          {r.code}
+                                        </span>
+                                        <span className="font-bold text-slate-800 dark:text-zinc-100 text-xs sm:text-sm leading-snug whitespace-normal" title={r.name}>
+                                          {displayName}
+                                        </span>
+                                      </div>
+                                      {r.breakdownDetail && (
+                                        <div className="text-[10.5px] text-slate-500 dark:text-zinc-400 font-medium mt-1 pl-8">
+                                          {r.breakdownDetail}
+                                        </div>
+                                      )}
                                     </div>
 
                                     <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-zinc-700/60">
@@ -3635,10 +3686,14 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
                               (ผู้ดูแล: <strong className="text-slate-800">{u.leadName}</strong> • {u.memberCount} คน)
                             </span>
                           </div>
-                          <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-900 px-2.5 py-1 rounded-full text-xs font-bold">
-                            <Star size={12} className="fill-amber-400 text-amber-500" />
+                          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${
+                            u.evaluatedCount > 0
+                              ? "bg-amber-50 border-amber-200 text-amber-900"
+                              : "bg-slate-100 dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-500 dark:text-zinc-400"
+                          }`}>
+                            <Star size={12} className={u.evaluatedCount > 0 ? "fill-amber-400 text-amber-500" : "text-slate-400"} />
                             <span>{u.avgSatisfaction}%</span>
-                            <span className="text-[10px] font-normal text-amber-700">({u.evaluatedCount} รีวิว)</span>
+                            <span className="text-[10px] font-normal opacity-80">({u.evaluatedCount} รีวิว)</span>
                           </div>
                         </div>
 
@@ -3662,9 +3717,17 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
                               ฿{u.totalPmProfit.toLocaleString()}
                             </div>
                             <div className="text-[9.5px] text-slate-500 font-mono flex items-center justify-center gap-1.5 flex-wrap leading-none">
-                              <span>รัฐ ฿{u.pmGovProfit.toLocaleString()}</span>
-                              <span className="text-slate-300">|</span>
-                              <span>เอกชน ฿{u.pmPrivProfit.toLocaleString()}</span>
+                              {u.totalPmProfit > 0 ? (
+                                <>
+                                  <span>รัฐ ฿{u.pmGovProfit.toLocaleString()}</span>
+                                  <span className="text-slate-300">|</span>
+                                  <span>เอกชน ฿{u.pmPrivProfit.toLocaleString()}</span>
+                                </>
+                              ) : (u.pmPipelineGov + u.pmPipelinePriv) > 0 ? (
+                                <span className="text-indigo-600 font-medium">Pipeline ฿{(u.pmPipelineGov + u.pmPipelinePriv).toLocaleString()}</span>
+                              ) : (
+                                <span>ยังไม่มีกำไร</span>
+                              )}
                             </div>
                           </div>
 
@@ -3797,11 +3860,19 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
                               <div className="text-xs font-bold font-mono text-emerald-700 dark:text-emerald-400 mt-0.5 truncate">
                                 ฿{member.pmProfitShare.toLocaleString()}
                               </div>
+                              {member.pmProfitShare === 0 && (member.pmPipelineShare || 0) > 0 && (
+                                <div className="text-[9px] text-indigo-600 dark:text-indigo-400 font-mono truncate">
+                                  กำลังทำ ฿{member.pmPipelineShare.toLocaleString()}
+                                </div>
+                              )}
                             </div>
                             <div className="p-1">
                               <div className="text-[10px] text-slate-400 dark:text-zinc-400 font-medium">ความพึงพอใจ</div>
                               <div className="text-xs font-bold font-mono text-amber-700 dark:text-amber-400 mt-0.5">
                                 {member.avgSat}%
+                              </div>
+                              <div className="text-[9px] font-mono opacity-80 text-slate-400 dark:text-zinc-500">
+                                ({member.evaluatedSatCount || 0} รีวิว)
                               </div>
                             </div>
                           </div>

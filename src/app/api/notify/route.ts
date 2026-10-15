@@ -1013,7 +1013,8 @@ ${targetUrl}
         lineMsg += `• ⚙️ **งานที่อยู่ระหว่างดำเนินการ (In Progress):** ${inProgressTasks.length} งาน\n`;
         lineMsg += `• 📋 **งานในคิวรอเริ่ม (To-Do List):** ${todoTasks.length} งาน\n`;
         lineMsg += `• 📥 **งานรอมอบหมายผู้รับผิดชอบ (Unassigned):** ${unassignedTasks.length} งาน\n`;
-        lineMsg += `• 🌟 **งานที่ได้รับการประเมินความพึงพอใจแล้ว:** ${evaluatedBriefs.length} งาน (เฉลี่ย 100% เต็ม)\n\n`;
+        const satAvgStr = okrSummary.totalEvaluatedBriefs > 0 ? `เฉลี่ย ${okrSummary.averageSatisfactionRate}%` : 'ยังไม่มีการประเมินจริง (0%)';
+        lineMsg += `• 🌟 **งานที่ได้รับการประเมินความพึงพอใจแล้ว:** ${evaluatedBriefs.length} งาน (${satAvgStr})\n\n`;
 
         if (completedThisWeek.length > 0) {
           lineMsg += `📌 **ไฮไลต์งานส่งมอบสำเร็จสัปดาห์นี้ (${completedThisWeek.length} งาน):**\n`;
@@ -1062,11 +1063,21 @@ ${targetUrl}
 
         lineMsg += `🔹 **KR1: จำนวนผลงานภายในองค์กร (น้ำหนัก 60%)**\n`;
         lineMsg += `• **R1 (ผลงานบริการภายใน):** สัปดาห์นี้ ${completedThisWeek.filter((b: any) => !isR3Task(b)).length} งาน | สะสม ${okrSummary.totalInternalTasks} / ${targetR1.toLocaleString()} งาน (${((okrSummary.totalInternalTasks / targetR1) * 100).toFixed(1)}%)\n`;
-        lineMsg += `• **R2 (ร้อยละความพึงพอใจภายใน):** **100%** (ประเมินแล้ว ${evaluatedBriefs.length} งาน • เป้าหมาย ≥ ${targetR2}% • บรรลุตามเกณฑ์)\n\n`;
+        const r2Pct = okrSummary.avgInternalSatisfaction || 0;
+        const r2Cnt = okrSummary.totalInternalEvaluated || 0;
+        const r2Desc = r2Cnt > 0
+          ? `**${r2Pct}%** (ประเมินแล้ว ${r2Cnt} งาน • เป้าหมาย ≥ ${targetR2}% • ${r2Pct >= targetR2 ? 'บรรลุตามเกณฑ์' : 'ต่ำกว่าเกณฑ์'})`
+          : `**0%** (ยังไม่มีการประเมินจริง • เป้าหมาย ≥ ${targetR2}%)`;
+        lineMsg += `• **R2 (ร้อยละความพึงพอใจภายใน):** ${r2Desc}\n\n`;
 
         lineMsg += `🔹 **KR2: จำนวนผลงานภายนอก มช. และ RSP (น้ำหนัก 10%)**\n`;
         lineMsg += `• **R3 (ผลงานภายนอก มช./RSP):** สัปดาห์นี้ 0 งาน | สะสม ${okrSummary.totalExternalTasks} / ${targetR3.toLocaleString()} งาน (0.0%)\n`;
-        lineMsg += `• **R4 (ร้อยละความพึงพอใจภายนอก):** 0% (ยังไม่มีงานประเมินในรอบนี้ • เป้าหมาย ≥ ${targetR4}%)\n\n`;
+        const r4Pct = okrSummary.avgExternalSatisfaction || 0;
+        const r4Cnt = okrSummary.totalExternalEvaluated || 0;
+        const r4Desc = r4Cnt > 0
+          ? `**${r4Pct}%** (ประเมินแล้ว ${r4Cnt} งาน • เป้าหมาย ≥ ${targetR4}% • ${r4Pct >= targetR4 ? 'บรรลุตามเกณฑ์' : 'ต่ำกว่าเกณฑ์'})`
+          : `0% (ยังไม่มีงานประเมินในรอบนี้ • เป้าหมาย ≥ ${targetR4}%)`;
+        lineMsg += `• **R4 (ร้อยละความพึงพอใจภายนอก):** ${r4Desc}\n\n`;
 
         lineMsg += `🔹 **KR3: มูลค่าการรับรู้ที่องค์กรได้รับ (น้ำหนัก 10%)**\n`;
         lineMsg += `• **R5 (จำนวน Reach สะสม):** 0 / ${targetR5.toLocaleString()} Reach (0.0%)\n`;
@@ -1076,16 +1087,22 @@ ${targetUrl}
         lineMsg += `• **ผลงานรับรู้จริงสะสม:** ฿0 / ฿${totalKR4Target.toLocaleString()} บาท (กำลังดำเนินงาน Pipeline ฿${totalPmProfit.toLocaleString()} บาท จาก 2 โครงการ PM)\n`;
         lineMsg += `• **R7 (กำไรบริการภาครัฐ):** ฿0 / ฿${targetR7.toLocaleString()} บาท (อยู่ระหว่างดำเนินงาน ฿${totalPmProfit.toLocaleString()} บาท)\n`;
         lineMsg += `• **R8 (กำไรบริการภาคเอกชน):** ฿0 / ฿${targetR8.toLocaleString()} บาท\n`;
-        lineMsg += `• **R9 (ร้อยละความพึงพอใจงานสร้างรายได้):** 0% (ยังไม่มีงานประเมินในรอบนี้ • เป้าหมาย ≥ ${targetR9}%)\n\n`;
+        const r9Pct = okrSummary.avgServiceSatisfaction || 0;
+        const r9Cnt = okrSummary.totalServiceEvaluated || 0;
+        const r9Desc = r9Cnt > 0
+          ? `**${r9Pct}%** (ประเมินแล้ว ${r9Cnt} งาน • เป้าหมาย ≥ ${targetR9}% • ${r9Pct >= targetR9 ? 'บรรลุตามเกณฑ์' : 'ต่ำกว่าเกณฑ์'})`
+          : `0% (ยังไม่มีงานประเมินในรอบนี้ • เป้าหมาย ≥ ${targetR9}%)`;
+        lineMsg += `• **R9 (ร้อยละความพึงพอใจงานสร้างรายได้):** ${r9Desc}\n\n`;
 
         if (evaluatedBriefs.length > 0) {
           lineMsg += `🌟 **ไฮไลต์ผลประเมินความพึงพอใจ (${evaluatedBriefs.length} งานที่ประเมินแล้ว):**\n`;
           evaluatedBriefs.forEach((eb: any, idx: number) => {
             const scores = eb.details?.satisfaction_scores || {};
             const evalBy = scores.evaluatedBy || 'ผู้รับบริการ';
+            const evalScore = scores.averagePercent || scores.scorePercent || eb.details?.satisfaction_rate || 100;
             const comment = scores.comment || scores.suggestions || 'พึงพอใจระดับดีเยี่ยม';
             lineMsg += `${idx + 1}. **${eb.project_name}** [Unit ${(eb.unit || '').toUpperCase()}]\n`;
-            lineMsg += `   └ คะแนน: **100% เต็ม** (ประเมินโดย: ${evalBy})\n`;
+            lineMsg += `   └ คะแนน: **${evalScore}%** (ประเมินโดย: ${evalBy})\n`;
             if (comment && comment !== 'ไม่มีข้อเสนอแนะเพิ่มเติม') {
               lineMsg += `   └ ความคิดเห็น: *"${comment}"*\n`;
             }
@@ -1094,7 +1111,10 @@ ${targetUrl}
         }
 
         lineMsg += `💡 **บทวิเคราะห์สั้นๆ ฝ่ายบริหาร (Executive Weekly Insights):**\n`;
-        lineMsg += `• **อัตราเร่งงาน (Velocity):** สัปดาห์แรกส่งมอบงานสำเร็จแล้ว ${completedThisWeek.length} งาน คุณภาพผลงานได้รับการประเมิน 100% เต็มทั้ง ${evaluatedBriefs.length} งานที่ส่งแบบประเมินกลับมา\n`;
+        const insightSatStr = evaluatedBriefs.length > 0
+          ? `คุณภาพผลงานได้รับการประเมินเฉลี่ย ${okrSummary.averageSatisfactionRate}% จาก ${evaluatedBriefs.length} งานที่ส่งแบบประเมินกลับมา`
+          : `ยังไม่มีแบบประเมินความพึงพอใจส่งกลับมาในรอบนี้ (0%)`;
+        lineMsg += `• **อัตราเร่งงาน (Velocity):** สัปดาห์นี้ส่งมอบงานสำเร็จแล้ว ${completedThisWeek.length} งาน ${insightSatStr}\n`;
         lineMsg += `• **มูลค่าความคุ้มค่า (Value & Save Cost):** สร้างมูลค่า Save Cost รวมในระบบ ฿${totalPortfolioSaveCost.toLocaleString()} บาท โดยมีโครงการสร้างรายได้และกำไร (PM) มูลค่า ฿${totalPmProfit.toLocaleString()} บาท อยู่ระหว่างดำเนินงาน\n`;
         lineMsg += `• **จุดโฟกัสสัปดาห์ถัดไป:** มีงานรอมอบหมาย (Unassigned) 1 งาน และงานคิวรอทำ (To-Do) 5 งาน ควรรีบกระจายงานเพื่อป้องกันงานสะสมและรักษาอัตราส่งตรงเวลา\n\n`;
 
@@ -1312,42 +1332,61 @@ ${targetUrl}
 
       lineMsg += `🎯 **รายละเอียดตัวชี้วัดความสำเร็จ OKR & R รายตัว (Key Results):**\n\n`;
 
-      lineMsg += `🔹 **KR1: จำนวนผลงานภายในองค์กร (น้ำหนัก 60%)**\n`;
-      lineMsg += `• **R1 (ผลงานบริการภายใน):** เดือนนี้ ${completedThisMonth.filter((b: any) => !isR3Task(b)).length} งาน | สะสม ${okrSummary.totalInternalTasks} / ${targetR1.toLocaleString()} งาน (${((okrSummary.totalInternalTasks / targetR1) * 100).toFixed(1)}%)\n`;
-      lineMsg += `• **R2 (ร้อยละความพึงพอใจภายใน):** **100%** (ประเมินแล้ว ${evaluatedBriefs.length} งาน • เป้าหมาย ≥ ${targetR2}% • บรรลุตามเกณฑ์)\n\n`;
+        lineMsg += `🔹 **KR1: จำนวนผลงานภายในองค์กร (น้ำหนัก 60%)**\n`;
+        lineMsg += `• **R1 (ผลงานบริการภายใน):** เดือนนี้ ${completedThisMonth.filter((b: any) => !isR3Task(b)).length} งาน | สะสม ${okrSummary.totalInternalTasks} / ${targetR1.toLocaleString()} งาน (${((okrSummary.totalInternalTasks / targetR1) * 100).toFixed(1)}%)\n`;
+        const monthR2Pct = okrSummary.avgInternalSatisfaction || 0;
+        const monthR2Cnt = okrSummary.totalInternalEvaluated || 0;
+        const monthR2Desc = monthR2Cnt > 0
+          ? `**${monthR2Pct}%** (ประเมินแล้ว ${monthR2Cnt} งาน • เป้าหมาย ≥ ${targetR2}% • ${monthR2Pct >= targetR2 ? 'บรรลุตามเกณฑ์' : 'ต่ำกว่าเกณฑ์'})`
+          : `**0%** (ยังไม่มีการประเมินจริง • เป้าหมาย ≥ ${targetR2}%)`;
+        lineMsg += `• **R2 (ร้อยละความพึงพอใจภายใน):** ${monthR2Desc}\n\n`;
 
-      lineMsg += `🔹 **KR2: จำนวนผลงานภายนอก มช. และ RSP (น้ำหนัก 10%)**\n`;
-      lineMsg += `• **R3 (ผลงานภายนอก มช./RSP):** เดือนนี้ 0 งาน | สะสม ${okrSummary.totalExternalTasks} / ${targetR3.toLocaleString()} งาน (0.0%)\n`;
-      lineMsg += `• **R4 (ร้อยละความพึงพอใจภายนอก):** 0% (ยังไม่มีงานประเมินในรอบนี้ • เป้าหมาย ≥ ${targetR4}%)\n\n`;
+        lineMsg += `🔹 **KR2: จำนวนผลงานภายนอก มช. และ RSP (น้ำหนัก 10%)**\n`;
+        lineMsg += `• **R3 (ผลงานภายนอก มช./RSP):** เดือนนี้ 0 งาน | สะสม ${okrSummary.totalExternalTasks} / ${targetR3.toLocaleString()} งาน (0.0%)\n`;
+        const monthR4Pct = okrSummary.avgExternalSatisfaction || 0;
+        const monthR4Cnt = okrSummary.totalExternalEvaluated || 0;
+        const monthR4Desc = monthR4Cnt > 0
+          ? `**${monthR4Pct}%** (ประเมินแล้ว ${monthR4Cnt} งาน • เป้าหมาย ≥ ${targetR4}% • ${monthR4Pct >= targetR4 ? 'บรรลุตามเกณฑ์' : 'ต่ำกว่าเกณฑ์'})`
+          : `0% (ยังไม่มีงานประเมินในรอบนี้ • เป้าหมาย ≥ ${targetR4}%)`;
+        lineMsg += `• **R4 (ร้อยละความพึงพอใจภายนอก):** ${monthR4Desc}\n\n`;
 
-      lineMsg += `🔹 **KR3: มูลค่าการรับรู้ที่องค์กรได้รับ (น้ำหนัก 10%)**\n`;
-      lineMsg += `• **R5 (จำนวน Reach สะสม):** 0 / ${targetR5.toLocaleString()} Reach (0.0%)\n`;
-      lineMsg += `• **R6 (จำนวน Engagement สะสม):** 0 / ${targetR6.toLocaleString()} Engagements (0.0%)\n\n`;
+        lineMsg += `🔹 **KR3: มูลค่าการรับรู้ที่องค์กรได้รับ (น้ำหนัก 10%)**\n`;
+        lineMsg += `• **R5 (จำนวน Reach สะสม):** 0 / ${targetR5.toLocaleString()} Reach (0.0%)\n`;
+        lineMsg += `• **R6 (จำนวน Engagement สะสม):** 0 / ${targetR6.toLocaleString()} Engagements (0.0%)\n\n`;
 
-      lineMsg += `🔹 **KR4: กำไรที่เกิดจากการให้บริการของทีม (เป้าหมายรวม ฿${totalKR4Target.toLocaleString()} บาท • น้ำหนัก 20%)**\n`;
-      lineMsg += `• **ผลงานรับรู้จริงสะสม:** ฿0 / ฿${totalKR4Target.toLocaleString()} บาท (กำลังดำเนินงาน Pipeline ฿${totalPmProfit.toLocaleString()} บาท จาก 2 โครงการ PM)\n`;
-      lineMsg += `• **R7 (กำไรบริการภาครัฐ):** ฿0 / ฿${targetR7.toLocaleString()} บาท (อยู่ระหว่างดำเนินงาน ฿${totalPmProfit.toLocaleString()} บาท)\n`;
-      lineMsg += `• **R8 (กำไรบริการภาคเอกชน):** ฿0 / ฿${targetR8.toLocaleString()} บาท\n`;
-      lineMsg += `• **R9 (ร้อยละความพึงพอใจงานสร้างรายได้):** 0% (ยังไม่มีงานประเมินในรอบนี้ • เป้าหมาย ≥ ${targetR9}%)\n\n`;
+        lineMsg += `🔹 **KR4: กำไรที่เกิดจากการให้บริการของทีม (เป้าหมายรวม ฿${totalKR4Target.toLocaleString()} บาท • น้ำหนัก 20%)**\n`;
+        lineMsg += `• **ผลงานรับรู้จริงสะสม:** ฿0 / ฿${totalKR4Target.toLocaleString()} บาท (กำลังดำเนินงาน Pipeline ฿${totalPmProfit.toLocaleString()} บาท จาก 2 โครงการ PM)\n`;
+        lineMsg += `• **R7 (กำไรบริการภาครัฐ):** ฿0 / ฿${targetR7.toLocaleString()} บาท (อยู่ระหว่างดำเนินงาน ฿${totalPmProfit.toLocaleString()} บาท)\n`;
+        lineMsg += `• **R8 (กำไรบริการภาคเอกชน):** ฿0 / ฿${targetR8.toLocaleString()} บาท\n`;
+        const monthR9Pct = okrSummary.avgServiceSatisfaction || 0;
+        const monthR9Cnt = okrSummary.totalServiceEvaluated || 0;
+        const monthR9Desc = monthR9Cnt > 0
+          ? `**${monthR9Pct}%** (ประเมินแล้ว ${monthR9Cnt} งาน • เป้าหมาย ≥ ${targetR9}% • ${monthR9Pct >= targetR9 ? 'บรรลุตามเกณฑ์' : 'ต่ำกว่าเกณฑ์'})`
+          : `0% (ยังไม่มีงานประเมินในรอบนี้ • เป้าหมาย ≥ ${targetR9}%)`;
+        lineMsg += `• **R9 (ร้อยละความพึงพอใจงานสร้างรายได้):** ${monthR9Desc}\n\n`;
 
-      if (evaluatedBriefs.length > 0) {
-        lineMsg += `🌟 **ไฮไลต์ผลประเมินความพึงพอใจ (${evaluatedBriefs.length} งานที่ประเมินแล้ว):**\n`;
-        evaluatedBriefs.forEach((eb: any, idx: number) => {
-          const scores = eb.details?.satisfaction_scores || {};
-          const evalBy = scores.evaluatedBy || 'ผู้รับบริการ';
-          const comment = scores.comment || scores.suggestions || 'พึงพอใจระดับดีเยี่ยม';
-          lineMsg += `${idx + 1}. **${eb.project_name}** [Unit ${(eb.unit || '').toUpperCase()}]\n`;
-          lineMsg += `   └ คะแนน: **100% เต็ม** (ประเมินโดย: ${evalBy})\n`;
-          if (comment && comment !== 'ไม่มีข้อเสนอแนะเพิ่มเติม') {
-            lineMsg += `   └ ความคิดเห็น: *"${comment}"*\n`;
-          }
-        });
-        lineMsg += `\n`;
-      }
+        if (evaluatedBriefs.length > 0) {
+          lineMsg += `🌟 **ไฮไลต์ผลประเมินความพึงพอใจ (${evaluatedBriefs.length} งานที่ประเมินแล้ว):**\n`;
+          evaluatedBriefs.forEach((eb: any, idx: number) => {
+            const scores = eb.details?.satisfaction_scores || {};
+            const evalBy = scores.evaluatedBy || 'ผู้รับบริการ';
+            const evalScore = scores.averagePercent || scores.scorePercent || eb.details?.satisfaction_rate || 100;
+            const comment = scores.comment || scores.suggestions || 'พึงพอใจระดับดีเยี่ยม';
+            lineMsg += `${idx + 1}. **${eb.project_name}** [Unit ${(eb.unit || '').toUpperCase()}]\n`;
+            lineMsg += `   └ คะแนน: **${evalScore}%** (ประเมินโดย: ${evalBy})\n`;
+            if (comment && comment !== 'ไม่มีข้อเสนอแนะเพิ่มเติม') {
+              lineMsg += `   └ ความคิดเห็น: *"${comment}"*\n`;
+            }
+          });
+          lineMsg += `\n`;
+        }
 
-      lineMsg += `🧭 **การวิเคราะห์สถานการณ์ทีมเชิงลึก (Strategic Insights):**\n`;
-      lineMsg += `• **สถานการณ์ทีม:** กำลังคนในทีม ${teamHeadcount} ท่าน มีงานส่งมอบสะสม ${completedAll.length} งาน สร้างมูลค่า Save Cost รวม ฿${totalPortfolioSaveCost.toLocaleString()} บาท\n`;
-      lineMsg += `• **จุดแข็ง:** ความพึงพอใจของผู้ใช้บริการ 100% เต็ม มีวัฒนธรรมงานช่วยเกื้อกูล (Cross-Skilling) ถึง ${tasksWithAssistants} งาน (${Math.round((tasksWithAssistants / (activeTasksCount || 1)) * 100)}%)\n`;
+        lineMsg += `🧭 **การวิเคราะห์สถานการณ์ทีมเชิงลึก (Strategic Insights):**\n`;
+        lineMsg += `• **สถานการณ์ทีม:** กำลังคนในทีม ${teamHeadcount} ท่าน มีงานส่งมอบสะสม ${completedAll.length} งาน สร้างมูลค่า Save Cost รวม ฿${totalPortfolioSaveCost.toLocaleString()} บาท\n`;
+        const satHighlight = okrSummary.totalEvaluatedBriefs > 0
+          ? `ความพึงพอใจเฉลี่ย ${okrSummary.averageSatisfactionRate}% (${evaluatedBriefs.length} งานประเมิน)`
+          : `ยังไม่มีผลประเมินความพึงพอใจส่งกลับมา (0%)`;
+        lineMsg += `• **จุดแข็ง:** ${satHighlight} มีวัฒนธรรมงานช่วยเกื้อกูล (Cross-Skilling) ถึง ${tasksWithAssistants} งาน (${Math.round((tasksWithAssistants / (activeTasksCount || 1)) * 100)}%)\n`;
       lineMsg += `• **จุดโฟกัสและแนวทางพัฒนา:** มีงานรอจัดสรรและรอทำรวม ${unassignedTasks.length + todoTasks.length} งาน และงานเกินกำหนด ${overdueTasks.length} งาน ควรกระจายงานตาม Lead Time และติดตามงานอย่างใกล้ชิด\n\n`;
 
       lineMsg += `🔗 ตรวจสอบรายงานเชิงลึกและ OKRs/KPIs ทีม:\n${process.env.NEXT_PUBLIC_APP_URL || 'https://ccteam.vercel.app'}/dashboard?view=dashboards\n`;

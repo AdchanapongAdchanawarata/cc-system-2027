@@ -1706,11 +1706,11 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                                         ...brief.details,
                                         organization: brief.details?.organization_other || 'อื่นๆ',
                                         organization_other: brief.details?.organization_other || '',
-                                        selected_okr: 'KR2',
-                                        okr_kr: 'KR2',
-                                        r_metrics: ['R3', 'R4']
+                                        selected_okr: 'KR1',
+                                        okr_kr: 'KR1',
+                                        r_metrics: ['R1', 'R2']
                                       });
-                                      onUpdateField(brief.id, 'okr_links', ['KR2', 'R3', 'R4']);
+                                      onUpdateField(brief.id, 'okr_links', ['KR1', 'R1', 'R2']);
                                     } else if (item.key === 'CMU' || item.key === 'RSP') {
                                       // CMU or RSP -> Link to KR2 (External support for CMU & RSP), R3, R4
                                       onUpdateField(brief.id, 'details', {

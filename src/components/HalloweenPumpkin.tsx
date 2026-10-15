@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
+import HalloweenMinigameArena from "./HalloweenMinigameArena";
 
 interface HalloweenPumpkinProps {
   size?: number;
@@ -78,6 +79,8 @@ export default function HalloweenPumpkin({
   const [isBursting, setIsBursting] = useState(false);
   const [lit, setLit] = useState(true);
   const [hasActiveCandies, setHasActiveCandies] = useState(false);
+  const [isArenaOpen, setIsArenaOpen] = useState(false);
+  const [originCoord, setOriginCoord] = useState<{ x: number; y: number } | undefined>(undefined);
 
   const pumpkinRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -174,7 +177,7 @@ export default function HalloweenPumpkin({
     };
   }, []);
 
-  // Volcano candy trigger (Capped & Hardware Accelerated, 100% lag-free)
+  // Volcano candy trigger & minigame launcher (In-Situ Workspace Arena)
   const handlePumpkinClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsBursting(true);
@@ -186,50 +189,10 @@ export default function HalloweenPumpkin({
     const rect = pumpkinRef.current?.getBoundingClientRect();
     const originX = rect ? rect.left + rect.width / 2 : window.innerWidth * 0.8;
     const originY = rect ? rect.top + rect.height * 0.4 : window.innerHeight * 0.65;
+    setOriginCoord({ x: originX, y: originY });
 
-    // Create 35-40 candies per click
-    const burstCount = 38;
-    const newCandies: VolcanoParticle[] = [];
-
-    for (let i = 0; i < burstCount; i++) {
-      const angle = -Math.PI * 0.92 + Math.random() * Math.PI * 0.84;
-      const speed = Math.random() * 20 + 16;
-      const vx = Math.cos(angle) * speed * (1.1 + Math.random() * 0.5);
-      const vy = Math.sin(angle) * speed;
-
-      newCandies.push({
-        emoji: VOLCANO_EMOJIS[Math.floor(Math.random() * VOLCANO_EMOJIS.length)],
-        x: originX + (Math.random() - 0.5) * 24,
-        y: originY + (Math.random() - 0.5) * 16,
-        vx,
-        vy,
-        rotation: Math.random() * 360,
-        vRot: (Math.random() - 0.5) * 20,
-        size: Math.floor(Math.random() * 16) + 24, // 24px - 40px
-        opacity: 1,
-      });
-    }
-
-    // Keep particles strictly capped at MAX_PARTICLES so clicking 100 times never causes lag!
-    const existing = particlesRef.current;
-    if (existing.length + newCandies.length > MAX_PARTICLES) {
-      particlesRef.current = [...existing.slice(-(MAX_PARTICLES - newCandies.length)), ...newCandies];
-    } else {
-      particlesRef.current = [...existing, ...newCandies];
-    }
-
-    // Ensure canvas exists and start loop if not running
-    setHasActiveCandies(true);
-    if (!isLoopRunningRef.current) {
-      isLoopRunningRef.current = true;
-      requestAnimationFrame(() => {
-        if (canvasRef.current) {
-          canvasRef.current.width = window.innerWidth;
-          canvasRef.current.height = window.innerHeight;
-        }
-        runPhysicsLoop();
-      });
-    }
+    // Launch in-situ minigame arena directly on workspace screen
+    setIsArenaOpen(true);
   };
 
   if (!active) return null;
@@ -325,14 +288,17 @@ export default function HalloweenPumpkin({
         }
       `}</style>
 
-      {/* Attention-Seeking "Trick or Treat!" Speech Bubble - Positioned to the RIGHT of Pumpkin (ไม่บังหน้าน้อง CC) */}
-      <div className="absolute -top-3 left-[92%] sm:left-[96%] z-30 pointer-events-none bubble-side-float">
-        <div className="relative px-2.5 py-1 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-400 to-amber-300 text-slate-950 font-black text-[10px] sm:text-[11.5px] shadow-[0_4px_18px_rgba(245,158,11,0.65)] border border-amber-200 whitespace-nowrap flex items-center gap-1.5 ring-2 ring-white/90">
+      {/* Horror-Comic "Trick or Treat! 🍬 CLICK TO PLAY!" Speech Bubble - Positioned to the RIGHT of Pumpkin (ไม่บังหน้าน้อง CC) */}
+      <div className="absolute -top-3.5 left-[92%] sm:left-[96%] z-30 pointer-events-none bubble-side-float">
+        <div className="relative px-2.5 py-1 rounded-2xl bg-gradient-to-r from-lime-400 via-amber-400 to-orange-500 text-slate-950 font-black text-[10px] sm:text-[11.5px] shadow-[0_4px_18px_rgba(245,158,11,0.65)] border-2 border-slate-950 whitespace-nowrap flex items-center gap-1.5 ring-2 ring-amber-300">
           {/* Bubble tail pointing left towards the pumpkin */}
-          <div className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent border-r-[7px] border-r-amber-400 filter drop-shadow-xs" />
-          <span className="text-[12px] animate-pulse">🎃</span>
-          <span className="tracking-tight leading-none">Trick or Treat!</span>
-          <span className="text-[12px]">🍬</span>
+          <div className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent border-r-[7px] border-r-slate-950 filter drop-shadow-xs" />
+          <span className="text-[12px] animate-bounce">🎃</span>
+          <div className="flex flex-col text-left">
+            <span className="tracking-tight leading-none text-slate-950 font-black">Trick or Treat!</span>
+            <span className="text-[8.5px] font-black text-amber-950 uppercase tracking-wider font-mono">🕹️ CLICK TO PLAY!</span>
+          </div>
+          <span className="text-[12px] animate-pulse">🍬</span>
         </div>
       </div>
 
@@ -448,8 +414,17 @@ export default function HalloweenPumpkin({
         </svg>
       </div>
 
-      {/* ULTRA HIGH-PERFORMANCE 60FPS HARDWARE-ACCELERATED VOLCANO CANVAS (ZERO LAG, ZERO FREEZE) */}
-      {hasActiveCandies && typeof document !== "undefined" && createPortal(
+      {/* IN-SITU FULL-WORKSPACE HALLOWEEN MINIGAME ARENA & LEADERBOARD */}
+      {isArenaOpen && (
+        <HalloweenMinigameArena
+          isOpen={isArenaOpen}
+          onClose={() => setIsArenaOpen(false)}
+          pumpkinOrigin={originCoord}
+        />
+      )}
+
+      {/* Fallback fast canvas if arena is not open */}
+      {hasActiveCandies && !isArenaOpen && typeof document !== "undefined" && createPortal(
         <canvas
           ref={canvasRef}
           className="fixed inset-0 z-[99999] pointer-events-none select-none"

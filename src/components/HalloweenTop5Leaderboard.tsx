@@ -68,14 +68,14 @@ export default function HalloweenTop5Leaderboard() {
       {/* 2. ตรงหัวขึ้นชื่อเกมส์ (Game Title & Subtitle) */}
       <div className="flex items-center justify-between gap-1.5 mb-2.5">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-xl bg-orange-50 border border-orange-200/70 flex items-center justify-center text-sm shadow-2xs group-hover:scale-110 transition-transform">
+          <div className="w-7 h-7 rounded-xl bg-gradient-to-b from-amber-100 to-orange-100 border border-amber-300/80 flex items-center justify-center text-sm shadow-2xs group-hover:scale-110 transition-transform">
             🎃
           </div>
           <div className="flex flex-col">
             <span className="text-xs font-black text-slate-900 tracking-tight leading-none flex items-center gap-1">
-              <span>CANDY CATCH</span>
+              <span>CANDY HARVEST</span>
             </span>
-            <span className="text-[10px] font-bold text-slate-400 tracking-wider font-mono mt-0.5 flex items-center gap-1">
+            <span className="text-[10px] font-bold text-amber-700 tracking-wider font-mono mt-0.5 flex items-center gap-1">
               <Trophy size={10} className="text-amber-500" />
               <span>TOP 5 ผู้นำ</span>
             </span>

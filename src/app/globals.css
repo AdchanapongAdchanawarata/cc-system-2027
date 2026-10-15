@@ -125,6 +125,31 @@ a, button, input, select, textarea {
   transition-duration: 150ms;
 }
 
+/* Custom Scrollbar Utility (Sleek, pill-shaped thumb, no triangle buttons) */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.45);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.7);
+}
+.custom-scrollbar::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.45) transparent;
+}
+
 /* ========================================================================= */
 /* GLOBAL FORM CONTROLS & CONTRAST SAFEGUARDS                                */
 /* ========================================================================= */

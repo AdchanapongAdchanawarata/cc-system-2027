@@ -138,6 +138,22 @@ export default function DashboardPage() {
           return;
         }
 
+        // Only alert/pop up 1 time per day per user
+        const todayDateStr = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
+        const userIdentifier = (currentEmail || currentName || "user").toLowerCase().replace(/[^a-z0-9]/g, "_");
+        const seenKey = `cc_daily_briefing_seen_${todayDateStr}_${userIdentifier}`;
+        const ackKey = `cc_mission_ack_${todayDateStr}`;
+
+        const alreadySeenToday = typeof window !== "undefined" && (
+          localStorage.getItem(seenKey) ||
+          localStorage.getItem(ackKey)
+        );
+
+        if (alreadySeenToday) {
+          setDailyMission(null);
+          return;
+        }
+
         const calculatedMission = computeDailyMission(
           validBriefs,
           currentName,
@@ -146,6 +162,10 @@ export default function DashboardPage() {
         );
         if (calculatedMission.hasMission) {
           setDailyMission(calculatedMission);
+          // Immediately mark as seen for today so refreshing or re-rendering never pops it up again today
+          try {
+            localStorage.setItem(seenKey, new Date().toISOString());
+          } catch {}
         }
       }
     });
@@ -672,13 +692,16 @@ export default function DashboardPage() {
           isPersonalExclusive={true}
           assignees={assigneesList}
           onAcknowledge={async () => {
-            const todayStr = new Date().toISOString().split("T")[0];
+            const todayStr = new Date().toLocaleDateString("en-CA");
+            const actor = getCurrentActor();
+            const userIdentifier = (actor.email || actor.name || userDisplayName || "user").toLowerCase().replace(/[^a-z0-9]/g, "_");
+            const seenKey = `cc_daily_briefing_seen_${todayStr}_${userIdentifier}`;
             const missionKey = `cc_mission_ack_${todayStr}`;
             try {
+              localStorage.setItem(seenKey, new Date().toISOString());
               localStorage.setItem(missionKey, new Date().toISOString());
 
               // 1. Log to Advice History / Audit Trail
-              const actor = getCurrentActor();
               await logActivity({
                 action: "DAILY_MISSION_ACK",
                 actor_name: actor.name,
@@ -726,7 +749,16 @@ export default function DashboardPage() {
             }
             setDailyMission(null);
           }}
-          onClose={() => setDailyMission(null)}
+          onClose={() => {
+            const todayStr = new Date().toLocaleDateString("en-CA");
+            const actor = getCurrentActor();
+            const userIdentifier = (actor.email || actor.name || userDisplayName || "user").toLowerCase().replace(/[^a-z0-9]/g, "_");
+            const seenKey = `cc_daily_briefing_seen_${todayStr}_${userIdentifier}`;
+            try {
+              localStorage.setItem(seenKey, new Date().toISOString());
+            } catch {}
+            setDailyMission(null);
+          }}
         />
       )}
       {/* Floating Admin Switcher: Only visible when an authentic Admin is simulating Assignee view */}

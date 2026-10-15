@@ -314,14 +314,24 @@ export default function DailyMissionModal({
   const cleanQuote = rawQuote.replace(/^["'“\s]+|["'”\s]+$/g, "").trim();
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] bg-neutral-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
-      <div className="relative bg-white text-neutral-900 border border-neutral-200/90 rounded-2xl sm:rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.18),0_4px_16px_rgba(0,0,0,0.06)] max-w-2xl w-full max-h-[94vh] overflow-y-auto flex flex-col animate-in zoom-in-95 duration-150 font-sans custom-scrollbar">
+    <div 
+      className="fixed inset-0 z-[9999] bg-neutral-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && onClose) {
+          onClose();
+        }
+      }}
+    >
+      <div 
+        className="relative bg-white text-neutral-900 border border-neutral-200/90 rounded-2xl sm:rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.18),0_4px_16px_rgba(0,0,0,0.06)] max-w-2xl w-full max-h-[92vh] sm:max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150 font-sans"
+        onClick={(e) => e.stopPropagation()}
+      >
         
-        {/* Dieter Rams Header: High Contrast, Clean Grid */}
-        <div className="p-5 sm:p-7 pb-4 border-b border-neutral-100">
+        {/* Dieter Rams Header: Pinned at top, no scrollbar touch, rounded corner safe */}
+        <div className="p-4 sm:p-6 pb-3 border-b border-neutral-100 shrink-0 bg-white z-10">
           
           {/* Top Category Tag & Controls */}
-          <div className="flex items-center justify-between gap-3 mb-3.5">
+          <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               {isPersonal ? (
                 <>
@@ -366,7 +376,7 @@ export default function DailyMissionModal({
 
           {/* Member Selector Bar (ดูภารกิจของแต่ละคน - เฉพาะ View/Admin Mode) */}
           {!isPersonal && (
-            <div className="mb-4">
+            <div className="mt-3">
               <div className="flex items-center justify-between text-[11px] font-bold text-neutral-500 mb-1.5 uppercase font-mono tracking-wider">
                 <span>เลือกผู้ปฏิบัติงานในทีม (TEAM MEMBER)</span>
                 <span className="text-[10px] text-neutral-400 font-normal">
@@ -410,7 +420,7 @@ export default function DailyMissionModal({
 
           {/* Timeline & Snapshot Switcher: Current vs History (เฉพาะ View/Admin Mode) */}
           {!isPersonal && (
-            <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-2xl bg-neutral-50 border border-neutral-200/70 mb-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-2xl bg-neutral-50 border border-neutral-200/70 mt-3">
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
@@ -470,7 +480,7 @@ export default function DailyMissionModal({
 
           {/* Historical notice banner */}
           {!isPersonal && activeTab === "history" && (
-            <div className="mb-4 p-2.5 rounded-xl bg-indigo-50/80 border border-indigo-100 text-indigo-900 text-xs flex items-center justify-between gap-2">
+            <div className="mt-3 p-2.5 rounded-xl bg-indigo-50/80 border border-indigo-100 text-indigo-900 text-xs flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <CheckCircle2 size={14} className="text-indigo-600 shrink-0" />
                 <span>
@@ -491,6 +501,11 @@ export default function DailyMissionModal({
             </div>
           )}
 
+        </div>
+
+        {/* Scrollable Body: Content scrolls inside, perfectly framed with NO scrollbar overflow! */}
+        <div className="flex-1 overflow-y-auto p-5 sm:p-7 pt-4 space-y-5 custom-scrollbar min-h-0">
+          
           {/* User Profile Row: Avatar & Bold Typography */}
           <div className="flex items-start sm:items-center gap-4 sm:gap-5">
             <div className="relative shrink-0 flex items-center justify-center">
@@ -546,7 +561,7 @@ export default function DailyMissionModal({
 
           {/* Personal Workload Quick-Bar (เฉพาะโหมดส่วนตัว) */}
           {isPersonal && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
               <div className="p-2.5 rounded-xl bg-orange-50/70 border border-orange-200/70 text-center">
                 <span className="block text-[10px] font-bold text-orange-800 uppercase font-mono">ส่งมอบวันนี้</span>
                 <span className="text-lg font-black text-orange-950 font-mono">
@@ -573,11 +588,6 @@ export default function DailyMissionModal({
               </div>
             </div>
           )}
-
-        </div>
-
-        {/* Content Body */}
-        <div className="p-5 sm:p-7 space-y-5">
           
           {/* Energy & Encouragement Quote */}
           {cleanQuote && (
@@ -643,14 +653,14 @@ export default function DailyMissionModal({
 
         </div>
 
-        {/* Action Footer */}
-        <div className="p-5 sm:p-7 pt-1 flex items-center gap-3">
+        {/* Pinned Action Footer: Perfectly seated at bottom, never cut off, zero corner bleed */}
+        <div className="p-4 sm:p-5 border-t border-neutral-100 bg-white/95 backdrop-blur-xs shrink-0 flex items-center gap-3 z-10">
           {isPersonal ? (
             <button
               type="button"
               disabled={isSubmitting}
               onClick={handleConfirm}
-              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-[#FF6200] to-[#EE5500] hover:from-[#EE5500] hover:to-[#D94400] active:scale-[0.99] text-white font-extrabold text-sm sm:text-base tracking-wide transition-all shadow-[0_8px_20px_rgba(255,98,0,0.28)] hover:shadow-[0_10px_25px_rgba(255,98,0,0.38)] flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-50 select-none"
+              className="w-full py-3.5 sm:py-4 px-6 rounded-2xl bg-gradient-to-r from-[#FF6200] to-[#EE5500] hover:from-[#EE5500] hover:to-[#D94400] active:scale-[0.99] text-white font-extrabold text-sm sm:text-base tracking-wide transition-all shadow-[0_8px_20px_rgba(255,98,0,0.28)] hover:shadow-[0_10px_25px_rgba(255,98,0,0.38)] flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-50 select-none"
             >
               <span>🚀 รับทราบและเริ่มภารกิจของฉันวันนี้</span>
               <ArrowRight size={18} />

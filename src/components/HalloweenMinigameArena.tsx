@@ -2,13 +2,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
+import { Volume2, VolumeX, X, RefreshCw, Send, Zap } from "lucide-react";
 import {
-  Trophy, Flame, X, Volume2, VolumeX, Sparkles, RefreshCw,
-  Send, ArrowRight, Award, Zap, ChevronRight, ChevronLeft
-} from "lucide-react";
-import {
-  HalloweenScoreEntry,
-  fetchHalloweenLeaderboard,
   submitHalloweenScore,
   getPlayerTitle
 } from "@/utils/halloweenLeaderboardService";
@@ -51,62 +46,75 @@ const CANDY_TYPES = [
   { emoji: "🍭", points: 20, isRare: false, weight: 25 },
   { emoji: "🍫", points: 30, isRare: false, weight: 20 },
   { emoji: "🍩", points: 25, isRare: false, weight: 15 },
-  { emoji: "🎃", points: 50, isRare: true, weight: 8 },
-  { emoji: "👻", points: 100, isRare: true, weight: 4 },
-  { emoji: "⭐", points: 75, isRare: true, weight: 6 },
+  { emoji: "🎃", points: 50, isRare: true, weight: 10 },
+  { emoji: "👻", points: 100, isRare: true, weight: 5 },
+  { emoji: "⭐", points: 75, isRare: true, weight: 8 },
   { emoji: "🕷️", points: 40, isRare: false, weight: 10 },
 ];
 
-const MAX_PARTICLES = 160;
-const ROUND_DURATION_SECONDS = 18;
+// Round duration set strictly to 5 seconds per user request
+const ROUND_DURATION_SECONDS = 5;
+const MAX_PARTICLES = 120;
 
 export default function HalloweenMinigameArena({
   isOpen,
   onClose,
   pumpkinOrigin,
 }: HalloweenMinigameArenaProps) {
-  // Game State
+  // Game state
   const [isPlaying, setIsPlaying] = useState(false);
-  const [score, setScore] = useState(0);
-  const [candiesCaught, setCandiesCaught] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(ROUND_DURATION_SECONDS);
-  const [combo, setCombo] = useState(0);
-  const [maxCombo, setMaxCombo] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [showLeaderboard, setShowLeaderboard] = useState(true);
-  
-  // Leaderboard
-  const [leaderboard, setLeaderboard] = useState<HalloweenScoreEntry[]>([]);
   const [playerName, setPlayerName] = useState("");
   const [isSubmittingScore, setIsSubmittingScore] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  
+  // Final score summary for modal
+  const [finalScore, setFinalScore] = useState(0);
+  const [finalCandies, setFinalCandies] = useState(0);
+  const [finalMaxCombo, setFinalMaxCombo] = useState(0);
 
-  // References
+  // Mutable refs for 60fps zero-lag updates (no React re-renders during active gameplay)
+  const scoreRef = useRef(0);
+  const candiesCaughtRef = useRef(0);
+  const comboRef = useRef(0);
+  const maxComboRef = useRef(0);
+  const timeLeftRef = useRef(ROUND_DURATION_SECONDS);
+
+  // DOM Refs for direct zero-latency HUD rendering
+  const scoreDomRef = useRef<HTMLSpanElement | null>(null);
+  const timerDomRef = useRef<HTMLSpanElement | null>(null);
+  const comboDomRef = useRef<HTMLDivElement | null>(null);
+  const caughtDomRef = useRef<HTMLSpanElement | null>(null);
+  const basketDomRef = useRef<HTMLDivElement | null>(null);
+
+  // Canvas & Physics Refs
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const particlesRef = useRef<CandyParticle[]>([]);
   const floatingTextsRef = useRef<FloatingScoreText[]>([]);
   const animFrameIdRef = useRef<number | null>(null);
   const roundTimerRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // Basket position
-  const basketPosRef = useRef({ x: typeof window !== "undefined" ? window.innerWidth / 2 : 500, targetX: typeof window !== "undefined" ? window.innerWidth / 2 : 500 });
-  const basketDomRef = useRef<HTMLDivElement | null>(null);
-  const [basketSquash, setBasketSquash] = useState(false);
+  const dropIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Basket coordinate tracker
+  const basketPosRef = useRef({
+    x: typeof window !== "undefined" ? window.innerWidth / 2 : 500,
+    targetX: typeof window !== "undefined" ? window.innerWidth / 2 : 500,
+  });
 
   // Audio Context Singleton
   const audioCtxRef = useRef<AudioContext | null>(null);
   const lastSoundTimeRef = useRef(0);
 
   // Sound Engine
-  const playSound = useCallback((type: "catch" | "rare" | "volcano" | "gameover" | "combo") => {
+  const playSound = useCallback((type: "catch" | "rare" | "volcano" | "gameover") => {
     if (!soundEnabled) return;
     try {
       const now = Date.now();
-      if (type === "volcano" && now - lastSoundTimeRef.current < 70) return;
+      if (type === "volcano" && now - lastSoundTimeRef.current < 80) return;
       lastSoundTimeRef.current = now;
 
-      const AudioClass = window.AudioContext || (window as any).webkitAudioContext;
+      const AudioClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (!AudioClass) return;
       if (!audioCtxRef.current) {
         audioCtxRef.current = new AudioClass();
@@ -119,52 +127,52 @@ export default function HalloweenMinigameArena({
         const gain = ctx.createGain();
         osc.type = "sine";
         osc.frequency.setValueAtTime(620, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.08);
+        osc.frequency.exponentialRampToValueAtTime(920, ctx.currentTime + 0.08);
         gain.gain.setValueAtTime(0.2, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.09);
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start();
-        osc.stop(ctx.currentTime + 0.11);
+        osc.stop(ctx.currentTime + 0.1);
       } else if (type === "rare") {
-        const notes = [659.25, 880, 1046.5, 1318.5]; // E5, A5, C6, E6 arpeggio
+        const notes = [659.25, 880, 1046.5, 1318.5];
         notes.forEach((freq, idx) => {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
           osc.type = "triangle";
-          osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.05);
-          gain.gain.setValueAtTime(0.25, ctx.currentTime + idx * 0.05);
-          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + idx * 0.05 + 0.15);
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.04);
+          gain.gain.setValueAtTime(0.22, ctx.currentTime + idx * 0.04);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + idx * 0.04 + 0.14);
           osc.connect(gain);
           gain.connect(ctx.destination);
-          osc.start(ctx.currentTime + idx * 0.05);
-          osc.stop(ctx.currentTime + idx * 0.05 + 0.16);
+          osc.start(ctx.currentTime + idx * 0.04);
+          osc.stop(ctx.currentTime + idx * 0.04 + 0.15);
         });
       } else if (type === "volcano") {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = "sawtooth";
-        osc.frequency.setValueAtTime(280, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.2);
-        gain.gain.setValueAtTime(0.22, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.22);
+        osc.frequency.setValueAtTime(320, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.25, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start();
-        osc.stop(ctx.currentTime + 0.23);
+        osc.stop(ctx.currentTime + 0.21);
       } else if (type === "gameover") {
-        const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6 triumphant
+        const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5]; // C5, E5, G5, C6, E6
         notes.forEach((freq, idx) => {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
           osc.type = "sine";
-          osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.1);
-          gain.gain.setValueAtTime(0.28, ctx.currentTime + idx * 0.1);
-          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + idx * 0.1 + 0.25);
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.08);
+          gain.gain.setValueAtTime(0.25, ctx.currentTime + idx * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + idx * 0.08 + 0.22);
           osc.connect(gain);
           gain.connect(ctx.destination);
-          osc.start(ctx.currentTime + idx * 0.1);
-          osc.stop(ctx.currentTime + idx * 0.1 + 0.28);
+          osc.start(ctx.currentTime + idx * 0.08);
+          osc.stop(ctx.currentTime + idx * 0.08 + 0.25);
         });
       }
     } catch {
@@ -172,33 +180,25 @@ export default function HalloweenMinigameArena({
     }
   }, [soundEnabled]);
 
-  // Initial Load & Player Name
+  // Initial Player Name retrieval
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("cc_halloween_last_player_name") || localStorage.getItem("cc_user_name") || "จ๊อบ AA";
+      const saved =
+        localStorage.getItem("cc_halloween_last_player_name") ||
+        localStorage.getItem("cc_user_name") ||
+        "ผู้เล่นนิรนาม";
       setPlayerName(saved);
-      fetchHalloweenLeaderboard().then(setLeaderboard);
     }
   }, []);
 
-  // Spawn Volcano Burst
-  const triggerVolcanoBurst = useCallback((count = 35) => {
-    playSound("volcano");
-
+  // Center Candy Stream Generator: drops candies down the middle of the screen
+  const spawnCenterCandies = useCallback((count = 4) => {
+    if (typeof window === "undefined") return;
     const width = window.innerWidth;
-    const height = window.innerHeight;
-
-    // Use pumpkin origin if provided, otherwise right-lower center
-    const originX = pumpkinOrigin?.x || width * 0.78;
-    const originY = pumpkinOrigin?.y || height * 0.65;
-
-    const newParticles: CandyParticle[] = [];
-
-    // Total weight calculation
     const totalWeight = CANDY_TYPES.reduce((acc, c) => acc + c.weight, 0);
+    const newItems: CandyParticle[] = [];
 
     for (let i = 0; i < count; i++) {
-      // Pick candy type by weight
       let rand = Math.random() * totalWeight;
       let selected = CANDY_TYPES[0];
       for (const t of CANDY_TYPES) {
@@ -209,22 +209,22 @@ export default function HalloweenMinigameArena({
         rand -= t.weight;
       }
 
-      // Fan angle: mainly upwards and spreading across the workspace
-      const angle = -Math.PI * 0.88 + Math.random() * Math.PI * 0.76;
-      const speed = Math.random() * 22 + 16;
-      const vx = Math.cos(angle) * speed * (1.1 + Math.random() * 0.6);
-      const vy = Math.sin(angle) * speed;
+      // Spread strictly around the CENTER corridor (35% to 65% of screen width)
+      const centerX = width * 0.5 + (Math.random() - 0.5) * (width * 0.28);
+      const startY = -20 - Math.random() * 40;
+      const vy = Math.random() * 3.5 + 4.2; // Fall downward
+      const vx = (Math.random() - 0.5) * 2.2; // Gentle horizontal drift
 
-      newParticles.push({
+      newItems.push({
         id: Math.random() + Date.now(),
         emoji: selected.emoji,
-        x: originX + (Math.random() - 0.5) * 30,
-        y: originY + (Math.random() - 0.5) * 20,
+        x: centerX,
+        y: startY,
         vx,
         vy,
         rotation: Math.random() * 360,
-        vRot: (Math.random() - 0.5) * 22,
-        size: selected.isRare ? 36 : Math.floor(Math.random() * 12) + 26,
+        vRot: (Math.random() - 0.5) * 14,
+        size: selected.isRare ? 36 : Math.floor(Math.random() * 10) + 26,
         points: selected.points,
         isRare: selected.isRare,
         settled: false,
@@ -234,64 +234,141 @@ export default function HalloweenMinigameArena({
     }
 
     const current = particlesRef.current;
-    if (current.length + newParticles.length > MAX_PARTICLES) {
-      particlesRef.current = [...current.slice(-(MAX_PARTICLES - newParticles.length)), ...newParticles];
+    if (current.length + newItems.length > MAX_PARTICLES) {
+      particlesRef.current = [...current.slice(-(MAX_PARTICLES - newItems.length)), ...newItems];
     } else {
-      particlesRef.current = [...current, ...newParticles];
+      particlesRef.current = [...current, ...newItems];
+    }
+  }, []);
+
+  // Initial Volcano Burst: Shoots candies from pumpkin arcing directly to the center sky
+  const triggerVolcanoBurst = useCallback((count = 32) => {
+    if (typeof window === "undefined") return;
+    playSound("volcano");
+
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    const originX = pumpkinOrigin?.x || width * 0.78;
+    const originY = pumpkinOrigin?.y || height * 0.65;
+
+    const totalWeight = CANDY_TYPES.reduce((acc, c) => acc + c.weight, 0);
+    const newItems: CandyParticle[] = [];
+
+    for (let i = 0; i < count; i++) {
+      let rand = Math.random() * totalWeight;
+      let selected = CANDY_TYPES[0];
+      for (const t of CANDY_TYPES) {
+        if (rand < t.weight) {
+          selected = t;
+          break;
+        }
+        rand -= t.weight;
+      }
+
+      // Arc towards the center of the screen
+      const targetCenterX = width * 0.5 + (Math.random() - 0.5) * (width * 0.24);
+      const framesToApex = 25 + Math.random() * 8;
+      const vx = (targetCenterX - originX) / framesToApex;
+      const vy = -(Math.random() * 5 + 16.5);
+
+      newItems.push({
+        id: Math.random() + Date.now(),
+        emoji: selected.emoji,
+        x: originX + (Math.random() - 0.5) * 20,
+        y: originY + (Math.random() - 0.5) * 15,
+        vx,
+        vy,
+        rotation: Math.random() * 360,
+        vRot: (Math.random() - 0.5) * 18,
+        size: selected.isRare ? 36 : Math.floor(Math.random() * 10) + 26,
+        points: selected.points,
+        isRare: selected.isRare,
+        settled: false,
+        opacity: 1,
+        bounceCount: 0,
+      });
+    }
+
+    const current = particlesRef.current;
+    if (current.length + newItems.length > MAX_PARTICLES) {
+      particlesRef.current = [...current.slice(-(MAX_PARTICLES - newItems.length)), ...newItems];
+    } else {
+      particlesRef.current = [...current, ...newItems];
     }
   }, [pumpkinOrigin, playSound]);
 
-  // Start / Reset Round
+  // Start / Restart 5-Second Blitz Game
   const startGame = useCallback(() => {
     setIsPlaying(true);
     setIsGameOver(false);
-    setScore(0);
-    setCandiesCaught(0);
-    setCombo(0);
-    setMaxCombo(0);
-    setTimeLeft(ROUND_DURATION_SECONDS);
     setHasSubmitted(false);
+
+    // Reset internal counters
+    scoreRef.current = 0;
+    candiesCaughtRef.current = 0;
+    comboRef.current = 0;
+    maxComboRef.current = 0;
+    timeLeftRef.current = ROUND_DURATION_SECONDS;
+
+    // Reset DOM HUD directly
+    if (scoreDomRef.current) scoreDomRef.current.innerText = "0";
+    if (timerDomRef.current) timerDomRef.current.innerText = `${ROUND_DURATION_SECONDS}s`;
+    if (caughtDomRef.current) caughtDomRef.current.innerText = "0 ชิ้น";
+    if (comboDomRef.current) comboDomRef.current.style.display = "none";
+
     particlesRef.current = [];
     floatingTextsRef.current = [];
 
-    // Initial Burst
+    // Initial eruption towards center
     setTimeout(() => {
-      triggerVolcanoBurst(42);
-    }, 200);
+      triggerVolcanoBurst(28);
+    }, 150);
 
-    // Wave 2 after 5s
-    setTimeout(() => {
-      triggerVolcanoBurst(32);
-    }, 5500);
+    // Continuous center candy rain stream every 350ms throughout the 5 seconds
+    if (dropIntervalRef.current) clearInterval(dropIntervalRef.current);
+    dropIntervalRef.current = setInterval(() => {
+      if (timeLeftRef.current > 0) {
+        spawnCenterCandies(3);
+      }
+    }, 350);
 
-    // Wave 3 after 10s
-    setTimeout(() => {
-      triggerVolcanoBurst(38);
-    }, 10500);
-  }, [triggerVolcanoBurst]);
-
-  // Round Timer
-  useEffect(() => {
-    if (!isOpen || !isPlaying || isGameOver) return;
-
+    // 5-Second Countdown Timer
+    if (roundTimerRef.current) clearInterval(roundTimerRef.current);
     roundTimerRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(roundTimerRef.current!);
-          setIsGameOver(true);
-          playSound("gameover");
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+      timeLeftRef.current -= 1;
+      const remaining = timeLeftRef.current;
 
+      if (timerDomRef.current) {
+        timerDomRef.current.innerText = `${Math.max(0, remaining)}s`;
+      }
+
+      if (remaining <= 0) {
+        if (roundTimerRef.current) clearInterval(roundTimerRef.current);
+        if (dropIntervalRef.current) clearInterval(dropIntervalRef.current);
+
+        // Game Over reached!
+        setIsGameOver(true);
+        setIsPlaying(false);
+        playSound("gameover");
+
+        // Sync final stats to modal state
+        setFinalScore(scoreRef.current);
+        setFinalCandies(candiesCaughtRef.current);
+        setFinalMaxCombo(maxComboRef.current);
+      }
+    }, 1000);
+  }, [triggerVolcanoBurst, spawnCenterCandies, playSound]);
+
+  // Clean up timers on unmount
+  useEffect(() => {
     return () => {
       if (roundTimerRef.current) clearInterval(roundTimerRef.current);
+      if (dropIntervalRef.current) clearInterval(dropIntervalRef.current);
     };
-  }, [isOpen, isPlaying, isGameOver, playSound]);
+  }, []);
 
-  // Track Mouse / Touch for Basket
+  // Track Mouse & Touch for Basket
   useEffect(() => {
     if (!isOpen) return;
 
@@ -307,11 +384,9 @@ export default function HalloweenMinigameArena({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") {
-        basketPosRef.current.targetX = Math.max(70, basketPosRef.current.targetX - 45);
+        basketPosRef.current.targetX = Math.max(80, basketPosRef.current.targetX - 55);
       } else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
-        basketPosRef.current.targetX = Math.min(window.innerWidth - 70, basketPosRef.current.targetX + 45);
-      } else if (e.key === " " && isPlaying && !isGameOver) {
-        triggerVolcanoBurst(25);
+        basketPosRef.current.targetX = Math.min(window.innerWidth - 80, basketPosRef.current.targetX + 55);
       } else if (e.key === "Escape") {
         onClose();
       }
@@ -326,9 +401,9 @@ export default function HalloweenMinigameArena({
       window.removeEventListener("touchmove", handlePointerMove);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, isPlaying, isGameOver, triggerVolcanoBurst, onClose]);
+  }, [isOpen, onClose]);
 
-  // 60FPS Physics & Catch Loop
+  // High Performance 60FPS Physics & Catch Loop (Zero React Rerenders)
   useEffect(() => {
     if (!isOpen) return;
 
@@ -351,20 +426,24 @@ export default function HalloweenMinigameArena({
 
       const width = canvas.width;
       const height = canvas.height;
-      const gravity = 0.62;
-      const floorY = height - 32;
+      const gravity = 0.58;
+      const floorY = height - 25;
 
-      // Smooth basket lerp
+      // Basket dimensions (Responsive & Generous matching user drawing)
+      const basketW = Math.min(280, Math.max(190, width * 0.32));
+      const basketH = Math.round(basketW * 0.53); // Aspect ratio 280x150
+      const basketY = height - basketH - 18;
+      const catchY = basketY + basketH * 0.43; // Rim level where cavity opens
+
+      // Smooth basket lerp tracking
       const basket = basketPosRef.current;
-      basket.x += (basket.targetX - basket.x) * 0.22;
-      const basketW = Math.min(130, width * 0.28);
-      const basketH = 46;
-      const basketY = height - 90;
+      basket.x += (basket.targetX - basket.x) * 0.28;
 
-      // Update Basket DOM position for crisp high-end rendering
+      // Move basket DOM container with hardware accelerated 3D transform
       if (basketDomRef.current) {
         basketDomRef.current.style.transform = `translate3d(${basket.x - basketW / 2}px, ${basketY}px, 0)`;
         basketDomRef.current.style.width = `${basketW}px`;
+        basketDomRef.current.style.height = `${basketH}px`;
       }
 
       ctx.clearRect(0, 0, width, height);
@@ -382,87 +461,99 @@ export default function HalloweenMinigameArena({
           p.vx *= 0.994;
           p.rotation += p.vRot;
 
-          // Wall Bouncing (Left & Right)
+          // Screen edge bouncing
           if (p.x <= p.size / 2) {
             p.x = p.size / 2;
-            p.vx = -p.vx * 0.65;
+            p.vx = -p.vx * 0.5;
           } else if (p.x >= width - p.size / 2) {
             p.x = width - p.size / 2;
-            p.vx = -p.vx * 0.65;
+            p.vx = -p.vx * 0.5;
           }
 
-          // Basket Catch Detection (AABB + Inflow check)
-          const inBasketX = p.x >= basket.x - basketW / 2 - 10 && p.x <= basket.x + basketW / 2 + 10;
-          const inBasketY = p.y >= basketY - 10 && p.y <= basketY + basketH + 15;
-          const fallingDown = p.vy > 0;
+          // Generous Basket Catch Zone (Width covers 82% of basket rim)
+          const catchSpan = basketW * 0.42;
+          const inBasketX = p.x >= basket.x - catchSpan && p.x <= basket.x + catchSpan;
+          const inBasketY = p.y >= catchY - 18 && p.y <= catchY + 24;
+          const isFalling = p.vy > 0;
 
-          if (inBasketX && inBasketY && fallingDown && isPlaying && !isGameOver) {
+          if (inBasketX && inBasketY && isFalling && isPlaying && !isGameOver) {
             // CAUGHT!
             playSound(p.isRare ? "rare" : "catch");
-            setBasketSquash(true);
-            setTimeout(() => setBasketSquash(false), 140);
 
-            // Combo logic
-            setCombo((prev) => {
-              const next = prev + 1;
-              setMaxCombo((mc) => Math.max(mc, next));
-              return next;
-            });
+            // Quick bounce animation on basket DOM element
+            if (basketDomRef.current) {
+              basketDomRef.current.style.transform = `translate3d(${basket.x - basketW / 2}px, ${basketY + 5}px, 0) scale(1.06, 0.94)`;
+              setTimeout(() => {
+                if (basketDomRef.current) {
+                  basketDomRef.current.style.transform = `translate3d(${basket.x - basketW / 2}px, ${basketY}px, 0) scale(1, 1)`;
+                }
+              }, 90);
+            }
 
-            // Score with combo bonus
-            const multiplier = combo >= 5 ? 2.5 : combo >= 3 ? 1.8 : 1.0;
+            // Combo & Score calculation
+            comboRef.current += 1;
+            if (comboRef.current > maxComboRef.current) {
+              maxComboRef.current = comboRef.current;
+            }
+
+            const multiplier = comboRef.current >= 5 ? 2.5 : comboRef.current >= 3 ? 1.8 : 1.0;
             const pointsAwarded = Math.round(p.points * multiplier);
-            setScore((prev) => prev + pointsAwarded);
-            setCandiesCaught((prev) => prev + 1);
+            scoreRef.current += pointsAwarded;
+            candiesCaughtRef.current += 1;
 
-            // Floating text
+            // Update DOM HUD directly without React re-render lag
+            if (scoreDomRef.current) scoreDomRef.current.innerText = String(scoreRef.current);
+            if (caughtDomRef.current) caughtDomRef.current.innerText = `${candiesCaughtRef.current} ชิ้น`;
+            if (comboDomRef.current) {
+              if (comboRef.current >= 2) {
+                comboDomRef.current.innerText = `🔥 COMBO x${comboRef.current}`;
+                comboDomRef.current.style.display = "inline-flex";
+              } else {
+                comboDomRef.current.style.display = "none";
+              }
+            }
+
+            // Floating Score text
             floatingTextsRef.current.push({
               id: Math.random(),
-              text: `+${pointsAwarded}${p.isRare ? " 🌟" : ""}`,
+              text: `+${pointsAwarded}${p.isRare ? " ⭐" : ""}`,
               x: p.x,
-              y: basketY - 15,
+              y: catchY - 15,
               opacity: 1,
               color: p.isRare ? "#FBBF24" : multiplier > 1 ? "#FF6200" : "#10B981",
-              scale: p.isRare ? 1.4 : multiplier > 1 ? 1.25 : 1,
+              scale: p.isRare ? 1.35 : multiplier > 1 ? 1.2 : 1.0,
             });
 
-            // Don't keep particle (eaten by basket)
+            // Candy enters basket, do not retain
             continue;
           }
 
-          // Floor Bouncing & Settling
+          // Floor Bouncing
           if (p.y >= floorY - p.size / 2) {
             p.y = floorY - p.size / 2;
-            p.vy = -p.vy * 0.42; // bounce damping
-            p.vx *= 0.88; // ground friction
+            p.vy = -p.vy * 0.35;
+            p.vx *= 0.85;
             p.bounceCount += 1;
 
-            if (Math.abs(p.vy) < 1.2 && Math.abs(p.vx) < 0.8) {
+            if (Math.abs(p.vy) < 1.0 && Math.abs(p.vx) < 0.6) {
               p.settled = true;
               p.vy = 0;
               p.vx = 0;
             }
           }
         } else {
-          // Settled on floor: fade out slowly
-          p.opacity -= 0.008;
+          // Settled on floor: fade out
+          p.opacity -= 0.015;
         }
 
         if (p.opacity > 0) {
           remaining.push(p);
 
-          // Render Candy on Canvas
+          // Render Candy on Canvas (Clean 60fps, no expensive software blur filters)
           ctx.save();
           ctx.globalAlpha = Math.max(0, p.opacity);
           ctx.translate(p.x, p.y);
           ctx.rotate((p.rotation * Math.PI) / 180);
-
-          // Glow for rare items
-          if (p.isRare) {
-            ctx.shadowColor = "#F59E0B";
-            ctx.shadowBlur = 14;
-          }
-
           ctx.font = `${p.size}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
@@ -478,7 +569,7 @@ export default function HalloweenMinigameArena({
       for (let j = 0; j < floatingTextsRef.current.length; j++) {
         const ft = floatingTextsRef.current[j];
         ft.y -= 1.8;
-        ft.opacity -= 0.025;
+        ft.opacity -= 0.028;
 
         if (ft.opacity > 0) {
           fRemaining.push(ft);
@@ -486,8 +577,6 @@ export default function HalloweenMinigameArena({
           ctx.globalAlpha = Math.max(0, ft.opacity);
           ctx.font = `900 ${Math.round(20 * ft.scale)}px sans-serif`;
           ctx.fillStyle = ft.color;
-          ctx.shadowColor = "rgba(0,0,0,0.8)";
-          ctx.shadowBlur = 8;
           ctx.textAlign = "center";
           ctx.fillText(ft.text, ft.x, ft.y);
           ctx.restore();
@@ -498,7 +587,7 @@ export default function HalloweenMinigameArena({
       animFrameIdRef.current = requestAnimationFrame(loop);
     };
 
-    // Set canvas dimensions
+    // Canvas resolution setup
     const handleResize = () => {
       if (canvasRef.current) {
         canvasRef.current.width = window.innerWidth;
@@ -508,7 +597,7 @@ export default function HalloweenMinigameArena({
     handleResize();
     window.addEventListener("resize", handleResize);
 
-    // Auto-start game on open
+    // Auto start game round
     startGame();
     animFrameIdRef.current = requestAnimationFrame(loop);
 
@@ -517,25 +606,34 @@ export default function HalloweenMinigameArena({
       if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
       window.removeEventListener("resize", handleResize);
     };
-  }, [isOpen, isPlaying, isGameOver, combo, playSound, startGame]);
+  }, [isOpen, isPlaying, isGameOver, playSound, startGame]);
 
-  // Submit High Score Handler
-  const handleSubmitScore = async (e: React.FormEvent) => {
+  // Submit Score & Finish Game
+  const handleSubmitAndFinish = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSubmittingScore || hasSubmitted || !playerName.trim()) return;
+    if (isSubmittingScore || !playerName.trim()) return;
 
     setIsSubmittingScore(true);
     try {
-      const updated = await submitHalloweenScore({
+      if (typeof window !== "undefined") {
+        localStorage.setItem("cc_halloween_last_player_name", playerName.trim());
+      }
+      await submitHalloweenScore({
         playerName: playerName.trim(),
-        score,
-        candiesCaught,
-        maxCombo,
+        score: finalScore,
+        candiesCaught: finalCandies,
+        maxCombo: finalMaxCombo,
       });
-      setLeaderboard(updated);
       setHasSubmitted(true);
+      playSound("rare");
+      
+      // Close modal and return smoothly to normal workspace page
+      setTimeout(() => {
+        onClose();
+      }, 350);
     } catch (err) {
       console.error("Failed to submit score:", err);
+      onClose();
     } finally {
       setIsSubmittingScore(false);
     }
@@ -546,12 +644,12 @@ export default function HalloweenMinigameArena({
   return createPortal(
     <div className="fixed inset-0 z-[99999] pointer-events-auto select-none font-sans overflow-hidden animate-in fade-in duration-200">
       
-      {/* Background Ambience: Translucent Spooky Vignette Over Workspace */}
+      {/* Translucent Spooky Ambience over Workspace */}
       <div 
-        className="absolute inset-0 bg-slate-950/40 backdrop-blur-[2px] transition-all"
+        className="absolute inset-0 bg-slate-950/30 backdrop-blur-[1.5px] transition-all"
         onClick={() => {
           if (isPlaying && !isGameOver) {
-            triggerVolcanoBurst(20);
+            spawnCenterCandies(4);
           }
         }}
       />
@@ -565,301 +663,245 @@ export default function HalloweenMinigameArena({
         className="absolute inset-0 pointer-events-none"
       />
 
-      {/* Floating Halloween Basket (Movable with Mouse/Touch) */}
+      {/* BIG AUTHENTIC HALLOWEEN WICKER BASKET (Following user's sketch) */}
       <div
         ref={basketDomRef}
-        className={`fixed top-0 left-0 pointer-events-none z-30 transition-transform duration-75 will-change-transform ${
-          basketSquash ? "scale-x-115 scale-y-85" : "scale-100"
-        }`}
+        className="fixed top-0 left-0 pointer-events-none z-30 transition-transform duration-75 will-change-transform filter drop-shadow-[0_14px_28px_rgba(0,0,0,0.5)]"
       >
-        <div className="relative w-full h-[52px] flex items-center justify-center">
-          {/* Basket Glow Aura */}
-          <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-amber-500/30 via-orange-500/40 to-amber-500/30 blur-md pointer-events-none" />
-          
-          {/* Basket Body */}
-          <div className="relative w-full h-full bg-gradient-to-b from-amber-600 via-orange-600 to-amber-700 border-2 border-amber-300 rounded-2xl shadow-[0_10px_25px_rgba(0,0,0,0.4),0_0_15px_rgba(245,158,11,0.5)] flex items-center justify-between px-3">
-            {/* Basket Handle Accent */}
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-14 h-4 border-t-2 border-x-2 border-amber-300 rounded-t-full pointer-events-none" />
+        <div className="relative w-full h-full">
+          <svg viewBox="0 0 280 150" className="w-full h-full overflow-visible" fill="none">
+            <defs>
+              <linearGradient id="basketBodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#EA580C" />
+                <stop offset="45%" stopColor="#D97706" />
+                <stop offset="100%" stopColor="#9A3412" />
+              </linearGradient>
+              <linearGradient id="rimGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#FDE047" />
+                <stop offset="50%" stopColor="#F59E0B" />
+                <stop offset="100%" stopColor="#D97706" />
+              </linearGradient>
+              <linearGradient id="handleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#78350F" />
+                <stop offset="50%" stopColor="#B45309" />
+                <stop offset="100%" stopColor="#78350F" />
+              </linearGradient>
+            </defs>
 
-            {/* Left Jack-o'-Lantern Emblem */}
-            <span className="text-xl filter drop-shadow-md animate-bounce">🎃</span>
+            {/* Ground shadow beneath basket */}
+            <ellipse cx="140" cy="142" rx="105" ry="7" fill="rgba(0,0,0,0.35)" />
 
-            {/* Center Basket Caught Counter */}
-            <div className="flex flex-col items-center">
-              <span className="text-[10px] font-black text-amber-100 uppercase tracking-widest font-mono">
-                BASKET
-              </span>
-              <span className="text-xs font-black text-white font-mono leading-none">
-                {candiesCaught} ชิ้น
-              </span>
-            </div>
+            {/* High Sturdy Arched Handle */}
+            <path d="M 46 68 C 46 2, 234 2, 234 68" stroke="url(#handleGrad)" strokeWidth="12" strokeLinecap="round" fill="none" />
+            <path d="M 46 68 C 46 2, 234 2, 234 68" stroke="#FDE047" strokeWidth="3" strokeLinecap="round" fill="none" strokeDasharray="10 8" />
 
-            {/* Right Candy Emblem */}
-            <span className="text-xl filter drop-shadow-md">🍬</span>
+            {/* Deep Interior Cavity where candies actually fall */}
+            <ellipse cx="140" cy="65" rx="116" ry="24" fill="#200B02" stroke="#581C87" strokeWidth="2" />
+            <ellipse cx="140" cy="65" rx="108" ry="19" fill="#140501" />
+
+            {/* Outer Wicker Basket Body */}
+            <path d="M 24 65 Q 16 112, 58 136 Q 140 146, 222 136 Q 264 112, 256 65 Z" fill="url(#basketBodyGrad)" stroke="#451A03" strokeWidth="5" strokeLinejoin="round" />
+
+            {/* Wicker Horizontal Weave Lines */}
+            <path d="M 30 84 Q 140 100, 250 84" stroke="#7C2D12" strokeWidth="4" fill="none" strokeLinecap="round" />
+            <path d="M 40 105 Q 140 120, 240 105" stroke="#7C2D12" strokeWidth="4" fill="none" strokeLinecap="round" />
+            <path d="M 54 124 Q 140 136, 226 124" stroke="#7C2D12" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+
+            {/* Wicker Vertical Texture Ribs */}
+            <path d="M 76 68 Q 72 104, 82 135" stroke="#FDBA74" strokeWidth="3" fill="none" strokeDasharray="7 6" opacity="0.85" />
+            <path d="M 112 70 Q 110 105, 116 140" stroke="#FDBA74" strokeWidth="3" fill="none" strokeDasharray="7 6" opacity="0.85" />
+            <path d="M 140 70 Q 140 106, 140 142" stroke="#FDBA74" strokeWidth="3.5" fill="none" strokeDasharray="7 6" opacity="0.85" />
+            <path d="M 168 70 Q 170 105, 164 140" stroke="#FDBA74" strokeWidth="3" fill="none" strokeDasharray="7 6" opacity="0.85" />
+            <path d="M 204 68 Q 208 104, 198 135" stroke="#FDBA74" strokeWidth="3" fill="none" strokeDasharray="7 6" opacity="0.85" />
+
+            {/* Front 3D Rim Lip */}
+            <path d="M 24 65 C 24 80, 256 80, 256 65 C 256 59, 24 59, 24 65 Z" fill="url(#rimGrad)" stroke="#78350F" strokeWidth="4" />
+
+            {/* Cute Glowing Jack-o'-Lantern Face */}
+            <polygon points="106,96 122,86 122,96" fill="#FEF08A" stroke="#451A03" strokeWidth="2" />
+            <polygon points="174,96 158,86 158,96" fill="#FEF08A" stroke="#451A03" strokeWidth="2" />
+            <polygon points="140,98 146,106 134,106" fill="#FEF08A" stroke="#451A03" strokeWidth="1.5" />
+            <path d="M 100,109 Q 140,131 180,109 Q 168,121 140,123 Q 112,121 100,109 Z" fill="#FEF08A" stroke="#451A03" strokeWidth="2" />
+          </svg>
+
+          {/* Caught Candies Badge on Basket */}
+          <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-slate-950/85 border border-amber-400/70 shadow-md flex items-center gap-1.5 whitespace-nowrap pointer-events-none">
+            <span className="text-[12px] animate-bounce">🍬</span>
+            <span
+              ref={caughtDomRef}
+              className="text-xs font-black font-mono text-amber-300 leading-tight"
+            >
+              0 ชิ้น
+            </span>
           </div>
         </div>
       </div>
 
-      {/* TOP ARCADE HUD (Score, Timer, Controls) */}
-      <header className="absolute top-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 sm:gap-3 px-4 py-2.5 rounded-2xl bg-slate-900/80 backdrop-blur-md border border-white/20 shadow-[0_12px_35px_rgba(0,0,0,0.4)] text-white pointer-events-auto">
-        {/* Mode / Logo Badge */}
-        <div className="flex items-center gap-1.5 pr-2 border-r border-white/15">
-          <span className="text-lg animate-pulse">🌋</span>
-          <div className="hidden sm:flex flex-col text-left">
-            <span className="text-[9px] font-black text-[#FF6200] uppercase tracking-wider font-mono">
-              HALLOWEEN VOLCANO
-            </span>
-            <span className="text-[11px] font-bold text-slate-200 leading-tight">
-              มินิเกมเก็บขนมฮาโลวีน
-            </span>
-          </div>
-        </div>
-
-        {/* Score Counter */}
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-orange-500/20 border border-orange-500/40">
-          <Trophy size={15} className="text-amber-400" />
-          <span className="text-base sm:text-lg font-black font-mono tracking-tight text-amber-300">
-            {score}
+      {/* TOP ARCADE HUD (Festive Halloween, No CC member list) */}
+      <header className="absolute top-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 sm:gap-3 px-4 py-2.5 rounded-full bg-slate-900/90 backdrop-blur-md border-2 border-amber-400/50 shadow-[0_12px_35px_rgba(0,0,0,0.5)] text-white pointer-events-auto">
+        {/* Game Title Badge */}
+        <div className="flex items-center gap-1.5 pr-2 border-r border-white/20">
+          <span className="text-xl animate-pulse">🎃</span>
+          <span className="text-xs font-black text-amber-300 font-mono hidden sm:inline tracking-wide">
+            CANDY CATCH!
           </span>
         </div>
 
-        {/* Countdown Timer */}
-        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-xl border font-mono font-black ${
-          timeLeft <= 5 
-            ? "bg-rose-500/30 border-rose-400 text-rose-300 animate-pulse text-base sm:text-lg"
-            : "bg-slate-800/80 border-slate-700 text-slate-200 text-sm sm:text-base"
-        }`}>
-          <span>⏳</span>
-          <span>{timeLeft}s</span>
+        {/* Live Score Counter */}
+        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/25 border border-amber-400/60 shadow-inner">
+          <span className="text-sm">⭐</span>
+          <span
+            ref={scoreDomRef}
+            className="text-base sm:text-lg font-black font-mono tracking-tight text-amber-300 min-w-[28px] text-center"
+          >
+            0
+          </span>
+        </div>
+
+        {/* 5-Second Blitz Countdown */}
+        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/25 border border-rose-400/70 shadow-inner">
+          <span className="animate-spin" style={{ animationDuration: "3s" }}>⏳</span>
+          <span
+            ref={timerDomRef}
+            className="text-base sm:text-lg font-black font-mono text-rose-300 min-w-[32px] text-center animate-pulse"
+          >
+            5s
+          </span>
         </div>
 
         {/* Combo Indicator */}
-        {combo >= 2 && (
-          <div className="hidden md:flex items-center gap-1 px-2.5 py-1 rounded-xl bg-gradient-to-r from-orange-500/30 to-rose-500/30 border border-orange-400/50 text-orange-300 text-xs font-black animate-bounce">
-            <Flame size={13} className="text-orange-400" />
-            <span>COMBO x{combo}</span>
-          </div>
-        )}
+        <div
+          ref={comboDomRef}
+          style={{ display: "none" }}
+          className="items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-orange-500/40 to-rose-500/40 border border-orange-400 text-orange-200 text-xs font-black animate-bounce font-mono"
+        >
+          🔥 COMBO
+        </div>
 
-        {/* Burst More Button */}
+        {/* Burst Button */}
         <button
           type="button"
-          onClick={() => triggerVolcanoBurst(28)}
+          onClick={() => spawnCenterCandies(5)}
           disabled={isGameOver}
-          className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#FF6200] hover:bg-[#EE5500] active:scale-95 text-white text-xs font-black shadow-[0_2px_10px_rgba(255,98,0,0.35)] transition-all cursor-pointer disabled:opacity-40"
-          title="ยิงลูกกวาดภูเขาไฟเพิ่ม!"
+          className="hidden sm:flex items-center gap-1 px-3 py-1 rounded-full bg-[#FF6200] hover:bg-[#EE5500] active:scale-95 text-white text-xs font-black shadow-[0_2px_10px_rgba(255,98,0,0.4)] transition-all cursor-pointer disabled:opacity-40"
+          title="ปล่อยลูกกวาดลงมาเพิ่ม!"
         >
           <Zap size={13} />
-          <span>ยิงเพิ่ม!</span>
+          <span>ปล่อยขนม!</span>
         </button>
 
         {/* Sound Toggle */}
         <button
           type="button"
           onClick={() => setSoundEnabled((v) => !v)}
-          className="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer"
+          className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer"
           title={soundEnabled ? "ปิดเสียง" : "เปิดเสียง"}
         >
           {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
-        </button>
-
-        {/* Leaderboard Toggle */}
-        <button
-          type="button"
-          onClick={() => setShowLeaderboard((v) => !v)}
-          className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-            showLeaderboard ? "bg-amber-500/30 text-amber-300 border border-amber-400/40" : "bg-slate-800/80 text-slate-400"
-          }`}
-          title="กระดานผู้นำ"
-        >
-          <Award size={14} />
-          <span className="hidden md:inline">บอร์ด</span>
         </button>
 
         {/* Close Button */}
         <button
           type="button"
           onClick={onClose}
-          className="w-8 h-8 rounded-xl bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 hover:text-rose-100 flex items-center justify-center transition-colors cursor-pointer"
+          className="w-8 h-8 rounded-full bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 hover:text-rose-100 flex items-center justify-center transition-colors cursor-pointer"
           title="ออกจากมินิเกม (ESC)"
         >
           <X size={16} />
         </button>
       </header>
 
-      {/* FLOATING LEADERBOARD PANEL (ทางขวาของหน้าจอทำงาน) */}
-      {showLeaderboard && (
-        <aside className="absolute right-4 top-20 bottom-24 w-72 sm:w-80 z-30 pointer-events-auto flex flex-col rounded-3xl bg-slate-900/85 backdrop-blur-md border border-amber-500/30 shadow-[0_16px_45px_rgba(0,0,0,0.5),0_0_20px_rgba(245,158,11,0.15)] overflow-hidden animate-in slide-in-from-right duration-200">
-          {/* Plaque Header */}
-          <div className="p-3.5 pb-2.5 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-amber-950/40 via-orange-950/30 to-slate-900">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">🏆</span>
-              <div>
-                <h3 className="text-xs font-black text-amber-300 uppercase tracking-wider font-mono">
-                  SPOOKY HALL OF FAME
-                </h3>
-                <p className="text-[10px] text-slate-400">
-                  กระดานคะแนนฮาโลวีน CC TEAM
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowLeaderboard(false)}
-              className="text-slate-400 hover:text-slate-200 p-1 cursor-pointer"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-
-          {/* Ranking Scroll Area */}
-          <div className="flex-1 p-2.5 space-y-1.5 overflow-y-auto custom-scrollbar">
-            {leaderboard.map((item, idx) => {
-              const isTop1 = idx === 0;
-              const isTop2 = idx === 1;
-              const isTop3 = idx === 2;
-
-              return (
-                <div
-                  key={item.id || idx}
-                  className={`p-2.5 rounded-2xl transition-all flex items-center gap-2.5 ${
-                    isTop1
-                      ? "bg-gradient-to-r from-amber-500/25 to-orange-500/20 border border-amber-400/50 shadow-xs"
-                      : isTop2
-                      ? "bg-slate-800/80 border border-slate-600/60"
-                      : isTop3
-                      ? "bg-slate-800/60 border border-amber-700/40"
-                      : "bg-slate-900/60 hover:bg-slate-800/50 border border-white/5"
-                  }`}
-                >
-                  {/* Rank Badge */}
-                  <div className="w-6 h-6 rounded-lg flex items-center justify-center font-black font-mono text-xs shrink-0">
-                    {isTop1 ? "🥇" : isTop2 ? "🥈" : isTop3 ? "🥉" : (
-                      <span className="text-slate-400 font-bold">{idx + 1}</span>
-                    )}
-                  </div>
-
-                  {/* Player Details */}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="text-xs font-bold text-slate-100 truncate">
-                        {item.playerName}
-                      </span>
-                      <span className="text-xs font-black font-mono text-amber-300 shrink-0">
-                        {item.score}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-[10px] text-slate-400 mt-0.5 font-mono">
-                      <span className="truncate">{item.titleEarned || "นักล่าขนม"}</span>
-                      <span>{item.candiesCaught} ชิ้น</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Leaderboard Footer */}
-          <div className="p-2 border-t border-white/10 text-center text-[10px] text-slate-400 font-mono">
-            {leaderboard.length} ผู้เล่นในประวัติการณ์ • อัปเดตสด
-          </div>
-        </aside>
-      )}
-
-      {/* GAME OVER & CONGRATULATIONS POPUP MODAL */}
+      {/* GAME OVER & CONGRATULATIONS CELEBRATION MODAL (Fun, Playful & Quick Return) */}
       {isGameOver && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in zoom-in-95 duration-200">
-          <div className="relative max-w-md w-full rounded-3xl bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-amber-400/50 p-6 sm:p-7 text-center shadow-[0_25px_60px_rgba(0,0,0,0.6),0_0_35px_rgba(245,158,11,0.25)]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md animate-in zoom-in-95 duration-200">
+          <div className="relative max-w-md w-full rounded-3xl bg-gradient-to-b from-[#241142] via-[#1a0b30] to-[#110521] border-2 border-amber-400/80 p-6 sm:p-7 text-center shadow-[0_25px_60px_rgba(0,0,0,0.7),0_0_40px_rgba(245,158,11,0.35)]">
             
-            {/* Top Crown Emblem */}
-            <div className="w-16 h-16 mx-auto -mt-12 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-300 border-2 border-white shadow-[0_8px_25px_rgba(245,158,11,0.5)] flex items-center justify-center text-3xl animate-bounce">
+            {/* Top Bouncing Halloween Emblem */}
+            <div className="w-18 h-18 mx-auto -mt-14 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-300 border-2 border-white shadow-[0_8px_25px_rgba(245,158,11,0.6)] flex items-center justify-center text-3xl animate-bounce">
               🎃
             </div>
 
-            <div className="mt-4">
+            <div className="mt-3">
               <span className="text-[11px] font-black text-[#FF6200] uppercase tracking-[0.2em] font-mono">
-                HALLOWEEN VOLCANO COMPLETE
+                ⚡ 5-SECOND BLITZ COMPLETE!
               </span>
               <h2 className="text-2xl font-black text-white mt-1">
-                ภารกิจภูเขาไฟฮาโลวีนสำเร็จ!
+                🎉 หมดเวลา 5 วินาทีสุดมันส์!
               </h2>
-              <p className="text-xs text-amber-200/80 mt-1">
-                {getPlayerTitle(score)}
+              <p className="text-xs font-bold text-amber-200 mt-1">
+                {getPlayerTitle(finalScore)}
               </p>
             </div>
 
             {/* Score Highlight Box */}
-            <div className="my-5 p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/20 to-amber-500/15 border border-amber-400/40">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">
-                FINAL SCORE
+            <div className="my-4 p-4 rounded-2xl bg-gradient-to-r from-amber-500/20 via-orange-500/25 to-amber-500/20 border border-amber-400/50">
+              <span className="text-[10px] font-bold text-amber-200 uppercase tracking-widest font-mono">
+                คะแนนรวมที่คุณทำได้
               </span>
-              <div className="text-4xl font-black font-mono text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-orange-400 to-amber-200 mt-0.5">
-                {score}
+              <div className="text-4xl font-black font-mono text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-orange-300 to-amber-100 mt-1">
+                ⭐ {finalScore}
               </div>
 
               <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-white/10 text-xs font-mono">
                 <div>
                   <span className="text-slate-400 block text-[10px]">เก็บขนมได้</span>
-                  <span className="font-bold text-slate-100">{candiesCaught} ชิ้น</span>
+                  <span className="font-bold text-slate-100 text-sm">🍬 {finalCandies} ชิ้น</span>
                 </div>
                 <div>
                   <span className="text-slate-400 block text-[10px]">คอมโบสูงสุด</span>
-                  <span className="font-bold text-orange-400">x{maxCombo}</span>
+                  <span className="font-bold text-orange-400 text-sm">🔥 x{finalMaxCombo}</span>
                 </div>
               </div>
             </div>
 
-            {/* Name Input & Submit Form */}
-            {!hasSubmitted ? (
-              <form onSubmit={handleSubmitScore} className="space-y-3">
-                <div className="text-left">
-                  <label className="text-[11px] font-bold text-slate-300 block mb-1">
-                    พิมพ์ชื่อของคุณเพื่อบันทึกลงกระดานเกียรติยศ:
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    maxLength={24}
-                    value={playerName}
-                    onChange={(e) => setPlayerName(e.target.value)}
-                    placeholder="ใส่ชื่อหรือฉายา..."
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-600 focus:border-amber-400 focus:outline-none text-white text-sm font-semibold placeholder:text-slate-500 font-sans"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmittingScore || !playerName.trim()}
-                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#FF6200] to-[#EE5500] hover:from-[#EE5500] hover:to-[#D94400] active:scale-95 text-white text-sm font-black shadow-[0_6px_20px_rgba(255,98,0,0.35)] flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50"
-                >
-                  <Send size={15} />
-                  <span>{isSubmittingScore ? "กำลังบันทึก..." : "🏆 บันทึกคะแนนลง Leaderboard"}</span>
-                </button>
-              </form>
-            ) : (
-              <div className="p-3 rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-bold mb-3 flex items-center justify-center gap-2">
-                <span>✅</span>
-                <span>บันทึกคะแนนของคุณเรียบร้อยแล้ว!</span>
+            {/* Name Input & Submit to Return to Normal Screen */}
+            <form onSubmit={handleSubmitAndFinish} className="space-y-3">
+              <div className="text-left">
+                <label className="text-xs font-bold text-amber-200 block mb-1">
+                  ✨ ใส่ชื่อของคุณเพื่อบันทึกสถิติ:
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  maxLength={24}
+                  value={playerName}
+                  onChange={(e) => setPlayerName(e.target.value)}
+                  placeholder="ใส่ชื่อหรือฉายา..."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border-2 border-amber-400/60 focus:border-amber-300 focus:outline-none text-white text-sm font-semibold placeholder:text-slate-500 font-sans shadow-inner"
+                />
               </div>
-            )}
 
-            {/* Action Buttons */}
+              {/* Big fun button: Saves and exits immediately to normal page */}
+              <button
+                type="submit"
+                disabled={isSubmittingScore || !playerName.trim()}
+                className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-[#FF6200] via-[#FF7700] to-[#EE5500] hover:from-[#EE5500] hover:to-[#D94400] active:scale-95 text-white text-sm font-black shadow-[0_6px_22px_rgba(255,98,0,0.45)] flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50"
+              >
+                <Send size={16} />
+                <span>
+                  {isSubmittingScore ? "กำลังบันทึก..." : hasSubmitted ? "✅ บันทึกแล้ว!" : "🏆 บันทึกคะแนน & เข้าสู่หน้าปกติ"}
+                </span>
+              </button>
+            </form>
+
+            {/* Quick Action Footer */}
             <div className="flex items-center gap-2 mt-4 pt-3 border-t border-white/10">
               <button
                 type="button"
                 onClick={startGame}
-                className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               >
                 <RefreshCw size={13} />
-                <span>เล่นใหม่อีกรอบ</span>
+                <span>🕹️ เล่นอีกรอบ (5 วิ)</span>
               </button>
 
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-slate-200 text-xs font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer"
               >
-                <span>กลับสู่หน้าทำงาน</span>
+                <span>เข้าสู่หน้าปกติ</span>
               </button>
             </div>
 

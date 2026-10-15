@@ -42,39 +42,42 @@ interface FloatingScoreText {
 }
 
 const CANDY_TYPES = [
-  { emoji: "🍬", points: 10, isRare: false, weight: 35 },
+  { emoji: "🍬", points: 10, isRare: false, weight: 30 },
   { emoji: "🍭", points: 20, isRare: false, weight: 25 },
   { emoji: "🍫", points: 30, isRare: false, weight: 20 },
   { emoji: "🍩", points: 25, isRare: false, weight: 15 },
-  { emoji: "🎃", points: 50, isRare: true, weight: 10 },
-  { emoji: "👻", points: 100, isRare: true, weight: 5 },
-  { emoji: "⭐", points: 75, isRare: true, weight: 8 },
-  { emoji: "🕷️", points: 40, isRare: false, weight: 10 },
+  { emoji: "🎃", points: 50, isRare: true, weight: 12 },
+  { emoji: "👻", points: 100, isRare: true, weight: 8 },
+  { emoji: "⭐", points: 75, isRare: true, weight: 10 },
+  { emoji: "🍪", points: 20, isRare: false, weight: 15 },
+  { emoji: "🧁", points: 35, isRare: false, weight: 12 },
+  { emoji: "🕷️", points: 40, isRare: false, weight: 8 },
 ];
 
-// Round duration set strictly to 5 seconds per user request
 const ROUND_DURATION_SECONDS = 5;
-const MAX_PARTICLES = 120;
+const MAX_PARTICLES = 130;
 
 export default function HalloweenMinigameArena({
   isOpen,
   onClose,
   pumpkinOrigin,
 }: HalloweenMinigameArenaProps) {
-  // Game state
+  // Game lifecycle state
   const [isPlaying, setIsPlaying] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [playerName, setPlayerName] = useState("");
   const [isSubmittingScore, setIsSubmittingScore] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
-  
-  // Final score summary for modal
+
+  // Final stats for game over modal
   const [finalScore, setFinalScore] = useState(0);
   const [finalCandies, setFinalCandies] = useState(0);
   const [finalMaxCombo, setFinalMaxCombo] = useState(0);
 
   // Mutable refs for 60fps zero-lag updates (no React re-renders during active gameplay)
+  const isPlayingRef = useRef(false);
+  const isGameOverRef = useRef(false);
   const scoreRef = useRef(0);
   const candiesCaughtRef = useRef(0);
   const comboRef = useRef(0);
@@ -94,7 +97,7 @@ export default function HalloweenMinigameArena({
   const floatingTextsRef = useRef<FloatingScoreText[]>([]);
   const animFrameIdRef = useRef<number | null>(null);
   const roundTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const dropIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const waveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Basket coordinate tracker
   const basketPosRef = useRef({
@@ -126,8 +129,8 @@ export default function HalloweenMinigameArena({
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = "sine";
-        osc.frequency.setValueAtTime(620, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(920, ctx.currentTime + 0.08);
+        osc.frequency.setValueAtTime(640, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(940, ctx.currentTime + 0.08);
         gain.gain.setValueAtTime(0.2, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.09);
         osc.connect(gain);
@@ -152,16 +155,16 @@ export default function HalloweenMinigameArena({
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = "sawtooth";
-        osc.frequency.setValueAtTime(320, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.2);
-        gain.gain.setValueAtTime(0.25, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+        osc.frequency.setValueAtTime(340, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(70, ctx.currentTime + 0.22);
+        gain.gain.setValueAtTime(0.28, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.22);
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start();
-        osc.stop(ctx.currentTime + 0.21);
+        osc.stop(ctx.currentTime + 0.23);
       } else if (type === "gameover") {
-        const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5]; // C5, E5, G5, C6, E6
+        const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5];
         notes.forEach((freq, idx) => {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
@@ -176,11 +179,11 @@ export default function HalloweenMinigameArena({
         });
       }
     } catch {
-      // Audio autoplay policy fallback
+      // Audio autoplay fallback
     }
   }, [soundEnabled]);
 
-  // Initial Player Name retrieval
+  // Initial Player Name
   useEffect(() => {
     if (typeof window !== "undefined") {
       const saved =
@@ -191,64 +194,15 @@ export default function HalloweenMinigameArena({
     }
   }, []);
 
-  // Center Candy Stream Generator: drops candies down the middle of the screen
-  const spawnCenterCandies = useCallback((count = 4) => {
-    if (typeof window === "undefined") return;
-    const width = window.innerWidth;
-    const totalWeight = CANDY_TYPES.reduce((acc, c) => acc + c.weight, 0);
-    const newItems: CandyParticle[] = [];
-
-    for (let i = 0; i < count; i++) {
-      let rand = Math.random() * totalWeight;
-      let selected = CANDY_TYPES[0];
-      for (const t of CANDY_TYPES) {
-        if (rand < t.weight) {
-          selected = t;
-          break;
-        }
-        rand -= t.weight;
-      }
-
-      // Spread strictly around the CENTER corridor (35% to 65% of screen width)
-      const centerX = width * 0.5 + (Math.random() - 0.5) * (width * 0.28);
-      const startY = -20 - Math.random() * 40;
-      const vy = Math.random() * 3.5 + 4.2; // Fall downward
-      const vx = (Math.random() - 0.5) * 2.2; // Gentle horizontal drift
-
-      newItems.push({
-        id: Math.random() + Date.now(),
-        emoji: selected.emoji,
-        x: centerX,
-        y: startY,
-        vx,
-        vy,
-        rotation: Math.random() * 360,
-        vRot: (Math.random() - 0.5) * 14,
-        size: selected.isRare ? 36 : Math.floor(Math.random() * 10) + 26,
-        points: selected.points,
-        isRare: selected.isRare,
-        settled: false,
-        opacity: 1,
-        bounceCount: 0,
-      });
-    }
-
-    const current = particlesRef.current;
-    if (current.length + newItems.length > MAX_PARTICLES) {
-      particlesRef.current = [...current.slice(-(MAX_PARTICLES - newItems.length)), ...newItems];
-    } else {
-      particlesRef.current = [...current, ...newItems];
-    }
-  }, []);
-
-  // Initial Volcano Burst: Shoots candies from pumpkin arcing directly to the center sky
-  const triggerVolcanoBurst = useCallback((count = 32) => {
+  // Spectacular Candy Volcano Eruption: Explodes out of the pumpkin in a high-energy fountain arc
+  const triggerVolcanoBurst = useCallback((count = 36) => {
     if (typeof window === "undefined") return;
     playSound("volcano");
 
     const width = window.innerWidth;
     const height = window.innerHeight;
 
+    // Use pumpkin origin on the grass
     const originX = pumpkinOrigin?.x || width * 0.78;
     const originY = pumpkinOrigin?.y || height * 0.65;
 
@@ -266,22 +220,24 @@ export default function HalloweenMinigameArena({
         rand -= t.weight;
       }
 
-      // Arc towards the center of the screen
-      const targetCenterX = width * 0.5 + (Math.random() - 0.5) * (width * 0.24);
-      const framesToApex = 25 + Math.random() * 8;
-      const vx = (targetCenterX - originX) / framesToApex;
-      const vy = -(Math.random() * 5 + 16.5);
+      // Volcano explosion angle: Arcs high up and fans left towards the center and sky
+      // Angle between -155 deg and -35 deg
+      const angle = -Math.PI * 0.86 + Math.random() * Math.PI * 0.66;
+      // High upward burst velocity
+      const speed = Math.random() * 12 + 18;
+      const vx = Math.cos(angle) * speed * (1.1 + Math.random() * 0.4);
+      const vy = Math.sin(angle) * speed;
 
       newItems.push({
         id: Math.random() + Date.now(),
         emoji: selected.emoji,
-        x: originX + (Math.random() - 0.5) * 20,
-        y: originY + (Math.random() - 0.5) * 15,
+        x: originX + (Math.random() - 0.5) * 24,
+        y: originY + (Math.random() - 0.5) * 16,
         vx,
         vy,
         rotation: Math.random() * 360,
-        vRot: (Math.random() - 0.5) * 18,
-        size: selected.isRare ? 36 : Math.floor(Math.random() * 10) + 26,
+        vRot: (Math.random() - 0.5) * 22,
+        size: selected.isRare ? 38 : Math.floor(Math.random() * 12) + 26,
         points: selected.points,
         isRare: selected.isRare,
         settled: false,
@@ -298,20 +254,41 @@ export default function HalloweenMinigameArena({
     }
   }, [pumpkinOrigin, playSound]);
 
+  // Clean finish function
+  const finishGame = useCallback(() => {
+    // Clear all timers
+    if (roundTimerRef.current) clearInterval(roundTimerRef.current);
+    if (waveTimerRef.current) clearTimeout(waveTimerRef.current);
+
+    isPlayingRef.current = false;
+    isGameOverRef.current = true;
+
+    setIsPlaying(false);
+    setIsGameOver(true);
+    playSound("gameover");
+
+    // Capture final scores
+    setFinalScore(scoreRef.current);
+    setFinalCandies(candiesCaughtRef.current);
+    setFinalMaxCombo(maxComboRef.current);
+  }, [playSound]);
+
   // Start / Restart 5-Second Blitz Game
   const startGame = useCallback(() => {
+    // Reset flags
+    isPlayingRef.current = true;
+    isGameOverRef.current = false;
     setIsPlaying(true);
     setIsGameOver(false);
     setHasSubmitted(false);
 
-    // Reset internal counters
     scoreRef.current = 0;
     candiesCaughtRef.current = 0;
     comboRef.current = 0;
     maxComboRef.current = 0;
     timeLeftRef.current = ROUND_DURATION_SECONDS;
 
-    // Reset DOM HUD directly
+    // Reset DOM HUD
     if (scoreDomRef.current) scoreDomRef.current.innerText = "0";
     if (timerDomRef.current) timerDomRef.current.innerText = `${ROUND_DURATION_SECONDS}s`;
     if (caughtDomRef.current) caughtDomRef.current.innerText = "0 ชิ้น";
@@ -320,20 +297,20 @@ export default function HalloweenMinigameArena({
     particlesRef.current = [];
     floatingTextsRef.current = [];
 
-    // Initial eruption towards center
+    // Wave 1: Immediate massive volcanic eruption!
     setTimeout(() => {
-      triggerVolcanoBurst(28);
-    }, 150);
+      triggerVolcanoBurst(38);
+    }, 100);
 
-    // Continuous center candy rain stream every 350ms throughout the 5 seconds
-    if (dropIntervalRef.current) clearInterval(dropIntervalRef.current);
-    dropIntervalRef.current = setInterval(() => {
-      if (timeLeftRef.current > 0) {
-        spawnCenterCandies(3);
+    // Wave 2: Mid-game eruption at 2.5s for peak excitement!
+    if (waveTimerRef.current) clearTimeout(waveTimerRef.current);
+    waveTimerRef.current = setTimeout(() => {
+      if (isPlayingRef.current) {
+        triggerVolcanoBurst(28);
       }
-    }, 350);
+    }, 2400);
 
-    // 5-Second Countdown Timer
+    // 5-Second Strict Countdown Timer
     if (roundTimerRef.current) clearInterval(roundTimerRef.current);
     roundTimerRef.current = setInterval(() => {
       timeLeftRef.current -= 1;
@@ -344,31 +321,20 @@ export default function HalloweenMinigameArena({
       }
 
       if (remaining <= 0) {
-        if (roundTimerRef.current) clearInterval(roundTimerRef.current);
-        if (dropIntervalRef.current) clearInterval(dropIntervalRef.current);
-
-        // Game Over reached!
-        setIsGameOver(true);
-        setIsPlaying(false);
-        playSound("gameover");
-
-        // Sync final stats to modal state
-        setFinalScore(scoreRef.current);
-        setFinalCandies(candiesCaughtRef.current);
-        setFinalMaxCombo(maxComboRef.current);
+        finishGame();
       }
     }, 1000);
-  }, [triggerVolcanoBurst, spawnCenterCandies, playSound]);
+  }, [triggerVolcanoBurst, finishGame]);
 
-  // Clean up timers on unmount
+  // Clean up all timers when unmounted
   useEffect(() => {
     return () => {
       if (roundTimerRef.current) clearInterval(roundTimerRef.current);
-      if (dropIntervalRef.current) clearInterval(dropIntervalRef.current);
+      if (waveTimerRef.current) clearTimeout(waveTimerRef.current);
     };
   }, []);
 
-  // Track Mouse & Touch for Basket
+  // Track Mouse & Touch for Basket Movement
   useEffect(() => {
     if (!isOpen) return;
 
@@ -403,7 +369,7 @@ export default function HalloweenMinigameArena({
     };
   }, [isOpen, onClose]);
 
-  // High Performance 60FPS Physics & Catch Loop (Zero React Rerenders)
+  // 60FPS Physics & Catch Loop (Independent from React re-renders)
   useEffect(() => {
     if (!isOpen) return;
 
@@ -429,17 +395,16 @@ export default function HalloweenMinigameArena({
       const gravity = 0.58;
       const floorY = height - 25;
 
-      // Basket dimensions (Responsive & Generous matching user drawing)
+      // Big realistic basket dimensions
       const basketW = Math.min(280, Math.max(190, width * 0.32));
-      const basketH = Math.round(basketW * 0.53); // Aspect ratio 280x150
+      const basketH = Math.round(basketW * 0.53);
       const basketY = height - basketH - 18;
-      const catchY = basketY + basketH * 0.43; // Rim level where cavity opens
+      const catchY = basketY + basketH * 0.43;
 
       // Smooth basket lerp tracking
       const basket = basketPosRef.current;
       basket.x += (basket.targetX - basket.x) * 0.28;
 
-      // Move basket DOM container with hardware accelerated 3D transform
       if (basketDomRef.current) {
         basketDomRef.current.style.transform = `translate3d(${basket.x - basketW / 2}px, ${basketY}px, 0)`;
         basketDomRef.current.style.width = `${basketW}px`;
@@ -461,26 +426,26 @@ export default function HalloweenMinigameArena({
           p.vx *= 0.994;
           p.rotation += p.vRot;
 
-          // Screen edge bouncing
+          // Wall bouncing
           if (p.x <= p.size / 2) {
             p.x = p.size / 2;
-            p.vx = -p.vx * 0.5;
+            p.vx = -p.vx * 0.55;
           } else if (p.x >= width - p.size / 2) {
             p.x = width - p.size / 2;
-            p.vx = -p.vx * 0.5;
+            p.vx = -p.vx * 0.55;
           }
 
-          // Generous Basket Catch Zone (Width covers 82% of basket rim)
+          // Generous Basket Catch Zone
           const catchSpan = basketW * 0.42;
           const inBasketX = p.x >= basket.x - catchSpan && p.x <= basket.x + catchSpan;
-          const inBasketY = p.y >= catchY - 18 && p.y <= catchY + 24;
+          const inBasketY = p.y >= catchY - 18 && p.y <= catchY + 26;
           const isFalling = p.vy > 0;
 
-          if (inBasketX && inBasketY && isFalling && isPlaying && !isGameOver) {
+          if (inBasketX && inBasketY && isFalling && isPlayingRef.current && !isGameOverRef.current) {
             // CAUGHT!
             playSound(p.isRare ? "rare" : "catch");
 
-            // Quick bounce animation on basket DOM element
+            // Basket bounce animation
             if (basketDomRef.current) {
               basketDomRef.current.style.transform = `translate3d(${basket.x - basketW / 2}px, ${basketY + 5}px, 0) scale(1.06, 0.94)`;
               setTimeout(() => {
@@ -490,7 +455,7 @@ export default function HalloweenMinigameArena({
               }, 90);
             }
 
-            // Combo & Score calculation
+            // Combo & Score
             comboRef.current += 1;
             if (comboRef.current > maxComboRef.current) {
               maxComboRef.current = comboRef.current;
@@ -501,7 +466,7 @@ export default function HalloweenMinigameArena({
             scoreRef.current += pointsAwarded;
             candiesCaughtRef.current += 1;
 
-            // Update DOM HUD directly without React re-render lag
+            // Direct HUD updates without React re-render lag
             if (scoreDomRef.current) scoreDomRef.current.innerText = String(scoreRef.current);
             if (caughtDomRef.current) caughtDomRef.current.innerText = `${candiesCaughtRef.current} ชิ้น`;
             if (comboDomRef.current) {
@@ -524,7 +489,6 @@ export default function HalloweenMinigameArena({
               scale: p.isRare ? 1.35 : multiplier > 1 ? 1.2 : 1.0,
             });
 
-            // Candy enters basket, do not retain
             continue;
           }
 
@@ -542,14 +506,13 @@ export default function HalloweenMinigameArena({
             }
           }
         } else {
-          // Settled on floor: fade out
           p.opacity -= 0.015;
         }
 
         if (p.opacity > 0) {
           remaining.push(p);
 
-          // Render Candy on Canvas (Clean 60fps, no expensive software blur filters)
+          // Fast GPU rendering
           ctx.save();
           ctx.globalAlpha = Math.max(0, p.opacity);
           ctx.translate(p.x, p.y);
@@ -564,7 +527,7 @@ export default function HalloweenMinigameArena({
 
       particlesRef.current = remaining;
 
-      // Render Floating Score Texts
+      // Floating Score Texts
       const fRemaining: FloatingScoreText[] = [];
       for (let j = 0; j < floatingTextsRef.current.length; j++) {
         const ft = floatingTextsRef.current[j];
@@ -597,8 +560,7 @@ export default function HalloweenMinigameArena({
     handleResize();
     window.addEventListener("resize", handleResize);
 
-    // Auto start game round
-    startGame();
+    // Start 60fps loop
     animFrameIdRef.current = requestAnimationFrame(loop);
 
     return () => {
@@ -606,7 +568,13 @@ export default function HalloweenMinigameArena({
       if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
       window.removeEventListener("resize", handleResize);
     };
-  }, [isOpen, isPlaying, isGameOver, playSound, startGame]);
+  }, [isOpen, playSound]);
+
+  // Start game once upon opening
+  useEffect(() => {
+    if (!isOpen) return;
+    startGame();
+  }, [isOpen]); // Only triggers when arena opens! Never restarts on score/gameover state!
 
   // Submit Score & Finish Game
   const handleSubmitAndFinish = async (e: React.FormEvent) => {
@@ -630,7 +598,7 @@ export default function HalloweenMinigameArena({
       // Close modal and return smoothly to normal workspace page
       setTimeout(() => {
         onClose();
-      }, 350);
+      }, 300);
     } catch (err) {
       console.error("Failed to submit score:", err);
       onClose();
@@ -646,12 +614,13 @@ export default function HalloweenMinigameArena({
       
       {/* Translucent Spooky Ambience over Workspace */}
       <div 
-        className="absolute inset-0 bg-slate-950/30 backdrop-blur-[1.5px] transition-all"
+        className="absolute inset-0 bg-slate-950/30 backdrop-blur-[1.5px] transition-all cursor-pointer"
         onClick={() => {
-          if (isPlaying && !isGameOver) {
-            spawnCenterCandies(4);
+          if (isPlayingRef.current && !isGameOverRef.current) {
+            triggerVolcanoBurst(20);
           }
         }}
+        title="แตะหน้าจอเพื่อยิงลูกกวาดภูเขาไฟเพิ่ม!"
       />
 
       {/* Screen Edge Ambient Neon Glow */}
@@ -663,7 +632,7 @@ export default function HalloweenMinigameArena({
         className="absolute inset-0 pointer-events-none"
       />
 
-      {/* BIG AUTHENTIC HALLOWEEN WICKER BASKET (Following user's sketch) */}
+      {/* BIG AUTHENTIC HALLOWEEN WICKER BASKET */}
       <div
         ref={basketDomRef}
         className="fixed top-0 left-0 pointer-events-none z-30 transition-transform duration-75 will-change-transform filter drop-shadow-[0_14px_28px_rgba(0,0,0,0.5)]"
@@ -737,13 +706,13 @@ export default function HalloweenMinigameArena({
         </div>
       </div>
 
-      {/* TOP ARCADE HUD (Festive Halloween, No CC member list) */}
+      {/* TOP ARCADE HUD */}
       <header className="absolute top-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 sm:gap-3 px-4 py-2.5 rounded-full bg-slate-900/90 backdrop-blur-md border-2 border-amber-400/50 shadow-[0_12px_35px_rgba(0,0,0,0.5)] text-white pointer-events-auto">
         {/* Game Title Badge */}
         <div className="flex items-center gap-1.5 pr-2 border-r border-white/20">
           <span className="text-xl animate-pulse">🎃</span>
           <span className="text-xs font-black text-amber-300 font-mono hidden sm:inline tracking-wide">
-            CANDY CATCH!
+            CANDY VOLCANO!
           </span>
         </div>
 
@@ -778,16 +747,16 @@ export default function HalloweenMinigameArena({
           🔥 COMBO
         </div>
 
-        {/* Burst Button */}
+        {/* Burst More Candies Button */}
         <button
           type="button"
-          onClick={() => spawnCenterCandies(5)}
+          onClick={() => triggerVolcanoBurst(24)}
           disabled={isGameOver}
           className="hidden sm:flex items-center gap-1 px-3 py-1 rounded-full bg-[#FF6200] hover:bg-[#EE5500] active:scale-95 text-white text-xs font-black shadow-[0_2px_10px_rgba(255,98,0,0.4)] transition-all cursor-pointer disabled:opacity-40"
-          title="ปล่อยลูกกวาดลงมาเพิ่ม!"
+          title="ยิงลูกกวาดภูเขาไฟเพิ่ม!"
         >
           <Zap size={13} />
-          <span>ปล่อยขนม!</span>
+          <span>พุ่งเพิ่ม!</span>
         </button>
 
         {/* Sound Toggle */}
@@ -800,7 +769,7 @@ export default function HalloweenMinigameArena({
           {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
         </button>
 
-        {/* Close Button */}
+        {/* Close Button: Instantly exits to normal screen */}
         <button
           type="button"
           onClick={onClose}
@@ -811,7 +780,7 @@ export default function HalloweenMinigameArena({
         </button>
       </header>
 
-      {/* GAME OVER & CONGRATULATIONS CELEBRATION MODAL (Fun, Playful & Quick Return) */}
+      {/* GAME OVER & CONGRATULATIONS CELEBRATION MODAL */}
       {isGameOver && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md animate-in zoom-in-95 duration-200">
           <div className="relative max-w-md w-full rounded-3xl bg-gradient-to-b from-[#241142] via-[#1a0b30] to-[#110521] border-2 border-amber-400/80 p-6 sm:p-7 text-center shadow-[0_25px_60px_rgba(0,0,0,0.7),0_0_40px_rgba(245,158,11,0.35)]">
@@ -823,7 +792,7 @@ export default function HalloweenMinigameArena({
 
             <div className="mt-3">
               <span className="text-[11px] font-black text-[#FF6200] uppercase tracking-[0.2em] font-mono">
-                ⚡ 5-SECOND BLITZ COMPLETE!
+                ⚡ 5-SECOND BLITZ FINISHED!
               </span>
               <h2 className="text-2xl font-black text-white mt-1">
                 🎉 หมดเวลา 5 วินาทีสุดมันส์!
@@ -872,7 +841,7 @@ export default function HalloweenMinigameArena({
                 />
               </div>
 
-              {/* Big fun button: Saves and exits immediately to normal page */}
+              {/* Big button: Saves and exits immediately to normal page */}
               <button
                 type="submit"
                 disabled={isSubmittingScore || !playerName.trim()}
@@ -880,7 +849,7 @@ export default function HalloweenMinigameArena({
               >
                 <Send size={16} />
                 <span>
-                  {isSubmittingScore ? "กำลังบันทึก..." : hasSubmitted ? "✅ บันทึกแล้ว!" : "🏆 บันทึกคะแนน & เข้าสู่หน้าปกติ"}
+                  {isSubmittingScore ? "กำลังบันทึก..." : hasSubmitted ? "✅ บันทึกแล้ว!" : "🏆 บันทึกคะแนน & ออกจากเกม"}
                 </span>
               </button>
             </form>
@@ -901,7 +870,7 @@ export default function HalloweenMinigameArena({
                 onClick={onClose}
                 className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer"
               >
-                <span>เข้าสู่หน้าปกติ</span>
+                <span>ออกจากเกม</span>
               </button>
             </div>
 

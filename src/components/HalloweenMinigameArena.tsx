@@ -43,6 +43,91 @@ interface FloatingScoreText {
   scale: number;
 }
 
+interface CatchSparkle {
+  id: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  size: number;
+  color: string;
+  opacity: number;
+}
+
+// Fierce Fiery-Eyed Jack-o'-Lantern Emblem (ฟักทองตาไฟดุดัน)
+function FiercePumpkinEmblem({ className = "w-24 h-20" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 120 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="fpBody" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#FF7A00" />
+          <stop offset="65%" stopColor="#EA580C" />
+          <stop offset="100%" stopColor="#9A3412" />
+        </radialGradient>
+        <linearGradient id="fpFire" x1="0%" y1="100%" x2="0%" y2="0%">
+          <stop offset="0%" stopColor="#EF4444" />
+          <stop offset="35%" stopColor="#F97316" />
+          <stop offset="70%" stopColor="#FBBF24" />
+          <stop offset="100%" stopColor="#FEF08A" />
+        </linearGradient>
+        <radialGradient id="fpFireCore" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="40%" stopColor="#FEF08A" />
+          <stop offset="75%" stopColor="#F97316" />
+          <stop offset="100%" stopColor="#DC2626" />
+        </radialGradient>
+        <filter id="flameGlow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="3.5" result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+      </defs>
+
+      {/* Pumpkin Stem */}
+      <path d="M 57 26 C 55 12, 65 6, 74 8 C 72 16, 65 24, 63 26 Z" fill="#365314" stroke="#14532D" strokeWidth="2" />
+      <path d="M 62 10 Q 75 14, 70 24" stroke="#84CC16" strokeWidth="1.5" fill="none" />
+
+      {/* Outer Lobes Shadow */}
+      <ellipse cx="28" cy="58" rx="18" ry="28" fill="#7C2D12" />
+      <ellipse cx="92" cy="58" rx="18" ry="28" fill="#7C2D12" />
+
+      {/* Secondary Lobes */}
+      <ellipse cx="36" cy="59" rx="20" ry="32" fill="url(#fpBody)" stroke="#431407" strokeWidth="2.5" />
+      <ellipse cx="84" cy="59" rx="20" ry="32" fill="url(#fpBody)" stroke="#431407" strokeWidth="2.5" />
+
+      {/* Center Lobes */}
+      <ellipse cx="48" cy="60" rx="20" ry="34" fill="url(#fpBody)" stroke="#431407" strokeWidth="2.5" />
+      <ellipse cx="72" cy="60" rx="20" ry="34" fill="url(#fpBody)" stroke="#431407" strokeWidth="2.5" />
+      <ellipse cx="60" cy="61" rx="20" ry="35" fill="url(#fpBody)" stroke="#431407" strokeWidth="2.5" />
+
+      {/* FIERCE MENACING SLANTED EYES (ตาไฟดุดัน) */}
+      <polygon points="26,45 52,49 43,58" fill="#DC2626" opacity="0.8" filter="url(#flameGlow)" />
+      <polygon points="94,45 68,49 77,58" fill="#DC2626" opacity="0.8" filter="url(#flameGlow)" />
+
+      {/* Left Fierce Eye */}
+      <polygon points="28,47 50,50 42,57" fill="url(#fpFire)" stroke="#431407" strokeWidth="2" strokeLinejoin="round" />
+      <polygon points="32,48 48,51 43,55" fill="url(#fpFireCore)" />
+
+      {/* Right Fierce Eye */}
+      <polygon points="92,47 70,50 78,57" fill="url(#fpFire)" stroke="#431407" strokeWidth="2" strokeLinejoin="round" />
+      <polygon points="88,48 72,51 77,55" fill="url(#fpFireCore)" />
+
+      {/* Sharp Menacing Nose */}
+      <polygon points="60,56 65,65 55,65" fill="url(#fpFire)" stroke="#431407" strokeWidth="1.8" />
+
+      {/* WICKED JAGGED SHARP FANGED MOUTH */}
+      <path d="M 28 68 Q 60 98, 92 68 Q 80 84, 60 86 Q 40 84, 28 68 Z" fill="#DC2626" opacity="0.85" filter="url(#flameGlow)" />
+      <path d="M 28 69 Q 60 96, 92 69 Q 80 85, 60 87 Q 40 85, 28 69 Z" fill="#431407" stroke="#431407" strokeWidth="3" strokeLinejoin="round" />
+      <path d="M 32 72 Q 60 93, 88 72 Q 78 83, 60 85 Q 42 83, 32 72 Z" fill="url(#fpFire)" />
+      <polygon points="40,71 44,78 48,72" fill="#431407" />
+      <polygon points="54,73 58,82 62,73" fill="#431407" />
+      <polygon points="68,73 72,82 76,73" fill="#431407" />
+      <polygon points="46,84 50,77 54,84" fill="#431407" />
+      <polygon points="62,85 66,78 70,85" fill="#431407" />
+      <polygon points="78,81 81,75 84,80" fill="#431407" />
+    </svg>
+  );
+}
+
 const CANDY_TYPES = [
   { emoji: "🍬", points: 10, isRare: false, weight: 30 },
   { emoji: "🍭", points: 20, isRare: false, weight: 25 },
@@ -82,6 +167,8 @@ export default function HalloweenMinigameArena({
   const [finalScore, setFinalScore] = useState(0);
   const [finalCandies, setFinalCandies] = useState(0);
   const [finalMaxCombo, setFinalMaxCombo] = useState(0);
+  const [rankAchieved, setAchievedRank] = useState<number | null>(null);
+  const [closingCountdown, setClosingCountdown] = useState<number | null>(null);
 
   // Mutable refs for 60fps zero-lag updates (no React re-renders during active gameplay)
   const isPlayingRef = useRef(false);
@@ -102,6 +189,7 @@ export default function HalloweenMinigameArena({
   // Canvas & Physics Refs
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const particlesRef = useRef<CandyParticle[]>([]);
+  const sparklesRef = useRef<CatchSparkle[]>([]);
   const floatingTextsRef = useRef<FloatingScoreText[]>([]);
   const animFrameIdRef = useRef<number | null>(null);
   const roundTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -289,6 +377,8 @@ export default function HalloweenMinigameArena({
     setIsPlaying(true);
     setIsGameOver(false);
     setHasSubmitted(false);
+    setAchievedRank(null);
+    setClosingCountdown(null);
 
     scoreRef.current = 0;
     candiesCaughtRef.current = 0;
@@ -303,6 +393,7 @@ export default function HalloweenMinigameArena({
     if (comboDomRef.current) comboDomRef.current.style.display = "none";
 
     particlesRef.current = [];
+    sparklesRef.current = [];
     floatingTextsRef.current = [];
 
     // Wave 1: Immediate massive volcanic explosion!
@@ -418,12 +509,14 @@ export default function HalloweenMinigameArena({
       const basketY = height - basketH - 18;
       const catchY = basketY + basketH * 0.44;
 
-      // Smooth basket lerp tracking
+      // Smooth basket lerp tracking & tilt
       const basket = basketPosRef.current;
-      basket.x += (basket.targetX - basket.x) * 0.28;
+      const dx = basket.targetX - basket.x;
+      basket.x += dx * 0.28;
+      const tilt = Math.max(-14, Math.min(14, dx * 0.08));
 
       if (basketDomRef.current) {
-        basketDomRef.current.style.transform = `translate3d(${basket.x - basketW / 2}px, ${basketY}px, 0)`;
+        basketDomRef.current.style.transform = `translate3d(${basket.x - basketW / 2}px, ${basketY}px, 0) rotate(${tilt}deg)`;
         basketDomRef.current.style.width = `${basketW}px`;
         basketDomRef.current.style.height = `${basketH}px`;
       }
@@ -464,12 +557,30 @@ export default function HalloweenMinigameArena({
 
             // Basket bounce animation
             if (basketDomRef.current) {
-              basketDomRef.current.style.transform = `translate3d(${basket.x - basketW / 2}px, ${basketY + 5}px, 0) scale(1.06, 0.94)`;
+              basketDomRef.current.style.transform = `translate3d(${basket.x - basketW / 2}px, ${basketY + 5}px, 0) scale(1.06, 0.94) rotate(${tilt}deg)`;
               setTimeout(() => {
                 if (basketDomRef.current) {
-                  basketDomRef.current.style.transform = `translate3d(${basket.x - basketW / 2}px, ${basketY}px, 0) scale(1, 1)`;
+                  basketDomRef.current.style.transform = `translate3d(${basket.x - basketW / 2}px, ${basketY}px, 0) scale(1, 1) rotate(${tilt}deg)`;
                 }
               }, 90);
+            }
+
+            // Burst juicy arcade sparkles on catch!
+            for (let s = 0; s < 8; s++) {
+              const angle = Math.random() * Math.PI * 2;
+              const spd = 2 + Math.random() * 4.5;
+              sparklesRef.current.push({
+                id: Math.random(),
+                x: p.x,
+                y: catchY,
+                vx: Math.cos(angle) * spd,
+                vy: Math.sin(angle) * spd - 1.8,
+                size: 2.5 + Math.random() * 3,
+                color: p.isRare
+                  ? "#FDE047"
+                  : ["#FF6200", "#F59E0B", "#10B981", "#EC4899", "#8B5CF6"][Math.floor(Math.random() * 5)],
+                opacity: 1,
+              });
             }
 
             // Visible candy inside basket: Add candy emoji to the bucket pile!
@@ -535,6 +646,19 @@ export default function HalloweenMinigameArena({
         if (p.opacity > 0) {
           remaining.push(p);
 
+          // Rare item glowing aura
+          if (p.isRare) {
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, p.opacity * 0.35);
+            ctx.fillStyle = "#F59E0B";
+            ctx.shadowColor = "#FBBF24";
+            ctx.shadowBlur = 14;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size * 0.65, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          }
+
           ctx.save();
           ctx.globalAlpha = Math.max(0, p.opacity);
           ctx.translate(p.x, p.y);
@@ -548,6 +672,30 @@ export default function HalloweenMinigameArena({
       }
 
       particlesRef.current = remaining;
+
+      // Arcade Sparkles Rendering & Physics
+      const sRemaining: CatchSparkle[] = [];
+      for (let s = 0; s < sparklesRef.current.length; s++) {
+        const sp = sparklesRef.current[s];
+        sp.x += sp.vx;
+        sp.y += sp.vy;
+        sp.vy += 0.16;
+        sp.opacity -= 0.045;
+
+        if (sp.opacity > 0) {
+          sRemaining.push(sp);
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, sp.opacity);
+          ctx.fillStyle = sp.color;
+          ctx.shadowColor = sp.color;
+          ctx.shadowBlur = 6;
+          ctx.beginPath();
+          ctx.arc(sp.x, sp.y, sp.size, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+      sparklesRef.current = sRemaining;
 
       // Floating Score Texts
       const fRemaining: FloatingScoreText[] = [];
@@ -615,11 +763,29 @@ export default function HalloweenMinigameArena({
       setLeaderboard(updated);
       setHasSubmitted(true);
       playSound("rare");
-      
-      // Auto exit after a pleasant celebratory moment
-      setTimeout(() => {
-        onClose();
-      }, 500);
+
+      // Calculate player's achieved rank in the updated leaderboard
+      const nameKey = playerName.trim().toLowerCase();
+      const rankIdx = updated.findIndex(
+        (entry) =>
+          entry.playerName.trim().toLowerCase() === nameKey &&
+          entry.score === finalScore
+      );
+      const computedRank = rankIdx !== -1 ? rankIdx + 1 : 1;
+      setAchievedRank(computedRank);
+
+      // Give 3 seconds to proudly see the rank announcement, then close
+      setClosingCountdown(3);
+      const timer = setInterval(() => {
+        setClosingCountdown((prev) => {
+          if (prev === null || prev <= 1) {
+            clearInterval(timer);
+            onClose();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     } catch (err) {
       console.error("Failed to submit score:", err);
       onClose();
@@ -981,9 +1147,9 @@ export default function HalloweenMinigameArena({
             onClick={(e) => e.stopPropagation()}
           >
             
-            {/* Top Bouncing Halloween Emblem */}
-            <div className="w-18 h-18 mx-auto -mt-14 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-300 border-2 border-white shadow-[0_8px_25px_rgba(245,158,11,0.6)] flex items-center justify-center text-3xl animate-bounce">
-              🎃
+            {/* Top Fierce Fiery-Eyed Jack-o'-Lantern Emblem (กราฟิกฟักทองตาไฟดุดัน) */}
+            <div className="relative mx-auto -mt-16 flex items-center justify-center filter drop-shadow-[0_12px_28px_rgba(234,88,12,0.85)] animate-bounce" style={{ animationDuration: "2.4s" }}>
+              <FiercePumpkinEmblem className="w-24 h-20 sm:w-28 sm:h-24" />
             </div>
 
             <div className="mt-3">
@@ -1047,36 +1213,74 @@ export default function HalloweenMinigameArena({
               </div>
             </div>
 
-            {/* Name Input & Submit to Return to Normal Screen */}
-            <form onSubmit={handleSubmitAndFinish} className="space-y-3 mt-3">
-              <div className="text-left">
-                <label className="text-xs font-bold text-amber-200 block mb-1">
-                  ✨ ใส่ชื่อของคุณเพื่อชิงอันดับ:
-                </label>
-                <input
-                  type="text"
-                  required
-                  autoFocus
-                  maxLength={24}
-                  value={playerName}
-                  onChange={(e) => setPlayerName(e.target.value)}
-                  placeholder="ใส่ชื่อหรือฉายาของคุณ..."
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border-2 border-amber-400/60 focus:border-amber-300 focus:outline-none text-white text-sm font-semibold placeholder:text-slate-500 font-sans shadow-inner"
-                />
+            {/* Rank Announcement Banner (เมื่อกดบันทึกแล้ว จะขึ้นอันดับที่ได้ทันที) */}
+            {rankAchieved !== null ? (
+              <div className="my-3.5 p-4 rounded-2xl bg-gradient-to-r from-amber-500/25 via-orange-500/35 to-amber-500/25 border-2 border-amber-400 text-center shadow-[0_0_30px_rgba(245,158,11,0.5)] animate-in zoom-in-95 duration-200">
+                <div className="flex items-center justify-center gap-2">
+                  <Trophy size={22} className="text-amber-400 animate-bounce" />
+                  <span className="text-lg font-black text-amber-300 font-mono tracking-wide">
+                    คุณคว้าอันดับที่ #{rankAchieved}!
+                  </span>
+                </div>
+                <p className="text-xs font-bold text-white mt-1">
+                  {rankAchieved === 1
+                    ? "👑 สุดยอดแชมป์อันดับ 1 ของ Hall of Fame!"
+                    : rankAchieved <= 3
+                    ? "🥈 ยอดฝีมือระดับท็อป 3 ฮาโลวีน!"
+                    : rankAchieved <= 10
+                    ? "🔥 ติดทำเนียบ Top 10 Hall of Fame!"
+                    : "👏 ยอดเยี่ยมมาก! ร่วมท้าชิงอันดับใหม่ได้เรื่อยๆ"}
+                </p>
+                <div className="mt-3 flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onClose();
+                    }}
+                    className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black shadow-lg cursor-pointer active:scale-95 transition-all flex items-center gap-1.5"
+                  >
+                    <span>กลับสู่หน้าหลัก</span>
+                    {closingCountdown !== null && (
+                      <span className="bg-black/20 px-1.5 py-0.5 rounded text-[10px] font-mono">
+                        {closingCountdown}s
+                      </span>
+                    )}
+                  </button>
+                </div>
               </div>
+            ) : (
+              /* Name Input & Submit to Return to Normal Screen */
+              <form onSubmit={handleSubmitAndFinish} className="space-y-3 mt-3">
+                <div className="text-left">
+                  <label className="text-xs font-bold text-amber-200 block mb-1">
+                    ✨ ใส่ชื่อของคุณเพื่อชิงอันดับ:
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    autoFocus
+                    maxLength={24}
+                    value={playerName}
+                    onChange={(e) => setPlayerName(e.target.value)}
+                    placeholder="ใส่ชื่อหรือฉายาของคุณ..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border-2 border-amber-400/60 focus:border-amber-300 focus:outline-none text-white text-sm font-semibold placeholder:text-slate-500 font-sans shadow-inner"
+                  />
+                </div>
 
-              {/* Big button: Saves and exits immediately to normal page */}
-              <button
-                type="submit"
-                disabled={isSubmittingScore || !playerName.trim()}
-                className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-[#FF6200] via-[#FF7700] to-[#EE5500] hover:from-[#EE5500] hover:to-[#D94400] active:scale-95 text-white text-sm font-black shadow-[0_6px_22px_rgba(255,98,0,0.45)] flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50"
-              >
-                <Send size={16} />
-                <span>
-                  {isSubmittingScore ? "กำลังบันทึก..." : hasSubmitted ? "✅ บันทึกแล้ว!" : "🏆 บันทึกคะแนน & ออกจากเกม"}
-                </span>
-              </button>
-            </form>
+                {/* Big button: Saves and exits immediately to normal page */}
+                <button
+                  type="submit"
+                  disabled={isSubmittingScore || !playerName.trim()}
+                  className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-[#FF6200] via-[#FF7700] to-[#EE5500] hover:from-[#EE5500] hover:to-[#D94400] active:scale-95 text-white text-sm font-black shadow-[0_6px_22px_rgba(255,98,0,0.45)] flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50"
+                >
+                  <Send size={16} />
+                  <span>
+                    {isSubmittingScore ? "กำลังบันทึก..." : hasSubmitted ? "✅ บันทึกแล้ว!" : "🏆 บันทึกคะแนน & ออกจากเกม"}
+                  </span>
+                </button>
+              </form>
+            )}
 
             {/* Quick Action Footer */}
             <div className="flex items-center gap-2 mt-4 pt-3 border-t border-white/10">

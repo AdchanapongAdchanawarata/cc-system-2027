@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Cloud, CloudRain, Sun, RefreshCw } from "lucide-react";
 import HalloweenPumpkin from "@/components/HalloweenPumpkin";
+import HalloweenTop5Leaderboard from "@/components/HalloweenTop5Leaderboard";
 
 // WMO Weather interpretation codes with real precipitation verification
 function getWeatherStatus(code: number, rainAmount = 0, precipitation = 0): { label: string; type: "sunny" | "cloudy" | "rainy" } {
@@ -363,12 +364,22 @@ export default function WeatherWidget({
           <div className="absolute bottom-[30.5%] sm:bottom-[31%] md:bottom-[31%] right-[13%] sm:right-[14%] md:right-[14.5%] z-20 pointer-events-auto">
             <HalloweenPumpkin className="w-[36px] h-[33px] sm:w-[48px] sm:h-[44px] md:w-[62px] md:h-[57px]" />
           </div>
+
+          {/* Desktop & Tablet Top 5 Leaderboard (Directly to the right of the CC character) */}
+          <div className="hidden sm:block absolute left-[102%] md:left-[105%] top-1 md:top-2 w-[185px] md:w-[215px] z-30 pointer-events-auto">
+            <HalloweenTop5Leaderboard />
+          </div>
         </div>
 
         {/* Weather Text & Date (Real Weather - No Manual Switchers) */}
         <div className="text-center font-light tracking-wide text-[#78716c] -mt-7 sm:-mt-9 md:-mt-11 mb-0 relative z-30">
           <p className="text-xs sm:text-base md:text-lg text-foreground font-normal mb-0.5">{weather.label} & {weather.temp}°C</p>
           <p className="text-[10px] sm:text-xs md:text-sm font-medium text-muted-foreground">{dateString}</p>
+        </div>
+
+        {/* Mobile Top 5 Leaderboard Widget (Below weather text) */}
+        <div className="block sm:hidden w-full max-w-[260px] mx-auto mt-2.5 z-30 pointer-events-auto">
+          <HalloweenTop5Leaderboard />
         </div>
       </div>
       

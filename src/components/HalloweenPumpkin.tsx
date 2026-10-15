@@ -94,6 +94,18 @@ export default function HalloweenPumpkin({
     setActive(now.getMonth() === 9 && now.getDate() <= 31);
   }, []);
 
+  useEffect(() => {
+    const handleOpenGame = () => {
+      const rect = pumpkinRef.current?.getBoundingClientRect();
+      const originX = rect ? rect.left + rect.width / 2 : window.innerWidth * 0.8;
+      const originY = rect ? rect.top + rect.height * 0.4 : window.innerHeight * 0.65;
+      setOriginCoord({ x: originX, y: originY });
+      setIsArenaOpen(true);
+    };
+    window.addEventListener("open-halloween-game", handleOpenGame);
+    return () => window.removeEventListener("open-halloween-game", handleOpenGame);
+  }, []);
+
   // High-performance canvas physics & render loop (0 React re-renders, 60fps GPU accelerated)
   const runPhysicsLoop = useCallback(() => {
     const canvas = canvasRef.current;

@@ -627,7 +627,7 @@ export default function HalloweenMinigameArena({
     if (timerDomRef.current) timerDomRef.current.innerText = `${ROUND_DURATION_SECONDS}s`;
     if (caughtDomRef.current) caughtDomRef.current.innerText = "0 ชิ้น";
     if (comboDomRef.current) comboDomRef.current.style.display = "none";
-    if (caughtCandiesDomRef.current) caughtCandiesDomRef.current.innerHTML = "";
+    if (basketDomRef.current) basketDomRef.current.setAttribute("data-fill-level", "0");
 
     particlesRef.current = [];
     sparklesRef.current = [];
@@ -764,11 +764,11 @@ export default function HalloweenMinigameArena({
         const gravity = 1.15; // Fast, energetic volcanic cascade pouring down from above
         const floorY = height - 25;
 
-        // Pumpkin bucket dimensions
-        const basketW = Math.min(270, Math.max(190, width * 0.32));
-        const basketH = Math.round(basketW * 0.54);
-        const basketY = height - basketH - 18;
-        const catchY = basketY + basketH * 0.44;
+        // Pumpkin bucket dimensions (aspect ratio ~1.33:1 matching reference image)
+        const basketW = Math.min(270, Math.max(195, width * 0.32));
+        const basketH = Math.round(basketW * 0.75);
+        const basketY = height - basketH - 12;
+        const catchY = basketY + basketH * 0.38;
 
         // Instant 100% direct tracking with smooth dynamic tilt (0 jitter, 0 lag!)
         const basket = basketPosRef.current;
@@ -827,9 +827,9 @@ export default function HalloweenMinigameArena({
             }
 
             // Generous Pumpkin Bucket Catch Zone
-            const catchSpan = basketW * 0.55;
+            const catchSpan = basketW * 0.52;
             const inBasketX = p.x >= basket.x - catchSpan && p.x <= basket.x + catchSpan;
-            const inBasketY = p.y >= catchY - 40 && p.y <= catchY + 50;
+            const inBasketY = p.y >= catchY - 45 && p.y <= catchY + 55;
             const isFalling = p.vy > -3;
 
             if (inBasketX && inBasketY && isFalling && isPlayingRef.current && !isGameOverRef.current) {
@@ -854,16 +854,16 @@ export default function HalloweenMinigameArena({
                 });
               }
 
-              // Visible candy inside basket: Add candy emoji directly to DOM (0 React re-renders)
-              if (caughtCandiesDomRef.current) {
-                if (caughtCandiesDomRef.current.childElementCount >= 18) {
-                  caughtCandiesDomRef.current.firstElementChild?.remove();
-                }
-                const span = document.createElement("span");
-                span.className = "text-[16px] sm:text-[18px] inline-block";
-                span.style.transform = `rotate(${(candiesCaughtRef.current * 43) % 46 - 23}deg)`;
-                span.innerText = p.emoji;
-                caughtCandiesDomRef.current.appendChild(span);
+              // Dynamic Visual Candy Fill Tiers (0 -> 1 -> 2 -> 3 -> 4 -> 5)
+              const nextCount = candiesCaughtRef.current + 1;
+              const fillLevel =
+                nextCount >= 33 ? 5 :
+                nextCount >= 22 ? 4 :
+                nextCount >= 13 ? 3 :
+                nextCount >= 6 ? 2 :
+                nextCount >= 1 ? 1 : 0;
+              if (basketDomRef.current && basketDomRef.current.getAttribute("data-fill-level") !== String(fillLevel)) {
+                basketDomRef.current.setAttribute("data-fill-level", String(fillLevel));
               }
 
               // Combo & Score
@@ -1008,8 +1008,8 @@ export default function HalloweenMinigameArena({
         canvasRef.current.height = h;
       }
       if (basketDomRef.current) {
-        const basketW = Math.min(270, Math.max(190, w * 0.32));
-        const basketH = Math.round(basketW * 0.54);
+        const basketW = Math.min(270, Math.max(195, w * 0.32));
+        const basketH = Math.round(basketW * 0.75);
         basketDomRef.current.style.width = `${basketW}px`;
         basketDomRef.current.style.height = `${basketH}px`;
       }
@@ -1188,137 +1188,266 @@ export default function HalloweenMinigameArena({
         className="absolute inset-0 pointer-events-none"
       />
 
-      {/* COUNTRY FRIENDS HARVEST PUMPKIN BARREL BASKET (Instant 1:1 Response, Zero CSS Lag) */}
+      {/* JACK-O'-LANTERN CANDY BUCKET WITH DYNAMIC OVERFLOWING TREAT TIERS (1:1 Reference Match) */}
       <div
         ref={basketDomRef}
+        data-fill-level="0"
         className="fixed top-0 left-0 pointer-events-none z-30 will-change-transform"
       >
         <div className="relative w-full h-full">
-          {/* Pumpkin Barrel Basket SVG Illustration */}
-          <svg viewBox="0 0 280 150" className="w-full h-full overflow-visible" fill="none">
+          {/* Jack-o'-Lantern Bucket SVG Illustration */}
+          <svg viewBox="0 0 280 210" className="w-full h-full overflow-visible" fill="none">
             <defs>
-              {/* Volumetric Pumpkin Shell Gradient */}
-              <linearGradient id="cfPumpkinGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#FFA000" />
-                <stop offset="25%" stopColor="#FF7A00" />
-                <stop offset="65%" stopColor="#EA580C" />
-                <stop offset="100%" stopColor="#9A3412" />
+              {/* Plump Pumpkin Body Gradient */}
+              <linearGradient id="jackBodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#FFA726" />
+                <stop offset="22%" stopColor="#FF7A00" />
+                <stop offset="68%" stopColor="#EA580C" />
+                <stop offset="100%" stopColor="#C2410C" />
               </linearGradient>
 
-              {/* Wooden Rim & Staves Texture */}
-              <linearGradient id="cfWoodRimGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#FDE047" />
-                <stop offset="30%" stopColor="#F59E0B" />
-                <stop offset="70%" stopColor="#B45309" />
-                <stop offset="100%" stopColor="#78350F" />
+              {/* Bucket Rim Gradient */}
+              <linearGradient id="jackRimGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#FFB74D" />
+                <stop offset="45%" stopColor="#FF7A00" />
+                <stop offset="100%" stopColor="#D84315" />
               </linearGradient>
 
-              {/* Twisted Braided Rope Handle */}
-              <linearGradient id="cfRopeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#78350F" />
-                <stop offset="35%" stopColor="#D97706" />
-                <stop offset="50%" stopColor="#FEF3C7" />
-                <stop offset="65%" stopColor="#D97706" />
-                <stop offset="100%" stopColor="#78350F" />
-              </linearGradient>
-
-              {/* Brass Rivet Gradient */}
-              <radialGradient id="cfBrassRivet" cx="35%" cy="35%" r="65%">
-                <stop offset="0%" stopColor="#FEF08A" />
-                <stop offset="55%" stopColor="#F59E0B" />
-                <stop offset="100%" stopColor="#78350F" />
+              {/* Deep Dark Pumpkin Cavity */}
+              <radialGradient id="jackInteriorGrad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#1E0A18" />
+                <stop offset="70%" stopColor="#12050D" />
+                <stop offset="100%" stopColor="#080106" />
               </radialGradient>
 
-              {/* Warm Lantern Core Candle Glow */}
-              <radialGradient id="cfCandleGlow" cx="50%" cy="50%" r="50%">
+              {/* Carved Facial Hollow Depth */}
+              <linearGradient id="jackFaceDepth" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#2A0B1B" />
+                <stop offset="100%" stopColor="#12040D" />
+              </linearGradient>
+
+              {/* Cute Ghost Gradient */}
+              <linearGradient id="ghostGrad" x1="0%" y1="0%" x2="0%" y2="100%">
                 <stop offset="0%" stopColor="#FFFFFF" />
-                <stop offset="30%" stopColor="#FEF08A" />
-                <stop offset="75%" stopColor="#F59E0B" />
-                <stop offset="100%" stopColor="#DC2626" />
-              </radialGradient>
+                <stop offset="85%" stopColor="#F1F5F9" />
+                <stop offset="100%" stopColor="#CBD5E1" />
+              </linearGradient>
+
+              {/* Frankenstein Monster Pop Gradient */}
+              <linearGradient id="frankGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#86EFAC" />
+                <stop offset="100%" stopColor="#22C55E" />
+              </linearGradient>
             </defs>
 
-            {/* Ground Ambient Shadow */}
-            <ellipse cx="140" cy="144" rx="108" ry="9" fill="rgba(0,0,0,0.45)" />
+            {/* Ambient Ground Shadow */}
+            <ellipse cx="140" cy="204" rx="98" ry="7" fill="rgba(0,0,0,0.4)" />
 
-            {/* Twisted Hemp Rope Arch Handle */}
-            <path d="M 40 70 C 40 -12, 240 -12, 240 70" stroke="#451A03" strokeWidth="13" strokeLinecap="round" fill="none" />
-            <path d="M 40 70 C 40 -12, 240 -12, 240 70" stroke="url(#cfRopeGrad)" strokeWidth="10" strokeLinecap="round" fill="none" />
-            <path d="M 40 70 C 40 -12, 240 -12, 240 70" stroke="#78350F" strokeWidth="2.5" strokeLinecap="round" fill="none" strokeDasharray="9 7" />
-
-            {/* Leather Grip at Center of Handle */}
-            <path d="M 115 11 C 128 7, 152 7, 165 11" stroke="#3E1A05" strokeWidth="15" strokeLinecap="round" fill="none" />
-            <path d="M 116 11 C 128 8, 152 8, 164 11" stroke="#92400E" strokeWidth="12" strokeLinecap="round" fill="none" />
-            <path d="M 125 7 L 125 15 M 140 6 L 140 16 M 155 7 L 155 15" stroke="#FEF3C7" strokeWidth="1.5" />
-
-            {/* Brass Mounting Brackets on sides */}
-            <rect x="32" y="60" width="16" height="18" rx="4" fill="url(#cfWoodRimGrad)" stroke="#451A03" strokeWidth="2" />
-            <circle cx="40" cy="69" r="4.5" fill="url(#cfBrassRivet)" stroke="#451A03" strokeWidth="1.5" />
-
-            <rect x="232" y="60" width="16" height="18" rx="4" fill="url(#cfWoodRimGrad)" stroke="#451A03" strokeWidth="2" />
-            <circle cx="240" cy="69" r="4.5" fill="url(#cfBrassRivet)" stroke="#451A03" strokeWidth="1.5" />
-
-            {/* Deep Dark Pumpkin Cavity (Where caught candies collect!) */}
-            <ellipse cx="140" cy="64" rx="116" ry="24" fill="#200800" stroke="#78350F" strokeWidth="3" />
-            <ellipse cx="140" cy="64" rx="108" ry="19" fill="#120400" />
-
-            {/* Volumetric Carved Pumpkin Barrel Body */}
+            {/* Black Plastic Handle (Loops behind bucket on the right side) */}
             <path
-              d="M 22 66 Q 10 115, 60 140 Q 140 152, 220 140 Q 270 115, 258 66 Z"
-              fill="url(#cfPumpkinGrad)"
-              stroke="#431407"
-              strokeWidth="5"
+              d="M 224 76 C 265 88, 260 144, 235 158"
+              stroke="#1A0D08"
+              strokeWidth="13"
+              strokeLinecap="round"
+              fill="none"
+            />
+            <path
+              d="M 224 76 C 263 88, 258 142, 235 156"
+              stroke="#3D1D12"
+              strokeWidth="4"
+              strokeLinecap="round"
+              fill="none"
+            />
+
+            {/* Deep Pumpkin Interior Cavity (Where treats mound up!) */}
+            <ellipse cx="140" cy="74" rx="92" ry="20" fill="url(#jackInteriorGrad)" stroke="#5A1A06" strokeWidth="2" />
+
+            {/* 🎃 DYNAMIC CANDY OVERFLOW TIERS (Pop in progressively as candies are caught) */}
+            {/* TIER 1: Base treats inside rim (1-5 candies) */}
+            <g className="candy-tier candy-tier-1">
+              {/* Candy Corn Left */}
+              <path d="M 88 74 L 98 52 L 108 74 Z" fill="#F59E0B" />
+              <path d="M 91 66 L 98 52 L 105 66 Z" fill="#FB923C" />
+              <path d="M 94 59 L 98 52 L 102 59 Z" fill="#FFFFFF" />
+              {/* Candy Corn Right */}
+              <path d="M 186 73 L 195 53 L 204 73 Z" fill="#F59E0B" />
+              <path d="M 189 66 L 195 53 L 201 66 Z" fill="#FB923C" />
+              <path d="M 192 60 L 195 53 L 198 60 Z" fill="#FFFFFF" />
+              {/* Purple Gumdrop */}
+              <path d="M 125 76 C 125 68, 137 68, 137 76 Z" fill="#A855F7" stroke="#6B21A8" strokeWidth="1" />
+              {/* Lime Jelly Bean */}
+              <ellipse cx="160" cy="73" rx="8" ry="5" transform="rotate(-15 160 73)" fill="#84CC16" stroke="#4D7C0F" strokeWidth="1" />
+              {/* Rolled Purple Spiral Candy */}
+              <circle cx="148" cy="71" r="7" fill="#C084FC" stroke="#581C87" strokeWidth="1.5" />
+              <path d="M 148 66 A 5 5 0 0 1 151 73 A 3 3 0 0 1 146 72" stroke="#FFFFFF" strokeWidth="1.2" fill="none" />
+            </g>
+
+            {/* TIER 2: Gummy worm drape & Swirl Pop & Green Eye Pop (6-12 candies) */}
+            <g className="candy-tier candy-tier-2">
+              {/* Green Eyeball Pop on stick */}
+              <line x1="108" y1="74" x2="108" y2="44" stroke="#E2E8F0" strokeWidth="2.5" strokeLinecap="round" />
+              <circle cx="108" cy="42" r="11" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="1.5" />
+              <path d="M 101 39 Q 104 42, 100 44 M 115 38 Q 112 41, 116 44" stroke="#FDA4AF" strokeWidth="1" fill="none" />
+              <circle cx="108" cy="42" r="6" fill="#22C55E" />
+              <ellipse cx="108" cy="42" rx="2" ry="4.5" fill="#0F172A" />
+              <circle cx="106" cy="40" r="1.5" fill="#FFFFFF" />
+              {/* Red & White Swirl Lollipop */}
+              <line x1="126" y1="75" x2="126" y2="52" stroke="#E2E8F0" strokeWidth="2.5" />
+              <circle cx="126" cy="50" r="13" fill="#EF4444" stroke="#991B1B" strokeWidth="1.5" />
+              <path d="M 126 50 M 126 40 A 10 10 0 0 1 136 50 A 7 7 0 0 1 126 57 A 5 5 0 0 1 121 50 A 3 3 0 0 1 126 47" fill="none" stroke="#FFFFFF" strokeWidth="2.2" strokeLinecap="round" />
+              {/* Green Gummy Worm draped over rim */}
+              <path d="M 64 68 C 62 58, 72 55, 78 64 C 82 72, 80 82, 73 84 C 68 85, 66 79, 70 75" fill="none" stroke="#4ADE80" strokeWidth="6.5" strokeLinecap="round" />
+              <path d="M 64 68 C 62 58, 72 55, 78 64 C 82 72, 80 82, 73 84 C 68 85, 66 79, 70 75" fill="none" stroke="#16A34A" strokeWidth="2" strokeDasharray="3 4" strokeLinecap="round" />
+              <circle cx="72" cy="83" r="1" fill="#0F172A" />
+            </g>
+
+            {/* TIER 3: Orange/Black Candy Cane & Cute Ghost Marshmallow Pop (13-21 candies) */}
+            <g className="candy-tier candy-tier-3">
+              {/* Orange & Black Striped Candy Cane Left */}
+              <path d="M 76 74 L 76 34 C 76 16, 52 16, 52 30" fill="none" stroke="#FF7A00" strokeWidth="8.5" strokeLinecap="round" />
+              <path d="M 76 74 L 76 34 C 76 16, 52 16, 52 30" fill="none" stroke="#1E1E1E" strokeWidth="8.5" strokeDasharray="5 7" strokeLinecap="round" />
+              <path d="M 76 74 L 76 34 C 76 16, 52 16, 52 30" fill="none" stroke="#FFA726" strokeWidth="1.5" strokeLinecap="round" />
+              {/* Cute White Ghost Marshmallow Pop Center */}
+              <line x1="138" y1="74" x2="138" y2="48" stroke="#E2E8F0" strokeWidth="2.5" />
+              <path d="M 127 50 C 127 34, 149 34, 149 50 C 149 60, 145 62, 142 60 C 139 58, 137 58, 134 60 C 131 62, 127 60, 127 50 Z" fill="url(#ghostGrad)" stroke="#CBD5E1" strokeWidth="1.5" />
+              <ellipse cx="134" cy="45" rx="1.5" ry="2.5" fill="#1E1B4B" />
+              <ellipse cx="142" cy="45" rx="1.5" ry="2.5" fill="#1E1B4B" />
+              <path d="M 136 49 Q 138 52, 140 49" fill="none" stroke="#1E1B4B" strokeWidth="1.2" strokeLinecap="round" />
+              <circle cx="132" cy="48" r="1.5" fill="#F472B6" opacity="0.6" />
+              <circle cx="144" cy="48" r="1.5" fill="#F472B6" opacity="0.6" />
+              {/* Blue Eyeball Pop Right */}
+              <line x1="174" y1="74" x2="174" y2="38" stroke="#E2E8F0" strokeWidth="2.5" />
+              <circle cx="174" cy="36" r="11" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="1.5" />
+              <path d="M 166 33 Q 169 36, 164 38 M 182 32 Q 179 35, 184 38" stroke="#FDA4AF" strokeWidth="1" fill="none" />
+              <circle cx="174" cy="36" r="6" fill="#0284C7" />
+              <circle cx="174" cy="36" r="3" fill="#0F172A" />
+              <circle cx="172" cy="34" r="1.5" fill="#FFFFFF" />
+            </g>
+
+            {/* TIER 4: Purple/White Candy Cane & Frankenstein Monster Pop (22-32 candies) */}
+            <g className="candy-tier candy-tier-4">
+              {/* Purple & White Striped Candy Cane Right */}
+              <path d="M 198 72 L 198 32 C 198 16, 218 16, 218 28" fill="none" stroke="#FFFFFF" strokeWidth="8" strokeLinecap="round" />
+              <path d="M 198 72 L 198 32 C 198 16, 218 16, 218 28" fill="none" stroke="#7E22CE" strokeWidth="8" strokeDasharray="5 7" strokeLinecap="round" />
+              {/* Frankenstein Monster Pop Upper Center */}
+              <line x1="152" y1="52" x2="152" y2="32" stroke="#E2E8F0" strokeWidth="2.5" />
+              <rect x="142" y="16" width="20" height="26" rx="4" fill="url(#frankGrad)" stroke="#15803D" strokeWidth="1.5" />
+              <path d="M 142 22 L 142 16 C 142 14, 162 14, 162 16 L 162 22 L 158 20 L 154 23 L 150 19 L 146 22 Z" fill="#3E1A0E" />
+              <circle cx="147" cy="25" r="2.5" fill="#FFFFFF" />
+              <circle cx="147" cy="25" r="1.2" fill="#0F172A" />
+              <circle cx="157" cy="25" r="2.5" fill="#FFFFFF" />
+              <circle cx="157" cy="25" r="1.2" fill="#0F172A" />
+              <path d="M 144 20 L 148 20 M 146 18 L 146 22" stroke="#1E1B4B" strokeWidth="1" />
+              <path d="M 148 31 Q 152 35, 156 31" fill="none" stroke="#1E1B4B" strokeWidth="1.2" strokeLinecap="round" />
+              {/* Orange Swirl Pop */}
+              <circle cx="166" cy="56" r="9" fill="#FB923C" stroke="#C2410C" strokeWidth="1.2" />
+              <path d="M 166 56 M 166 50 A 6 6 0 0 1 172 56 A 4 4 0 0 1 166 60 A 2 2 0 0 1 163 56" fill="none" stroke="#FFFFFF" strokeWidth="1.8" />
+            </g>
+
+            {/* TIER 5: Skull Pop, Purple Sprinkles Cake Pop, Bonbons & Grand Mountain (33+ candies) */}
+            <g className="candy-tier candy-tier-5">
+              {/* Cute White Skull Pop */}
+              <line x1="188" y1="72" x2="188" y2="52" stroke="#E2E8F0" strokeWidth="2.5" />
+              <path d="M 180 50 C 180 40, 198 40, 198 50 C 198 54, 195 56, 194 60 L 184 60 C 183 56, 180 54, 180 50 Z" fill="#F8FAFC" stroke="#94A3B8" strokeWidth="1.3" />
+              <circle cx="185" cy="48" r="2.5" fill="#0F172A" />
+              <circle cx="193" cy="48" r="2.5" fill="#0F172A" />
+              <polygon points="189,52 188,54 190,54" fill="#0F172A" />
+              <line x1="187" y1="57" x2="187" y2="60" stroke="#0F172A" strokeWidth="1" />
+              <line x1="191" y1="57" x2="191" y2="60" stroke="#0F172A" strokeWidth="1" />
+              {/* Purple Sprinkles Cake Pop */}
+              <line x1="120" y1="46" x2="120" y2="34" stroke="#E2E8F0" strokeWidth="2" />
+              <circle cx="120" cy="30" r="10" fill="#7E22CE" stroke="#581C87" strokeWidth="1.3" />
+              <circle cx="118" cy="27" r="1.2" fill="#FBBF24" />
+              <circle cx="123" cy="29" r="1.2" fill="#38BDF8" />
+              <circle cx="119" cy="33" r="1.2" fill="#F472B6" />
+              <circle cx="122" cy="33" r="1.2" fill="#4ADE80" />
+              {/* Side Protruding Bonbons */}
+              <path d="M 206 68 L 220 62 L 222 74 Z" fill="#1E1B4B" />
+              <circle cx="204" cy="68" r="6" fill="#1E1B4B" stroke="#D97706" strokeWidth="1.5" />
+              <path d="M 72 70 L 60 64 L 62 76 Z" fill="#9333EA" />
+              <circle cx="74" cy="70" r="6" fill="#E11D48" stroke="#831843" strokeWidth="1.2" />
+            </g>
+
+            {/* 🎃 FRONT PUMPKIN BODY (Volumetric Carved Pumpkin Pail) */}
+            <path
+              d="M 44 80
+                 C 18 108, 14 165, 52 192
+                 C 74 206, 110 206, 140 206
+                 C 170 206, 206 206, 228 192
+                 C 266 165, 262 108, 236 80
+                 C 214 74, 168 72, 140 72
+                 C 112 72, 66 74, 44 80 Z"
+              fill="url(#jackBodyGrad)"
+              stroke="#7C2D12"
+              strokeWidth="4"
               strokeLinejoin="round"
             />
 
-            {/* Vertical Pumpkin Barrel Staves / Ribs */}
-            <path d="M 68 66 Q 52 108, 76 138" stroke="#7C2D12" strokeWidth="5" fill="none" strokeLinecap="round" opacity="0.9" />
-            <path d="M 104 68 Q 96 112, 108 144" stroke="#7C2D12" strokeWidth="5.5" fill="none" strokeLinecap="round" opacity="0.9" />
-            <path d="M 140 68 Q 140 114, 140 146" stroke="#7C2D12" strokeWidth="6" fill="none" strokeLinecap="round" opacity="0.9" />
-            <path d="M 176 68 Q 184 112, 172 144" stroke="#7C2D12" strokeWidth="5.5" fill="none" strokeLinecap="round" opacity="0.9" />
-            <path d="M 212 66 Q 228 108, 204 138" stroke="#7C2D12" strokeWidth="5" fill="none" strokeLinecap="round" opacity="0.9" />
+            {/* Vertical Pumpkin Lobe Rib Creases */}
+            <path d="M 88 76 C 58 115, 60 172, 86 198" stroke="#C2410C" strokeWidth="4.5" fill="none" opacity="0.85" strokeLinecap="round" />
+            <path d="M 120 74 C 108 120, 110 176, 122 205" stroke="#C2410C" strokeWidth="4.5" fill="none" opacity="0.85" strokeLinecap="round" />
+            <path d="M 160 74 C 172 120, 170 176, 158 205" stroke="#C2410C" strokeWidth="4.5" fill="none" opacity="0.85" strokeLinecap="round" />
+            <path d="M 192 76 C 222 115, 220 172, 194 198" stroke="#C2410C" strokeWidth="4.5" fill="none" opacity="0.85" strokeLinecap="round" />
 
-            {/* Rustic Brass Barrel Hoop Band across lower midsection */}
-            <path d="M 28 105 Q 140 128, 252 105" stroke="#451A03" strokeWidth="8" fill="none" strokeLinecap="round" />
-            <path d="M 28 105 Q 140 128, 252 105" stroke="url(#cfWoodRimGrad)" strokeWidth="6" fill="none" strokeLinecap="round" />
-            {/* Brass Hoop Rivets */}
-            <circle cx="50" cy="107" r="3" fill="url(#cfBrassRivet)" stroke="#451A03" strokeWidth="1" />
-            <circle cx="95" cy="113" r="3" fill="url(#cfBrassRivet)" stroke="#451A03" strokeWidth="1" />
-            <circle cx="185" cy="113" r="3" fill="url(#cfBrassRivet)" stroke="#451A03" strokeWidth="1" />
-            <circle cx="230" cy="107" r="3" fill="url(#cfBrassRivet)" stroke="#451A03" strokeWidth="1" />
+            {/* Soft Lobe Top Crest Highlights */}
+            <path d="M 52 88 C 66 82, 80 82, 86 86" stroke="#FED7AA" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.75" />
+            <path d="M 94 82 C 114 76, 130 76, 138 80" stroke="#FED7AA" strokeWidth="3.5" fill="none" strokeLinecap="round" opacity="0.85" />
+            <path d="M 142 80 C 150 76, 166 76, 186 82" stroke="#FED7AA" strokeWidth="3.5" fill="none" strokeLinecap="round" opacity="0.85" />
+            <path d="M 194 86 C 200 82, 214 82, 228 88" stroke="#FED7AA" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.75" />
 
-            {/* Front Pumpkin Lip / Rim Overlap */}
-            <path d="M 22 64 C 22 80, 258 80, 258 64 C 258 56, 22 56, 22 64 Z" fill="url(#cfWoodRimGrad)" stroke="#451A03" strokeWidth="3.5" />
+            {/* Front Bucket Rim Lip */}
+            <path d="M 44 78 C 64 71, 216 71, 236 78 C 216 87, 64 87, 44 78 Z" fill="url(#jackRimGrad)" stroke="#9A3412" strokeWidth="2.5" />
 
-            {/* Glowing Jack-o'-Lantern Face (Warm Farmhouse Candlelight) */}
+            {/* Right Handle Hinge Ear / Rivet Tab */}
+            <circle cx="225" cy="77" r="7" fill="#EA580C" stroke="#7C2D12" strokeWidth="2" />
+            <circle cx="225" cy="77" r="3.5" fill="#1A0D08" />
+
+            {/* 🎃 CARVED JACK-O'-LANTERN FACE (Sinister Arched Eyes, Nose & Toothy Grin) */}
             {/* Left Eye */}
-            <polygon points="102,96 122,84 122,96" fill="url(#cfCandleGlow)" stroke="#451A03" strokeWidth="2" strokeLinejoin="round" />
-            {/* Right Eye */}
-            <polygon points="178,96 158,84 158,96" fill="url(#cfCandleGlow)" stroke="#451A03" strokeWidth="2" strokeLinejoin="round" />
-            {/* Nose */}
-            <polygon points="140,98 146,106 134,106" fill="url(#cfCandleGlow)" stroke="#451A03" strokeWidth="2" strokeLinejoin="round" />
-            {/* Friendly Harvest Jack Grin */}
             <path
-              d="M 94,110 Q 140,136 186,110 Q 170,126 140,127 Q 110,126 94,110 Z"
-              fill="url(#cfCandleGlow)"
-              stroke="#451A03"
+              d="M 76 114 C 92 98, 124 104, 126 118 C 110 126, 92 126, 76 114 Z"
+              fill="url(#jackFaceDepth)"
+              stroke="#3E0C1C"
+              strokeWidth="2"
+              strokeLinejoin="round"
+            />
+            <path d="M 77 115 C 93 126, 110 126, 126 118" stroke="#FF9A3C" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+
+            {/* Right Eye */}
+            <path
+              d="M 204 114 C 188 98, 156 104, 154 118 C 170 126, 188 126, 204 114 Z"
+              fill="url(#jackFaceDepth)"
+              stroke="#3E0C1C"
+              strokeWidth="2"
+              strokeLinejoin="round"
+            />
+            <path d="M 154 118 C 170 126, 187 126, 203 115" stroke="#FF9A3C" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+
+            {/* Carved Triangular Nose */}
+            <path
+              d="M 140 123 C 143 122, 148 132, 151 140 C 145 144, 135 144, 129 140 C 132 132, 137 122, 140 123 Z"
+              fill="url(#jackFaceDepth)"
+              stroke="#3E0C1C"
+              strokeWidth="1.5"
+            />
+            <path d="M 130 140 C 136 144, 144 144, 150 140" stroke="#FF9A3C" strokeWidth="2" fill="none" strokeLinecap="round" />
+
+            {/* Wicked Grinning Mouth with 2 Square Carved Bottom Teeth */}
+            <path
+              d="M 66 136 C 88 165, 112 172, 112 172 L 112 155 L 126 155 L 126 173 C 134 175, 146 175, 154 173 L 154 155 L 168 155 L 168 172 C 168 172, 192 165, 214 136 C 188 168, 92 168, 66 136 Z"
+              fill="url(#jackFaceDepth)"
+              stroke="#3E0C1C"
               strokeWidth="2.5"
               strokeLinejoin="round"
             />
-            {/* Carved Teeth */}
-            <polygon points="122,113 128,121 134,113" fill="#9A3412" />
-            <polygon points="146,113 152,121 158,113" fill="#9A3412" />
-            <polygon points="134,125 140,118 146,125" fill="#9A3412" />
+            {/* 3D Carved Pumpkin Teeth & Bottom Lip Bevel */}
+            <path d="M 112 172 L 112 155 L 126 155 L 126 173" stroke="#FF9A3C" strokeWidth="2.5" fill="none" strokeLinejoin="round" />
+            <path d="M 154 173 L 154 155 L 168 155 L 168 172" stroke="#FF9A3C" strokeWidth="2.5" fill="none" strokeLinejoin="round" />
+            <path d="M 68 137 C 88 166, 112 173, 112 173 M 126 173 C 135 175, 145 175, 154 173 M 168 172 C 168 172, 192 166, 212 137" stroke="#FF9A3C" strokeWidth="2.5" fill="none" strokeLinecap="round" />
           </svg>
 
-          {/* REAL COLLECTED CANDIES SITTING INSIDE THE PUMPKIN BUCKET! (Managed directly via DOM, zero React re-render lag) */}
-          <div
-            ref={caughtCandiesDomRef}
-            className="absolute top-[38px] left-[32px] right-[32px] h-[34px] flex items-center justify-center flex-wrap gap-1 overflow-hidden pointer-events-none z-10 px-2"
-          />
-
           {/* Carved Country Wooden Signboard with Golden Coin Badge on Pumpkin Front */}
-          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 px-3 py-1 rounded-xl bg-gradient-to-b from-[#6D320A] via-[#4A1F06] to-[#2B0E02] border-2 border-amber-400 shadow-[0_4px_12px_rgba(0,0,0,0.6),inset_0_1px_2px_rgba(255,255,255,0.3)] flex items-center gap-1.5 whitespace-nowrap pointer-events-none z-20">
+          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded-xl bg-gradient-to-b from-[#6D320A] via-[#4A1F06] to-[#2B0E02] border-2 border-amber-400 shadow-[0_4px_12px_rgba(0,0,0,0.6),inset_0_1px_2px_rgba(255,255,255,0.3)] flex items-center gap-1.5 whitespace-nowrap pointer-events-none z-20">
             <span className="text-[13px] animate-bounce">🍬</span>
             <span
               ref={caughtDomRef}
@@ -1329,6 +1458,39 @@ export default function HalloweenMinigameArena({
           </div>
         </div>
       </div>
+
+      {/* Dynamic Candy Fill Tier CSS (Pure CSS Spring Transitions, 0 React Re-renders!) */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            .candy-tier {
+              opacity: 0;
+              transform-origin: 140px 140px;
+              transform: translateY(28px) scale(0.68);
+              transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease-out;
+              pointer-events: none;
+            }
+            [data-fill-level="1"] .candy-tier-1,
+            [data-fill-level="2"] .candy-tier-1,
+            [data-fill-level="2"] .candy-tier-2,
+            [data-fill-level="3"] .candy-tier-1,
+            [data-fill-level="3"] .candy-tier-2,
+            [data-fill-level="3"] .candy-tier-3,
+            [data-fill-level="4"] .candy-tier-1,
+            [data-fill-level="4"] .candy-tier-2,
+            [data-fill-level="4"] .candy-tier-3,
+            [data-fill-level="4"] .candy-tier-4,
+            [data-fill-level="5"] .candy-tier-1,
+            [data-fill-level="5"] .candy-tier-2,
+            [data-fill-level="5"] .candy-tier-3,
+            [data-fill-level="5"] .candy-tier-4,
+            [data-fill-level="5"] .candy-tier-5 {
+              opacity: 1 !important;
+              transform: translateY(0) scale(1) !important;
+            }
+          `,
+        }}
+      />
 
       {/* TOP COUNTRY FRIENDS ARCADE HUD (Carved Barnwood Signboard) */}
       <header 

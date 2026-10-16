@@ -324,56 +324,194 @@ export function encodeMemberUnit(
   return `${cleanUnit}|${role}|${encodeURIComponent(JSON.stringify(payload))}`;
 }
 
+// Ironclad Core Operational CC TEAM Members Whitelist (12 Core Members)
+// Prevents any operational member from ever being misclassified as Executive/Viewer or disappearing from dropdowns/filters
+export const CORE_OPERATIONAL_MEMBERS: ReadonlyArray<{
+  id: string;
+  name: string;
+  email: string;
+  unit: string;
+}> = [
+  { id: "18c2cc99-e677-43fd-bbaf-fcb83e23210e", name: "จ๊อบ AA", email: "adchanapong@step.cmu.ac.th", unit: "all|admin" },
+  { id: "daca31a4-5efd-475e-80ee-b9f38dd381cb", name: "วา WK", email: "wasita@step.cmu.ac.th", unit: "creative|assignee" },
+  { id: "d99de87a-eb50-4383-a050-1f24a52b4620", name: "จอย RL", email: "ratiporn@step.cmu.ac.th", unit: "creative|assignee" },
+  { id: "47adfbc2-8d0e-4dc7-87ad-98895be82026", name: "พิม AC", email: "autcharaporn@step.cmu.ac.th", unit: "creative|assignee" },
+  { id: "7800682c-8aed-45cf-ab31-45473fd16e3d", name: "เยียร์ LLP", email: "lalipat@step.cmu.ac.th", unit: "creative|assignee" },
+  { id: "b04669b5-6e86-4629-9e66-57d464881653", name: "ลูกอิน STK", email: "suthiarpa@step.cmu.ac.th", unit: "content|assignee" },
+  { id: "82faa669-a2b6-4497-88cf-8556a867176f", name: "นิน MTN", email: "matanin@step.cmu.ac.th", unit: "creative|assignee" },
+  { id: "e2c2672d-81c4-411d-89e9-bcbb6eb374f5", name: "โอ๊ต CNB", email: "chonnikarn@step.cmu.ac.th", unit: "pr|assignee" },
+  { id: "a2cf6e47-fc1c-4c19-b080-fe4b57f4a66a", name: "เอ็นจอย SLR", email: "siriluk@step.cmu.ac.th", unit: "content|assignee" },
+  { id: "3ab19406-29cc-4430-b4bf-2cfe9a1c29b7", name: "แก้ว KYK", email: "kanyakorn@step.cmu.ac.th", unit: "content|assignee" },
+  { id: "6984154a-2975-4040-a557-aec9d090377f", name: "ต้า TTY", email: "thitiya@step.cmu.ac.th", unit: "pr|assignee" },
+  { id: "fa87becd-45b3-4590-b381-ded430ce7975", name: "ก้อง IK", email: "itsara@step.cmu.ac.th", unit: "creative|assignee" },
+];
+
+export const CORE_OPERATIONAL_MEMBER_IDS = new Set(CORE_OPERATIONAL_MEMBERS.map((m) => m.id));
+export const CORE_OPERATIONAL_MEMBER_NAMES = new Set(CORE_OPERATIONAL_MEMBERS.map((m) => m.name));
+export const CORE_OPERATIONAL_EMAILS = new Set([
+  ...CORE_OPERATIONAL_MEMBERS.map((m) => m.email.toLowerCase()),
+  "adchanapong.a@cmu.ac.th",
+  "wasita.k@cmu.ac.th",
+  "ratiporn.k@cmu.ac.th",
+  "autcharaporn.s@cmu.ac.th",
+  "lalipat.l@cmu.ac.th",
+  "suthiarpa.k@cmu.ac.th",
+  "matanin.y@cmu.ac.th",
+  "chonnikarn.b@cmu.ac.th",
+  "siriluk.k@cmu.ac.th",
+  "kanyakorn.a@cmu.ac.th",
+  "thitiya.kh@cmu.ac.th",
+  "itsara.k@cmu.ac.th",
+]);
+
+/**
+ * Returns the official short name for a known core member ID (fallback if assignees list hasn't loaded or is filtered)
+ */
+export function getAssigneeFallbackName(assigneeId?: string | null): string | null {
+  if (!assigneeId) return null;
+  const found = CORE_OPERATIONAL_MEMBERS.find((m) => m.id === assigneeId);
+  return found ? found.name : null;
+}
+
+/**
+ * Ensures all 12 core operational CC TEAM members are always present in an assignees list
+ */
+export function ensureCoreOperationalAssignees<T extends { id: string; name: string; email?: string; unit?: string }>(
+  rawAssignees: T[] | null | undefined
+): T[] {
+  const list = (rawAssignees || []).filter((a) => isOperationalAssignee(a));
+  const existingIds = new Set(list.map((a) => a.id));
+  const existingNames = new Set(list.map((a) => (a.name || "").trim()));
+
+  const result = [...list];
+  for (const core of CORE_OPERATIONAL_MEMBERS) {
+    if (!existingIds.has(core.id) && !existingNames.has(core.name)) {
+      result.push({
+        id: core.id,
+        name: core.name,
+        email: core.email,
+        unit: core.unit,
+        is_active: true,
+      } as unknown as T);
+    }
+  }
+  return result;
+}
+
+/**
+ * Checks if a member belongs to the 12 core operational CC TEAM members
+ */
+export function isCoreOperationalMember(
+  memberOrUnit: MemberProfile | { id?: string; unit?: string; role?: string; name?: string; email?: string } | string | null | undefined
+): boolean {
+  if (!memberOrUnit) return false;
+  if (typeof memberOrUnit === "string") {
+    const trimmed = memberOrUnit.trim();
+    if (CORE_OPERATIONAL_MEMBER_IDS.has(trimmed) || CORE_OPERATIONAL_MEMBER_NAMES.has(trimmed) || CORE_OPERATIONAL_EMAILS.has(trimmed.toLowerCase())) {
+      return true;
+    }
+    if (trimmed.includes("|")) {
+      const [unitPart, rolePart] = trimmed.split("|");
+      const u = (unitPart || "").toLowerCase();
+      const r = (rolePart || "").toLowerCase();
+      if ((u === "creative" || u === "content" || u === "pr" || u === "all" || u === "internal") && (r === "assignee" || r === "admin")) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  const id = ("id" in memberOrUnit && typeof memberOrUnit.id === "string" && memberOrUnit.id.trim()) || "";
+  const name = ("name" in memberOrUnit && typeof memberOrUnit.name === "string" && memberOrUnit.name.trim()) || "";
+  const email = ("email" in memberOrUnit && typeof memberOrUnit.email === "string" && memberOrUnit.email.trim().toLowerCase()) || "";
+
+  if (id && CORE_OPERATIONAL_MEMBER_IDS.has(id)) return true;
+  if (name && CORE_OPERATIONAL_MEMBER_NAMES.has(name)) return true;
+  if (email && CORE_OPERATIONAL_EMAILS.has(email)) return true;
+
+  if ("unit" in memberOrUnit && typeof memberOrUnit.unit === "string" && memberOrUnit.unit.includes("|")) {
+    const [unitPart, rolePart] = memberOrUnit.unit.split("|");
+    const u = (unitPart || "").toLowerCase();
+    const r = (rolePart || "").toLowerCase();
+    if ((u === "creative" || u === "content" || u === "pr" || u === "all" || u === "internal") && (r === "assignee" || r === "admin")) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 /**
  * Checks if a member has an Executive role
  */
-export function isExecutive(memberOrUnit: MemberProfile | { unit?: string; role?: string; name?: string; email?: string } | string | null | undefined): boolean {
+export function isExecutive(
+  memberOrUnit: MemberProfile | { id?: string; unit?: string; role?: string; name?: string; email?: string } | string | null | undefined
+): boolean {
   if (!memberOrUnit) return false;
 
-  const textToCheck = typeof memberOrUnit === 'string'
-    ? memberOrUnit
-    : [
-        ('role' in memberOrUnit && memberOrUnit.role) || '',
-        ('unit' in memberOrUnit && memberOrUnit.unit) || '',
-        ('name' in memberOrUnit && memberOrUnit.name) || '',
-        ('fullName' in memberOrUnit && (memberOrUnit as any).fullName) || '',
-        ('email' in memberOrUnit && memberOrUnit.email) || '',
-      ].join(' ');
+  // IRONCLAD GUARD: Core operational CC TEAM members are NEVER executives under any circumstance!
+  // (Previously, 'Wasita Kobtanyakit' in encoded unit JSON matched s.includes('tanya')!)
+  if (isCoreOperationalMember(memberOrUnit)) {
+    return false;
+  }
+
+  // Extract structured fields WITHOUT scanning raw URL-encoded metadata JSON in unit.split('|')[2]
+  let textToCheck = "";
+  if (typeof memberOrUnit === "string") {
+    if (memberOrUnit.includes("|")) {
+      const parts = memberOrUnit.split("|");
+      textToCheck = `${parts[0] || ""} ${parts[1] || ""}`;
+    } else {
+      textToCheck = memberOrUnit;
+    }
+  } else {
+    const rawUnit = ("unit" in memberOrUnit && typeof memberOrUnit.unit === "string") ? memberOrUnit.unit : "";
+    const unitParts = rawUnit.split("|");
+    const unitPrefix = `${unitParts[0] || ""} ${unitParts[1] || ""}`;
+    textToCheck = [
+      ("id" in memberOrUnit && memberOrUnit.id) || "",
+      ("role" in memberOrUnit && memberOrUnit.role) || "",
+      unitPrefix,
+      ("name" in memberOrUnit && memberOrUnit.name) || "",
+      ("fullName" in memberOrUnit && (memberOrUnit as any).fullName) || "",
+      ("email" in memberOrUnit && memberOrUnit.email) || "",
+    ].join(" ");
+  }
 
   const s = textToCheck.toLowerCase();
 
   // 1. Executive keywords in unit/role/position (Do not match 'ผู้บริหารระบบ' which is CC Team Leader)
   if (
-    s.includes('executive') ||
-    s.includes('|executive') ||
-    s.includes('management') ||
-    s.includes('director') ||
-    s.includes('ผู้อำนวยการ') ||
-    s.includes('รองผู้อำนวยการ') ||
-    s.includes('ผู้ช่วยผู้อำนวยการ') ||
-    (s.includes('ผู้บริหาร') && !s.includes('ผู้บริหารระบบ'))
+    s.includes("executive") ||
+    s.includes("|executive") ||
+    s.includes("management") ||
+    s.includes("director") ||
+    s.includes("ผู้อำนวยการ") ||
+    s.includes("รองผู้อำนวยการ") ||
+    s.includes("ผู้ช่วยผู้อำนวยการ") ||
+    (s.includes("ผู้บริหาร") && !s.includes("ผู้บริหารระบบ"))
   ) {
     return true;
   }
 
-  // 2. Specific executive identities:
+  // 2. Specific executive identities (use exact/unambiguous tokens — never bare 'tanya' or bare 'หนึ่ง'):
   // - อ.บ่าว ST (สุริยะ / suriyah)
-  if (s.includes('บ่าว') || s.includes('สุริยะ') || s.includes('suriyah')) return true;
+  if (s.includes("บ่าว") || s.includes("สุริยะ") || s.includes("suriyah") || s.includes("686a3b2e-c83a-48d8-a0c2-fd0dd8fc223a")) return true;
 
-  // - อ.วิน (วรพจน์ / witty win / pw)
-  if (s.includes('อ.วิน') || s.includes('อาจารย์วิน') || s.includes('วรพจน์') || s.includes('witty win')) return true;
+  // - อ.วิน (วรพจน์ / ปิติวัฒน์ / pitiwat)
+  if (s.includes("อ.วิน") || s.includes("อาจารย์วิน") || s.includes("วรพจน์") || s.includes("witty win") || s.includes("b42a9d02-89b8-4876-be17-91ae9e638401")) return true;
 
-  // - อ.อ้วน (tanya / tanyanuparb / ty / ob-oon)
-  if (s.includes('อ.อ้วน') || s.includes('อาจารย์อ้วน') || s.includes('tanya') || s.includes('tanyanuparb') || s.includes('ob-oon')) return true;
+  // - อ.อ้วน (tanyanuparb / ธัญญานุภาพ / ob-oon)
+  if (s.includes("อ.อ้วน") || s.includes("อาจารย์อ้วน") || s.includes("tanyanuparb") || s.includes("ธัญญานุภาพ") || s.includes("ob-oon") || s.includes("b90df01a-6595-4f7a-934b-aaaeffda1acd")) return true;
 
-  // - อ.กอล์ฟ (choncharoen / golf / cs)
-  if (s.includes('อ.กอล์ฟ') || s.includes('อาจารย์กอล์ฟ') || s.includes('choncharoen') || (s.includes('กอล์ฟ') && !s.includes('ก้อง'))) return true;
+  // - อ.กอล์ฟ (choncharoen / ชนม์เจริญ)
+  if (s.includes("อ.กอล์ฟ") || s.includes("อาจารย์กอล์ฟ") || s.includes("choncharoen") || s.includes("ชนม์เจริญ") || (s.includes("กอล์ฟ") && !s.includes("ก้อง")) || s.includes("75af9cf4-fb88-4a73-b931-2ed6ae2256dd")) return true;
 
-  // - พี่หนึ่ง (3536b2e1-4a69-47c4-a943-79409d8b741f)
-  if (s.includes('พี่หนึ่ง') || s.includes('หนึ่ง') || s.includes('3536b2e1-4a69-47c4-a943-79409d8b741f')) return true;
+  // - พี่หนึ่ง (พิชาติ / pichart / 3536b2e1-4a69-47c4-a943-79409d8b741f)
+  if (s.includes("พี่หนึ่ง") || s.includes("pichart") || s.includes("พิชาติ") || s.includes("3536b2e1-4a69-47c4-a943-79409d8b741f")) return true;
 
   // - Other director references
-  if (s.includes('pitiwat') || s.includes('ปิติวัฒน์') || s.includes('step director')) return true;
+  if (s.includes("pitiwat") || s.includes("ปิติวัฒน์") || s.includes("step director")) return true;
 
   return false;
 }
@@ -381,19 +519,25 @@ export function isExecutive(memberOrUnit: MemberProfile | { unit?: string; role?
 /**
  * Checks if a member has a Viewer role
  */
-export function isViewer(memberOrUnit: MemberProfile | { unit?: string; role?: string } | string | null | undefined): boolean {
+export function isViewer(memberOrUnit: MemberProfile | { id?: string; unit?: string; role?: string; name?: string; email?: string } | string | null | undefined): boolean {
   if (!memberOrUnit) return false;
-  if (typeof memberOrUnit === 'string') {
-    return memberOrUnit === 'viewer' || memberOrUnit.includes('|viewer');
+  if (isCoreOperationalMember(memberOrUnit)) return false;
+  if (typeof memberOrUnit === "string") {
+    return memberOrUnit === "viewer" || memberOrUnit.includes("|viewer");
   }
-  if ('role' in memberOrUnit && memberOrUnit.role === 'viewer') return true;
-  if ('unit' in memberOrUnit && memberOrUnit.unit && memberOrUnit.unit.includes('|viewer')) return true;
+  if ("role" in memberOrUnit && memberOrUnit.role === "viewer") return true;
+  if ("unit" in memberOrUnit && memberOrUnit.unit && memberOrUnit.unit.includes("|viewer")) return true;
   return false;
 }
 
 /**
  * Checks if a member can be assigned tasks (Assignee or Admin, but NOT Executive or Viewer)
  */
-export function isOperationalAssignee(memberOrUnit: MemberProfile | { unit?: string; role?: string; name?: string; email?: string } | string | null | undefined): boolean {
+export function isOperationalAssignee(
+  memberOrUnit: MemberProfile | { id?: string; unit?: string; role?: string; name?: string; email?: string } | string | null | undefined
+): boolean {
+  if (!memberOrUnit) return false;
+  if (isCoreOperationalMember(memberOrUnit)) return true;
   return !isExecutive(memberOrUnit) && !isViewer(memberOrUnit);
 }
+

@@ -22,6 +22,7 @@ interface TrashBinModalProps {
   onRestore: (briefId: string) => Promise<void>;
   onPermanentDelete: (briefId: string) => Promise<void>;
   onEmptyTrash: () => Promise<void>;
+  onDeepRestore?: (restoredBrief: any) => void;
 }
 
 export default function TrashBinModal({
@@ -31,11 +32,47 @@ export default function TrashBinModal({
   onRestore,
   onPermanentDelete,
   onEmptyTrash,
+  onDeepRestore,
 }: TrashBinModalProps) {
   const [mounted, setMounted] = useState(false);
+  const [activeTab, setActiveTab] = useState<"trash" | "purged">("trash");
+  const [purgedBriefs, setPurgedBriefs] = useState<TrashItem[]>([]);
+  const [loadingPurged, setLoadingPurged] = useState(false);
+
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (isOpen && activeTab === "purged") {
+      fetchPurgedBriefs();
+    }
+  }, [isOpen, activeTab]);
+
+  const fetchPurgedBriefs = async () => {
+    setLoadingPurged(true);
+    try {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("briefs")
+        .select("*")
+        .gte("created_at", "2026-09-25T00:00:00Z")
+        .order("created_at", { ascending: false });
+
+      if (data) {
+        const recoverable = data.filter((b: any) => {
+          const isPurged = b.status === "purged" || b.details?.is_permanently_deleted === true;
+          const isStressTest = (b.project_name || "").includes("[STRESS_TEST]") || b.details?.is_test === true;
+          return isPurged && !isStressTest;
+        });
+        setPurgedBriefs(recoverable);
+      }
+    } catch (err) {
+      console.error("Failed to fetch purged briefs:", err);
+    } finally {
+      setLoadingPurged(false);
+    }
+  };
 
   const [restoringId, setRestoringId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -53,8 +90,45 @@ export default function TrashBinModal({
     }
   };
 
+  const handleDeepRestoreClick = async (item: TrashItem) => {
+    setRestoringId(item.id);
+    try {
+      const supabase = createClient();
+      const cleanDetails = { ...(item.details || {}) };
+      const targetStatus =
+        cleanDetails.previous_status && cleanDetails.previous_status !== "purged"
+          ? cleanDetails.previous_status
+          : "pending";
+
+      delete cleanDetails.is_deleted;
+      delete cleanDetails.deleted_at;
+      delete cleanDetails.is_permanently_deleted;
+      delete cleanDetails.purged_at;
+      delete cleanDetails.previous_status;
+
+      const { data, error } = await supabase
+        .from("briefs")
+        .update({
+          status: targetStatus,
+          details: cleanDetails,
+        })
+        .eq("id", item.id)
+        .select()
+        .single();
+
+      if (!error && data) {
+        setPurgedBriefs((prev) => prev.filter((p) => p.id !== item.id));
+        if (onDeepRestore) {
+          onDeepRestore(data);
+        }
+      }
+    } finally {
+      setRestoringId(null);
+    }
+  };
+
   const handleDeletePermanent = async (id: string) => {
-    if (!confirm("คุณแน่ใจหรือไม่ที่จะลบงานนี้อย่างถาวร?")) return;
+    if (!confirm("คุณแน่ใจหรือไม่ที่จะย้ายงานนี้ไปยังคลังล้างถาวร? (ยังสามารถกู้คืนได้จากแท็บคลังกู้คืนลึก)")) return;
     setDeletingId(id);
     try {
       await onPermanentDelete(id);
@@ -82,6 +156,8 @@ export default function TrashBinModal({
     });
   };
 
+  const currentList = activeTab === "trash" ? trashedBriefs : purgedBriefs;
+
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#181a1c]/90 backdrop-blur-md animate-in fade-in duration-200">
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
@@ -94,13 +170,13 @@ export default function TrashBinModal({
             </div>
             <div>
               <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
-                ถังขยะ (Trash Bin)
+                ถังขยะและระบบกู้คืนงาน (Trash & Deep Recovery)
                 <span className="text-xs px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-600 font-semibold border border-rose-200">
-                  {trashedBriefs.length} รายการ
+                  {trashedBriefs.length} รายการในถังขยะ
                 </span>
               </h3>
               <p className="text-xs text-slate-500">
-                งานที่ถูกลบจะถูกเก็บไว้ที่นี่ สามารถกู้คืน (Restore) กลับไปทำงานต่อได้ตลอดเวลา
+                งานทุกชิ้นมีระบบป้องกันสูญหาย สามารถกู้คืน (Restore) กลับไปทำงานต่อบนบอร์ดได้ตลอดเวลา
               </p>
             </div>
           </div>
@@ -113,15 +189,38 @@ export default function TrashBinModal({
           </button>
         </div>
 
-        {/* Action Toolbar */}
-        {trashedBriefs.length > 0 && (
-          <div className="px-6 py-2.5 bg-slate-50/40 border-b border-slate-100 flex items-center justify-between">
-            <span className="text-xs text-slate-500">
-              💡 กด <strong>&quot;กู้คืน&quot;</strong> เพื่องานจะกลับไปยังบอร์ดคอลัมน์เดิมทันที
-            </span>
-            {confirmEmpty ? (
+        {/* Mode Tabs: Standard Trash vs Deep Recovery */}
+        <div className="px-6 pt-3 pb-2 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between flex-wrap gap-2">
+          <div className="inline-flex bg-slate-200/70 p-1 rounded-xl gap-1">
+            <button
+              type="button"
+              onClick={() => setActiveTab("trash")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                activeTab === "trash"
+                  ? "bg-white text-slate-900 shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              ถังขยะปัจจุบัน ({trashedBriefs.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("purged")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === "purged"
+                  ? "bg-white text-indigo-700 shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <RotateCcw size={12} />
+              <span>คลังกู้คืนงานที่ถูกล้างถาวร (Deep Recovery)</span>
+            </button>
+          </div>
+
+          {activeTab === "trash" && trashedBriefs.length > 0 && (
+            confirmEmpty ? (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-rose-600 font-semibold">ยืนยันลบทั้งหมด?</span>
+                <span className="text-xs text-rose-600 font-semibold">ยืนยันล้างถังขยะ?</span>
                 <button
                   onClick={handleEmptyAll}
                   disabled={isEmptying}
@@ -145,30 +244,44 @@ export default function TrashBinModal({
                 <Trash2 size={13} />
                 ล้างถังขยะทั้งหมด
               </button>
-            )}
-          </div>
-        )}
+            )
+          )}
+        </div>
 
         {/* Content List */}
         <div className="flex-1 overflow-y-auto p-6 space-y-3">
-          {trashedBriefs.length === 0 ? (
+          {activeTab === "purged" && loadingPurged ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center text-slate-400">
+              <RefreshCw size={28} className="animate-spin text-indigo-500 mb-3" />
+              <p className="text-xs text-slate-500">กำลังค้นหางานในคลังสำรองข้อมูล...</p>
+            </div>
+          ) : currentList.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center text-slate-400">
               <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-3">
                 <Trash2 size={32} className="text-slate-300" />
               </div>
-              <h4 className="font-semibold text-slate-600 text-base mb-1">ถังขยะว่างเปล่า</h4>
+              <h4 className="font-semibold text-slate-600 text-base mb-1">
+                {activeTab === "trash" ? "ถังขยะว่างเปล่า" : "ไม่มีงานค้างในคลังล้างถาวร"}
+              </h4>
               <p className="text-xs text-slate-400 max-w-sm">
-                ไม่มีงานที่ถูกลบค้างอยู่ในระบบ หากคุณลบงานใดๆ จากบอร์ด จะสามารถมากู้คืนได้ที่นี่
+                {activeTab === "trash"
+                  ? "ไม่มีงานที่ถูกลบค้างอยู่ในถังขยะ หากเผลอล้างถังขยะไปแล้ว สามารถตรวจสอบได้ที่แท็บ 'คลังกู้คืนงานที่ถูกล้างถาวร (Deep Recovery)'"
+                  : "ไม่พบรายการงานที่ถูกล้างถาวรในปีงบประมาณปัจจุบัน"}
               </p>
             </div>
           ) : (
-            trashedBriefs.map((item) => (
+            currentList.map((item) => (
               <div
                 key={item.id}
                 className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-slate-300 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 group"
               >
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    {item.details?.task_code && (
+                      <span className="text-[11px] font-bold font-mono px-2 py-0.5 rounded bg-slate-900 text-white">
+                        {item.details.task_code}
+                      </span>
+                    )}
                     <span
                       className={`text-[11px] font-bold px-2 py-0.5 rounded-full uppercase ${
                         item.unit?.toLowerCase() === "creative"
@@ -183,7 +296,9 @@ export default function TrashBinModal({
                       {item.unit || "TASK"}
                     </span>
                     <span className="text-[11px] text-slate-400">
-                      ลบเมื่อ: {formatDeletedDate(item.details?.deleted_at)}
+                      {activeTab === "trash"
+                        ? `ลบเมื่อ: ${formatDeletedDate(item.details?.deleted_at)}`
+                        : `ล้างถังขยะเมื่อ: ${formatDeletedDate(item.details?.purged_at || item.details?.deleted_at)}`}
                     </span>
                     {item.details?.previous_status && (
                       <span className="text-[11px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
@@ -204,24 +319,30 @@ export default function TrashBinModal({
                 <div className="flex items-center gap-2 shrink-0">
                   {/* Restore Button */}
                   <button
-                    onClick={() => handleRestoreClick(item.id)}
+                    onClick={() =>
+                      activeTab === "trash"
+                        ? handleRestoreClick(item.id)
+                        : handleDeepRestoreClick(item)
+                    }
                     disabled={restoringId === item.id}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-600 hover:text-white rounded-lg text-xs font-semibold shadow-sm transition-all cursor-pointer"
                     title="กู้คืนงานกลับสู่บอร์ดเดิม"
                   >
                     <RotateCcw size={13} className={restoringId === item.id ? "animate-spin" : ""} />
-                    <span>กู้คืน (Restore)</span>
+                    <span>กู้คืนกลับบอร์ด (Restore)</span>
                   </button>
 
-                  {/* Permanent Delete Button */}
-                  <button
-                    onClick={() => handleDeletePermanent(item.id)}
-                    disabled={deletingId === item.id}
-                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg border border-transparent hover:border-rose-200 transition-colors cursor-pointer"
-                    title="ลบถาวร (Permanent Delete)"
-                  >
-                    <Trash2 size={15} />
-                  </button>
+                  {/* Permanent Delete Button (only in standard trash tab) */}
+                  {activeTab === "trash" && (
+                    <button
+                      onClick={() => handleDeletePermanent(item.id)}
+                      disabled={deletingId === item.id}
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg border border-transparent hover:border-rose-200 transition-colors cursor-pointer"
+                      title="ย้ายไปคลังล้างถาวร"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  )}
                 </div>
               </div>
             ))
@@ -243,3 +364,4 @@ export default function TrashBinModal({
     document.body
   );
 }
+

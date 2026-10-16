@@ -27,7 +27,7 @@ import StepQuotationModal, { StepQuotationData, formatCurrency } from "./StepQuo
 import { getCloudJson, setCloudJson, CLOUD_KEYS } from "@/utils/cloudSyncService";
 import { RSP_UNIVERSITIES, PressReleaseItem } from "./RspPressReport";
 import { Assignee3DAvatarBadge } from "@/components/Assignee3DAvatarBadge";
-import { isOperationalAssignee } from "@/utils/memberProfile";
+import { isOperationalAssignee, ensureCoreOperationalAssignees, getAssigneeFallbackName } from "@/utils/memberProfile";
 
 const ALL_CATEGORIES_BY_UNIT: Record<string, { name: string; desc: string }[]> = {
   creative: [
@@ -140,9 +140,9 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
     setMounted(true);
   }, []);
 
-  // Filter operational assignees (exclude executives from being assigned to tasks)
+  // Filter operational assignees (exclude executives from being assigned to tasks, while guaranteeing all 12 core CC members)
   const operationalAssignees = useMemo(() => {
-    return (assignees || []).filter((a: any) => isOperationalAssignee(a));
+    return ensureCoreOperationalAssignees(assignees || []);
   }, [assignees]);
 
   const unit = (brief.unit || 'creative').toLowerCase();
@@ -901,12 +901,13 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                         value={brief.assignee_id || ""}
                         onChange={(val) => onUpdateField(brief.id, "assignee_id", val)}
                         renderValue={(val) => {
-                          const matched = assignees.find((a: any) => a.id === val);
-                          if (!matched) return "Unassigned (รอมอบหมาย)";
+                          const matched = operationalAssignees.find((a: any) => a.id === val) || assignees.find((a: any) => a.id === val);
+                          const resolvedName = matched?.name || getAssigneeFallbackName(val);
+                          if (!resolvedName) return "Unassigned (รอมอบหมาย)";
                           return (
                             <div className="flex items-center gap-2 truncate">
-                              <Assignee3DAvatarBadge name={matched.name} size={20} showBorder />
-                              <span className="truncate">{matched.name}</span>
+                              <Assignee3DAvatarBadge name={resolvedName} size={20} showBorder />
+                              <span className="truncate">{resolvedName}</span>
                             </div>
                           );
                         }}
@@ -2765,7 +2766,7 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                 const effectiveBaseVal = isPMProject ? pmProfit : currentSaveCost;
                 const totalAstPercent = assistantsList.reduce((sum: number, a: any) => sum + (Number(a.percentage) || 0), 0);
                 const ownerPercent = Math.max(0, 100 - totalAstPercent);
-                const ownerName = assignees.find(a => a.id === brief.assignee_id)?.name || "เจ้าของงาน (Unassigned)";
+                const ownerName = operationalAssignees.find(a => a.id === brief.assignee_id)?.name || assignees.find(a => a.id === brief.assignee_id)?.name || getAssigneeFallbackName(brief.assignee_id) || "เจ้าของงาน (Unassigned)";
                 const ownerAmount = Math.round((effectiveBaseVal * ownerPercent) / 100);
 
                 return (
@@ -2795,7 +2796,7 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                         </div>
                       </div>
                       {assistantsList.map((ast: any, i: number) => {
-                        const astName = assignees.find(a => a.id === ast.assignee_id)?.name || `ผู้ช่วย #${i+1}`;
+                        const astName = operationalAssignees.find(a => a.id === ast.assignee_id)?.name || assignees.find(a => a.id === ast.assignee_id)?.name || getAssigneeFallbackName(ast.assignee_id) || `ผู้ช่วย #${i+1}`;
                         const astAmount = Math.round((effectiveBaseVal * Number(ast.percentage)) / 100);
                         return (
                           <div key={i} className="bg-white/90 p-2.5 rounded-xl border shadow-xs flex items-center justify-between border-emerald-200/80">

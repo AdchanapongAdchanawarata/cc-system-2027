@@ -14,7 +14,7 @@ import ModernSelect, { ModernSelectOption } from "@/components/ModernSelect";
 import CustomSelect from "./CustomSelect";
 import { OFFICIAL_STEP_TEAMS } from "@/utils/teamAnalytics";
 import StepQuotationModal, { StepQuotationData, formatCurrency } from "./StepQuotationModal";
-import { isOperationalAssignee } from "@/utils/memberProfile";
+import { isOperationalAssignee, ensureCoreOperationalAssignees } from "@/utils/memberProfile";
 import { getSavedContact, saveContact } from "@/utils/contactMemory";
 
 type OKR = { id: string; type: string; description: string };
@@ -72,7 +72,7 @@ const PM_PR_CATEGORIES = [
 export default function InternalTaskModal({ onClose }: { onClose: () => void }) {
   const [loading, setLoading] = useState(false);
   const [okrs, setOkrs] = useState<OKR[]>([]);
-  const [assignees, setAssignees] = useState<Assignee[]>([]);
+  const [assignees, setAssignees] = useState<Assignee[]>(() => ensureCoreOperationalAssignees([]));
   const [pricingList, setPricingList] = useState<ServicePriceItem[]>([]);
   const supabase = createClient();
 
@@ -119,12 +119,9 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
       const { data: okrData } = await supabase.from('okr_settings').select('id, type, description').eq('is_active', true);
       if (okrData) setOkrs(okrData);
 
-      // 2. Fetch Assignees (Active members of CC Team - exclude executives)
+      // 2. Fetch Assignees (Active members of CC Team - exclude executives, guarantee all 12 core members)
       const { data: assigneeData } = await supabase.from('assignees').select('id, name, unit, is_active').eq('is_active', true).order('name');
-      if (assigneeData && assigneeData.length > 0) {
-        const operationalOnly = assigneeData.filter(a => isOperationalAssignee(a));
-        setAssignees(operationalOnly);
-      }
+      setAssignees(ensureCoreOperationalAssignees(assigneeData || []));
 
       // 3. Fetch Service Pricing (from Supabase or local storage or default STeP list)
       try {

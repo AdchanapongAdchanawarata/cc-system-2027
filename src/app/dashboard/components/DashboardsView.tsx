@@ -21,7 +21,7 @@ import {
   isR3Task 
 } from "@/utils/okrSettings";
 import { resolveTaskCode } from "@/utils/taskCodeService";
-import { MemberProfile, parseMemberRecord, getMemberOfficialEmail, isExecutive, isOperationalAssignee } from "@/utils/memberProfile";
+import { MemberProfile, parseMemberRecord, getMemberOfficialEmail, isExecutive, isOperationalAssignee, ensureCoreOperationalAssignees } from "@/utils/memberProfile";
 import { createClient } from "@/utils/supabase/client";
 import { 
   BriefTaskLike, 
@@ -462,7 +462,7 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
 
   // Filter out executives from operational workload assignees (Executives do not perform production tasks)
   const operationalAssignees = useMemo(() => {
-    return assignees.filter((a) => isOperationalAssignee(a));
+    return ensureCoreOperationalAssignees(assignees);
   }, [assignees]);
 
   // Executive members list for executive reports & mail recipients (Director first, then Deputy Director)

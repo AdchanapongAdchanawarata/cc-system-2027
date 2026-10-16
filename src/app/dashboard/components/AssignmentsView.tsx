@@ -21,7 +21,7 @@ import { resolveTaskCode, generateNextTaskCode, getUnitPrefix } from "@/utils/ta
 import { logActivity, getCurrentActor, getAuditLogs } from "@/utils/auditLogger";
 import { Assignee3DAvatarBadge } from "@/components/Assignee3DAvatarBadge";
 import { updateGlobalBriefsStatsCache } from "@/utils/avatarMemberStats";
-import { isOperationalAssignee } from "@/utils/memberProfile";
+import { isOperationalAssignee, ensureCoreOperationalAssignees, getAssigneeFallbackName } from "@/utils/memberProfile";
 import { getBriefTimeWindow } from "@/utils/teamAnalytics";
 import {
   getDesktopNotificationPermission,
@@ -217,7 +217,7 @@ export default function AssignmentsView() {
   const [selectedAssigneeIds, setSelectedAssigneeIds] = useState<string[]>([]);
   const [isAssigneeFilterOpen, setIsAssigneeFilterOpen] = useState(false);
   const [briefs, setBriefs] = useState<Brief[]>([]);
-  const [assignees, setAssignees] = useState<Assignee[]>([]);
+  const [assignees, setAssignees] = useState<Assignee[]>(() => ensureCoreOperationalAssignees([]));
   const [okrs, setOkrs] = useState<OKR[]>([]);
   const [selectedBrief, setSelectedBrief] = useState<Brief | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -588,12 +588,10 @@ export default function AssignmentsView() {
     }
 
     const { data: assigneesData } = await supabase.from('assignees').select('id, name, email, unit').eq('is_active', true);
-    if (assigneesData) {
-      const operationalOnly = assigneesData.filter(a => isOperationalAssignee(a));
-      setAssignees(operationalOnly);
-      if (briefsData) {
-        updateGlobalBriefsStatsCache(briefsData, operationalOnly);
-      }
+    const operationalOnly = ensureCoreOperationalAssignees(assigneesData || []);
+    setAssignees(operationalOnly);
+    if (briefsData) {
+      updateGlobalBriefsStatsCache(briefsData, operationalOnly);
     }
 
     const { data: okrData } = await supabase.from('okr_settings').select('id, type, description').eq('is_active', true);
@@ -1262,7 +1260,7 @@ export default function AssignmentsView() {
     }
   };
 
-  // --- SOFT DELETE TO TRASH (WITH 50-STEP UNDO) ---
+  // --- SOFT DELETE TO TRASH (WITH CONFIRMATION & 50-STEP UNDO) ---
   const handleDeleteTask = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     if (isViewer) {
@@ -1271,6 +1269,15 @@ export default function AssignmentsView() {
     }
     const brief = briefs.find(b => b.id === id);
     if (!brief) return;
+
+    const code = brief.details?.task_code || getTaskCode(brief.unit || "internal", id);
+    if (
+      !confirm(
+        `คุณต้องการย้ายงาน "${code}: ${brief.project_name}" ลงถังขยะใช่หรือไม่?\n(งานที่ย้ายลงถังขยะสามารถกดกู้คืนได้ทุกเมื่อ)`
+      )
+    ) {
+      return;
+    }
 
     const previousDetails = { ...(brief.details || {}) };
     const newDetails = {
@@ -2356,11 +2363,12 @@ export default function AssignmentsView() {
                             onChange={(val) => { updateField(brief.id, 'assignee_id', val); }}
                             renderValue={(val) => {
                               const matched = assignees.find(a => a.id === val);
-                              if (!matched) return "Unassigned";
+                              const resolvedName = matched?.name || getAssigneeFallbackName(val);
+                              if (!resolvedName) return "Unassigned";
                               return (
                                 <div className="flex items-center gap-1.5 truncate">
-                                  <Assignee3DAvatarBadge name={matched.name} size={18} showBorder />
-                                  <span className="truncate">{matched.name}</span>
+                                  <Assignee3DAvatarBadge name={resolvedName} size={18} showBorder />
+                                  <span className="truncate">{resolvedName}</span>
                                 </div>
                               );
                             }}
@@ -2443,13 +2451,14 @@ export default function AssignmentsView() {
                             const activeAsts = brief.details.assistants.filter((a: any) => a.assignee_id && Number(a.percentage) > 0);
                             const totalPct = activeAsts.reduce((sum: number, a: any) => sum + (Number(a.percentage) || 0), 0);
                             const firstAst = assignees.find((as: any) => as.id === activeAsts[0]?.assignee_id);
+                            const firstAstName = firstAst?.name || getAssigneeFallbackName(activeAsts[0]?.assignee_id);
                             return (
                               <div className="group/ast relative inline-flex">
                                 <span 
                                   className="inline-flex items-center gap-0.5 text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/60 px-1 py-0.5 rounded-full shrink-1 min-w-0 max-w-[110px] truncate cursor-help"
                                 >
                                   <Users size={9} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                  <span className="truncate">+{activeAsts.length} {activeAsts.length === 1 && firstAst?.name ? `${firstAst.name} ` : ''}({totalPct}%)</span>
+                                  <span className="truncate">+{activeAsts.length} {activeAsts.length === 1 && firstAstName ? `${firstAstName} ` : ''}({totalPct}%)</span>
                                 </span>
                                 {/* Dieter Rams Assistant Card - Semi-transparent Zero Shadow */}
                                 <div className="hidden group-hover/ast:flex flex-col absolute left-0 bottom-full mb-1.5 z-50 whitespace-nowrap p-2.5 bg-neutral-900/90 backdrop-blur-md text-white rounded-xl border border-white/20 text-left pointer-events-none font-sans min-w-[160px] shadow-none">
@@ -2457,9 +2466,10 @@ export default function AssignmentsView() {
                                   <div className="space-y-1 text-[10.5px]">
                                     {activeAsts.map((a: any, i: number) => {
                                       const m = assignees.find(as => as.id === a.assignee_id);
+                                      const astName = m?.name || getAssigneeFallbackName(a.assignee_id) || 'ผู้ช่วย';
                                       return (
                                         <div key={i} className="flex items-center justify-between gap-3 text-neutral-200">
-                                          <span>{m?.name || 'ผู้ช่วย'}</span>
+                                          <span>{astName}</span>
                                           <span className="font-mono text-emerald-400 font-bold">{a.percentage}%</span>
                                         </div>
                                       );
@@ -2638,6 +2648,15 @@ export default function AssignmentsView() {
         onRestore={handleRestoreTask}
         onPermanentDelete={handlePermanentDelete}
         onEmptyTrash={handleEmptyTrash}
+        onDeepRestore={(restoredBrief) => {
+          setBriefs((prev) => {
+            if (prev.some((b) => b.id === restoredBrief.id)) {
+              return prev.map((b) => (b.id === restoredBrief.id ? restoredBrief : b));
+            }
+            return [...prev, restoredBrief];
+          });
+          showToast(`✅ กู้คืนงาน "${restoredBrief.project_name}" กลับสู่บอร์ดสำเร็จ!`);
+        }}
       />
 
       {/* Status Revert Confirmation Modal (Request 2) */}

@@ -22,6 +22,7 @@ import { logActivity, getCurrentActor, getAuditLogs } from "@/utils/auditLogger"
 import { Assignee3DAvatarBadge } from "@/components/Assignee3DAvatarBadge";
 import { updateGlobalBriefsStatsCache } from "@/utils/avatarMemberStats";
 import { isOperationalAssignee } from "@/utils/memberProfile";
+import { getBriefTimeWindow } from "@/utils/teamAnalytics";
 import {
   getDesktopNotificationPermission,
   requestDesktopNotificationPermission,
@@ -2150,6 +2151,7 @@ export default function AssignmentsView() {
 
                 {columnBriefs.map(brief => {
                 const ages = getTaskAges(brief);
+                const briefTimeWindow = getBriefTimeWindow(brief);
                 
                 let isOverdue = false;
                 let daysUntilDue: number | null = null;
@@ -2311,6 +2313,16 @@ export default function AssignmentsView() {
                       }`}>
                         {getTaskCode(brief.unit, brief.id)}
                       </span>
+
+                      {/* Brief Date & Available Working Days to Deadline (วันสั่งงานและระยะเวลาทำงานจางๆ) */}
+                      {briefTimeWindow && (
+                        <span 
+                          className="text-[10px] sm:text-[10.5px] font-medium text-slate-400 dark:text-zinc-500 tracking-tight"
+                          title={briefTimeWindow.tooltip}
+                        >
+                          {briefTimeWindow.text}
+                        </span>
+                      )}
 
                       {/* Surveillance / Watch Badge (Unclipped Top Layer via Portal) */}
                       {isUnderWatch && (

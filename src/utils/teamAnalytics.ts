@@ -1,4 +1,53 @@
 import { BriefTaskLike, PersonShare, getTaskFinancialDistribution, getBriefSaveCost, MemberStats } from './stats';
+import { getLeadTimeForTask } from './pricing';
+
+export interface BriefTimeWindow {
+  briefDateStr: string;
+  briefDateFull: string;
+  deadlineStr?: string;
+  deadlineFull?: string;
+  workingDays: number | null;
+  text: string;
+  tooltip: string;
+  isUrgent: boolean;
+  slaLeadTime: number;
+}
+
+export interface RequesterUrgentStat {
+  requesterKey: string;
+  requesterName: string;
+  requesterEmail?: string;
+  teamKey: string;
+  teamName: string;
+  totalBriefs: number;
+  urgentBriefs: number;
+  urgentRate: number; // percentage
+  avgWorkingDays: number;
+  topCategory: string;
+  coachingAdvice: string;
+  planningHealth: 'critical' | 'warning' | 'good';
+}
+
+export interface TeamUrgentStat {
+  teamKey: string;
+  teamName: string;
+  totalBriefs: number;
+  urgentBriefs: number;
+  urgentRate: number; // percentage
+  avgWorkingDays: number;
+  topCategory: string;
+  teamGuidance: string;
+  planningHealth: 'critical' | 'warning' | 'good';
+}
+
+export interface UrgentOrderInsights {
+  totalBriefs: number;
+  totalUrgent: number;
+  overallUrgentRate: number;
+  topRequesters: RequesterUrgentStat[];
+  topTeams: TeamUrgentStat[];
+  keyRecommendations: string[];
+}
 
 export interface StatusCounts {
   total: number;
@@ -186,6 +235,282 @@ export function isTaskOverdue(brief: BriefTaskLike): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Calculate brief date and available working days window to deadline
+ */
+export function getBriefTimeWindow(brief: BriefTaskLike): BriefTimeWindow | null {
+  const rawAny = brief as Record<string, any>;
+  const briefDateRaw = rawAny.created_at || brief.details?.brief_date || brief.details?.submission_date || brief.details?.date;
+  if (!briefDateRaw) return null;
+
+  const bDate = new Date(briefDateRaw);
+  if (isNaN(bDate.getTime())) return null;
+
+  const thaiMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+  const briefDay = bDate.getDate();
+  const briefMonth = thaiMonths[bDate.getMonth()];
+  const briefDateStr = `${briefDay} ${briefMonth}`;
+  const briefDateFull = `${briefDay} ${briefMonth} ${bDate.getFullYear() + 543}`;
+
+  const category = getBriefCategory(brief);
+  const slaLeadTime = getLeadTimeForTask(brief.unit, category, brief.project_name);
+
+  const deadlineStr = brief.details?.publish_date || brief.deadline || brief.details?.usage_date || brief.details?.delivery_date || (brief.details?.event_datetime ? String(brief.details.event_datetime).split(" ")[0] : null);
+
+  if (!deadlineStr) {
+    return {
+      briefDateStr,
+      briefDateFull,
+      workingDays: null,
+      text: `สั่ง ${briefDateStr}`,
+      tooltip: `วันสั่งงาน: ${briefDateFull} (ไม่ได้ระบุกำหนดส่ง)`,
+      isUrgent: false,
+      slaLeadTime
+    };
+  }
+
+  // Parse deadline date cleanly
+  const match = String(deadlineStr).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  let dueYear: number, dueMonth: number, dueDay: number;
+  if (match) {
+    dueYear = parseInt(match[1], 10);
+    dueMonth = parseInt(match[2], 10) - 1;
+    dueDay = parseInt(match[3], 10);
+  } else {
+    const d = new Date(deadlineStr);
+    dueYear = d.getFullYear();
+    dueMonth = d.getMonth();
+    dueDay = d.getDate();
+  }
+  const dueDate = new Date(dueYear, dueMonth, dueDay);
+  const dueDayNum = dueDate.getDate();
+  const dueMonthName = thaiMonths[dueDate.getMonth()];
+  const deadlineShort = `${dueDayNum} ${dueMonthName}`;
+  const deadlineFull = `${dueDayNum} ${dueMonthName} ${dueDate.getFullYear() + 543}`;
+
+  const startDay = new Date(bDate.getFullYear(), bDate.getMonth(), bDate.getDate());
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const workingDays = Math.round((dueDate.getTime() - startDay.getTime()) / msPerDay);
+
+  let daysLabel = "";
+  if (workingDays === 0) {
+    daysLabel = "0 วัน (วันเดียว)";
+  } else if (workingDays === 1) {
+    daysLabel = "1 วัน";
+  } else if (workingDays < 0) {
+    daysLabel = "กระชั้นชิด";
+  } else {
+    daysLabel = `${workingDays} วัน`;
+  }
+
+  const isUrgent = workingDays <= 3 || workingDays < slaLeadTime || brief.details?.is_urgent === true;
+
+  return {
+    briefDateStr,
+    briefDateFull,
+    deadlineStr: deadlineShort,
+    deadlineFull,
+    workingDays,
+    text: `สั่ง ${briefDateStr} (${daysLabel})`,
+    tooltip: `วันสั่งงาน: ${briefDateFull} | กำหนดส่ง: ${deadlineFull} | ระยะเวลาทำงานรวม: ${workingDays} วัน (เกณฑ์มาตรฐาน ${slaLeadTime} วัน)`,
+    isUrgent,
+    slaLeadTime
+  };
+}
+
+/**
+ * Check if a task is an urgent/rush order
+ */
+export function isTaskUrgent(brief: BriefTaskLike): boolean {
+  if (brief.status === "cancelled") return false;
+  const rawAny = brief as Record<string, any>;
+  const p = String(rawAny.priority || brief.details?.priority || '').toLowerCase();
+  if (p === 'urgent' || p === 'high' || p === 'critical' || brief.details?.is_urgent === true) return true;
+
+  const tw = getBriefTimeWindow(brief);
+  if (tw && tw.workingDays !== null) {
+    return tw.isUrgent;
+  }
+  return false;
+}
+
+/**
+ * Compute Urgent/Rush Order Insights by Requester and by Team
+ */
+export function computeUrgentOrderInsights(briefs: BriefTaskLike[]): UrgentOrderInsights {
+  const validBriefs = briefs.filter(b => b.status !== "cancelled");
+  const totalBriefs = validBriefs.length;
+
+  const requesterMap: Record<string, {
+    key: string;
+    name: string;
+    email?: string;
+    teamKey: string;
+    teamName: string;
+    total: number;
+    urgent: number;
+    totalWorkingDays: number;
+    workingDaysCount: number;
+    categories: Record<string, number>;
+  }> = {};
+
+  const teamMap: Record<string, {
+    key: string;
+    name: string;
+    total: number;
+    urgent: number;
+    totalWorkingDays: number;
+    workingDaysCount: number;
+    categories: Record<string, number>;
+  }> = {};
+
+  let totalUrgent = 0;
+
+  validBriefs.forEach(b => {
+    const rawAny = b as Record<string, any>;
+    const client = getBriefClientTeam(b);
+    const cat = getBriefCategory(b);
+    const tw = getBriefTimeWindow(b);
+    const urgent = isTaskUrgent(b);
+
+    if (urgent) totalUrgent++;
+
+    // Requester identifier: nickname first, then email, then client team
+    const requesterName = String(rawAny.coordinator_nickname || b.details?.coordinator_nickname || b.details?.requester_name || rawAny.requester_email || "").trim() || "ไม่ระบุผู้สั่ง";
+    const requesterEmail = String(rawAny.requester_email || b.details?.requester_email || "").trim();
+    const requesterKey = requesterName.toLowerCase();
+
+    // 1. Group by Requester
+    if (!requesterMap[requesterKey]) {
+      requesterMap[requesterKey] = {
+        key: requesterKey,
+        name: requesterName,
+        email: requesterEmail,
+        teamKey: client.key,
+        teamName: client.name,
+        total: 0,
+        urgent: 0,
+        totalWorkingDays: 0,
+        workingDaysCount: 0,
+        categories: {}
+      };
+    }
+    requesterMap[requesterKey].total++;
+    if (urgent) requesterMap[requesterKey].urgent++;
+    if (tw && tw.workingDays !== null) {
+      requesterMap[requesterKey].totalWorkingDays += Math.max(0, tw.workingDays);
+      requesterMap[requesterKey].workingDaysCount++;
+    }
+    requesterMap[requesterKey].categories[cat] = (requesterMap[requesterKey].categories[cat] || 0) + (urgent ? 2 : 1);
+
+    // 2. Group by Team
+    if (!teamMap[client.key]) {
+      teamMap[client.key] = {
+        key: client.key,
+        name: client.name,
+        total: 0,
+        urgent: 0,
+        totalWorkingDays: 0,
+        workingDaysCount: 0,
+        categories: {}
+      };
+    }
+    teamMap[client.key].total++;
+    if (urgent) teamMap[client.key].urgent++;
+    if (tw && tw.workingDays !== null) {
+      teamMap[client.key].totalWorkingDays += Math.max(0, tw.workingDays);
+      teamMap[client.key].workingDaysCount++;
+    }
+    teamMap[client.key].categories[cat] = (teamMap[client.key].categories[cat] || 0) + (urgent ? 2 : 1);
+  });
+
+  // Transform Requesters
+  const topRequesters: RequesterUrgentStat[] = Object.values(requesterMap)
+    .filter(r => r.total > 0)
+    .map(r => {
+      const urgentRate = Math.round((r.urgent / r.total) * 100);
+      const avgWorkingDays = r.workingDaysCount > 0 ? Number((r.totalWorkingDays / r.workingDaysCount).toFixed(1)) : 0;
+      const topCategory = Object.entries(r.categories).sort((a, b) => b[1] - a[1])[0]?.[0] || "ทั่วไป";
+
+      let planningHealth: 'critical' | 'warning' | 'good' = 'good';
+      let coachingAdvice = "วางแผนการสั่งงานได้เหมาะสม มีการเผื่อเวลาทำงานตามเกณฑ์มาตรฐาน";
+
+      if (r.urgent >= 4 || (r.urgent >= 2 && urgentRate >= 50)) {
+        planningHealth = 'critical';
+        coachingAdvice = `มีสัดส่วนงานด่วนสูง (${urgentRate}% / ${r.urgent} ครั้ง) โดยเฉพาะงาน "${topCategory}" แนะนำให้แจ้งหัวหน้าทีม CC หรือนัดประชุม Monthly Pipeline ล่วงหน้าเพื่อจองคิวงาน`;
+      } else if (r.urgent >= 1 || urgentRate >= 25) {
+        planningHealth = 'warning';
+        coachingAdvice = `มีประวัติสั่งงานด่วน ${r.urgent} ครั้ง แนะนำให้วางแผนส่งบรีฟงานประเภท "${topCategory}" ล่วงหน้าอย่างน้อย 5-7 วันทำการ เพื่อรักษาคุณภาพตามเกณฑ์ WI`;
+      }
+
+      return {
+        requesterKey: r.key,
+        requesterName: r.name,
+        requesterEmail: r.email,
+        teamKey: r.teamKey,
+        teamName: r.teamName,
+        totalBriefs: r.total,
+        urgentBriefs: r.urgent,
+        urgentRate,
+        avgWorkingDays,
+        topCategory,
+        coachingAdvice,
+        planningHealth
+      };
+    })
+    .sort((a, b) => b.urgentBriefs - a.urgentBriefs || b.urgentRate - a.urgentRate);
+
+  // Transform Teams
+  const topTeams: TeamUrgentStat[] = Object.values(teamMap)
+    .filter(t => t.total > 0)
+    .map(t => {
+      const urgentRate = Math.round((t.urgent / t.total) * 100);
+      const avgWorkingDays = t.workingDaysCount > 0 ? Number((t.totalWorkingDays / t.workingDaysCount).toFixed(1)) : 0;
+      const topCategory = Object.entries(t.categories).sort((a, b) => b[1] - a[1])[0]?.[0] || "ทั่วไป";
+
+      let planningHealth: 'critical' | 'warning' | 'good' = 'good';
+      let teamGuidance = "ทีมนี้บริหารจัดการเวลาสั่งงานได้ตามเกณฑ์มาตรฐานขององค์กร";
+
+      if (t.urgent >= 5 || (t.urgent >= 2 && urgentRate >= 40)) {
+        planningHealth = 'critical';
+        teamGuidance = `ทีม ${t.key} มีอัตรางานด่วนสูง (${urgentRate}% / ${t.urgent} งาน) แนะนำให้หัวหน้าฝ่ายกำหนดรอบการสรุปบรีฟงานประจำสัปดาห์ (Weekly Batching) และแจ้งทีม CC ก่อนเริ่มจัดกิจกรรม`;
+      } else if (t.urgent >= 1 || urgentRate >= 20) {
+        planningHealth = 'warning';
+        teamGuidance = `ทีม ${t.key} ควรกำชับผู้ประสานงานให้เผื่อระยะเวลาทำงานสำหรับ "${topCategory}" อย่างน้อย 5 วันทำการ เพื่อลดภาระงานเร่งด่วน`;
+      }
+
+      return {
+        teamKey: t.key,
+        teamName: t.name,
+        totalBriefs: t.total,
+        urgentBriefs: t.urgent,
+        urgentRate,
+        avgWorkingDays,
+        topCategory,
+        teamGuidance,
+        planningHealth
+      };
+    })
+    .sort((a, b) => b.urgentBriefs - a.urgentBriefs || b.urgentRate - a.urgentRate);
+
+  const overallUrgentRate = totalBriefs > 0 ? Math.round((totalUrgent / totalBriefs) * 100) : 0;
+
+  const keyRecommendations: string[] = [
+    "ส่งเสริมให้ PM ทุกทีมใช้ระบบจองคิวงานล่วงหน้า (Early Slot Reservation) แม้รายละเอียดยังไม่ครบ 100%",
+    "สำหรับงานด่วนที่มีเวลาทำงานน้อยกว่า 3 วัน ต้องมีขั้นตอนแจ้งหัวหน้าทีมหรือผู้ช่วยหัวหน้าทีม CC ทันทีหลังกดสั่งงาน",
+    "นำสถิติการสั่งงานด่วนรายบุคคลและรายทีมไปใช้ในเวที Review การทำงานเพื่อปรับกระบวนการให้ราบรื่นยิ่งขึ้น"
+  ];
+
+  return {
+    totalBriefs,
+    totalUrgent,
+    overallUrgentRate,
+    topRequesters,
+    topTeams,
+    keyRecommendations
+  };
 }
 
 /**

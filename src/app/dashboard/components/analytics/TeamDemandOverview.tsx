@@ -14,7 +14,9 @@ import {
 import { 
   getBriefClientTeam, 
   getBriefCategory, 
-  isTaskOverdue 
+  isTaskOverdue,
+  computeUrgentOrderInsights,
+  isTaskUrgent as isTaskUrgentShared
 } from '@/utils/teamAnalytics';
 
 interface TeamDemandOverviewProps {
@@ -201,6 +203,8 @@ export default function TeamDemandOverview({
       };
     }).sort((a, b) => b.totalTasks - a.totalTasks || b.totalSaveCost - a.totalSaveCost);
 
+    const urgentInsights = computeUrgentOrderInsights(briefs);
+
     return {
       totalValid,
       totalUrgentCount,
@@ -209,7 +213,8 @@ export default function TeamDemandOverview({
       urgentTeams,
       urgentCategories,
       overdueTeams,
-      popularCategories
+      popularCategories,
+      urgentInsights
     };
   }, [briefs]);
 
@@ -379,100 +384,231 @@ export default function TeamDemandOverview({
         </div>
       )}
 
-      {/* TAB 2: URGENT ORDERS - ทีม & ประเภทงานที่สั่งงานด่วนบ่อยสุด */}
+      {/* TAB 2: URGENT ORDERS - ใครและทีมไหนที่สั่งงานด่วนบ่อย พร้อมคำแนะนำการทำงาน */}
       {activeTab === 'urgent' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-in fade-in duration-100">
-          
-          {/* Left: ทีมที่สั่งงานด่วนบ่อยสุด */}
-          <div className="p-3.5 bg-amber-50/40 rounded-xl border border-amber-200/70 space-y-2.5">
-            <div className="flex items-center justify-between pb-1.5 border-b border-amber-200/60">
-              <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
-                <Zap size={14} className="text-amber-600" />
-                ทีมที่สั่งงานด่วนบ่อยที่สุด (Top Urgent Teams)
+        <div className="space-y-4 animate-in fade-in duration-100">
+          {/* Urgent Summary Strip */}
+          <div className="p-3 bg-gradient-to-r from-amber-50 via-orange-50 to-rose-50 rounded-xl border border-amber-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 rounded-lg bg-amber-500 text-white shadow-2xs">
+                <Flame size={15} />
               </span>
-              <span className="text-[10px] font-mono text-amber-700">
-                รวม {analytics.totalUrgentCount} งานด่วน
+              <div>
+                <strong className="text-amber-950 font-black">สถิติและเจาะลึกงานด่วน (Rush Job Intelligence):</strong>
+                <span className="text-amber-800 ml-1.5">
+                  พบงานด่วนทั้งหมด <strong className="text-rose-700 font-mono font-bold">{analytics.urgentInsights.totalUrgent} งาน</strong> ({analytics.urgentInsights.overallUrgentRate}% ของงานทั้งหมด)
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-[11px] text-amber-900 font-medium">
+              <span className="px-2 py-0.5 rounded-md bg-white/80 border border-amber-200">
+                ผู้สั่งด่วนบ่อย: <strong className="font-mono text-amber-950">{analytics.urgentInsights.topRequesters.length} คน</strong>
+              </span>
+              <span className="px-2 py-0.5 rounded-md bg-white/80 border border-amber-200">
+                ทีมที่สั่งด่วน: <strong className="font-mono text-amber-950">{analytics.urgentInsights.topTeams.length} ทีม</strong>
               </span>
             </div>
-
-            {analytics.urgentTeams.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-400">
-                ไม่มีประวัติงานด่วนในระบบ
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {analytics.urgentTeams.slice(0, 5).map((t, idx) => (
-                  <div key={t.teamKey} className="p-2.5 bg-white rounded-lg border border-amber-200/60 space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-slate-800 flex items-center gap-1.5">
-                        <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.2 rounded-md font-mono">
-                          #{idx + 1}
-                        </span>
-                        <span>{t.teamName}</span>
-                      </span>
-                      <span className="font-mono font-bold text-amber-900">
-                        {t.urgentTasks} งานด่วน <span className="text-slate-400 font-normal">({t.urgentRate}%)</span>
-                      </span>
-                    </div>
-                    <div className="w-full bg-amber-100 h-1.5 rounded-full overflow-hidden">
-                      <div
-                        style={{ width: `${Math.min(100, Math.max(5, t.urgentRate))}%` }}
-                        className="h-full bg-amber-500 rounded-full"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
-          {/* Right: ประเภทงานที่สั่งด่วนบ่อยที่สุด */}
-          <div className="p-3.5 bg-rose-50/40 rounded-xl border border-rose-200/70 space-y-2.5">
-            <div className="flex items-center justify-between pb-1.5 border-b border-rose-200/60">
-              <span className="text-xs font-bold text-rose-900 flex items-center gap-1.5">
-                <Flame size={14} className="text-rose-600" />
-                ประเภทงานที่ถูกสั่งด่วนบ่อยที่สุด (Top Urgent Categories)
-              </span>
-              <span className="text-[10px] font-mono text-rose-700">
-                {analytics.urgentCategories.length} หมวดงานด่วน
-              </span>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* 1. ใครสั่งงานด่วนบ่อยที่สุด (Top Requesters) */}
+            <div className="p-3.5 bg-amber-50/40 rounded-xl border border-amber-200/70 space-y-2.5 flex flex-col">
+              <div className="flex items-center justify-between pb-1.5 border-b border-amber-200/60">
+                <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                  <Zap size={14} className="text-amber-600" />
+                  ใครสั่งงานด่วนบ่อยสุด (Top Requesters)
+                </span>
+                <span className="text-[10px] font-mono text-amber-700">
+                  {analytics.urgentInsights.topRequesters.length} ผู้สั่ง
+                </span>
+              </div>
+
+              {analytics.urgentInsights.topRequesters.length === 0 ? (
+                <div className="py-8 text-center text-xs text-slate-400 my-auto">
+                  ไม่มีประวัติผู้สั่งงานด่วนในระบบ
+                </div>
+              ) : (
+                <div className="space-y-2.5 overflow-y-auto max-h-[360px] pr-0.5 custom-scrollbar">
+                  {analytics.urgentInsights.topRequesters.slice(0, 6).map((r, idx) => (
+                    <div key={r.requesterKey} className="p-2.5 bg-white rounded-lg border border-amber-200/70 shadow-2xs space-y-1.5">
+                      <div className="flex items-start justify-between gap-1 text-xs">
+                        <div>
+                          <div className="font-bold text-slate-800 flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.2 rounded-md font-mono">
+                              #{idx + 1}
+                            </span>
+                            <span className="text-slate-900 font-black">{r.requesterName}</span>
+                          </div>
+                          <span className="text-[10.5px] text-slate-500 font-medium">ทีม {r.teamKey}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-mono font-black text-amber-900 text-xs">
+                            {r.urgentBriefs} ครั้ง
+                          </span>
+                          <span className="text-[10.5px] text-slate-400 block font-normal">
+                            ({r.urgentRate}% / {r.totalBriefs} งาน)
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Progress bar */}
+                      <div className="w-full bg-amber-100 h-1 rounded-full overflow-hidden">
+                        <div
+                          style={{ width: `${Math.min(100, Math.max(8, r.urgentRate))}%` }}
+                          className={`h-full rounded-full ${r.planningHealth === 'critical' ? 'bg-rose-500' : 'bg-amber-500'}`}
+                        />
+                      </div>
+
+                      {/* Coaching note */}
+                      <div className="p-1.5 rounded-md bg-amber-50/80 border border-amber-200/50 text-[10.5px] text-amber-900 leading-snug">
+                        <span className="font-bold text-amber-800">💡 คำแนะนำ: </span>
+                        <span>{r.coachingAdvice}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {analytics.urgentCategories.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-400">
-                ไม่มีข้อมูลหมวดงานด่วน
+            {/* 2. ทีมไหนสั่งงานด่วนบ่อยที่สุด (Top Teams) */}
+            <div className="p-3.5 bg-orange-50/40 rounded-xl border border-orange-200/70 space-y-2.5 flex flex-col">
+              <div className="flex items-center justify-between pb-1.5 border-b border-orange-200/60">
+                <span className="text-xs font-bold text-orange-900 flex items-center gap-1.5">
+                  <Building2 size={14} className="text-orange-600" />
+                  ทีมไหนสั่งงานด่วนบ่อยสุด (Top Teams)
+                </span>
+                <span className="text-[10px] font-mono text-orange-700">
+                  {analytics.urgentInsights.topTeams.length} ทีม
+                </span>
               </div>
-            ) : (
-              <div className="space-y-2">
-                {analytics.urgentCategories.slice(0, 5).map((c, idx) => (
-                  <div
-                    key={c.category}
-                    onClick={() => onCategoryClick?.(c.category)}
-                    className="p-2.5 bg-white rounded-lg border border-rose-200/60 space-y-1 hover:border-rose-300 transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-slate-800 flex items-center gap-1.5">
-                        <span className="text-[10px] font-bold text-rose-700 bg-rose-100 px-1.5 py-0.2 rounded-md font-mono">
-                          #{idx + 1}
+
+              {analytics.urgentInsights.topTeams.length === 0 ? (
+                <div className="py-8 text-center text-xs text-slate-400 my-auto">
+                  ไม่มีข้อมูลทีมที่สั่งงานด่วน
+                </div>
+              ) : (
+                <div className="space-y-2.5 overflow-y-auto max-h-[360px] pr-0.5 custom-scrollbar">
+                  {analytics.urgentInsights.topTeams.slice(0, 6).map((t, idx) => (
+                    <div key={t.teamKey} className="p-2.5 bg-white rounded-lg border border-orange-200/70 shadow-2xs space-y-1.5">
+                      <div className="flex items-start justify-between gap-1 text-xs">
+                        <div>
+                          <div className="font-bold text-slate-800 flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-orange-700 bg-orange-100 px-1.5 py-0.2 rounded-md font-mono">
+                              #{idx + 1}
+                            </span>
+                            <span className="text-slate-900 font-black">{t.teamKey}</span>
+                          </div>
+                          <span className="text-[10px] text-slate-500 truncate max-w-[170px] block">{t.teamName}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-mono font-black text-orange-900 text-xs">
+                            {t.urgentBriefs} งาน
+                          </span>
+                          <span className="text-[10.5px] text-slate-400 block font-normal">
+                            ({t.urgentRate}% ของทีม)
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Progress bar */}
+                      <div className="w-full bg-orange-100 h-1 rounded-full overflow-hidden">
+                        <div
+                          style={{ width: `${Math.min(100, Math.max(8, t.urgentRate))}%` }}
+                          className={`h-full rounded-full ${t.planningHealth === 'critical' ? 'bg-rose-500' : 'bg-orange-500'}`}
+                        />
+                      </div>
+
+                      {/* Team guidance */}
+                      <div className="p-1.5 rounded-md bg-orange-50/80 border border-orange-200/50 text-[10.5px] text-orange-950 leading-snug">
+                        <span className="font-bold text-orange-900">📌 แนวทางทีม: </span>
+                        <span>{t.teamGuidance}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 3. หมวดงานที่ถูกสั่งด่วนบ่อยที่สุด (Top Categories) */}
+            <div className="p-3.5 bg-rose-50/40 rounded-xl border border-rose-200/70 space-y-2.5 flex flex-col">
+              <div className="flex items-center justify-between pb-1.5 border-b border-rose-200/60">
+                <span className="text-xs font-bold text-rose-900 flex items-center gap-1.5">
+                  <Flame size={14} className="text-rose-600" />
+                  หมวดงานที่สั่งด่วนบ่อย (Top Categories)
+                </span>
+                <span className="text-[10px] font-mono text-rose-700">
+                  {analytics.urgentCategories.length} หมวด
+                </span>
+              </div>
+
+              {analytics.urgentCategories.length === 0 ? (
+                <div className="py-8 text-center text-xs text-slate-400 my-auto">
+                  ไม่มีข้อมูลหมวดงานด่วน
+                </div>
+              ) : (
+                <div className="space-y-2 overflow-y-auto max-h-[360px] pr-0.5 custom-scrollbar">
+                  {analytics.urgentCategories.slice(0, 6).map((c, idx) => (
+                    <div
+                      key={c.category}
+                      onClick={() => onCategoryClick?.(c.category)}
+                      className="p-2.5 bg-white rounded-lg border border-rose-200/60 space-y-1 hover:border-rose-300 transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                          <span className="text-[10px] font-bold text-rose-700 bg-rose-100 px-1.5 py-0.2 rounded-md font-mono">
+                            #{idx + 1}
+                          </span>
+                          <span className="truncate max-w-[170px]">{c.category}</span>
                         </span>
-                        <span className="truncate max-w-[200px]">{c.category}</span>
-                      </span>
-                      <span className="font-mono font-bold text-rose-800">
-                        {c.urgentTasks} ชิ้นด่วน <span className="text-slate-400 font-normal">({c.urgentRate}%)</span>
-                      </span>
+                        <span className="font-mono font-bold text-rose-800">
+                          {c.urgentTasks} ชิ้น <span className="text-slate-400 font-normal">({c.urgentRate}%)</span>
+                        </span>
+                      </div>
+                      <div className="w-full bg-rose-100 h-1.5 rounded-full overflow-hidden">
+                        <div
+                          style={{ width: `${Math.min(100, Math.max(5, c.urgentRate))}%` }}
+                          className="h-full bg-rose-500 rounded-full"
+                        />
+                      </div>
                     </div>
-                    <div className="w-full bg-rose-100 h-1.5 rounded-full overflow-hidden">
-                      <div
-                        style={{ width: `${Math.min(100, Math.max(5, c.urgentRate))}%` }}
-                        className="h-full bg-rose-500 rounded-full"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
+          {/* Operational Guidance & Coaching Strategy Card */}
+          <div className="p-3.5 rounded-xl bg-slate-900 text-white space-y-2 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-amber-400 flex items-center gap-1.5">
+                <ShieldAlert size={15} />
+                แนวทางปฏิบัติการเพื่อการให้คำแนะนำ & บริหารจัดการงานด่วน (Operational Coaching Framework)
+              </span>
+              <span className="text-[11px] text-slate-400">
+                ผู้ประสานงานหลัก: <strong>หัวหน้าทีม (จ๊อบ AA)</strong> / <strong>ผู้ช่วยหัวหน้าทีม (วะ WK)</strong>
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-1 text-[11px] text-slate-300">
+              <div className="p-2 rounded-lg bg-slate-800/80 border border-slate-700/70 space-y-1">
+                <span className="font-bold text-amber-300 block">1. กฎการแจ้งเตือนงานด่วน</span>
+                <p className="leading-relaxed text-slate-400">
+                  เมื่องานมีเวลาทำงานน้อยกว่า 3 วัน หรือน้อยกว่ามาตรฐาน SLA ผู้สั่งต้องแจ้งหัวหน้าทีมหรือผู้ช่วยหัวหน้าทีม CC ให้ทราบโดยตรงทันที เพื่อรีบดำเนินงาน
+                </p>
+              </div>
+              <div className="p-2 rounded-lg bg-slate-800/80 border border-slate-700/70 space-y-1">
+                <span className="font-bold text-sky-300 block">2. เกณฑ์ระยะเวลามาตรฐาน (WI)</span>
+                <p className="leading-relaxed text-slate-400">
+                  Creative Design แนะนำ 5–7 วัน, Content แนะนำ 4–5 วัน, PR ประชาสัมพันธ์ แนะนำ 3–5 วัน เพื่อให้มีเวลาตรวจสอบคุณภาพงาน
+                </p>
+              </div>
+              <div className="p-2 rounded-lg bg-slate-800/80 border border-slate-700/70 space-y-1">
+                <span className="font-bold text-emerald-300 block">3. การใช้ Insight เพื่อพัฒนา</span>
+                <p className="leading-relaxed text-slate-400">
+                  ใช้สถิติความถี่งานด่วนรายบุคคลและรายทีมในการประสานงานเชิงรุก แนะนำการวางแผน Monthly Pipeline ล่วงหน้าเพื่อลดงานด่วนซ้ำซ้อน
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

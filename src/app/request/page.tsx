@@ -2,10 +2,11 @@
 
 import { useState, useEffect, Suspense, useRef, useMemo } from "react";
 import Link from "next/link";
-import { ArrowRight, ArrowLeft, CheckCircle2, UploadCloud, X, PenTool, Video, Mic, Copy, Check, Link2, FileText, Trash2, AlertCircle } from "lucide-react";
+import { ArrowRight, ArrowLeft, CheckCircle2, UploadCloud, X, PenTool, Video, Mic, Copy, Check, Link2, FileText, Trash2, AlertCircle, Flame, MessageCircle, Clock } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useSearchParams } from "next/navigation";
-import { getStandardPriceForTask } from "@/utils/pricing";
+import { getStandardPriceForTask, getLeadTimeForTask } from "@/utils/pricing";
+import { isTaskUrgent } from "@/utils/teamAnalytics";
 import ModernDatePicker from "@/components/ModernDatePicker";
 import ModernSelect from "@/components/ModernSelect";
 import { generateNextTaskCode, getUnitPrefix } from "@/utils/taskCodeService";
@@ -292,6 +293,85 @@ async function compressImageIfNeeded(file: File, maxDimension = 1920, quality = 
   });
 }
 
+function UrgentLeadTimeWarningBanner({
+  timing,
+  pastUrgentStats
+}: {
+  timing: {
+    workingDays: number | null;
+    requiredLeadTime: number;
+    isUrgent: boolean;
+    chosenCategory: string;
+  };
+  pastUrgentStats: { urgentCount: number; totalCount: number } | null;
+}) {
+  if (!timing.isUrgent || timing.workingDays === null) return null;
+
+  return (
+    <div className="rounded-2xl border border-amber-300 dark:border-amber-700/60 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/20 p-4 sm:p-5 shadow-sm space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+      <div className="flex items-start gap-3">
+        <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0 mt-0.5 font-bold shadow-xs">
+          <Flame size={20} className="animate-pulse" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-200/80 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200">
+              ⚡ งานด่วน (Urgent Task)
+            </span>
+            <span className="text-xs text-amber-800 dark:text-amber-300 font-medium">
+              มีเวลาทำงาน <strong className="font-bold underline">{timing.workingDays} วัน</strong> (เกณฑ์มาตรฐาน {timing.requiredLeadTime} วันทำการ)
+            </span>
+          </div>
+          <p className="text-xs sm:text-[13px] text-amber-900 dark:text-amber-100 mt-1.5 leading-relaxed font-normal">
+            งานของท่านจัดเป็น <strong>งานด่วน</strong> เนื่องจากมีระยะเวลาทำงานสั้นกว่าเกณฑ์มาตรฐาน เมื่อกดยื่นใบสั่งงานแล้ว 
+            <strong className="text-red-700 dark:text-red-400 underline decoration-red-400/60 underline-offset-2"> ควรแจ้งหัวหน้าทีม หรือผู้ช่วยหัวหน้าทีม CC ให้ทราบโดยตรงทันที</strong> เพื่อให้รีบจัดสรรคิวงานและดำเนินงานได้ทันตามกำหนด
+          </p>
+        </div>
+      </div>
+
+      {/* Direct Contact Reference */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1 border-t border-amber-200/60 dark:border-amber-800/40">
+        <div className="bg-white/70 dark:bg-zinc-900/70 rounded-xl p-2.5 border border-amber-200/40 dark:border-amber-800/30 flex items-center justify-between">
+          <div>
+            <div className="text-[11px] text-zinc-500 dark:text-zinc-400">หัวหน้าทีม CC</div>
+            <div className="font-bold text-zinc-800 dark:text-zinc-100">จ๊อบ AA</div>
+          </div>
+          <span className="text-[11px] text-amber-800 dark:text-amber-300 font-mono bg-amber-100/70 dark:bg-amber-900/40 px-2 py-0.5 rounded-md">
+            062-4166396
+          </span>
+        </div>
+        <div className="bg-white/70 dark:bg-zinc-900/70 rounded-xl p-2.5 border border-amber-200/40 dark:border-amber-800/30 flex items-center justify-between">
+          <div>
+            <div className="text-[11px] text-zinc-500 dark:text-zinc-400">ผู้ช่วยหัวหน้าทีม CC</div>
+            <div className="font-bold text-zinc-800 dark:text-zinc-100">วะ WK</div>
+          </div>
+          <span className="text-[11px] text-amber-800 dark:text-amber-300 font-mono bg-amber-100/70 dark:bg-amber-900/40 px-2 py-0.5 rounded-md">
+            085-1071229
+          </span>
+        </div>
+      </div>
+
+      {/* History and Lead Time Coaching */}
+      <div className="space-y-1.5 text-[11.5px] text-amber-900/90 dark:text-amber-200/90 bg-amber-100/40 dark:bg-amber-900/20 p-2.5 rounded-xl border border-amber-200/40">
+        {pastUrgentStats && pastUrgentStats.urgentCount > 0 && (
+          <div className="flex items-center gap-1.5 font-medium">
+            <Clock size={13} className="text-amber-700 dark:text-amber-300 shrink-0" />
+            <span>
+              สถิติการสั่งงานของคุณ: เคยสั่งงานด่วนในระบบไปแล้ว <strong className="text-amber-900 dark:text-amber-100 font-bold">{pastUrgentStats.urgentCount} ครั้ง</strong> (จากทั้งหมด {pastUrgentStats.totalCount} งาน)
+            </span>
+          </div>
+        )}
+        <div className="flex items-start gap-1.5 text-zinc-600 dark:text-zinc-300">
+          <span className="text-amber-600 dark:text-amber-400 shrink-0">💡</span>
+          <span>
+            <strong>คำแนะนำเรื่องระยะเวลา:</strong> หมวดงาน{timing.chosenCategory ? ` "${timing.chosenCategory}"` : ""} ควรเผื่อเวลาล่วงหน้าอย่างน้อย <strong>{timing.requiredLeadTime} วันทำการ</strong> เพื่อให้ทีมงานมีเวลาค้นคว้า วางแนวคิด และส่งมอบงานคุณภาพสูงสุด
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function FormContent() {
   const searchParams = useSearchParams();
   const unitParam = searchParams.get("unit") as UnitType;
@@ -368,6 +448,134 @@ function FormContent() {
   }, [unitParam]);
 
   const supabase = createClient();
+
+  const [pastUrgentStats, setPastUrgentStats] = useState<{ urgentCount: number; totalCount: number } | null>(null);
+  const [submittedResult, setSubmittedResult] = useState<{
+    taskCode: string;
+    projectName: string;
+    isUrgent: boolean;
+    workingDays: number | null;
+    requiredLeadTime: number;
+    urgentCount: number;
+    category: string;
+    coordinatorNickname: string;
+    team: string;
+    deadlineStr: string;
+  } | null>(null);
+  const [isCopiedLeadMsg, setIsCopiedLeadMsg] = useState(false);
+
+  // Real-time query to check how many urgent briefs this requester has ordered
+  useEffect(() => {
+    const name = coordinatorNickname.trim();
+    const email = requesterEmail.trim();
+    if (!name && !email) {
+      setPastUrgentStats(null);
+      return;
+    }
+
+    let isMounted = true;
+    const fetchPastUrgentStats = async () => {
+      try {
+        const orClauses: string[] = [];
+        if (name) orClauses.push(`coordinator_nickname.ilike.${name}`);
+        if (email) orClauses.push(`requester_email.ilike.${email}`);
+
+        const { data, error } = await supabase
+          .from('briefs')
+          .select('id, created_at, deadline, priority, details, status')
+          .or(orClauses.join(','))
+          .limit(150);
+
+        if (error || !data) return;
+
+        let uCount = 0;
+        data.forEach(b => {
+          if (b.status !== 'cancelled' && isTaskUrgent(b as any)) {
+            uCount++;
+          }
+        });
+
+        if (isMounted) {
+          setPastUrgentStats({
+            urgentCount: uCount,
+            totalCount: data.filter(b => b.status !== 'cancelled').length
+          });
+        }
+      } catch (err) {
+        console.error("Failed to query requester urgent stats:", err);
+      }
+    };
+
+    const timer = setTimeout(fetchPastUrgentStats, 600);
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [coordinatorNickname, requesterEmail]);
+
+  // Real-time calculation of working days and standard lead time
+  const currentTiming = useMemo(() => {
+    const chosenCategory =
+      activeUnit === 'creative' ? selectedCategory :
+      activeUnit === 'content' ? selectedContentCategory :
+      selectedPRCategory;
+
+    const targetDateStr =
+      activeUnit === 'creative' ? (creativeUsageDate || creativeDraftDate) :
+      activeUnit === 'content' ? contentPublishDate :
+      (prPublishDate || (prEventStart ? prEventStart.split(" ")[0] : ""));
+
+    const requiredLeadTime = getLeadTimeForTask(activeUnit, chosenCategory);
+
+    if (!targetDateStr) {
+      return {
+        targetDateStr: "",
+        workingDays: null,
+        requiredLeadTime,
+        isUrgent: false,
+        chosenCategory
+      };
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const match = String(targetDateStr).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    let dueYear: number, dueMonth: number, dueDay: number;
+    if (match) {
+      dueYear = parseInt(match[1], 10);
+      dueMonth = parseInt(match[2], 10) - 1;
+      dueDay = parseInt(match[3], 10);
+    } else {
+      const d = new Date(targetDateStr);
+      dueYear = d.getFullYear();
+      dueMonth = d.getMonth();
+      dueDay = d.getDate();
+    }
+    const dueDate = new Date(dueYear, dueMonth, dueDay);
+    const msPerDay = 1000 * 60 * 60 * 24;
+    const workingDays = Math.round((dueDate.getTime() - today.getTime()) / msPerDay);
+
+    const isUrgent = workingDays <= 3 || workingDays < requiredLeadTime;
+
+    return {
+      targetDateStr,
+      workingDays,
+      requiredLeadTime,
+      isUrgent,
+      chosenCategory
+    };
+  }, [
+    activeUnit,
+    selectedCategory,
+    selectedContentCategory,
+    selectedPRCategory,
+    creativeUsageDate,
+    creativeDraftDate,
+    contentPublishDate,
+    prPublishDate,
+    prEventStart
+  ]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -515,6 +723,17 @@ function FormContent() {
       const generatedTaskCode = await generateNextTaskCode(prefix);
       details.task_code = generatedTaskCode;
 
+      // Check if this order is urgent
+      const isUrgent = currentTiming.isUrgent;
+      const urgentOrderCount = (pastUrgentStats?.urgentCount || 0) + (isUrgent ? 1 : 0);
+      if (isUrgent) {
+        details.is_urgent = true;
+        details.lead_time_days = currentTiming.workingDays;
+        details.required_lead_time_days = currentTiming.requiredLeadTime;
+        details.urgent_order_count = urgentOrderCount;
+        details.urgent_reason = `ระยะเวลาทำงาน ${currentTiming.workingDays} วัน น้อยกว่าเกณฑ์มาตรฐาน ${currentTiming.requiredLeadTime} วัน`;
+      }
+
       // Insert into briefs table
       const { error: insertError } = await supabase.from('briefs').insert({
         unit: activeUnit,
@@ -527,6 +746,23 @@ function FormContent() {
         okr_links: isNmco ? ['KR2', 'R3', 'R4'] : ['KR1', 'R1', 'R2'],
         deadline: computedDeadline,
         status: 'pending'
+      });
+
+      if (insertError) {
+        throw new Error(insertError.message);
+      }
+
+      setSubmittedResult({
+        taskCode: generatedTaskCode,
+        projectName: project_name,
+        isUrgent,
+        workingDays: currentTiming.workingDays,
+        requiredLeadTime: currentTiming.requiredLeadTime,
+        urgentCount: urgentOrderCount,
+        category: chosenCategory,
+        coordinatorNickname: coordinator_nickname,
+        team: decision_maker,
+        deadlineStr: computedDeadline || "-"
       });
 
       setIsSuccess(true);
@@ -590,20 +826,125 @@ function FormContent() {
   };
 
   if (isSuccess) {
+    const isUrgentTask = submittedResult?.isUrgent;
+    const directLineMsg = submittedResult ? `[แจ้งงานด่วน CC TEAM]
+รหัสงาน: ${submittedResult.taskCode}
+ชื่องาน: ${submittedResult.projectName}
+ผู้สั่งงาน: คุณ${submittedResult.coordinatorNickname} (${submittedResult.team})
+กำหนดส่ง: ${submittedResult.deadlineStr} (ระยะเวลาทำงาน ${submittedResult.workingDays ?? "-"} วัน / เกณฑ์ปกติ ${submittedResult.requiredLeadTime} วัน)
+รบกวนพี่จ๊อบ AA / พี่วะ WK ช่วยพิจารณาจัดสรรคิวงานด่วนนี้ด้วยครับ/ค่ะ ขอบคุณครับ` : "";
+
+    const copyDirectMessage = () => {
+      if (!directLineMsg) return;
+      navigator.clipboard.writeText(directLineMsg);
+      setIsCopiedLeadMsg(true);
+      setTimeout(() => setIsCopiedLeadMsg(false), 3000);
+    };
+
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 w-full max-w-2xl mx-auto min-h-[70vh]">
-        <div className="text-center space-y-6 bg-white p-6 sm:p-10 rounded-3xl border border-slate-200 shadow-xl w-full">
-          <div className="inline-flex h-20 w-20 bg-primary/10 text-primary rounded-full items-center justify-center mb-2">
-            <CheckCircle2 size={40} />
+        <div className="text-center space-y-6 bg-white dark:bg-zinc-900 p-6 sm:p-10 rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-xl w-full">
+          <div className={`inline-flex h-20 w-20 ${isUrgentTask ? 'bg-amber-100 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400' : 'bg-primary/10 text-primary'} rounded-full items-center justify-center mb-2`}>
+            {isUrgentTask ? <Flame size={44} className="animate-pulse" /> : <CheckCircle2 size={40} />}
           </div>
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">ส่งใบสั่งงานสำเร็จ</h1>
-          <p className="text-muted-foreground text-sm sm:text-base">
-            ระบบได้รับข้อมูลของคุณแล้ว ทีมงานจะดำเนินการตรวจสอบโดยเร็วที่สุด
-          </p>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
+              {isUrgentTask ? "ส่งใบสั่งงานด่วนสำเร็จ" : "ส่งใบสั่งงานสำเร็จ"}
+            </h1>
+            <p className="text-muted-foreground text-sm sm:text-base mt-2">
+              ระบบได้รับข้อมูลเรียบร้อยแล้ว {submittedResult?.taskCode && <span className="font-mono font-bold text-zinc-800 dark:text-zinc-200">({submittedResult.taskCode})</span>}
+            </p>
+          </div>
+
+          {/* Urgent Warning & Coaching Box */}
+          {isUrgentTask && submittedResult && (
+            <div className="text-left bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/30 border-2 border-amber-300 dark:border-amber-700/60 rounded-2xl p-4 sm:p-5 space-y-4 shadow-sm">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" size={22} />
+                <div className="space-y-1">
+                  <h3 className="font-bold text-sm sm:text-base text-amber-950 dark:text-amber-100">
+                    งานของท่านเป็นงานด่วน (มีเวลาทำงาน {submittedResult.workingDays} วัน)
+                  </h3>
+                  <p className="text-xs sm:text-sm text-amber-900/90 dark:text-amber-200 leading-relaxed">
+                    เนื่องจากมีระยะเวลาทำงานสั้นกว่าเกณฑ์มาตรฐาน ({submittedResult.requiredLeadTime} วันทำการ) 
+                    <strong className="text-red-700 dark:text-red-300"> ควรแจ้งหัวหน้าทีม (จ๊อบ AA) หรือผู้ช่วยหัวหน้าทีม (วะ WK) CC ให้ทราบโดยตรงทันที</strong> เพื่อให้รีบจัดสรรคิวและดำเนินงานได้ทันตามกำหนด
+                  </p>
+                </div>
+              </div>
+
+              {/* Requester Urgent Stats Counter */}
+              <div className="bg-white/80 dark:bg-zinc-900/80 rounded-xl p-3 border border-amber-200/60 dark:border-amber-800/40 text-xs text-zinc-700 dark:text-zinc-200 space-y-1">
+                <div className="font-semibold text-zinc-900 dark:text-zinc-100 flex items-center justify-between">
+                  <span>📊 ประวัติการสั่งงานด่วนของคุณ:</span>
+                  <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200">
+                    สั่งงานด่วนครั้งที่ {submittedResult.urgentCount}
+                  </span>
+                </div>
+                <p className="text-[11.5px] text-zinc-500 dark:text-zinc-400">
+                  คุณ <strong className="text-zinc-800 dark:text-zinc-200">{submittedResult.coordinatorNickname}</strong> สั่งงานด่วนในระบบไปแล้วทั้งหมด {submittedResult.urgentCount} ครั้ง
+                </p>
+              </div>
+
+              {/* Direct Leadership Contacts */}
+              <div className="space-y-2">
+                <div className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                  ช่องทางติดต่อตรงทีมผู้นำ CC เพื่อประสานคิวด่วน:
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <div className="bg-white/80 dark:bg-zinc-900/80 p-2.5 rounded-xl border border-amber-200/50 flex items-center justify-between">
+                    <div>
+                      <div className="font-bold text-zinc-800 dark:text-zinc-100">จ๊อบ AA (หัวหน้าทีม)</div>
+                      <div className="text-[11px] text-zinc-500">adchanapong@step.cmu.ac.th</div>
+                    </div>
+                    <a href="tel:0624166396" className="text-xs font-mono font-bold text-primary bg-primary/10 px-2 py-1 rounded-lg hover:bg-primary/20 transition-colors">
+                      062-4166396
+                    </a>
+                  </div>
+                  <div className="bg-white/80 dark:bg-zinc-900/80 p-2.5 rounded-xl border border-amber-200/50 flex items-center justify-between">
+                    <div>
+                      <div className="font-bold text-zinc-800 dark:text-zinc-100">วะ WK (ผู้ช่วยหัวหน้าทีม)</div>
+                      <div className="text-[11px] text-zinc-500">wasita@step.cmu.ac.th</div>
+                    </div>
+                    <a href="tel:0851071229" className="text-xs font-mono font-bold text-primary bg-primary/10 px-2 py-1 rounded-lg hover:bg-primary/20 transition-colors">
+                      085-1071229
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action: Copy Direct Line Message */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={copyDirectMessage}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold bg-[#06C755] hover:bg-[#05b04c] text-white shadow-sm transition-all cursor-pointer"
+                >
+                  {isCopiedLeadMsg ? (
+                    <>
+                      <Check size={16} />
+                      คัดลอกข้อความแจ้งหัวหน้าทีมแล้ว!
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={16} />
+                      คัดลอกข้อความสรุปเพื่อส่ง LINE ให้พี่จ๊อบ / พี่วะ ทันที
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Lead Time Advice */}
+              <div className="p-3 bg-amber-100/60 dark:bg-amber-900/30 rounded-xl text-[11.5px] text-amber-950 dark:text-amber-100 leading-relaxed border border-amber-200/40">
+                💡 <strong>คำแนะนำระยะเวลาสั่งงานที่เหมาะสม:</strong> สำหรับงานหมวด {submittedResult.category || "นี้"} ควรเผื่อเวลาล่วงหน้าอย่างน้อย <strong>{submittedResult.requiredLeadTime} วันทำการ</strong> เพื่อให้ทีมงาน CC มีเวลาศึกษาข้อมูล ออกแบบ และตรวจสอบคุณภาพงานอย่างเต็มที่ก่อนส่งมอบ
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
             <button 
               onClick={() => { 
                 setIsSuccess(false); 
+                setSubmittedResult(null);
                 setFiles([]); 
                 setCreativeDraftDate(""); 
                 setCreativeUsageDate(""); 
@@ -836,6 +1177,11 @@ function FormContent() {
                   className="w-full px-4 py-3 text-sm border border-zinc-200 bg-[#f9f9fb] rounded-full focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]"
                 />
               </div>
+
+              <div className="md:col-span-2">
+                <UrgentLeadTimeWarningBanner timing={currentTiming} pastUrgentStats={pastUrgentStats} />
+              </div>
+
               <div className="space-y-2 md:col-span-2">
                 <label htmlFor="objective" className="text-sm font-medium">วัตถุประสงค์ของงานนี้</label>
                 <textarea required id="objective" name="details.objective" rows={2} className="w-full px-4 py-3 text-sm border border-zinc-200 bg-[#f9f9fb] rounded-[24px] focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] resize-y" placeholder="เช่น เพื่อโปรโมทกิจกรรม..."></textarea>
@@ -889,6 +1235,8 @@ function FormContent() {
                   className="w-full px-4 py-3 text-sm border border-zinc-200 bg-[#f9f9fb] rounded-full focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]"
                 />
               </div>
+
+              <UrgentLeadTimeWarningBanner timing={currentTiming} pastUrgentStats={pastUrgentStats} />
             </div>
           )}
 
@@ -943,6 +1291,11 @@ function FormContent() {
                   className="w-full px-4 py-3 text-sm border border-zinc-200 bg-[#f9f9fb] rounded-full focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]"
                 />
               </div>
+
+              <div className="md:col-span-2">
+                <UrgentLeadTimeWarningBanner timing={currentTiming} pastUrgentStats={pastUrgentStats} />
+              </div>
+
               <div className="space-y-2 md:col-span-2">
                 <label htmlFor="pr_details" className="text-sm font-medium">รายละเอียดข้อมูลกิจกรรมโดยสังเขป</label>
                 <textarea required id="pr_details" name="details.details" rows={3} className="w-full px-4 py-3 text-sm border border-zinc-200 bg-[#f9f9fb] rounded-[24px] focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] resize-y" placeholder="ข้อมูลเกี่ยวกับงาน..."></textarea>

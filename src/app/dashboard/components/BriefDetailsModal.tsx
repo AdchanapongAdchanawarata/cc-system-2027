@@ -16,8 +16,7 @@ import {
 } from "lucide-react";
 import { getStandardPriceForTask, shouldInternalTaskSkipEmail, shouldSkipEmailForInProgress, shouldSkipEmailForCompleted, getLeadTimeForTask } from "@/utils/pricing";
 import SatisfactionSurveyModal from "./SatisfactionSurveyModal";
-import { SatisfactionScores } from "@/utils/okrSettings";
-import { OFFICIAL_STEP_TEAMS } from "@/utils/teamAnalytics";
+import { OFFICIAL_STEP_TEAMS, getBriefTimeWindow } from "@/utils/teamAnalytics";
 import { exportBriefToPdf } from "@/utils/briefPdfExport";
 import { getTaskSurveyUrl } from "@/utils/surveyTokens";
 import InProgressEmailModal from "./InProgressEmailModal";
@@ -513,6 +512,7 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
     return { unassignedDays, pendingDays, inProgressDays };
   };
   const ages = getTaskAges(brief);
+  const briefTimeWindow = getBriefTimeWindow(brief);
 
   // Helper to update a detail field
   const updateDetail = (key: string, val: any) => {
@@ -2604,8 +2604,17 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
           {/* Timeline & Metadata History */}
           <div className="bg-slate-50/50 rounded-xl border border-slate-200 p-4 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-3">
             <div className="flex items-center gap-4">
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-1.5 flex-wrap">
                 <Calendar size={13} /> ส่งบรีฟเมื่อ: <strong className="text-slate-700">{new Date(brief.created_at).toLocaleDateString('th-TH')}</strong>
+                {briefTimeWindow && briefTimeWindow.workingDays !== null && (
+                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                    briefTimeWindow.isUrgent 
+                      ? 'bg-rose-100 text-rose-700 border border-rose-300 dark:bg-rose-950/60 dark:text-rose-300' 
+                      : 'bg-slate-200/80 text-slate-700 border border-slate-300 dark:bg-zinc-800 dark:text-zinc-300'
+                  }`} title={briefTimeWindow.tooltip}>
+                    {briefTimeWindow.isUrgent ? '⚡ งานด่วน' : '⏱'} เวลาทำงาน {briefTimeWindow.workingDays} วัน (เกณฑ์ {briefTimeWindow.slaLeadTime} วัน)
+                  </span>
+                )}
               </span>
               <span className="flex items-center gap-2 flex-wrap">
                 <span className="flex items-center gap-1.5">

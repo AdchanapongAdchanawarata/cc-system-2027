@@ -164,106 +164,7 @@ function FiercePumpkinEmblem({ className = "w-32 h-26" }: { className?: string }
   );
 }
 
-// Fiery Jack-o'-Lantern Candy Volcano Caldera (ภูเขาไฟฟักทองลาวา อลังการ เดือดปะทุทะลัก)
-function PumpkinVolcanoCaldera({
-  isErupting,
-  onClick,
-}: {
-  isErupting: boolean;
-  onClick?: () => void;
-}) {
-  return (
-    <div
-      onClick={onClick}
-      className={`relative cursor-pointer transition-all duration-150 select-none ${
-        isErupting ? "scale-115 -translate-y-2 filter drop-shadow-[0_0_35px_rgba(255,87,34,0.95)]" : "hover:scale-105"
-      }`}
-      title="แตะภูเขาไฟฟักทองลาวาเพื่อระเบิดลูกกวาดทะลักเต็มจอ!"
-    >
-      <svg viewBox="0 0 200 160" className="w-36 h-28 sm:w-48 sm:h-38 overflow-visible" fill="none">
-        <defs>
-          {/* Volcano Crag Gradient */}
-          <linearGradient id="volcanoRock" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#5D2605" />
-            <stop offset="35%" stopColor="#3E1502" />
-            <stop offset="75%" stopColor="#220B01" />
-            <stop offset="100%" stopColor="#120400" />
-          </linearGradient>
 
-          {/* Glowing Boiling Molten Lava Gradient */}
-          <radialGradient id="moltenLava" cx="50%" cy="40%" r="60%">
-            <stop offset="0%" stopColor="#FFFFFF" />
-            <stop offset="25%" stopColor="#FFF176" />
-            <stop offset="55%" stopColor="#FF9100" />
-            <stop offset="80%" stopColor="#FF3D00" />
-            <stop offset="100%" stopColor="#B71C1C" />
-          </radialGradient>
-
-          {/* Magma Fissure Veins */}
-          <linearGradient id="magmaVein" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#FFD54F" />
-            <stop offset="50%" stopColor="#FF5722" />
-            <stop offset="100%" stopColor="#C62828" />
-          </linearGradient>
-
-          {/* Volcanic Eruption Flash Filter */}
-          <filter id="volcanoGlow" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="6" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          </filter>
-        </defs>
-
-        {/* Ambient Ground Lava Shadow */}
-        <ellipse cx="100" cy="150" rx="90" ry="12" fill="rgba(255, 61, 0, 0.3)" filter="url(#volcanoGlow)" />
-
-        {/* Volcano Mountain Silhouette Base */}
-        <path
-          d="M 20 152 Q 40 100, 68 46 Q 100 40, 132 46 Q 160 100, 180 152 Q 100 162, 20 152 Z"
-          fill="url(#volcanoRock)"
-          stroke="#6B2906"
-          strokeWidth="4"
-        />
-
-        {/* Glowing Magma Fissures & Veins on mountain body */}
-        <path d="M 68 56 Q 74 88, 62 118 Q 54 136, 45 148" stroke="url(#magmaVein)" strokeWidth="3.5" fill="none" strokeLinecap="round" />
-        <path d="M 132 56 Q 126 88, 138 118 Q 146 136, 155 148" stroke="url(#magmaVein)" strokeWidth="3.5" fill="none" strokeLinecap="round" />
-        <path d="M 100 66 Q 98 94, 102 124 Q 104 140, 100 152" stroke="url(#magmaVein)" strokeWidth="3" fill="none" strokeLinecap="round" />
-
-        {/* Carved Menacing Jack-o'-Lantern Face inside Volcano Rock */}
-        {/* Left Slanted Fiery Eye */}
-        <polygon points="76,82 92,92 80,98" fill="url(#moltenLava)" stroke="#2E1002" strokeWidth="1.5" />
-        {/* Right Slanted Fiery Eye */}
-        <polygon points="124,82 108,92 120,98" fill="url(#moltenLava)" stroke="#2E1002" strokeWidth="1.5" />
-        {/* Jagged Lava Mouth */}
-        <path d="M 80,108 Q 100,128 120,108 Q 112,120 100,121 Q 88,120 80,108 Z" fill="url(#moltenLava)" stroke="#2E1002" strokeWidth="2" />
-        <polygon points="94,110 97,117 100,110" fill="#2E1002" />
-        <polygon points="103,110 106,117 109,110" fill="#2E1002" />
-
-        {/* Boiling Caldera Rim & Molten Crater Pool */}
-        <ellipse cx="100" cy="46" rx="36" ry="13" fill="#1C0600" stroke="#7C2D12" strokeWidth="3.5" />
-        <ellipse cx="100" cy="46" rx="31" ry="9.5" fill="url(#moltenLava)" filter={isErupting ? "url(#volcanoGlow)" : undefined} />
-
-        {/* Bubbling Lava Dome in Center of Crater */}
-        <circle cx="95" cy="44" r="5.5" fill="#FFFDE7" />
-        <circle cx="108" cy="46" r="4" fill="#FFF9C4" />
-
-        {/* Dynamic Eruption Flames & Flare at Crater when bursting */}
-        {isErupting && (
-          <g filter="url(#volcanoGlow)">
-            <path d="M 74 44 Q 90 8, 100 -4 Q 110 8, 126 44 Q 100 34, 74 44 Z" fill="#FFC107" opacity="0.95" />
-            <path d="M 84 44 Q 95 18, 100 6 Q 105 18, 116 44 Z" fill="#FFFFFF" />
-            <circle cx="100" cy="24" r="28" fill="none" stroke="#FF5722" strokeWidth="4.5" opacity="0.85" />
-          </g>
-        )}
-      </svg>
-
-      {/* Floating Eruption Callout Badge */}
-      <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-red-600 via-orange-500 to-amber-500 text-white text-[10px] font-black tracking-wide font-mono whitespace-nowrap shadow-[0_4px_12px_rgba(255,87,34,0.6)] border border-amber-300 animate-pulse pointer-events-none">
-        🌋 ภูเขาไฟลูกกวาด
-      </div>
-    </div>
-  );
-}
 
 // Original Candy Graphics Definition
 const CANDY_TYPES = [
@@ -325,7 +226,6 @@ export default function HalloweenMinigameArena({
   const caughtDomRef = useRef<HTMLSpanElement | null>(null);
   const basketDomRef = useRef<HTMLDivElement | null>(null);
   const caughtCandiesDomRef = useRef<HTMLDivElement | null>(null);
-  const volcanoDomRef = useRef<HTMLDivElement | null>(null);
 
   // Canvas & Physics Refs
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -524,40 +424,26 @@ export default function HalloweenMinigameArena({
     return canvas;
   }, []);
 
-  // Spectacular Candy Volcano Burst from pumpkin (พุ่งทะลักเต็มจอแบบภูเขาไฟปะทุ!)
-  const triggerVolcanoBurst = useCallback((count = 36, customOrigin?: { x: number; y: number }) => {
+  // Spectacular Candy Volcano Deluge pouring down from the clicked Pumpkin at the top!
+  const triggerVolcanoBurst = useCallback((count = 38) => {
     if (typeof window === "undefined") return;
     playSound("volcano");
 
-    // Eruption flare and tremor
+    // Eruption flare and tremor on the top pumpkin
     setIsVolcanoErupting(true);
     setScreenShake(true);
     setTimeout(() => setIsVolcanoErupting(false), 240);
-    setTimeout(() => setScreenShake(false), 150);
+    setTimeout(() => setScreenShake(false), 140);
 
     const width = window.innerWidth;
-    const height = window.innerHeight;
+    const originX = Math.max(70, Math.min(width - 70, pumpkinOrigin?.x ?? width * 0.78));
+    const originY = Math.max(70, Math.min(130, pumpkinOrigin?.y ?? 85));
 
-    let originX = width * 0.85;
-    let originY = height - 90;
-
-    if (customOrigin) {
-      originX = customOrigin.x;
-      originY = customOrigin.y;
-    } else if (volcanoDomRef.current) {
-      const rect = volcanoDomRef.current.getBoundingClientRect();
-      originX = rect.left + rect.width / 2;
-      originY = rect.top + rect.height * 0.3;
-    } else if (pumpkinOrigin) {
-      originX = pumpkinOrigin.x;
-      originY = Math.max(pumpkinOrigin.y, height * 0.6);
-    }
-
-    // Add volcanic shockwave ring
+    // Shockwave ring expanding from pumpkin mouth at the top
     shockwavesRef.current.push({
       id: Math.random(),
       x: originX,
-      y: originY,
+      y: originY + 18,
       radius: 10,
       maxRadius: Math.min(220, width * 0.35),
       opacity: 0.95,
@@ -567,7 +453,7 @@ export default function HalloweenMinigameArena({
     const totalWeight = CANDY_TYPES.reduce((acc, c) => acc + c.weight, 0);
     const newItems: CandyParticle[] = [];
 
-    // Volcanic fountain physics: 3 distinct eruption trajectories
+    // Volcanic cascade: Candies gush, spray, and shower down from the pumpkin across the arena!
     for (let i = 0; i < count; i++) {
       let rand = Math.random() * totalWeight;
       let selected = CANDY_TYPES[0];
@@ -579,29 +465,23 @@ export default function HalloweenMinigameArena({
         rand -= t.weight;
       }
 
-      const category = Math.random();
-      let vx: number;
-      let vy: number;
+      // Target position spread evenly across the playing field
+      const targetX = width * (0.04 + Math.random() * 0.92);
+      const fallFrames = 22 + Math.random() * 12; // Fast & snappy arcade cascade
+      const vx = (targetX - originX) / fallFrames;
 
-      if (category < 0.45) {
-        // Tier 1: Stratospheric long-distance fountain arching all the way to left and center!
-        vx = -(Math.random() * 11 + 6.5);
-        vy = -(Math.random() * 8 + 23); // Massive skyward blast!
-      } else if (category < 0.80) {
-        // Tier 2: High central sky geyser
-        vx = -(Math.random() * 7 + 1.5);
-        vy = -(Math.random() * 8 + 19);
-      } else {
-        // Tier 3: Right flank and crater splatter
-        vx = (Math.random() - 0.35) * 8;
-        vy = -(Math.random() * 7 + 15);
-      }
+      // Downward volcanic gush with explosive outward velocity
+      // Some candies pop slightly outward/upward before plunging down
+      const isPopUp = Math.random() < 0.22;
+      const vy = isPopUp
+        ? -(Math.random() * 5 + 2) // Pops up slightly out of pumpkin top
+        : (Math.random() * 11 + 6); // Rushes straight downward from mouth!
 
       newItems.push({
         id: Math.random() + Date.now(),
         emoji: selected.emoji,
-        x: originX + (Math.random() - 0.5) * 28,
-        y: originY + (Math.random() - 0.5) * 16,
+        x: originX + (Math.random() - 0.5) * 32,
+        y: originY + 18 + (Math.random() - 0.5) * 16,
         vx,
         vy,
         rotation: Math.random() * 360,
@@ -615,14 +495,14 @@ export default function HalloweenMinigameArena({
       });
     }
 
-    // Launch intense incandescent magma sparks & embers
+    // Launch intense incandescent magma sparks & embers spraying down and outward
     for (let sp = 0; sp < 18; sp++) {
-      const angle = -Math.PI * 0.9 + Math.random() * Math.PI * 0.8;
-      const spd = Math.random() * 16 + 8;
+      const angle = Math.PI * 0.5 + (Math.random() - 0.5) * 1.8; // Downward spray cone
+      const spd = Math.random() * 14 + 6;
       sparklesRef.current.push({
         id: Math.random(),
         x: originX,
-        y: originY,
+        y: originY + 18,
         vx: Math.cos(angle) * spd,
         vy: Math.sin(angle) * spd,
         size: 3 + Math.random() * 4,
@@ -639,20 +519,13 @@ export default function HalloweenMinigameArena({
     }
   }, [pumpkinOrigin, playSound]);
 
-  // Continuous bubbling volcano geyser stream (spits candies steadily between waves)
+  // Continuous stream of candies pouring down steadily from the pumpkin mouth
   const triggerMiniGeyser = useCallback((count = 3) => {
     if (typeof window === "undefined" || !isPlayingRef.current) return;
 
     const width = window.innerWidth;
-    const height = window.innerHeight;
-    let originX = width * 0.85;
-    let originY = height - 90;
-
-    if (volcanoDomRef.current) {
-      const rect = volcanoDomRef.current.getBoundingClientRect();
-      originX = rect.left + rect.width / 2;
-      originY = rect.top + rect.height * 0.3;
-    }
+    const originX = Math.max(70, Math.min(width - 70, pumpkinOrigin?.x ?? width * 0.78));
+    const originY = Math.max(70, Math.min(130, pumpkinOrigin?.y ?? 85));
 
     const totalWeight = CANDY_TYPES.reduce((acc, c) => acc + c.weight, 0);
     const newItems: CandyParticle[] = [];
@@ -668,14 +541,16 @@ export default function HalloweenMinigameArena({
         rand -= t.weight;
       }
 
-      const vx = -(Math.random() * 9 + 2);
-      const vy = -(Math.random() * 7 + 18);
+      const targetX = width * (0.08 + Math.random() * 0.84);
+      const fallFrames = 26 + Math.random() * 8;
+      const vx = (targetX - originX) / fallFrames;
+      const vy = Math.random() * 7 + 6; // Streams downward
 
       newItems.push({
         id: Math.random() + Date.now(),
         emoji: selected.emoji,
         x: originX + (Math.random() - 0.5) * 20,
-        y: originY + (Math.random() - 0.5) * 10,
+        y: originY + 18 + (Math.random() - 0.5) * 10,
         vx,
         vy,
         rotation: Math.random() * 360,
@@ -689,13 +564,13 @@ export default function HalloweenMinigameArena({
       });
     }
 
-    for (let s = 0; s < 4; s++) {
-      const angle = -Math.PI * 0.85 + Math.random() * Math.PI * 0.7;
-      const spd = Math.random() * 9 + 4;
+    for (let s = 0; s < 3; s++) {
+      const angle = Math.PI * 0.5 + (Math.random() - 0.5) * 1.5;
+      const spd = Math.random() * 8 + 4;
       sparklesRef.current.push({
         id: Math.random(),
         x: originX,
-        y: originY,
+        y: originY + 18,
         vx: Math.cos(angle) * spd,
         vy: Math.sin(angle) * spd,
         size: 2.5 + Math.random() * 2.5,
@@ -708,7 +583,7 @@ export default function HalloweenMinigameArena({
     if (current.length + newItems.length <= MAX_PARTICLES) {
       particlesRef.current = [...current, ...newItems];
     }
-  }, []);
+  }, [pumpkinOrigin]);
 
   // Clean finish function
   const finishGame = useCallback(() => {
@@ -886,7 +761,7 @@ export default function HalloweenMinigameArena({
 
         const width = canvas.width;
         const height = canvas.height;
-        const gravity = 0.94; // Majestic volcanic fountain gravity: high dramatic arcs & fast descent
+        const gravity = 1.15; // Fast, energetic volcanic cascade pouring down from above
         const floorY = height - 25;
 
         // Pumpkin bucket dimensions
@@ -1235,7 +1110,7 @@ export default function HalloweenMinigameArena({
         onClick={(e) => {
           e.stopPropagation();
           if (isPlayingRef.current && !isGameOverRef.current) {
-            triggerVolcanoBurst(36, { x: e.clientX, y: e.clientY });
+            triggerVolcanoBurst(36);
           }
         }}
         title="แตะหน้าจอเพื่อระเบิดลูกกวาดภูเขาไฟเพิ่ม!"
@@ -1276,18 +1151,32 @@ export default function HalloweenMinigameArena({
         <div className="absolute bottom-0 inset-x-0 h-28 bg-gradient-to-t from-[#3B1504]/50 via-purple-950/25 to-transparent pointer-events-none" />
       </div>
 
-      {/* FIERY JACK-O'-LANTERN CANDY VOLCANO (ภูเขาไฟฟักทองลาวาปะทุทะลัก) */}
+      {/* THE ERUPTING JACK-O'-LANTERN PUMPKIN (ฟักทองที่กด พ่นลูกกวาดทะลักจากด้านบน) */}
       <div
-        ref={volcanoDomRef}
-        className="absolute bottom-1 right-2 sm:right-8 z-20 pointer-events-auto"
+        className="absolute z-30 transition-transform duration-100 cursor-pointer select-none pointer-events-auto"
+        style={{
+          left: typeof window !== "undefined" ? `${Math.max(70, Math.min(window.innerWidth - 70, pumpkinOrigin?.x ?? window.innerWidth * 0.78))}px` : "78%",
+          top: typeof window !== "undefined" ? `${Math.max(70, Math.min(130, pumpkinOrigin?.y ?? 85))}px` : "85px",
+          transform: `translate(-50%, -50%) ${isVolcanoErupting ? "scale(1.22) rotate(-5deg)" : "scale(1)"}`,
+        }}
         onClick={(e) => {
           e.stopPropagation();
           if (isPlayingRef.current && !isGameOverRef.current) {
             triggerVolcanoBurst(45);
           }
         }}
+        title="ฟักทองฮาโลวีนที่กด (แตะเพื่อเร่งให้ลูกกวาดทะลักเพิ่ม!)"
       >
-        <PumpkinVolcanoCaldera isErupting={isVolcanoErupting} />
+        {/* Fierce Fiery-Eyed Pumpkin Emblem (ฟักทองตาไฟดุดันที่กด) */}
+        <FiercePumpkinEmblem className="w-20 h-16 sm:w-26 sm:h-22 filter drop-shadow-[0_0_25px_rgba(255,102,0,0.95)]" />
+
+        {/* Fiery Lava Spill Gush beneath pumpkin mouth */}
+        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-14 h-3.5 bg-gradient-to-b from-amber-400/90 via-orange-500/60 to-transparent blur-xs rounded-full pointer-events-none" />
+
+        {/* Tactile Badge */}
+        <div className="absolute -bottom-3.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-gradient-to-r from-red-600 via-orange-500 to-amber-500 text-white text-[9px] font-black tracking-wide font-mono whitespace-nowrap shadow-md border border-amber-300 pointer-events-none animate-pulse">
+          🎃 แตะฟักทองให้ทะลัก!
+        </div>
       </div>
 
       {/* Screen Frame Country Golden Accent */}

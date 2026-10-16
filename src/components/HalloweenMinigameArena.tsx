@@ -187,9 +187,6 @@ export default function HalloweenMinigameArena({
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [leaderboard, setLeaderboard] = useState<HalloweenScoreEntry[]>([]);
 
-  // Visible candies accumulated inside the pumpkin bucket!
-  const [caughtCandiesDisplay, setCaughtCandiesDisplay] = useState<string[]>([]);
-
   // Final stats for game over modal
   const [finalScore, setFinalScore] = useState(0);
   const [finalCandies, setFinalCandies] = useState(0);
@@ -212,6 +209,7 @@ export default function HalloweenMinigameArena({
   const comboDomRef = useRef<HTMLDivElement | null>(null);
   const caughtDomRef = useRef<HTMLSpanElement | null>(null);
   const basketDomRef = useRef<HTMLDivElement | null>(null);
+  const caughtCandiesDomRef = useRef<HTMLDivElement | null>(null);
 
   // Canvas & Physics Refs
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -427,12 +425,12 @@ export default function HalloweenMinigameArena({
     comboRef.current = 0;
     maxComboRef.current = 0;
     timeLeftRef.current = ROUND_DURATION_SECONDS;
-    setCaughtCandiesDisplay([]);
 
     if (scoreDomRef.current) scoreDomRef.current.innerText = "0";
     if (timerDomRef.current) timerDomRef.current.innerText = `${ROUND_DURATION_SECONDS}s`;
     if (caughtDomRef.current) caughtDomRef.current.innerText = "0 ชิ้น";
     if (comboDomRef.current) comboDomRef.current.style.display = "none";
+    if (caughtCandiesDomRef.current) caughtCandiesDomRef.current.innerHTML = "";
 
     particlesRef.current = [];
     sparklesRef.current = [];
@@ -508,7 +506,7 @@ export default function HalloweenMinigameArena({
       }
     };
 
-    window.addEventListener("mousemove", handlePointerMove);
+    window.addEventListener("mousemove", handlePointerMove, { passive: true });
     window.addEventListener("touchmove", handlePointerMove, { passive: true });
     window.addEventListener("keydown", handleKeyDown);
 
@@ -532,11 +530,6 @@ export default function HalloweenMinigameArena({
         const canvas = canvasRef.current;
         if (!canvas) return;
 
-        if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
-          canvas.width = window.innerWidth;
-          canvas.height = window.innerHeight;
-        }
-
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
 
@@ -551,16 +544,14 @@ export default function HalloweenMinigameArena({
         const basketY = height - basketH - 18;
         const catchY = basketY + basketH * 0.44;
 
-        // Snappy basket lerp tracking & tilt
+        // Instantaneous 1:1 direct tracking (0ms input lag on PC / mobile)
         const basket = basketPosRef.current;
         const dx = basket.targetX - basket.x;
-        basket.x += dx * 0.35;
-        const tilt = Math.max(-14, Math.min(14, dx * 0.08));
+        basket.x = basket.targetX;
+        const tilt = Math.max(-14, Math.min(14, dx * 0.12));
 
         if (basketDomRef.current) {
           basketDomRef.current.style.transform = `translate3d(${basket.x - basketW / 2}px, ${basketY}px, 0) rotate(${tilt}deg)`;
-          basketDomRef.current.style.width = `${basketW}px`;
-          basketDomRef.current.style.height = `${basketH}px`;
         }
 
         ctx.clearRect(0, 0, width, height);
@@ -627,11 +618,17 @@ export default function HalloweenMinigameArena({
                 });
               }
 
-              // Visible candy inside basket: Add candy emoji to the bucket pile!
-              setCaughtCandiesDisplay((prev) => {
-                if (prev.length >= 22) return prev;
-                return [...prev, p.emoji];
-              });
+              // Visible candy inside basket: Add candy emoji directly to DOM (0 React re-renders)
+              if (caughtCandiesDomRef.current) {
+                if (caughtCandiesDomRef.current.childElementCount >= 18) {
+                  caughtCandiesDomRef.current.firstElementChild?.remove();
+                }
+                const span = document.createElement("span");
+                span.className = "text-[16px] sm:text-[18px] inline-block";
+                span.style.transform = `rotate(${(candiesCaughtRef.current * 43) % 46 - 23}deg)`;
+                span.innerText = p.emoji;
+                caughtCandiesDomRef.current.appendChild(span);
+              }
 
               // Combo & Score
               comboRef.current += 1;
@@ -786,9 +783,17 @@ export default function HalloweenMinigameArena({
     };
 
     const handleResize = () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
       if (canvasRef.current) {
-        canvasRef.current.width = window.innerWidth;
-        canvasRef.current.height = window.innerHeight;
+        canvasRef.current.width = w;
+        canvasRef.current.height = h;
+      }
+      if (basketDomRef.current) {
+        const basketW = Math.min(270, Math.max(190, w * 0.32));
+        const basketH = Math.round(basketW * 0.54);
+        basketDomRef.current.style.width = `${basketW}px`;
+        basketDomRef.current.style.height = `${basketH}px`;
       }
     };
     handleResize();
@@ -870,9 +875,9 @@ export default function HalloweenMinigameArena({
       }}
     >
       
-      {/* Country Friends Harvest Festival Twilight Ambience */}
+      {/* Country Friends Harvest Festival Twilight Ambience (Pure GPU solid rendering, zero backdrop-blur lag) */}
       <div 
-        className="absolute inset-0 bg-gradient-to-b from-[#180B2B]/90 via-[#220F38]/85 to-[#0E041A]/95 backdrop-blur-[1px] transition-all cursor-pointer overflow-hidden"
+        className="absolute inset-0 bg-gradient-to-b from-[#180B2B] via-[#220F38] to-[#0E041A] cursor-pointer overflow-hidden"
         onClick={(e) => {
           e.stopPropagation();
           if (isPlayingRef.current && !isGameOverRef.current) {
@@ -882,15 +887,15 @@ export default function HalloweenMinigameArena({
         title="แตะหน้าจอเพื่อระเบิดลูกกวาดภูเขาไฟเพิ่ม!"
       >
         {/* Harvest Festival Autumn Moon Glow in Twilight Sky */}
-        <div className="absolute -top-16 -right-16 w-80 h-80 rounded-full bg-gradient-to-br from-amber-300/20 via-orange-500/10 to-transparent blur-3xl pointer-events-none" />
-        <div className="absolute top-1/4 -left-20 w-72 h-72 rounded-full bg-purple-600/15 blur-3xl pointer-events-none" />
+        <div className="absolute -top-16 -right-16 w-80 h-80 rounded-full bg-gradient-to-br from-amber-300/15 via-orange-500/10 to-transparent blur-2xl pointer-events-none" />
+        <div className="absolute top-1/4 -left-20 w-72 h-72 rounded-full bg-purple-600/10 blur-2xl pointer-events-none" />
 
         {/* Country Festival Autumn Bunting / Pennant Garland across top */}
         <div className="absolute top-0 inset-x-0 h-6 flex justify-between items-start opacity-70 pointer-events-none select-none px-2 overflow-hidden">
           {Array.from({ length: 28 }).map((_, i) => (
             <div
               key={i}
-              className="w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[16px] filter drop-shadow-xs"
+              className="w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[16px]"
               style={{
                 borderTopColor: [
                   "#F59E0B", // honey
@@ -905,28 +910,23 @@ export default function HalloweenMinigameArena({
           ))}
         </div>
 
-        {/* Floating Farm Fireflies / Autumn Stardust Embers */}
-        <div className="absolute top-28 left-[12%] w-2 h-2 rounded-full bg-amber-300 shadow-[0_0_12px_#FDE047] animate-ping opacity-75" style={{ animationDuration: "3s" }} />
-        <div className="absolute top-44 right-[18%] w-1.5 h-1.5 rounded-full bg-amber-200 shadow-[0_0_10px_#FEF08A] animate-pulse opacity-85" style={{ animationDuration: "2.2s" }} />
-        <div className="absolute top-60 left-[35%] w-2 h-2 rounded-full bg-orange-400 shadow-[0_0_12px_#FB923C] animate-ping opacity-60" style={{ animationDuration: "4s" }} />
-        <div className="absolute top-36 right-[38%] w-2 h-2 rounded-full bg-amber-300 shadow-[0_0_14px_#FDE047] animate-pulse opacity-70" style={{ animationDuration: "3.2s" }} />
+        {/* Floating Farm Fireflies */}
+        <div className="absolute top-28 left-[12%] w-2 h-2 rounded-full bg-amber-300 opacity-75" />
+        <div className="absolute top-44 right-[18%] w-1.5 h-1.5 rounded-full bg-amber-200 opacity-85" />
+        <div className="absolute top-60 left-[35%] w-2 h-2 rounded-full bg-orange-400 opacity-60" />
+        <div className="absolute top-36 right-[38%] w-2 h-2 rounded-full bg-amber-300 opacity-70" />
 
-        {/* Animated Friendly Halloween Bats 🦇 */}
-        <div className="absolute top-14 left-10 text-2xl animate-pulse opacity-75 filter drop-shadow-sm">🦇</div>
-        <div className="absolute top-24 right-16 text-3xl animate-bounce opacity-70 filter drop-shadow-sm" style={{ animationDuration: "3.5s" }}>🦇</div>
-        <div className="absolute top-40 left-1/4 text-xl opacity-65 animate-pulse">🦇</div>
-        <div className="absolute top-32 right-1/3 text-2xl opacity-65 animate-pulse" style={{ animationDuration: "4.2s" }}>🦇</div>
+        {/* Friendly Halloween Bats & Ghosts 🦇 👻 */}
+        <div className="absolute top-14 left-10 text-2xl opacity-75">🦇</div>
+        <div className="absolute top-24 right-16 text-3xl opacity-70">🦇</div>
+        <div className="absolute top-18 right-1/4 text-2xl opacity-60">👻</div>
 
-        {/* Floating Spooky Friendly Ghosts 👻 */}
-        <div className="absolute top-18 right-1/4 text-2xl animate-bounce opacity-60 filter drop-shadow-sm" style={{ animationDuration: "5.5s" }}>👻</div>
-        <div className="absolute top-36 left-16 text-xl opacity-50 animate-pulse" style={{ animationDuration: "4.8s" }}>👻</div>
-
-        {/* Cozy Country Pumpkin Farm Ground Silhouette & Amber Lantern Mist */}
+        {/* Cozy Country Pumpkin Farm Ground Silhouette */}
         <div className="absolute bottom-0 inset-x-0 h-28 bg-gradient-to-t from-[#3B1504]/50 via-purple-950/25 to-transparent pointer-events-none" />
       </div>
 
-      {/* Screen Frame Country Golden Accent Glow */}
-      <div className="absolute inset-0 pointer-events-none border-[3px] border-amber-500/30 shadow-[inset_0_0_80px_rgba(245,158,11,0.15)]" />
+      {/* Screen Frame Country Golden Accent */}
+      <div className="absolute inset-0 pointer-events-none border-2 border-amber-500/25" />
 
       {/* 60FPS Hardware Accelerated Particle Canvas */}
       <canvas
@@ -934,10 +934,10 @@ export default function HalloweenMinigameArena({
         className="absolute inset-0 pointer-events-none"
       />
 
-      {/* COUNTRY FRIENDS HARVEST PUMPKIN BARREL BASKET (With Real Collected Candies!) */}
+      {/* COUNTRY FRIENDS HARVEST PUMPKIN BARREL BASKET (Instant 1:1 Response, Zero CSS Lag) */}
       <div
         ref={basketDomRef}
-        className="fixed top-0 left-0 pointer-events-none z-30 transition-transform duration-75 will-change-transform filter drop-shadow-[0_18px_36px_rgba(0,0,0,0.65)]"
+        className="fixed top-0 left-0 pointer-events-none z-30 will-change-transform"
       >
         <div className="relative w-full h-full">
           {/* Pumpkin Barrel Basket SVG Illustration */}
@@ -1057,20 +1057,11 @@ export default function HalloweenMinigameArena({
             <polygon points="134,125 140,118 146,125" fill="#9A3412" />
           </svg>
 
-          {/* REAL COLLECTED CANDIES SITTING INSIDE THE PUMPKIN BUCKET! */}
-          <div className="absolute top-[38px] left-[32px] right-[32px] h-[34px] flex items-center justify-center flex-wrap gap-1 overflow-hidden pointer-events-none z-10 px-2">
-            {caughtCandiesDisplay.slice(-18).map((emoji, idx) => (
-              <span
-                key={idx}
-                className="text-[16px] sm:text-[18px] filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] transition-all animate-in zoom-in duration-100"
-                style={{
-                  transform: `rotate(${(idx * 43) % 46 - 23}deg) translateY(${((idx * 17) % 6) - 3}px)`,
-                }}
-              >
-                {emoji}
-              </span>
-            ))}
-          </div>
+          {/* REAL COLLECTED CANDIES SITTING INSIDE THE PUMPKIN BUCKET! (Managed directly via DOM, zero React re-render lag) */}
+          <div
+            ref={caughtCandiesDomRef}
+            className="absolute top-[38px] left-[32px] right-[32px] h-[34px] flex items-center justify-center flex-wrap gap-1 overflow-hidden pointer-events-none z-10 px-2"
+          />
 
           {/* Carved Country Wooden Signboard with Golden Coin Badge on Pumpkin Front */}
           <div className="absolute bottom-1 left-1/2 -translate-x-1/2 px-3 py-1 rounded-xl bg-gradient-to-b from-[#6D320A] via-[#4A1F06] to-[#2B0E02] border-2 border-amber-400 shadow-[0_4px_12px_rgba(0,0,0,0.6),inset_0_1px_2px_rgba(255,255,255,0.3)] flex items-center gap-1.5 whitespace-nowrap pointer-events-none z-20">

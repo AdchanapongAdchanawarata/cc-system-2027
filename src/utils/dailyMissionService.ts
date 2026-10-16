@@ -114,8 +114,10 @@ export function computeDailyMission(
 
   // Build matched assignee IDs for accurate personal task lookup
   const matchedAssigneeIds = new Set<string>();
+  const assigneeIdToMember = new Map<string, any>();
   if (assignees && assignees.length > 0) {
     assignees.forEach((a) => {
+      assigneeIdToMember.set(a.id, a);
       const aName = (a.name || "").toLowerCase().trim();
       const aEmail = (a.email || "").toLowerCase().trim();
       if (
@@ -127,27 +129,53 @@ export function computeDailyMission(
     });
   }
 
-  // Tasks assigned to this specific member
+  // Tasks assigned to this specific member (Main owner or Assistant)
   const myTasks = activeBriefs.filter((b: any) => {
+    // 1. Direct Assignee ID match
     if (b.assignee_id && matchedAssigneeIds.has(b.assignee_id)) return true;
 
-    const bAssigneeName = (
+    // 2. Resolve assignee name & email (including lookup from assignees table if brief only has assignee_id)
+    let bAssigneeName = (
       b.assignees?.name ||
       b.assignee_name ||
       b.details?.assignee_name ||
       b.details?.assignee ||
       ""
     ).toLowerCase().trim();
-    const bAssigneeEmail = (b.assignees?.email || b.details?.assignee_email || "").toLowerCase().trim();
+    let bAssigneeEmail = (b.assignees?.email || b.details?.assignee_email || "").toLowerCase().trim();
+
+    if (!bAssigneeName && b.assignee_id && assigneeIdToMember.has(b.assignee_id)) {
+      const found = assigneeIdToMember.get(b.assignee_id);
+      bAssigneeName = (found.name || "").toLowerCase().trim();
+      if (!bAssigneeEmail) bAssigneeEmail = (found.email || "").toLowerCase().trim();
+    }
 
     if (normName && bAssigneeName && (bAssigneeName.includes(normName) || normName.includes(bAssigneeName))) return true;
     if (normEmail && bAssigneeEmail && (bAssigneeEmail.includes(normEmail) || normEmail.includes(bAssigneeEmail))) return true;
 
+    // 3. Assistants check (Strictly non-empty and non-zero percentage)
     if (Array.isArray(b.details?.assistants)) {
       const isAst = b.details.assistants.some((ast: any) => {
+        if (!ast) return false;
+        // Ignore inactive or 0% assistants
+        if (ast.percentage !== undefined && Number(ast.percentage) <= 0) return false;
+
+        // ID match
         if (ast.assignee_id && matchedAssigneeIds.has(ast.assignee_id)) return true;
-        const astName = (ast.name || "").toLowerCase().trim();
-        return normName && (astName.includes(normName) || normName.includes(astName));
+
+        // Name / Email match
+        let astName = (ast.name || "").toLowerCase().trim();
+        let astEmail = (ast.email || "").toLowerCase().trim();
+        if ((!astName || !astEmail) && ast.assignee_id && assigneeIdToMember.has(ast.assignee_id)) {
+          const foundAst = assigneeIdToMember.get(ast.assignee_id);
+          if (!astName) astName = (foundAst.name || "").toLowerCase().trim();
+          if (!astEmail) astEmail = (foundAst.email || "").toLowerCase().trim();
+        }
+
+        if (normName && astName && (astName.includes(normName) || normName.includes(astName))) return true;
+        if (normEmail && astEmail && (astEmail.includes(normEmail) || normEmail.includes(astEmail))) return true;
+
+        return false;
       });
       if (isAst) return true;
     }

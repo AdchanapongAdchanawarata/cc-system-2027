@@ -35,18 +35,18 @@ interface TeamMemberItem {
 
 // Operational Creative Team Members Only (Excludes Executives & Directors)
 const FALLBACK_MEMBERS: TeamMemberItem[] = [
-  { id: "job", name: "จ๊อบ AA", email: "adchanapong@step.cmu.ac.th", roleTitle: "หัวหน้าทีม (Team Leader)" },
-  { id: "wah", name: "วา WK", email: "wasita@step.cmu.ac.th", roleTitle: "ผู้ช่วยหัวหน้าทีม & ควบคุมงานออกแบบ (Design Lead)" },
-  { id: "kong", name: "ก้อง IK", email: "itsara@step.cmu.ac.th", roleTitle: "พนักงานออกแบบสร้างสรรค์ (Creative Designer Lead)" },
-  { id: "earn", name: "เอิร์นวอย SLR", email: "siriluk@step.cmu.ac.th", roleTitle: "Content Creator (Unit Content)" },
-  { id: "joy", name: "จอย RL", email: "ratiporn@step.cmu.ac.th", roleTitle: "พนักงานออกแบบสร้างสรรค์ (Creative Designer)" },
-  { id: "pim", name: "พิม AC", email: "autcharaporn@step.cmu.ac.th", roleTitle: "พนักงานออกแบบสร้างสรรค์ (Creative Designer)" },
-  { id: "year", name: "เยียร์ LLP", email: "lalipat@step.cmu.ac.th", roleTitle: "พนักงานออกแบบสร้างสรรค์ (Creative Designer)" },
-  { id: "lookin", name: "ลูกอิน STK", email: "suthiarpa@step.cmu.ac.th", roleTitle: "Content Creator (Unit Content)" },
-  { id: "nin", name: "นิน MTN", email: "matanin@step.cmu.ac.th", roleTitle: "พนักงานออกแบบสร้างสรรค์ (Creative Designer)" },
-  { id: "oat", name: "โอ๊ต CNB", email: "chonnikarn@step.cmu.ac.th", roleTitle: "PR (Unit PR)" },
-  { id: "kaew", name: "แก้ว KYK", email: "kanyakorn@step.cmu.ac.th", roleTitle: "Content Creator (Unit Content)" },
-  { id: "tah", name: "ต้า TTY", email: "thitiya@step.cmu.ac.th", roleTitle: "PR (Unit PR)" },
+  { id: "002534f3-6fa4-46c5-a6e5-4a572a129029", name: "จ๊อบ AA", email: "adchanapong@step.cmu.ac.th", roleTitle: "หัวหน้าทีม (Team Leader)" },
+  { id: "461a2be1-cb19-450f-9f79-ffca537ce974", name: "วา WK", email: "wasita@step.cmu.ac.th", roleTitle: "ผู้ช่วยหัวหน้าทีม & ควบคุมงานออกแบบ (Design Lead)" },
+  { id: "74cf8c66-6b68-45a7-96a8-20bf8fbdfd71", name: "ก้อง IK", email: "itsara@step.cmu.ac.th", roleTitle: "พนักงานออกแบบสร้างสรรค์ (Creative Designer Lead)" },
+  { id: "a2cf6e47-fc1c-4c19-b080-fe4b57f4a66a", name: "เอ็นจอย SLR", email: "siriluk@step.cmu.ac.th", roleTitle: "Content Creator (Unit Content)" },
+  { id: "bfda3120-f5a6-455b-b935-cf27b4ae1591", name: "จอย RL", email: "ratiporn@step.cmu.ac.th", roleTitle: "พนักงานออกแบบสร้างสรรค์ (Creative Designer)" },
+  { id: "47adfbc2-8d0e-4dc7-87ad-98895be82026", name: "พิม AC", email: "autcharaporn@step.cmu.ac.th", roleTitle: "พนักงานออกแบบสร้างสรรค์ (Creative Designer)" },
+  { id: "7800682c-8aed-45cf-ab31-45473fd16e3d", name: "เยียร์ LLP", email: "lalipat@step.cmu.ac.th", roleTitle: "พนักงานออกแบบสร้างสรรค์ (Creative Designer)" },
+  { id: "b04669b5-6e86-4629-9e66-57d464881653", name: "ลูกอิน STK", email: "suthiarpa@step.cmu.ac.th", roleTitle: "Content Creator (Unit Content)" },
+  { id: "82faa669-a2b6-4497-88cf-8556a867176f", name: "นิน MTN", email: "matanin@step.cmu.ac.th", roleTitle: "พนักงานออกแบบสร้างสรรค์ (Creative Designer)" },
+  { id: "e2c2672d-81c4-411d-89e9-bcbb6eb374f5", name: "โอ๊ต CNB", email: "chonnikarn@step.cmu.ac.th", roleTitle: "PR (Unit PR)" },
+  { id: "3ab19406-29cc-4430-b4bf-2cfe9a1c29b7", name: "แก้ว KYK", email: "kanyakorn@step.cmu.ac.th", roleTitle: "Content Creator (Unit Content)" },
+  { id: "6984154a-2975-4040-a557-aec9d090377f", name: "ต้า TTY", email: "thitiya@step.cmu.ac.th", roleTitle: "PR (Unit PR)" },
 ];
 
 function matchMember(nameA: string, nameB: string): boolean {
@@ -132,7 +132,7 @@ export default function DailyMissionModal({
       const supabase = createClient();
       supabase
         .from("briefs")
-        .select("*")
+        .select("*, assignees(id, name, email)")
         .neq("status", "purged")
         .then(({ data }) => {
           if (data) {
@@ -537,7 +537,7 @@ export default function DailyMissionModal({
                   </span>
                 ) : (
                   <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-neutral-100 border border-neutral-200 text-neutral-600 font-semibold font-mono">
-                    {activeTab === "history" ? "ARCHIVED" : "ACTIVE"}
+                    {activeTab === "history" ? "SNAPSHOT" : "ACTIVE"}
                   </span>
                 )}
               </div>

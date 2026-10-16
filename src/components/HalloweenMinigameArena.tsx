@@ -220,15 +220,17 @@ export default function HalloweenMinigameArena({
   const roundTimerRef = useRef<NodeJS.Timeout | null>(null);
   const waveTimersRef = useRef<NodeJS.Timeout[]>([]);
 
-  // Basket coordinate tracker
+  // Basket coordinate tracker with filtered tilt
   const basketPosRef = useRef({
     x: typeof window !== "undefined" ? window.innerWidth / 2 : 500,
     targetX: typeof window !== "undefined" ? window.innerWidth / 2 : 500,
+    tilt: 0,
   });
 
   // Audio Context Singleton
   const audioCtxRef = useRef<AudioContext | null>(null);
   const lastSoundTimeRef = useRef(0);
+  const lastCatchSoundTimeRef = useRef(0);
 
   // Sound Engine
   const playSound = useCallback((type: "catch" | "rare" | "volcano" | "gameover") => {
@@ -236,6 +238,10 @@ export default function HalloweenMinigameArena({
     try {
       const now = Date.now();
       if (type === "volcano" && now - lastSoundTimeRef.current < 75) return;
+      if (type === "catch") {
+        if (now - lastCatchSoundTimeRef.current < 45) return;
+        lastCatchSoundTimeRef.current = now;
+      }
       lastSoundTimeRef.current = now;
 
       const AudioClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
@@ -316,8 +322,8 @@ export default function HalloweenMinigameArena({
     }
   }, []);
 
-  // Spectacular Candy Volcano Burst from pumpkin (พุ่งแบบอลังการ โค้งสวยงามตกตรงเข้าโซนเก็บ!)
-  const triggerVolcanoBurst = useCallback((count = 28) => {
+  // Spectacular Candy Volcano Burst from pumpkin (พุ่งเร็วสะใจ ตกฉับไว เข้าโซนรับลื่นไหล!)
+  const triggerVolcanoBurst = useCallback((count = 24) => {
     if (typeof window === "undefined") return;
     playSound("volcano");
 
@@ -341,22 +347,22 @@ export default function HalloweenMinigameArena({
         rand -= t.weight;
       }
 
-      // Smooth parabolic arc: Pops up visibly (100-180px above origin) and fans evenly across the screen width (12% - 88%)
-      const targetX = width * (0.12 + Math.random() * 0.76);
-      const fallFrames = 42 + Math.random() * 16; // Reaches basket height in ~0.7-0.95 seconds!
+      // Fast, snappy, high-energy arcade arc (reaches basket in ~0.45 - 0.60s!)
+      const targetX = width * (0.10 + Math.random() * 0.80);
+      const fallFrames = 26 + Math.random() * 10;
       const vx = (targetX - originX) / fallFrames;
-      const vy = -(Math.random() * 5 + 9.5); // Snappy upward pop, never flies off-screen!
+      const vy = -(Math.random() * 4 + 11); // Crisp upward pop
 
       newItems.push({
         id: Math.random() + Date.now(),
         emoji: selected.emoji,
-        x: originX + (Math.random() - 0.5) * 24,
-        y: originY + (Math.random() - 0.5) * 16,
+        x: originX + (Math.random() - 0.5) * 20,
+        y: originY + (Math.random() - 0.5) * 14,
         vx,
         vy,
         rotation: Math.random() * 360,
-        vRot: (Math.random() - 0.5) * 12,
-        size: selected.isRare ? 48 : Math.floor(Math.random() * 12) + 36,
+        vRot: (Math.random() - 0.5) * 16,
+        size: selected.isRare ? 46 : 38,
         points: selected.points,
         isRare: selected.isRare,
         settled: false,
@@ -366,16 +372,16 @@ export default function HalloweenMinigameArena({
     }
 
     // Launch cheerful festive embers alongside candies (lightweight, zero lag)
-    for (let sp = 0; sp < 10; sp++) {
+    for (let sp = 0; sp < 8; sp++) {
       const angle = -Math.PI * 0.85 + Math.random() * Math.PI * 0.70;
-      const spd = Math.random() * 8 + 6;
+      const spd = Math.random() * 9 + 6;
       sparklesRef.current.push({
         id: Math.random(),
         x: originX,
         y: originY,
         vx: Math.cos(angle) * spd,
         vy: Math.sin(angle) * spd,
-        size: 3 + Math.random() * 3.5,
+        size: 3 + Math.random() * 3,
         color: ["#FBBF24", "#FF6200", "#EF4444", "#FDE047", "#A855F7"][Math.floor(Math.random() * 5)],
         opacity: 1,
       });
@@ -449,13 +455,16 @@ export default function HalloweenMinigameArena({
       waveTimersRef.current.push(t);
     };
 
-    // Continuous flow of volcanic candy bursts throughout the 10 seconds!
-    scheduleWave(100, 28);   // Wave 1: Immediate explosive start
-    scheduleWave(1800, 24);  // Wave 2: Steady cascade
-    scheduleWave(3600, 24);  // Wave 3: Mid-game frenzy
-    scheduleWave(5400, 24);  // Wave 4: Golden hour rain
-    scheduleWave(7200, 24);  // Wave 5: Late-game surge
-    scheduleWave(8600, 20);  // Wave 6: Final sprint
+    // Fast-paced, continuous flow of candy rain throughout the 10 seconds!
+    scheduleWave(40, 24);    // 0.04s: Immediate explosion
+    scheduleWave(1100, 20);  // 1.1s
+    scheduleWave(2200, 20);  // 2.2s
+    scheduleWave(3300, 22);  // 3.3s
+    scheduleWave(4400, 22);  // 4.4s
+    scheduleWave(5500, 24);  // 5.5s
+    scheduleWave(6600, 24);  // 6.6s
+    scheduleWave(7700, 26);  // 7.7s
+    scheduleWave(8800, 26);  // 8.8s: Grand finale sprint!
 
     // 10-Second Countdown Timer
     if (roundTimerRef.current) clearInterval(roundTimerRef.current);
@@ -535,7 +544,7 @@ export default function HalloweenMinigameArena({
 
         const width = canvas.width;
         const height = canvas.height;
-        const gravity = 0.74;
+        const gravity = 0.95;
         const floorY = height - 25;
 
         // Pumpkin bucket dimensions
@@ -544,17 +553,23 @@ export default function HalloweenMinigameArena({
         const basketY = height - basketH - 18;
         const catchY = basketY + basketH * 0.44;
 
-        // Instantaneous 1:1 direct tracking (0ms input lag on PC / mobile)
+        // Buttery smooth, instantaneous tracking with filtered tilt (0 jitter, 0 lag)
         const basket = basketPosRef.current;
         const dx = basket.targetX - basket.x;
-        basket.x = basket.targetX;
-        const tilt = Math.max(-14, Math.min(14, dx * 0.12));
+        basket.x += dx * 0.82;
+        const targetTilt = Math.max(-12, Math.min(12, dx * 0.15));
+        basket.tilt += (targetTilt - basket.tilt) * 0.25;
 
         if (basketDomRef.current) {
-          basketDomRef.current.style.transform = `translate3d(${basket.x - basketW / 2}px, ${basketY}px, 0) rotate(${tilt}deg)`;
+          basketDomRef.current.style.transform = `translate3d(${basket.x - basketW / 2}px, ${basketY}px, 0) rotate(${basket.tilt}deg)`;
         }
 
         ctx.clearRect(0, 0, width, height);
+
+        // Pre-configure canvas font and text alignment ONCE for standard particles (MAJOR CPU OPTIMIZATION)
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.font = '38px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
 
         const particles = particlesRef.current;
         const remaining: CandyParticle[] = [];
@@ -566,42 +581,31 @@ export default function HalloweenMinigameArena({
             p.x += p.vx;
             p.y += p.vy;
             p.vy += gravity;
-            // Cap downward speed to guarantee smooth catching without tunneling
-            if (p.vy > 13.5) p.vy = 13.5;
-            p.vx *= 0.994;
+            if (p.vy > 18) p.vy = 18;
+            p.vx *= 0.992;
             p.rotation += p.vRot;
 
             // Wall bouncing
-            if (p.x <= p.size / 2) {
-              p.x = p.size / 2;
-              p.vx = -p.vx * 0.55;
-            } else if (p.x >= width - p.size / 2) {
-              p.x = width - p.size / 2;
-              p.vx = -p.vx * 0.55;
+            if (p.x <= 20) {
+              p.x = 20;
+              p.vx = -p.vx * 0.6;
+            } else if (p.x >= width - 20) {
+              p.x = width - 20;
+              p.vx = -p.vx * 0.6;
             }
 
-            // Generous Pumpkin Bucket Catch Zone (กว้างและจับติดง่าย สะใจ ไม่หลุดรอด!)
-            const catchSpan = basketW * 0.52;
+            // Generous Pumpkin Bucket Catch Zone
+            const catchSpan = basketW * 0.54;
             const inBasketX = p.x >= basket.x - catchSpan && p.x <= basket.x + catchSpan;
-            const inBasketY = p.y >= catchY - 32 && p.y <= catchY + 45;
-            const isFalling = p.vy > -1.5;
+            const inBasketY = p.y >= catchY - 35 && p.y <= catchY + 45;
+            const isFalling = p.vy > -2;
 
             if (inBasketX && inBasketY && isFalling && isPlayingRef.current && !isGameOverRef.current) {
               // CAUGHT!
               playSound(p.isRare ? "rare" : "catch");
 
-              // Basket bounce animation
-              if (basketDomRef.current) {
-                basketDomRef.current.style.transform = `translate3d(${basket.x - basketW / 2}px, ${basketY + 5}px, 0) scale(1.06, 0.94) rotate(${tilt}deg)`;
-                setTimeout(() => {
-                  if (basketDomRef.current) {
-                    basketDomRef.current.style.transform = `translate3d(${basket.x - basketW / 2}px, ${basketY}px, 0) scale(1, 1) rotate(${tilt}deg)`;
-                  }
-                }, 90);
-              }
-
               // Burst juicy arcade sparkles on catch!
-              for (let s = 0; s < 8; s++) {
+              for (let s = 0; s < 6; s++) {
                 const angle = Math.random() * Math.PI * 2;
                 const spd = 2 + Math.random() * 4.5;
                 sparklesRef.current.push({
@@ -653,7 +657,7 @@ export default function HalloweenMinigameArena({
                 }
               }
 
-              // Floating Score text
+              // Floating Score text (fast & snappy)
               floatingTextsRef.current.push({
                 id: Math.random(),
                 text: `+${pointsAwarded}${p.isRare ? " ⭐" : ""}`,
@@ -661,7 +665,7 @@ export default function HalloweenMinigameArena({
                 y: catchY - 15,
                 opacity: 1,
                 color: p.isRare ? "#FBBF24" : multiplier > 1 ? "#FF6200" : "#10B981",
-                scale: p.isRare ? 1.35 : multiplier > 1 ? 1.2 : 1.0,
+                scale: p.isRare ? 1.3 : multiplier > 1 ? 1.15 : 1.0,
               });
 
               continue;
@@ -681,7 +685,7 @@ export default function HalloweenMinigameArena({
               }
             }
           } else {
-            p.opacity -= 0.02;
+            p.opacity -= 0.035; // Fades out faster to reduce active particle count
           }
 
           if (p.opacity > 0) {
@@ -689,23 +693,21 @@ export default function HalloweenMinigameArena({
 
             // Rare item glowing aura (pure GPU vector circle, 0 lag)
             if (p.isRare) {
-              ctx.save();
               ctx.globalAlpha = Math.max(0, p.opacity * 0.35);
               ctx.fillStyle = "#F59E0B";
               ctx.beginPath();
               ctx.arc(p.x, p.y, p.size * 0.65, 0, Math.PI * 2);
               ctx.fill();
-              ctx.restore();
             }
 
-            // Original Candy Graphic Style: Large Emoji (pure GPU text rendering, 60fps locked)
-            ctx.save();
+            // Draw Emoji Candy
             ctx.globalAlpha = Math.max(0, p.opacity);
+            ctx.save();
             ctx.translate(p.x, p.y);
             ctx.rotate((p.rotation * Math.PI) / 180);
-            ctx.font = `${p.size}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
+            if (p.isRare) {
+              ctx.font = '46px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
+            }
             ctx.fillText(p.emoji, 0, 0);
             ctx.restore();
           }
@@ -713,19 +715,18 @@ export default function HalloweenMinigameArena({
 
         particlesRef.current = remaining;
 
-        // Arcade Sparkles Rendering & Physics (Pure GPU star paths, 0 CPU shadowBlur)
+        // Arcade Sparkles Rendering & Physics (Pure GPU star paths, 0 CPU shadowBlur, 0 save/restore)
         const sRemaining: CatchSparkle[] = [];
         for (let s = 0; s < sparklesRef.current.length; s++) {
           const sp = sparklesRef.current[s];
           sp.x += sp.vx;
           sp.y += sp.vy;
-          sp.vy += 0.2;
+          sp.vy += 0.25;
           sp.vx *= 0.98;
-          sp.opacity -= 0.04;
+          sp.opacity -= 0.05;
 
           if (sp.opacity > 0) {
             sRemaining.push(sp);
-            ctx.save();
             ctx.globalAlpha = Math.max(0, sp.opacity);
             ctx.fillStyle = sp.color;
 
@@ -739,37 +740,30 @@ export default function HalloweenMinigameArena({
             ctx.quadraticCurveTo(sp.x, sp.y, sp.x, sp.y - sz * 1.5);
             ctx.closePath();
             ctx.fill();
-            ctx.restore();
           }
         }
         sparklesRef.current = sRemaining;
 
-        // Floating Score Texts with thick cartoon chocolate outline
+        // Floating Score Texts (Pre-configure text styles once, fast snappy fade)
         const fRemaining: FloatingScoreText[] = [];
-        for (let j = 0; j < floatingTextsRef.current.length; j++) {
-          const ft = floatingTextsRef.current[j];
-          ft.y -= 1.8;
-          ft.opacity -= 0.028;
+        if (floatingTextsRef.current.length > 0) {
+          ctx.font = '900 22px system-ui, -apple-system, sans-serif';
+          ctx.lineWidth = 4;
+          ctx.strokeStyle = "#2A0E00";
+          ctx.lineJoin = "round";
 
-          if (ft.opacity > 0) {
-            fRemaining.push(ft);
-            ctx.save();
-            ctx.globalAlpha = Math.max(0, ft.opacity);
-            const fontSize = Math.round(22 * ft.scale);
-            ctx.font = `900 ${fontSize}px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
+          for (let j = 0; j < floatingTextsRef.current.length; j++) {
+            const ft = floatingTextsRef.current[j];
+            ft.y -= 2.6;
+            ft.opacity -= 0.045;
 
-            // Dark warm chocolate outline
-            ctx.lineWidth = 4.5;
-            ctx.strokeStyle = "#2A0E00";
-            ctx.lineJoin = "round";
-            ctx.strokeText(ft.text, ft.x, ft.y);
-
-            // Bright glossy fill
-            ctx.fillStyle = ft.color;
-            ctx.fillText(ft.text, ft.x, ft.y);
-            ctx.restore();
+            if (ft.opacity > 0) {
+              fRemaining.push(ft);
+              ctx.globalAlpha = Math.max(0, ft.opacity);
+              ctx.strokeText(ft.text, ft.x, ft.y);
+              ctx.fillStyle = ft.color;
+              ctx.fillText(ft.text, ft.x, ft.y);
+            }
           }
         }
         floatingTextsRef.current = fRemaining;
@@ -875,20 +869,24 @@ export default function HalloweenMinigameArena({
       }}
     >
       
-      {/* Country Friends Harvest Festival Twilight Ambience (Pure GPU solid rendering, zero backdrop-blur lag) */}
+      {/* Country Friends Harvest Festival Twilight Ambience (Pure GPU solid rendering, zero blur lag) */}
       <div 
         className="absolute inset-0 bg-gradient-to-b from-[#180B2B] via-[#220F38] to-[#0E041A] cursor-pointer overflow-hidden"
+        style={{
+          backgroundImage: `
+            radial-gradient(circle at 85% 15%, rgba(245, 158, 11, 0.14) 0%, transparent 45%),
+            radial-gradient(circle at 15% 40%, rgba(147, 51, 234, 0.12) 0%, transparent 40%),
+            linear-gradient(to bottom, #180B2B, #220F38, #0E041A)
+          `,
+        }}
         onClick={(e) => {
           e.stopPropagation();
           if (isPlayingRef.current && !isGameOverRef.current) {
-            triggerVolcanoBurst(24);
+            triggerVolcanoBurst(22);
           }
         }}
         title="แตะหน้าจอเพื่อระเบิดลูกกวาดภูเขาไฟเพิ่ม!"
       >
-        {/* Harvest Festival Autumn Moon Glow in Twilight Sky */}
-        <div className="absolute -top-16 -right-16 w-80 h-80 rounded-full bg-gradient-to-br from-amber-300/15 via-orange-500/10 to-transparent blur-2xl pointer-events-none" />
-        <div className="absolute top-1/4 -left-20 w-72 h-72 rounded-full bg-purple-600/10 blur-2xl pointer-events-none" />
 
         {/* Country Festival Autumn Bunting / Pennant Garland across top */}
         <div className="absolute top-0 inset-x-0 h-6 flex justify-between items-start opacity-70 pointer-events-none select-none px-2 overflow-hidden">

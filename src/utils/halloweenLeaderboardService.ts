@@ -117,6 +117,17 @@ export function getPlayerTitle(score: number): string {
   return "🧁 ผู้เริ่มต้นชิมขนม";
 }
 
+const REMOVED_SCORE_IDS = new Set([
+  "score-1792231049788-ao1x", // สเตป พริ้ว (60438)
+  "score-1792230997564-2jgj", // ชิสุกะ ดอยคำ (58448)
+  "score-1792132093307-ipvq", // ปีศาจแมวเลีย (57679)
+  "score-1792122988669-f5jk", // ผู้เล่นนิรนาม (14706)
+]);
+
+function filterRemovedScores(list: HalloweenScoreEntry[]): HalloweenScoreEntry[] {
+  return list.filter((entry) => !REMOVED_SCORE_IDS.has(entry.id));
+}
+
 function getLocalCachedLeaderboard(): HalloweenScoreEntry[] {
   if (typeof window === "undefined") return INITIAL_SEED_SCORES;
   try {
@@ -124,7 +135,7 @@ function getLocalCachedLeaderboard(): HalloweenScoreEntry[] {
     if (!raw) return INITIAL_SEED_SCORES;
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed.sort((a, b) => b.score - a.score);
+      return filterRemovedScores(parsed).sort((a, b) => b.score - a.score);
     }
   } catch (err) {
     console.warn("Failed to parse local cached halloween leaderboard:", err);
@@ -147,7 +158,9 @@ export async function fetchHalloweenLeaderboard(): Promise<HalloweenScoreEntry[]
       try {
         const cloudList = JSON.parse(data.target_value);
         if (Array.isArray(cloudList) && cloudList.length > 0) {
-          const sorted = cloudList.sort((a: HalloweenScoreEntry, b: HalloweenScoreEntry) => b.score - a.score);
+          const sorted = filterRemovedScores(cloudList).sort(
+            (a: HalloweenScoreEntry, b: HalloweenScoreEntry) => b.score - a.score
+          );
           if (typeof window !== "undefined") {
             localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(sorted));
           }

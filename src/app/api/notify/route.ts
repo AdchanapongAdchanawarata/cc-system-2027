@@ -9,9 +9,9 @@ import { getFreshCreativeTrend, getFreshEveningHealthMind } from '@/utils/dailyA
 import { getTaskSurveyUrl } from '@/utils/surveyTokens';
 import { shouldInternalTaskSkipEmail, getLeadTimeForTask } from '@/utils/pricing';
 import { recordBotMessageId, recordBotActivity } from '@/utils/lineMemoryService';
-import { getMemberOfficialEmail, DEFAULT_MEMBER_METADATA } from '@/utils/memberProfile';
+import { getMemberOfficialEmail, DEFAULT_MEMBER_METADATA, CORE_OPERATIONAL_MEMBERS, getAssigneeFallbackName } from '@/utils/memberProfile';
 import { resolveTaskCode } from '@/utils/taskCodeService';
-import { getTaskFinancialDistribution, isCcPmProject } from '@/utils/stats';
+import { getTaskFinancialDistribution, isCcPmProject, aggregateMemberWorkloadAndFinancials } from '@/utils/stats';
 import { isR3Task, computeRealtimeMetrics } from '@/utils/okrSettings';
 
 // Ensure in-process cron timer is active
@@ -23,6 +23,17 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 function getSupabase() {
   if (!supabaseUrl || !supabaseKey) return null;
   return createClient(supabaseUrl, supabaseKey);
+}
+
+function getBangkokNow(): Date {
+  return new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+}
+
+function getBangkokDateStr(d: Date = getBangkokNow()): string {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 // Helper to push LINE message
@@ -67,12 +78,14 @@ async function pushLineMessage(targetId: string, text: string, mention?: any) {
       console.log(`[LINE PUSH SUCCESS] To: ${targetId}`);
       try {
         const resData = await res.json().catch(() => ({}));
+        const promises: Promise<any>[] = [];
         if (resData?.sentMessages && Array.isArray(resData.sentMessages)) {
           resData.sentMessages.forEach((m: any) => {
-            if (m?.id) recordBotMessageId(m.id, targetId, text);
+            if (m?.id) promises.push(recordBotMessageId(m.id, targetId, text));
           });
         }
-        recordBotActivity(targetId, text);
+        promises.push(recordBotActivity(targetId, text));
+        await Promise.allSettled(promises);
       } catch (e) {}
       return { ok: true };
     } else {
@@ -324,7 +337,7 @@ ${targetUrl}
       }
 
       const supabase = getSupabase();
-      const todayStr = new Date().toISOString().split('T')[0];
+      const todayStr = getBangkokDateStr();
       const now = Date.now();
       const twentyFourHoursAgo = now - 24 * 60 * 60 * 1000;
       const threeDaysAgo = now - 3 * 24 * 60 * 60 * 1000;
@@ -339,6 +352,9 @@ ${targetUrl}
       let inProgressTasks: any[] = [];
       let rawBriefsList: any[] = [];
 
+      const resolveTaskAssignee = (b: any) =>
+        b?.assignees?.name || b?.details?.assignee || getAssigneeFallbackName(b?.assignee_id) || 'ยังไม่ระบุผู้รับผิดชอบ';
+
       if (supabase) {
         const { data: briefs } = await supabase
           .from('briefs')
@@ -349,7 +365,7 @@ ${targetUrl}
         if (briefs) {
           rawBriefsList = briefs;
           briefs.forEach((b: any) => {
-            const isDeleted = b.details?.is_deleted || b.status === 'purged' || b.status === 'cancelled' || b.status === 'cancel';
+            const isDeleted = b.details?.is_deleted || b.details?.is_permanently_deleted || b.status === 'purged' || b.status === 'cancelled' || b.status === 'cancel';
             const isTest = b.details?.is_test ||
               /\[(STRESS_TEST|TEST|BENCHMARK)\]/i.test(b.project_name || '') ||
               /Automated Load Benchmark/i.test(b.project_name || '') ||
@@ -359,12 +375,13 @@ ${targetUrl}
 
             const hasAssignee = Boolean((b.assignee_id && b.assignee_id.trim() !== '') || b.assignees?.name || b.details?.assignee);
             const dStr = b.details?.publish_date || b.deadline || b.details?.usage_date;
-            const isToday = dStr && dStr.startsWith(todayStr);
-            const isOverdue = dStr && new Date(dStr).getTime() < now && !isToday;
+            const dDatePart = dStr ? String(dStr).slice(0, 10) : '';
+            const isToday = Boolean(dDatePart && dDatePart === todayStr);
+            const isOverdue = Boolean(dDatePart && dDatePart < todayStr);
             const diffDays = dStr ? (new Date(dStr).getTime() - now) / (1000 * 60 * 60 * 24) : 999;
             const slaLeadTime = getLeadTimeForTask(b.unit, b.details?.category || b.details?.service_name, b.project_name);
             const isSlaUrgent = diffDays >= 0 && diffDays < slaLeadTime;
-            const isUrgent = (b.details?.is_urgent || b.details?.isUrgent || isSlaUrgent || (diffDays >= 0 && diffDays <= 2)) && !isToday;
+            const isUrgent = (b.details?.is_urgent || b.details?.isUrgent || isSlaUrgent || (diffDays >= 0 && diffDays <= 2)) && !isToday && !isOverdue;
             const isNewSinceYesterday = new Date(b.created_at).getTime() >= twentyFourHoursAgo;
 
             if (isNewSinceYesterday) newBriefs.push(b);
@@ -380,11 +397,11 @@ ${targetUrl}
       }
 
       const getAssigneesText = (tasks: any[]) => {
-        const names = Array.from(new Set(tasks.map(t => t.assignees?.name || t.details?.assignee || 'ยังไม่ระบุผู้รับผิดชอบ'))).filter(Boolean);
+        const names = Array.from(new Set(tasks.map(t => resolveTaskAssignee(t)))).filter(Boolean);
         return names.length > 0 ? names.map(n => formatMemberTag(n)).join(', ') : 'ผู้รับผิดชอบ';
       };
 
-      const todayThai = new Date().toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      const todayThai = new Date().toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
       let lineMsg = `☀️ [Morning Brief ประจำวัน • ${todayThai}]\nสวัสดีตอนเช้าพี่ๆ ทีมสร้างสรรค์และการสื่อสาร (CC) ครับ! 🌸✨\n`;
 
       const unassignedCreative = unassignedTasks.filter(t => (t.unit || '').toLowerCase().includes('creative') || (t.unit || '').toLowerCase().includes('design'));
@@ -409,7 +426,7 @@ ${targetUrl}
         lineMsg += `⚠️ มีงานที่เกินกำหนดส่งแล้วในระบบ ขอให้ผู้รับผิดชอบและหัวหน้ายูนิตเร่งเคลียร์ส่งมอบ หรือประสานผู้ขอเพื่อปรับขยายเวลาทันทีครับ!\n`;
         overdueTasks.slice(0, 4).forEach((t, i) => {
           const code = getTaskCodeDisplay(t, rawBriefsList);
-          const rawAssignee = t.assignees?.name || t.details?.assignee || 'ยังไม่ระบุผู้รับผิดชอบ';
+          const rawAssignee = resolveTaskAssignee(t);
           const assignee = formatMemberTag(rawAssignee);
           const dStr = formatDeadlineThai(t.details?.publish_date || t.deadline || t.details?.usage_date);
           lineMsg += `\n${i + 1}. [${formatUnit(t.unit)}] **${code}** : ${t.project_name}\n   └ ผู้รับผิดชอบ: **${assignee}** (ครบกำหนด: ${dStr})`;
@@ -458,7 +475,7 @@ ${targetUrl}
         // จัดกลุ่มตามผู้รับผิดชอบ เพื่อให้เห็นชัดว่าใครรับผิดชอบอะไร เป็นงานของใคร ยูนิตไหน
         const groupedTodo: Record<string, any[]> = {};
         todoTasks.forEach(t => {
-          const rawName = t.assignees?.name || t.details?.assignee || 'ยังไม่ระบุผู้รับผิดชอบ';
+          const rawName = resolveTaskAssignee(t);
           const name = formatMemberTag(rawName);
           if (!groupedTodo[name]) groupedTodo[name] = [];
           groupedTodo[name].push(t);
@@ -493,7 +510,7 @@ ${targetUrl}
       } else {
         todayTasks.forEach((t, i) => {
           const code = getTaskCodeDisplay(t, rawBriefsList);
-          const rawAssignee = t.assignees?.name || t.details?.assignee || 'ยังไม่ระบุผู้รับผิดชอบ';
+          const rawAssignee = resolveTaskAssignee(t);
           const assignee = formatMemberTag(rawAssignee);
           lineMsg += `\n${i + 1}. [${formatUnit(t.unit)}] **${code}** : ${t.project_name}\n   └ ผู้รับผิดชอบ: **${assignee}**`;
         });
@@ -506,7 +523,7 @@ ${targetUrl}
         lineMsg += `\n\n🚨 **งานด่วนเฝ้าระวัง 48 ชม. (${urgentTasks.length} งาน):**`;
         urgentTasks.slice(0, 5).forEach((t) => {
           const code = getTaskCodeDisplay(t, rawBriefsList);
-          const rawAssignee = t.assignees?.name || t.details?.assignee || 'ยังไม่ระบุผู้รับผิดชอบ';
+          const rawAssignee = resolveTaskAssignee(t);
           const assignee = formatMemberTag(rawAssignee);
           const dStr = formatDeadlineThai(t.details?.publish_date || t.deadline || t.details?.usage_date);
           lineMsg += `\n• [${formatUnit(t.unit)}] **${code}** : ${t.project_name}\n   └ ผู้รับผิดชอบ: **${assignee}** | กำหนดส่ง: ${dStr}`;
@@ -806,12 +823,13 @@ ${targetUrl}
       });
     }
 
-    // 4.0 Automated Weekly Executive Report for CC TEAM (Every Friday 15:00 PM)
+    // 4.0 Automated Weekly Executive Report for CC TEAM (Every Friday 16:30 PM)
     else if (action === 'weekly_executive_report') {
-      const now = new Date();
+      const bkkNow = getBangkokNow();
+      const todayStr = getBangkokDateStr(bkkNow);
       // Rule: อาทิตย์สุดท้ายของเดือนไม่ต้องมีรายงานวีค เพราะมีรายงานเดือนแล้ว
-      const curDate = now.getDate();
-      const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      const curDate = bkkNow.getDate();
+      const lastDayOfMonth = new Date(bkkNow.getFullYear(), bkkNow.getMonth() + 1, 0).getDate();
       const isLastWeekOfMonth = (curDate + 7) > lastDayOfMonth;
 
       if (!body.force && isLastWeekOfMonth) {
@@ -824,31 +842,9 @@ ${targetUrl}
       }
 
       const supabase = getSupabase();
-      const sevenDaysAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
-      const fridayThai = now.toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-
-      let completedThisWeek: any[] = [];
-      let inProgressTasks: any[] = [];
-      let pendingTasks: any[] = [];
-      let completedAll: any[] = [];
-      let overdueTasks: any[] = [];
-
-      let creativeCount = 0;
-      let contentCount = 0;
-      let prCount = 0;
-      let internalCount = 0;
-
-      // Status x Unit accumulators
-      let pendingDesign = 0, pendingPR = 0, pendingContent = 0, pendingInternal = 0;
-      let inProgressDesign = 0, inProgressPR = 0, inProgressContent = 0, inProgressInternal = 0;
-      let completedDesign = 0, completedPR = 0, completedContent = 0, completedInternal = 0;
-
-      let weeklySaveCost = 0;
-      let totalSaveCost = 0;
-      
-      // Detailed R metrics accumulators
-      let weeklyR1 = 0;
-      let assigneeMap: Record<string, string> = {};
+      const nowMs = Date.now();
+      const sevenDaysAgo = nowMs - 7 * 24 * 60 * 60 * 1000;
+      const fridayThai = new Date().toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
       if (supabase) {
         let okrConfig: any = null;
@@ -865,13 +861,28 @@ ${targetUrl}
           console.warn("Could not parse manual okr metrics:", e);
         }
 
+        const assigneeMap: Record<string, string> = {};
+        const assigneesList: { id: string; name: string; unit?: string }[] = [];
         try {
-          const { data: settingRow } = await supabase.from('settings').select('value').eq('key', 'assignees').maybeSingle();
-          if (settingRow?.value) {
-            const list = typeof settingRow.value === 'string' ? JSON.parse(settingRow.value) : settingRow.value;
-            assigneeMap = Object.fromEntries(list.map((a: any) => [a.id, a.name || a.nickname]));
+          const { data: dbAssignees } = await supabase.from('assignees').select('id, name, unit');
+          if (Array.isArray(dbAssignees)) {
+            dbAssignees.forEach((a: any) => {
+              if (a?.id && a?.name) {
+                assigneeMap[a.id] = a.name;
+                assigneesList.push({ id: a.id, name: a.name, unit: a.unit });
+              }
+            });
           }
         } catch (e) {}
+
+        CORE_OPERATIONAL_MEMBERS.forEach((cm) => {
+          if (!assigneeMap[cm.id]) {
+            assigneeMap[cm.id] = cm.name;
+          }
+          if (!assigneesList.some((a) => a.id === cm.id || a.name.trim() === cm.name.trim())) {
+            assigneesList.push({ id: cm.id, name: cm.name, unit: cm.unit });
+          }
+        });
 
         const { data: rawBriefs, error: briefsErr } = await supabase
           .from('briefs')
@@ -881,9 +892,6 @@ ${targetUrl}
         if (briefsErr) {
           console.error('[WEEKLY REPORT] Briefs query error:', briefsErr);
         }
-
-        const now = new Date();
-        const sevenDaysAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
 
         const allValidBriefs = (rawBriefs || []).filter((b: any) => {
           const isDeleted = b.details?.is_deleted || b.details?.is_permanently_deleted;
@@ -938,9 +946,12 @@ ${targetUrl}
           else if (isTodo) todoTasks.push(b);
 
           const dStr = b.details?.publish_date || b.deadline || b.details?.usage_date;
-          if (!isCompleted && !isCancelled && dStr && new Date(dStr).getTime() < now.getTime()) {
+          const dDatePart = dStr ? String(dStr).slice(0, 10) : '';
+          if (!isCompleted && !isCancelled && dDatePart && dDatePart < todayStr) {
             overdueTasks.push(b);
           }
+
+          const dist = getTaskFinancialDistribution(b);
 
           if (!isCancelled) {
             const u = (b.unit || '').toLowerCase();
@@ -950,7 +961,6 @@ ${targetUrl}
             else if (u === 'internal') internalCount++;
             else internalCount++;
 
-            const dist = getTaskFinancialDistribution(b);
             totalPortfolioSaveCost += dist.totalSaveCost;
             if (dist.ownerShare) totalOwnerCost += dist.ownerShare.save_cost;
             dist.assistantShares.forEach((a: any) => {
@@ -963,7 +973,7 @@ ${targetUrl}
               const d = b.details || {};
               const rev = Number(d.revenue || 0);
               const cost = Number(d.cost || 0);
-              const profit = Number(d.profit) !== undefined && d.profit !== null ? Number(d.profit) : (rev - cost);
+              const profit = d.profit !== undefined && d.profit !== null ? Number(d.profit) : (rev - cost);
               totalPmRevenue += rev;
               totalPmCost += cost;
               if (profit > 0) totalPmProfit += profit;
@@ -971,7 +981,7 @@ ${targetUrl}
           }
 
           if (isCompleted) {
-            const sc = Number(b.details?.save_cost || b.details?.save_cost_value || b.details?.project_value || 0);
+            const sc = dist.totalSaveCost;
             if (!isNaN(sc) && sc > 0) deliveredSaveCost += sc;
 
             const compTime = new Date(b.completed_at || b.created_at).getTime();
@@ -987,21 +997,55 @@ ${targetUrl}
           }
         });
 
-        const okrSummary = computeRealtimeMetrics(allValidBriefs, okrConfig, 10, 10);
+        // Dynamic Team Dynamics (Turnaround Speed, On-Time Rate, and BOH Index)
+        const memberStats = aggregateMemberWorkloadAndFinancials(allValidBriefs, assigneesList);
+        const totalTurnaroundDays = memberStats.reduce((sum, m) => sum + (m.totalTurnaroundDays || 0), 0);
+        const totalCompletedWithTime = memberStats.reduce((sum, m) => sum + (m.completedTasksWithTime || 0), 0);
+        const avgTurnaroundDays = totalCompletedWithTime > 0 ? Number((totalTurnaroundDays / totalCompletedWithTime).toFixed(1)) : 0;
+        const totalOnTime = memberStats.reduce((sum, m) => sum + (m.onTimeCompletedCount || 0), 0);
+        const totalLate = memberStats.reduce((sum, m) => sum + (m.lateCompletedCount || 0), 0);
+        const totalRatedOnTime = totalOnTime + totalLate;
+        const teamOnTimeRate = totalRatedOnTime > 0 ? Math.round((totalOnTime / totalRatedOnTime) * 100) : 100;
+        const avgBohScore = memberStats.length > 0
+          ? Math.round(memberStats.reduce((sum, m) => sum + (m.citizenshipScore || 0), 0) / memberStats.length)
+          : 0;
 
-        const targetR1 = 1200;
-        const targetR2 = 85;
-        const targetR3 = 350;
-        const targetR4 = 85;
-        const targetR5 = 6000000;
-        const targetR6 = 60000;
-        const targetR7 = 3000000;
-        const targetR8 = 1000000;
-        const targetR9 = 85;
+        // Dynamic PM Margin & Status
+        const completedPmCount = pmProjects.filter((p: any) => p.status === 'completed' || p.status === 'complete').length;
+        const activePmCount = pmProjects.length - completedPmCount;
+        const pmMarginPct = totalPmRevenue > 0 ? Math.round((totalPmProfit / totalPmRevenue) * 100) : 0;
+        const pmStatusText = completedPmCount > 0 && activePmCount > 0
+          ? `(ส่งมอบแล้ว ${completedPmCount} • อยู่ระหว่างดำเนินงาน ${activePmCount} โครงการ)`
+          : activePmCount > 0
+          ? `(อยู่ระหว่างดำเนินงานทั้ง ${activePmCount} โครงการ)`
+          : pmProjects.length > 0
+          ? `(ส่งมอบเสร็จสิ้น ${completedPmCount} โครงการ)`
+          : '';
+
+        const okrSummary = computeRealtimeMetrics(allValidBriefs, okrConfig, 10, 10);
+        const rMap: Record<string, any> = {};
+        (okrSummary.krs || []).forEach((k: any) => {
+          (k.rResults || []).forEach((r: any) => {
+            rMap[r.code] = r;
+          });
+        });
+
+        const targetR1 = rMap['R1']?.target || 1200;
+        const targetR2 = rMap['R2']?.target || 85;
+        const targetR3 = rMap['R3']?.target || 350;
+        const targetR4 = rMap['R4']?.target || 85;
+        const actualR5 = rMap['R5']?.actual || 0;
+        const targetR5 = rMap['R5']?.target || 6000000;
+        const actualR6 = rMap['R6']?.actual || 0;
+        const targetR6 = rMap['R6']?.target || 60000;
+        const targetR7 = rMap['R7']?.target || 3000000;
+        const targetR8 = rMap['R8']?.target || 1000000;
+        const targetR9 = rMap['R9']?.target || 85;
         const totalKR4Target = targetR7 + targetR8;
 
         const totalTasksCount = allValidBriefs.length;
         const activeTasksCount = activeBriefs.length;
+        const teamHeadcount = 12;
 
         const roundLabel = 'รอบ 16:30 น. (บ่าย 4 โมงครึ่ง • สรุปสิ้นสัปดาห์)';
         let lineMsg = `📊 [CC TEAM • รายงานสรุปผลการดำเนินงานประจำสัปดาห์]\n`;
@@ -1019,7 +1063,7 @@ ${targetUrl}
         if (completedThisWeek.length > 0) {
           lineMsg += `📌 **ไฮไลต์งานส่งมอบสำเร็จสัปดาห์นี้ (${completedThisWeek.length} งาน):**\n`;
           completedThisWeek.slice(0, 5).forEach((t: any, i: number) => {
-            const rawAssignee = (t.assignee_id && assigneeMap[t.assignee_id]) || t.assignees?.name || t.details?.assignee || '';
+            const rawAssignee = (t.assignee_id && assigneeMap[t.assignee_id]) || t.assignees?.name || t.details?.assignee || getAssigneeFallbackName(t.assignee_id) || '';
             const assigneeStr = rawAssignee ? ` • ${formatTag(rawAssignee)}` : '';
             lineMsg += `${i + 1}. **${t.project_name}** [Unit ${(t.unit || '').toUpperCase()}]${assigneeStr}\n`;
           });
@@ -1045,19 +1089,19 @@ ${targetUrl}
 
         lineMsg += `🛡️ **สรุปมูลค่าประหยัดงบประมาณองค์กร (Save Cost):**\n`;
         lineMsg += `• 🏆 **Save Cost รวมในระบบ (Portfolio Save Cost):** ฿${totalPortfolioSaveCost.toLocaleString()} บาท\n`;
-        lineMsg += `   └ งานหลัก: ฿${totalOwnerCost.toLocaleString()} บาท | งานช่วย: ฿${totalAssistantCost.toLocaleString()} บาท (เฉลี่ย ฿${Math.round(totalPortfolioSaveCost / 12).toLocaleString()} / คน)\n`;
+        lineMsg += `   └ งานหลัก: ฿${totalOwnerCost.toLocaleString()} บาท | งานช่วย: ฿${totalAssistantCost.toLocaleString()} บาท (เฉลี่ย ฿${Math.round(totalPortfolioSaveCost / teamHeadcount).toLocaleString()} / คน)\n`;
         lineMsg += `• 💰 **Save Cost งานที่ส่งมอบสำเร็จแล้ว:** ฿${deliveredSaveCost.toLocaleString()} บาท (สัปดาห์นี้ +฿${weeklyDeliveredSaveCost.toLocaleString()} บาท)\n`;
         lineMsg += `*(ประเมินเทียบเท่ามูลค่าตลาดการจ้างผลิตสื่อและคอนเทนต์ภายนอก)*\n\n`;
 
         lineMsg += `🤝 **งานช่วยเกื้อกูลและประสิทธิภาพทีม (Team Dynamics):**\n`;
         lineMsg += `• 👥 **งานช่วยเกื้อกูล (Cross-Skilling Assist):** ${tasksWithAssistants} งาน (${Math.round((tasksWithAssistants / (activeTasksCount || 1)) * 100)}% ของระบบ • มูลค่างานช่วย ฿${totalAssistantCost.toLocaleString()} บาท)\n`;
-        lineMsg += `• ⚡ **ความเร็วส่งมอบเฉลี่ย:** 2 วัน/งาน | ส่งมอบตรงเวลา 44%\n`;
-        lineMsg += `• 🛡️ **ดัชนีงานหลังบ้านและการมีส่วนร่วม (BOH):** 27 / 100 คะแนน\n\n`;
+        lineMsg += `• ⚡ **ความเร็วส่งมอบเฉลี่ย:** ${avgTurnaroundDays} วัน/งาน | ส่งมอบตรงเวลา ${teamOnTimeRate}%\n`;
+        lineMsg += `• 🛡️ **ดัชนีงานหลังบ้านและการมีส่วนร่วม (BOH):** ${avgBohScore} / 100 คะแนน\n\n`;
 
         lineMsg += `💼 **โครงการที่มีเงินเข้าของ CC (PM โครงการ):**\n`;
-        lineMsg += `• โครงการบริหารจัดการ: ${pmProjects.length} โครงการ (อยู่ระหว่างดำเนินงานทั้ง ${pmProjects.length} โครงการ)\n`;
+        lineMsg += `• โครงการบริหารจัดการ: ${pmProjects.length} โครงการ ${pmStatusText}\n`;
         lineMsg += `• รายรับรวม: ฿${totalPmRevenue.toLocaleString()} บาท | ต้นทุนรวม: ฿${totalPmCost.toLocaleString()} บาท\n`;
-        lineMsg += `• 📈 **กำไรโครงการรวม (PM Profit):** ฿${totalPmProfit.toLocaleString()} บาท (Margin 8% • รอรับรู้เมื่อส่งมอบเสร็จสิ้น)\n\n`;
+        lineMsg += `• 📈 **กำไรโครงการรวม (PM Profit):** ฿${totalPmProfit.toLocaleString()} บาท (Margin ${pmMarginPct}% • ${activePmCount > 0 ? 'รอรับรู้เมื่อส่งมอบเสร็จสิ้น' : 'รับรู้ตามโครงการที่ส่งมอบ'})\n\n`;
 
         lineMsg += `🎯 **รายละเอียดตัวชี้วัดความสำเร็จ OKR & R รายตัว (Key Results):**\n\n`;
 
@@ -1080,8 +1124,8 @@ ${targetUrl}
         lineMsg += `• **R4 (ร้อยละความพึงพอใจภายนอก):** ${r4Desc}\n\n`;
 
         lineMsg += `🔹 **KR3: มูลค่าการรับรู้ที่องค์กรได้รับ (น้ำหนัก 10%)**\n`;
-        lineMsg += `• **R5 (จำนวน Reach สะสม):** 0 / ${targetR5.toLocaleString()} Reach (0.0%)\n`;
-        lineMsg += `• **R6 (จำนวน Engagement สะสม):** 0 / ${targetR6.toLocaleString()} Engagements (0.0%)\n\n`;
+        lineMsg += `• **R5 (จำนวน Reach สะสม):** ${actualR5.toLocaleString()} / ${targetR5.toLocaleString()} Reach (${targetR5 > 0 ? ((actualR5 / targetR5) * 100).toFixed(1) : '0.0'}%)\n`;
+        lineMsg += `• **R6 (จำนวน Engagement สะสม):** ${actualR6.toLocaleString()} / ${targetR6.toLocaleString()} Engagements (${targetR6 > 0 ? ((actualR6 / targetR6) * 100).toFixed(1) : '0.0'}%)\n\n`;
 
         const realizedProfit = (okrSummary.totalProfitGov || 0) + (okrSummary.totalProfitPrivate || 0);
         const pipelineProfit = (okrSummary.pipelineProfitGov || 0) + (okrSummary.pipelineProfitPrivate || 0);
@@ -1117,8 +1161,8 @@ ${targetUrl}
           ? `คุณภาพผลงานได้รับการประเมินเฉลี่ย ${okrSummary.averageSatisfactionRate}% จาก ${evaluatedBriefs.length} งานที่ส่งแบบประเมินกลับมา`
           : `ยังไม่มีแบบประเมินความพึงพอใจส่งกลับมาในรอบนี้ (0%)`;
         lineMsg += `• **อัตราเร่งงาน (Velocity):** สัปดาห์นี้ส่งมอบงานสำเร็จแล้ว ${completedThisWeek.length} งาน ${insightSatStr}\n`;
-        lineMsg += `• **มูลค่าความคุ้มค่า (Value & Save Cost):** สร้างมูลค่า Save Cost รวมในระบบ ฿${totalPortfolioSaveCost.toLocaleString()} บาท โดยมีโครงการสร้างรายได้และกำไร (PM) มูลค่า ฿${totalPmProfit.toLocaleString()} บาท อยู่ระหว่างดำเนินงาน\n`;
-        lineMsg += `• **จุดโฟกัสสัปดาห์ถัดไป:** มีงานรอมอบหมาย (Unassigned) 1 งาน และงานคิวรอทำ (To-Do) 5 งาน ควรรีบกระจายงานเพื่อป้องกันงานสะสมและรักษาอัตราส่งตรงเวลา\n\n`;
+        lineMsg += `• **มูลค่าความคุ้มค่า (Value & Save Cost):** สร้างมูลค่า Save Cost รวมในระบบ ฿${totalPortfolioSaveCost.toLocaleString()} บาท (ส่งมอบแล้ว ฿${deliveredSaveCost.toLocaleString()} บาท) โดยมีโครงการสร้างรายได้และกำไร (PM) มูลค่ากำไรรวม ฿${totalPmProfit.toLocaleString()} บาท\n`;
+        lineMsg += `• **จุดโฟกัสสัปดาห์ถัดไป:** มีงานรอมอบหมาย (Unassigned) ${unassignedTasks.length} งาน และงานคิวรอทำ (To-Do) ${todoTasks.length} งาน${overdueTasks.length > 0 ? ` (รวมถึงงานเกินกำหนดส่ง ${overdueTasks.length} งาน)` : ''} ควรรีบกระจายงานเพื่อป้องกันงานสะสมและรักษาอัตราส่งตรงเวลา\n\n`;
 
         lineMsg += `🔗 ตรวจสอบรายละเอียดและ Executive Insights:\n${process.env.NEXT_PUBLIC_APP_URL || 'https://ccteam.vercel.app'}/dashboard?view=dashboards\n`;
         lineMsg += `\n💬 **ต้องการสอบถามข้อมูลหรือเจาะลึกสถิติงานเพิ่มเติม?**\n`;
@@ -1142,18 +1186,20 @@ ${targetUrl}
     // 4.1 Automated Monthly Performance Summary for CC TEAM (Pushed on Last Workday 09:00 AM)
     else if (action === 'monthly_performance_summary') {
       const supabase = getSupabase();
-      const now = new Date();
+      const bkkNow = getBangkokNow();
+      const todayStr = getBangkokDateStr(bkkNow);
       const thaiMonthNames = [
         "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
         "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
       ];
-      const monthNameThai = thaiMonthNames[now.getMonth()];
-      const yearThai = now.getFullYear() + 543;
-      const currentMonthIndex = now.getMonth();
-      const currentYear = now.getFullYear();
+      const monthNameThai = thaiMonthNames[bkkNow.getMonth()];
+      const yearThai = bkkNow.getFullYear() + 543;
+      const currentMonthIndex = bkkNow.getMonth();
+      const currentYear = bkkNow.getFullYear();
 
       let okrConfig: any = null;
       let rawBriefs: any[] = [];
+      const assigneesList: { id: string; name: string; unit?: string }[] = [];
 
       if (supabase) {
         try {
@@ -1169,12 +1215,29 @@ ${targetUrl}
           console.warn("Could not parse manual okr metrics:", e);
         }
 
+        try {
+          const { data: dbAssignees } = await supabase.from('assignees').select('id, name, unit');
+          if (Array.isArray(dbAssignees)) {
+            dbAssignees.forEach((a: any) => {
+              if (a?.id && a?.name) {
+                assigneesList.push({ id: a.id, name: a.name, unit: a.unit });
+              }
+            });
+          }
+        } catch (e) {}
+
         const { data: briefsData } = await supabase
           .from('briefs')
           .select('*')
           .neq('status', 'purged');
         rawBriefs = briefsData || [];
       }
+
+      CORE_OPERATIONAL_MEMBERS.forEach((cm) => {
+        if (!assigneesList.some((a) => a.id === cm.id || a.name.trim() === cm.name.trim())) {
+          assigneesList.push({ id: cm.id, name: cm.name, unit: cm.unit });
+        }
+      });
 
       // IRONCLAD DATA INTEGRITY: Exclude soft-deleted and test/stress/benchmark briefs
       const allValidBriefs = rawBriefs.filter((b: any) => {
@@ -1230,9 +1293,12 @@ ${targetUrl}
         else if (isTodo) todoTasks.push(b);
 
         const dStr = b.details?.publish_date || b.deadline || b.details?.usage_date;
-        if (!isCompleted && !isCancelled && dStr && new Date(dStr).getTime() < now.getTime()) {
+        const dDatePart = dStr ? String(dStr).slice(0, 10) : '';
+        if (!isCompleted && !isCancelled && dDatePart && dDatePart < todayStr) {
           overdueTasks.push(b);
         }
+
+        const dist = getTaskFinancialDistribution(b);
 
         if (!isCancelled) {
           const u = (b.unit || '').toLowerCase();
@@ -1242,7 +1308,6 @@ ${targetUrl}
           else if (u === 'internal') internalCount++;
           else internalCount++;
 
-          const dist = getTaskFinancialDistribution(b);
           totalPortfolioSaveCost += dist.totalSaveCost;
           if (dist.ownerShare) totalOwnerCost += dist.ownerShare.save_cost;
           dist.assistantShares.forEach((a: any) => {
@@ -1255,7 +1320,7 @@ ${targetUrl}
             const d = b.details || {};
             const rev = Number(d.revenue || 0);
             const cost = Number(d.cost || 0);
-            const profit = Number(d.profit) !== undefined && d.profit !== null ? Number(d.profit) : (rev - cost);
+            const profit = d.profit !== undefined && d.profit !== null ? Number(d.profit) : (rev - cost);
             totalPmRevenue += rev;
             totalPmCost += cost;
             if (profit > 0) totalPmProfit += profit;
@@ -1263,10 +1328,10 @@ ${targetUrl}
         }
 
         if (isCompleted) {
-          const sc = Number(b.details?.save_cost || b.details?.save_cost_value || b.details?.project_value || 0);
+          const sc = dist.totalSaveCost;
           if (!isNaN(sc) && sc > 0) deliveredSaveCost += sc;
 
-          const compDate = new Date(b.completed_at || b.created_at);
+          const compDate = new Date(new Date(b.completed_at || b.created_at).toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
           if (compDate.getMonth() === currentMonthIndex && compDate.getFullYear() === currentYear) {
             completedThisMonth.push(b);
             if (!isNaN(sc) && sc > 0) monthlyDeliveredSaveCost += sc;
@@ -1279,17 +1344,42 @@ ${targetUrl}
         }
       });
 
-      const okrSummary = computeRealtimeMetrics(allValidBriefs, okrConfig, 10, 10);
+      // Dynamic Team Dynamics (Turnaround Speed, On-Time Rate, and BOH Index)
+      const memberStats = aggregateMemberWorkloadAndFinancials(allValidBriefs, assigneesList);
+      const totalTurnaroundDays = memberStats.reduce((sum, m) => sum + (m.totalTurnaroundDays || 0), 0);
+      const totalCompletedWithTime = memberStats.reduce((sum, m) => sum + (m.completedTasksWithTime || 0), 0);
+      const avgTurnaroundDays = totalCompletedWithTime > 0 ? Number((totalTurnaroundDays / totalCompletedWithTime).toFixed(1)) : 0;
+      const totalOnTime = memberStats.reduce((sum, m) => sum + (m.onTimeCompletedCount || 0), 0);
+      const totalLate = memberStats.reduce((sum, m) => sum + (m.lateCompletedCount || 0), 0);
+      const totalRatedOnTime = totalOnTime + totalLate;
+      const teamOnTimeRate = totalRatedOnTime > 0 ? Math.round((totalOnTime / totalRatedOnTime) * 100) : 100;
+      const avgBohScore = memberStats.length > 0
+        ? Math.round(memberStats.reduce((sum, m) => sum + (m.citizenshipScore || 0), 0) / memberStats.length)
+        : 0;
 
-      const targetR1 = 1200;
-      const targetR2 = 85;
-      const targetR3 = 350;
-      const targetR4 = 85;
-      const targetR5 = 6000000;
-      const targetR6 = 60000;
-      const targetR7 = 3000000;
-      const targetR8 = 1000000;
-      const targetR9 = 85;
+      const completedPmCount = pmProjects.filter((p: any) => p.status === 'completed' || p.status === 'complete').length;
+      const activePmCount = pmProjects.length - completedPmCount;
+      const pmMarginPct = totalPmRevenue > 0 ? Math.round((totalPmProfit / totalPmRevenue) * 100) : 0;
+
+      const okrSummary = computeRealtimeMetrics(allValidBriefs, okrConfig, 10, 10);
+      const rMap: Record<string, any> = {};
+      (okrSummary.krs || []).forEach((k: any) => {
+        (k.rResults || []).forEach((r: any) => {
+          rMap[r.code] = r;
+        });
+      });
+
+      const targetR1 = rMap['R1']?.target || 1200;
+      const targetR2 = rMap['R2']?.target || 85;
+      const targetR3 = rMap['R3']?.target || 350;
+      const targetR4 = rMap['R4']?.target || 85;
+      const actualR5 = rMap['R5']?.actual || 0;
+      const targetR5 = rMap['R5']?.target || 6000000;
+      const actualR6 = rMap['R6']?.actual || 0;
+      const targetR6 = rMap['R6']?.target || 60000;
+      const targetR7 = rMap['R7']?.target || 3000000;
+      const targetR8 = rMap['R8']?.target || 1000000;
+      const targetR9 = rMap['R9']?.target || 85;
       const totalKR4Target = targetR7 + targetR8;
 
       const totalTasksCount = allValidBriefs.length;
@@ -1324,74 +1414,74 @@ ${targetUrl}
 
       lineMsg += `🤝 **งานช่วยเกื้อกูลและประสิทธิภาพทีม (Team Dynamics):**\n`;
       lineMsg += `• 👥 **งานช่วยเกื้อกูล (Cross-Skilling Assist):** ${tasksWithAssistants} งาน (${Math.round((tasksWithAssistants / (activeTasksCount || 1)) * 100)}% ของระบบ • มูลค่างานช่วย ฿${totalAssistantCost.toLocaleString()} บาท)\n`;
-      lineMsg += `• ⚡ **ความเร็วส่งมอบเฉลี่ย:** 2 วัน/งาน | ส่งมอบตรงเวลา 44%\n`;
-      lineMsg += `• 🛡️ **ดัชนีงานหลังบ้านและการมีส่วนร่วม (BOH):** 27 / 100 คะแนน\n\n`;
+      lineMsg += `• ⚡ **ความเร็วส่งมอบเฉลี่ย:** ${avgTurnaroundDays} วัน/งาน | ส่งมอบตรงเวลา ${teamOnTimeRate}%\n`;
+      lineMsg += `• 🛡️ **ดัชนีงานหลังบ้านและการมีส่วนร่วม (BOH):** ${avgBohScore} / 100 คะแนน\n\n`;
 
       lineMsg += `💼 **โครงการที่มีเงินเข้าของ CC (PM โครงการ):**\n`;
       lineMsg += `• โครงการบริหารจัดการ: ${pmProjects.length} โครงการ\n`;
       lineMsg += `• รายรับรวม: ฿${totalPmRevenue.toLocaleString()} บาท | ต้นทุนรวม: ฿${totalPmCost.toLocaleString()} บาท\n`;
-      lineMsg += `• 📈 **กำไรโครงการรวม (PM Profit):** ฿${totalPmProfit.toLocaleString()} บาท (Margin 8% • รอรับรู้เมื่อส่งมอบเสร็จสิ้น)\n\n`;
+      lineMsg += `• 📈 **กำไรโครงการรวม (PM Profit):** ฿${totalPmProfit.toLocaleString()} บาท (Margin ${pmMarginPct}% • ${activePmCount > 0 ? 'รอรับรู้เมื่อส่งมอบเสร็จสิ้น' : 'รับรู้ตามโครงการที่ส่งมอบ'})\n\n`;
 
       lineMsg += `🎯 **รายละเอียดตัวชี้วัดความสำเร็จ OKR & R รายตัว (Key Results):**\n\n`;
 
-        lineMsg += `🔹 **KR1: จำนวนผลงานภายในองค์กร (น้ำหนัก 60%)**\n`;
-        lineMsg += `• **R1 (ผลงานบริการภายใน):** เดือนนี้ ${completedThisMonth.filter((b: any) => !isR3Task(b)).length} งาน | สะสม ${okrSummary.totalInternalTasks} / ${targetR1.toLocaleString()} งาน (${((okrSummary.totalInternalTasks / targetR1) * 100).toFixed(1)}%)\n`;
-        const monthR2Pct = okrSummary.avgInternalSatisfaction || 0;
-        const monthR2Cnt = okrSummary.totalInternalEvaluated || 0;
-        const monthR2Desc = monthR2Cnt > 0
-          ? `**${monthR2Pct}%** (ประเมินแล้ว ${monthR2Cnt} งาน • เป้าหมาย ≥ ${targetR2}% • ${monthR2Pct >= targetR2 ? 'บรรลุตามเกณฑ์' : 'ต่ำกว่าเกณฑ์'})`
-          : `**0%** (ยังไม่มีการประเมินจริง • เป้าหมาย ≥ ${targetR2}%)`;
-        lineMsg += `• **R2 (ร้อยละความพึงพอใจภายใน):** ${monthR2Desc}\n\n`;
+      lineMsg += `🔹 **KR1: จำนวนผลงานภายในองค์กร (น้ำหนัก 60%)**\n`;
+      lineMsg += `• **R1 (ผลงานบริการภายใน):** เดือนนี้ ${completedThisMonth.filter((b: any) => !isR3Task(b)).length} งาน | สะสม ${okrSummary.totalInternalTasks} / ${targetR1.toLocaleString()} งาน (${((okrSummary.totalInternalTasks / targetR1) * 100).toFixed(1)}%)\n`;
+      const monthR2Pct = okrSummary.avgInternalSatisfaction || 0;
+      const monthR2Cnt = okrSummary.totalInternalEvaluated || 0;
+      const monthR2Desc = monthR2Cnt > 0
+        ? `**${monthR2Pct}%** (ประเมินแล้ว ${monthR2Cnt} งาน • เป้าหมาย ≥ ${targetR2}% • ${monthR2Pct >= targetR2 ? 'บรรลุตามเกณฑ์' : 'ต่ำกว่าเกณฑ์'})`
+        : `**0%** (ยังไม่มีการประเมินจริง • เป้าหมาย ≥ ${targetR2}%)`;
+      lineMsg += `• **R2 (ร้อยละความพึงพอใจภายใน):** ${monthR2Desc}\n\n`;
 
-        lineMsg += `🔹 **KR2: จำนวนผลงานภายนอก มช. และ RSP (น้ำหนัก 10%)**\n`;
-        lineMsg += `• **R3 (ผลงานภายนอก มช./RSP):** เดือนนี้ ${completedThisMonth.filter((b: any) => isR3Task(b)).length} งาน | สะสม ${okrSummary.totalExternalTasks} / ${targetR3.toLocaleString()} งาน (${targetR3 > 0 ? ((okrSummary.totalExternalTasks / targetR3) * 100).toFixed(1) : '0.0'}%)\n`;
-        const monthR4Pct = okrSummary.avgExternalSatisfaction || 0;
-        const monthR4Cnt = okrSummary.totalExternalEvaluated || 0;
-        const monthR4Desc = monthR4Cnt > 0
-          ? `**${monthR4Pct}%** (ประเมินแล้ว ${monthR4Cnt} งาน • เป้าหมาย ≥ ${targetR4}% • ${monthR4Pct >= targetR4 ? 'บรรลุตามเกณฑ์' : 'ต่ำกว่าเกณฑ์'})`
-          : `0% (ยังไม่มีงานประเมินในรอบนี้ • เป้าหมาย ≥ ${targetR4}%)`;
-        lineMsg += `• **R4 (ร้อยละความพึงพอใจภายนอก):** ${monthR4Desc}\n\n`;
+      lineMsg += `🔹 **KR2: จำนวนผลงานภายนอก มช. และ RSP (น้ำหนัก 10%)**\n`;
+      lineMsg += `• **R3 (ผลงานภายนอก มช./RSP):** เดือนนี้ ${completedThisMonth.filter((b: any) => isR3Task(b)).length} งาน | สะสม ${okrSummary.totalExternalTasks} / ${targetR3.toLocaleString()} งาน (${targetR3 > 0 ? ((okrSummary.totalExternalTasks / targetR3) * 100).toFixed(1) : '0.0'}%)\n`;
+      const monthR4Pct = okrSummary.avgExternalSatisfaction || 0;
+      const monthR4Cnt = okrSummary.totalExternalEvaluated || 0;
+      const monthR4Desc = monthR4Cnt > 0
+        ? `**${monthR4Pct}%** (ประเมินแล้ว ${monthR4Cnt} งาน • เป้าหมาย ≥ ${targetR4}% • ${monthR4Pct >= targetR4 ? 'บรรลุตามเกณฑ์' : 'ต่ำกว่าเกณฑ์'})`
+        : `0% (ยังไม่มีงานประเมินในรอบนี้ • เป้าหมาย ≥ ${targetR4}%)`;
+      lineMsg += `• **R4 (ร้อยละความพึงพอใจภายนอก):** ${monthR4Desc}\n\n`;
 
-        lineMsg += `🔹 **KR3: มูลค่าการรับรู้ที่องค์กรได้รับ (น้ำหนัก 10%)**\n`;
-        lineMsg += `• **R5 (จำนวน Reach สะสม):** 0 / ${targetR5.toLocaleString()} Reach (0.0%)\n`;
-        lineMsg += `• **R6 (จำนวน Engagement สะสม):** 0 / ${targetR6.toLocaleString()} Engagements (0.0%)\n\n`;
+      lineMsg += `🔹 **KR3: มูลค่าการรับรู้ที่องค์กรได้รับ (น้ำหนัก 10%)**\n`;
+      lineMsg += `• **R5 (จำนวน Reach สะสม):** ${actualR5.toLocaleString()} / ${targetR5.toLocaleString()} Reach (${targetR5 > 0 ? ((actualR5 / targetR5) * 100).toFixed(1) : '0.0'}%)\n`;
+      lineMsg += `• **R6 (จำนวน Engagement สะสม):** ${actualR6.toLocaleString()} / ${targetR6.toLocaleString()} Engagements (${targetR6 > 0 ? ((actualR6 / targetR6) * 100).toFixed(1) : '0.0'}%)\n\n`;
 
-        const monthRealizedProfit = (okrSummary.totalProfitGov || 0) + (okrSummary.totalProfitPrivate || 0);
-        const monthPipelineProfit = (okrSummary.pipelineProfitGov || 0) + (okrSummary.pipelineProfitPrivate || 0);
-        lineMsg += `🔹 **KR4: กำไรที่เกิดจากการให้บริการของทีม (เป้าหมายรวม ฿${totalKR4Target.toLocaleString()} บาท • น้ำหนัก 20%)**\n`;
-        lineMsg += `• **ผลงานรับรู้จริงสะสม:** ฿${monthRealizedProfit.toLocaleString()} / ฿${totalKR4Target.toLocaleString()} บาท${monthPipelineProfit > 0 ? ` (กำลังดำเนินงาน Pipeline ฿${monthPipelineProfit.toLocaleString()} บาท จาก ${pmProjects.length} โครงการ PM)` : ''}\n`;
-        lineMsg += `• **R7 (กำไรบริการภาครัฐ):** ฿${(okrSummary.totalProfitGov || 0).toLocaleString()} / ฿${targetR7.toLocaleString()} บาท${(okrSummary.pipelineProfitGov || 0) > 0 ? ` (อยู่ระหว่างดำเนินงาน ฿${(okrSummary.pipelineProfitGov || 0).toLocaleString()} บาท)` : ''}\n`;
-        lineMsg += `• **R8 (กำไรบริการภาคเอกชน):** ฿${(okrSummary.totalProfitPrivate || 0).toLocaleString()} / ฿${targetR8.toLocaleString()} บาท${(okrSummary.pipelineProfitPrivate || 0) > 0 ? ` (อยู่ระหว่างดำเนินงาน ฿${(okrSummary.pipelineProfitPrivate || 0).toLocaleString()} บาท)` : ''}\n`;
-        const monthR9Pct = okrSummary.avgServiceSatisfaction || 0;
-        const monthR9Cnt = okrSummary.totalServiceEvaluated || 0;
-        const monthR9Desc = monthR9Cnt > 0
-          ? `**${monthR9Pct}%** (ประเมินแล้ว ${monthR9Cnt} งาน • เป้าหมาย ≥ ${targetR9}% • ${monthR9Pct >= targetR9 ? 'บรรลุตามเกณฑ์' : 'ต่ำกว่าเกณฑ์'})`
-          : `0% (ยังไม่มีงานประเมินในรอบนี้ • เป้าหมาย ≥ ${targetR9}%)`;
-        lineMsg += `• **R9 (ร้อยละความพึงพอใจงานสร้างรายได้):** ${monthR9Desc}\n\n`;
+      const monthRealizedProfit = (okrSummary.totalProfitGov || 0) + (okrSummary.totalProfitPrivate || 0);
+      const monthPipelineProfit = (okrSummary.pipelineProfitGov || 0) + (okrSummary.pipelineProfitPrivate || 0);
+      lineMsg += `🔹 **KR4: กำไรที่เกิดจากการให้บริการของทีม (เป้าหมายรวม ฿${totalKR4Target.toLocaleString()} บาท • น้ำหนัก 20%)**\n`;
+      lineMsg += `• **ผลงานรับรู้จริงสะสม:** ฿${monthRealizedProfit.toLocaleString()} / ฿${totalKR4Target.toLocaleString()} บาท${monthPipelineProfit > 0 ? ` (กำลังดำเนินงาน Pipeline ฿${monthPipelineProfit.toLocaleString()} บาท จาก ${pmProjects.length} โครงการ PM)` : ''}\n`;
+      lineMsg += `• **R7 (กำไรบริการภาครัฐ):** ฿${(okrSummary.totalProfitGov || 0).toLocaleString()} / ฿${targetR7.toLocaleString()} บาท${(okrSummary.pipelineProfitGov || 0) > 0 ? ` (อยู่ระหว่างดำเนินงาน ฿${(okrSummary.pipelineProfitGov || 0).toLocaleString()} บาท)` : ''}\n`;
+      lineMsg += `• **R8 (กำไรบริการภาคเอกชน):** ฿${(okrSummary.totalProfitPrivate || 0).toLocaleString()} / ฿${targetR8.toLocaleString()} บาท${(okrSummary.pipelineProfitPrivate || 0) > 0 ? ` (อยู่ระหว่างดำเนินงาน ฿${(okrSummary.pipelineProfitPrivate || 0).toLocaleString()} บาท)` : ''}\n`;
+      const monthR9Pct = okrSummary.avgServiceSatisfaction || 0;
+      const monthR9Cnt = okrSummary.totalServiceEvaluated || 0;
+      const monthR9Desc = monthR9Cnt > 0
+        ? `**${monthR9Pct}%** (ประเมินแล้ว ${monthR9Cnt} งาน • เป้าหมาย ≥ ${targetR9}% • ${monthR9Pct >= targetR9 ? 'บรรลุตามเกณฑ์' : 'ต่ำกว่าเกณฑ์'})`
+        : `0% (ยังไม่มีงานประเมินในรอบนี้ • เป้าหมาย ≥ ${targetR9}%)`;
+      lineMsg += `• **R9 (ร้อยละความพึงพอใจงานสร้างรายได้):** ${monthR9Desc}\n\n`;
 
-        if (evaluatedBriefs.length > 0) {
-          lineMsg += `🌟 **ไฮไลต์ผลประเมินความพึงพอใจ (${evaluatedBriefs.length} งานที่ประเมินแล้ว):**\n`;
-          evaluatedBriefs.forEach((eb: any, idx: number) => {
-            const scores = eb.details?.satisfaction_scores || {};
-            const evalBy = scores.evaluatedBy || 'ผู้รับบริการ';
-            const evalScore = scores.averagePercent || scores.scorePercent || eb.details?.satisfaction_rate || 100;
-            const comment = scores.comment || scores.suggestions || 'พึงพอใจระดับดีเยี่ยม';
-            lineMsg += `${idx + 1}. **${eb.project_name}** [Unit ${(eb.unit || '').toUpperCase()}]\n`;
-            lineMsg += `   └ คะแนน: **${evalScore}%** (ประเมินโดย: ${evalBy})\n`;
-            if (comment && comment !== 'ไม่มีข้อเสนอแนะเพิ่มเติม') {
-              lineMsg += `   └ ความคิดเห็น: *"${comment}"*\n`;
-            }
-          });
-          lineMsg += `\n`;
-        }
+      if (evaluatedBriefs.length > 0) {
+        lineMsg += `🌟 **ไฮไลต์ผลประเมินความพึงพอใจ (${evaluatedBriefs.length} งานที่ประเมินแล้ว):**\n`;
+        evaluatedBriefs.forEach((eb: any, idx: number) => {
+          const scores = eb.details?.satisfaction_scores || {};
+          const evalBy = scores.evaluatedBy || 'ผู้รับบริการ';
+          const evalScore = scores.averagePercent || scores.scorePercent || eb.details?.satisfaction_rate || 100;
+          const comment = scores.comment || scores.suggestions || 'พึงพอใจระดับดีเยี่ยม';
+          lineMsg += `${idx + 1}. **${eb.project_name}** [Unit ${(eb.unit || '').toUpperCase()}]\n`;
+          lineMsg += `   └ คะแนน: **${evalScore}%** (ประเมินโดย: ${evalBy})\n`;
+          if (comment && comment !== 'ไม่มีข้อเสนอแนะเพิ่มเติม') {
+            lineMsg += `   └ ความคิดเห็น: *"${comment}"*\n`;
+          }
+        });
+        lineMsg += `\n`;
+      }
 
-        lineMsg += `🧭 **การวิเคราะห์สถานการณ์ทีมเชิงลึก (Strategic Insights):**\n`;
-        lineMsg += `• **สถานการณ์ทีม:** กำลังคนในทีม ${teamHeadcount} ท่าน มีงานส่งมอบสะสม ${completedAll.length} งาน สร้างมูลค่า Save Cost รวม ฿${totalPortfolioSaveCost.toLocaleString()} บาท\n`;
-        const satHighlight = okrSummary.totalEvaluatedBriefs > 0
-          ? `ความพึงพอใจเฉลี่ย ${okrSummary.averageSatisfactionRate}% (${evaluatedBriefs.length} งานประเมิน)`
-          : `ยังไม่มีผลประเมินความพึงพอใจส่งกลับมา (0%)`;
-        lineMsg += `• **จุดแข็ง:** ${satHighlight} มีวัฒนธรรมงานช่วยเกื้อกูล (Cross-Skilling) ถึง ${tasksWithAssistants} งาน (${Math.round((tasksWithAssistants / (activeTasksCount || 1)) * 100)}%)\n`;
-      lineMsg += `• **จุดโฟกัสและแนวทางพัฒนา:** มีงานรอจัดสรรและรอทำรวม ${unassignedTasks.length + todoTasks.length} งาน และงานเกินกำหนด ${overdueTasks.length} งาน ควรกระจายงานตาม Lead Time และติดตามงานอย่างใกล้ชิด\n\n`;
+      lineMsg += `🧭 **การวิเคราะห์สถานการณ์ทีมเชิงลึก (Strategic Insights):**\n`;
+      lineMsg += `• **สถานการณ์ทีม:** กำลังคนในทีม ${teamHeadcount} ท่าน มีงานส่งมอบสะสม ${completedAll.length} งาน สร้างมูลค่า Save Cost รวม ฿${totalPortfolioSaveCost.toLocaleString()} บาท (ส่งมอบแล้ว ฿${deliveredSaveCost.toLocaleString()} บาท)\n`;
+      const satHighlight = okrSummary.totalEvaluatedBriefs > 0
+        ? `ความพึงพอใจเฉลี่ย ${okrSummary.averageSatisfactionRate}% (${evaluatedBriefs.length} งานประเมิน)`
+        : `ยังไม่มีผลประเมินความพึงพอใจส่งกลับมา (0%)`;
+      lineMsg += `• **จุดแข็ง:** ${satHighlight} มีวัฒนธรรมงานช่วยเกื้อกูล (Cross-Skilling) ถึง ${tasksWithAssistants} งาน (${Math.round((tasksWithAssistants / (activeTasksCount || 1)) * 100)}%)\n`;
+      lineMsg += `• **จุดโฟกัสและแนวทางพัฒนา:** มีงานรอจัดสรรและรอทำรวม ${unassignedTasks.length + todoTasks.length} งาน (Unassigned ${unassignedTasks.length} • To-Do ${todoTasks.length}) และงานเกินกำหนด ${overdueTasks.length} งาน ควรกระจายงานตาม Lead Time และติดตามงานอย่างใกล้ชิด\n\n`;
 
       lineMsg += `🔗 ตรวจสอบรายงานเชิงลึกและ OKRs/KPIs ทีม:\n${process.env.NEXT_PUBLIC_APP_URL || 'https://ccteam.vercel.app'}/dashboard?view=dashboards\n`;
       lineMsg += `\n💬 **ต้องการสอบถามข้อมูลหรือเจาะลึกสถิติงานเพิ่มเติม?**\n`;

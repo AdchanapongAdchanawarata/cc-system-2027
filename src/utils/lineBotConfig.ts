@@ -1,5 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 
+// Default canonical group IDs for CC TEAM (fallback if env/db not yet loaded)
+const DEFAULT_NOTY_GROUP_ID = "C072d3db3b3859ce8fff41a207a1786f9";
+const DEFAULT_EXEC_GROUP_ID = "Ca19a480f4c3e3f53c10ac751fad9319f";
+
 // In-memory cache for group IDs (fallback if env/db)
 let cachedNotyGroupId = process.env.LINE_NOTY_GROUP_ID || "";
 let cachedExecGroupId = process.env.LINE_EXECUTIVE_GROUP_ID || process.env.LINE_GROUP_ID || "";
@@ -13,10 +17,9 @@ function getSupabase() {
 }
 
 /**
- * Get Group IDs
+ * Get Group IDs (Reads from env -> memory -> Supabase okr_settings -> canonical defaults)
  */
 export async function getLineGroupIds(): Promise<{ notyGroupId: string; execGroupId: string }> {
-  // If already in memory or env, return
   if (cachedNotyGroupId && cachedExecGroupId) {
     return { notyGroupId: cachedNotyGroupId, execGroupId: cachedExecGroupId };
   }
@@ -25,39 +28,68 @@ export async function getLineGroupIds(): Promise<{ notyGroupId: string; execGrou
   if (supabase) {
     try {
       const { data } = await supabase
-        .from("system_settings")
-        .select("key, value")
-        .in("key", ["line_noty_group_id", "line_exec_group_id"]);
+        .from("okr_settings")
+        .select("target_value")
+        .eq("description", "CONFIG_LINE_GROUPS_JSON")
+        .maybeSingle();
 
-      if (data && data.length > 0) {
-        data.forEach((row: any) => {
-          if (row.key === "line_noty_group_id" && row.value) cachedNotyGroupId = row.value;
-          if (row.key === "line_exec_group_id" && row.value) cachedExecGroupId = row.value;
-        });
+      if (data?.target_value) {
+        const parsed = JSON.parse(data.target_value);
+        if (parsed?.notyGroupId && !cachedNotyGroupId) cachedNotyGroupId = parsed.notyGroupId;
+        if (parsed?.execGroupId && !cachedExecGroupId) cachedExecGroupId = parsed.execGroupId;
       }
     } catch {
-      // Table might not exist, ignore and use env/cached
+      // Ignore and use env/cached/default
     }
   }
 
   return {
-    notyGroupId: cachedNotyGroupId || process.env.LINE_NOTY_GROUP_ID || "",
-    execGroupId: cachedExecGroupId || process.env.LINE_EXECUTIVE_GROUP_ID || process.env.LINE_GROUP_ID || "",
+    notyGroupId: cachedNotyGroupId || process.env.LINE_NOTY_GROUP_ID || DEFAULT_NOTY_GROUP_ID,
+    execGroupId: cachedExecGroupId || process.env.LINE_EXECUTIVE_GROUP_ID || process.env.LINE_GROUP_ID || DEFAULT_EXEC_GROUP_ID,
   };
 }
 
 /**
- * Save Group ID for a specific group role
+ * Save Group ID for a specific group role into Supabase okr_settings
  */
 export async function saveLineGroupId(role: "noty" | "exec", groupId: string): Promise<boolean> {
+  if (!groupId) return false;
   if (role === "noty") cachedNotyGroupId = groupId;
   if (role === "exec") cachedExecGroupId = groupId;
 
   const supabase = getSupabase();
   if (supabase) {
     try {
-      const key = role === "noty" ? "line_noty_group_id" : "line_exec_group_id";
-      await supabase.from("system_settings").upsert({ key, value: groupId, updated_at: new Date().toISOString() });
+      const { data: existing } = await supabase
+        .from("okr_settings")
+        .select("id, target_value")
+        .eq("description", "CONFIG_LINE_GROUPS_JSON")
+        .maybeSingle();
+
+      let currentObj: any = {
+        notyGroupId: cachedNotyGroupId || process.env.LINE_NOTY_GROUP_ID || DEFAULT_NOTY_GROUP_ID,
+        execGroupId: cachedExecGroupId || process.env.LINE_EXECUTIVE_GROUP_ID || DEFAULT_EXEC_GROUP_ID,
+      };
+      if (existing?.target_value) {
+        try {
+          currentObj = { ...currentObj, ...JSON.parse(existing.target_value) };
+        } catch {}
+      }
+      if (role === "noty") currentObj.notyGroupId = groupId;
+      if (role === "exec") currentObj.execGroupId = groupId;
+      currentObj.updatedAt = new Date().toISOString();
+
+      const payload = JSON.stringify(currentObj);
+      if (existing?.id) {
+        await supabase.from("okr_settings").update({ target_value: payload }).eq("id", existing.id);
+      } else {
+        await supabase.from("okr_settings").insert({
+          type: "KR",
+          description: "CONFIG_LINE_GROUPS_JSON",
+          target_value: payload,
+          is_active: true,
+        });
+      }
     } catch (e) {
       console.warn("Could not persist group id to database:", e);
     }
@@ -124,7 +156,7 @@ export async function getLineQuotaStatus(): Promise<{
 /**
  * Intelligent Morning Brief Pacing / Balancing Strategy
  * Dynamically balances available Morning Brief dispatches across remaining workweeks.
- * If quota is tight, it automatically adapts from 4 days/week (Mon-Thu) down to 3 days (Mon, Wed, Thu) or 2 days (Mon, Wed)
+ * If quota is tight, it automatically adapts from 4 days/week (Mon-Thu) down to 3 days (Mon, Tue, Thu) or 2 days (Mon, Wed)
  * so that notifications are evenly spaced and NEVER run out prematurely.
  */
 export async function shouldSendMorningBriefToday(targetDate: Date = new Date()): Promise<{
@@ -133,7 +165,9 @@ export async function shouldSendMorningBriefToday(targetDate: Date = new Date())
   allowedDays: number[]; // e.g. [1, 2, 3, 4] for Mon-Thu, [1, 3] for Mon & Wed
   quotaInfo: any;
 }> {
-  const day = targetDate.getDay(); // 0=Sun, 1=Mon, ..., 4=Thu, 5=Fri, 6=Sat
+  // Always evaluate date/day in Asia/Bangkok timezone
+  const bkkDate = new Date(targetDate.toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+  const day = bkkDate.getDay(); // 0=Sun, 1=Mon, ..., 4=Thu, 5=Fri, 6=Sat
   if (day < 1 || day > 4) {
     return {
       allowed: false,
@@ -147,10 +181,10 @@ export async function shouldSendMorningBriefToday(targetDate: Date = new Date())
   const notyCost = qStatus.notyMembers || 12;
   const execCost = qStatus.execMembers || 17;
 
-  // Calculate remaining workdays and Fridays in the month
-  const year = targetDate.getFullYear();
-  const month = targetDate.getMonth();
-  const curDate = targetDate.getDate();
+  // Calculate remaining workdays and Fridays in the month (in Bangkok time)
+  const year = bkkDate.getFullYear();
+  const month = bkkDate.getMonth();
+  const curDate = bkkDate.getDate();
   const lastDate = new Date(year, month + 1, 0).getDate();
 
   let remainingFridays = 0;
@@ -163,8 +197,9 @@ export async function shouldSendMorningBriefToday(targetDate: Date = new Date())
   }
 
   // Mandatory Executive Reports quota reservation:
-  // (Remaining Fridays * execCost) + 1 Monthly Report + safety margin (at least 15 messages)
-  const reservedForExecutive = (remainingFridays * execCost) + execCost + 15;
+  // Note: On the last Friday of the month, Monthly Report replaces Weekly Report, so total Executive Reports = Math.max(1, remainingFridays)
+  // Plus safety guard of 20 messages per Ironclad Rule #7
+  const reservedForExecutive = (Math.max(1, remainingFridays) * execCost) + 20;
   const quotaForMorningBrief = Math.max(0, qStatus.remaining - reservedForExecutive);
 
   // How many Morning Brief pushes can we safely afford?

@@ -206,45 +206,42 @@ export function getAllLearnedFacts(): string[] {
 // BOT SENT MESSAGE ID PERSISTENCE (Handles Multi-Instance Serverless)
 // -------------------------------------------------------------
 
-export function recordBotActivity(groupId: string, text: string) {
+export async function recordBotActivity(groupId: string, text: string): Promise<void> {
   if (!groupId) return;
   lastBotActivityByGroup.set(groupId, { timestamp: Date.now(), text });
 
-  // Sync to Supabase in background
   const supabase = getSupabase();
   if (supabase) {
-    (async () => {
-      try {
-        const { data: existing } = await supabase
-          .from("okr_settings")
-          .select("id, target_value")
-          .eq("description", "CONFIG_LINE_BOT_MESSAGES")
-          .maybeSingle();
+    try {
+      const { data: existing } = await supabase
+        .from("okr_settings")
+        .select("id, target_value")
+        .eq("description", "CONFIG_LINE_BOT_MESSAGES")
+        .maybeSingle();
 
-        let currentObj: any = { ids: [], lastActivity: {} };
-        if (existing?.target_value) {
-          try {
-            currentObj = JSON.parse(existing.target_value);
-          } catch {}
-        }
-        if (!currentObj.lastActivity) currentObj.lastActivity = {};
-        currentObj.lastActivity[groupId] = { timestamp: Date.now(), text: (text || "").slice(0, 200) };
-
-        const payload = JSON.stringify(currentObj);
-        if (existing?.id) {
-          await supabase.from("okr_settings").update({ target_value: payload }).eq("id", existing.id);
-        } else {
-          await supabase.from("okr_settings").insert({
-            type: "KR",
-            description: "CONFIG_LINE_BOT_MESSAGES",
-            target_value: payload,
-            is_active: true,
-          });
-        }
-      } catch (err) {
-        console.warn("[BOT ACTIVITY] Sync error:", err);
+      let currentObj: any = { ids: [], lastActivity: {} };
+      if (existing?.target_value) {
+        try {
+          currentObj = JSON.parse(existing.target_value);
+        } catch {}
       }
-    })();
+      if (!currentObj.lastActivity) currentObj.lastActivity = {};
+      currentObj.lastActivity[groupId] = { timestamp: Date.now(), text: (text || "").slice(0, 200) };
+
+      const payload = JSON.stringify(currentObj);
+      if (existing?.id) {
+        await supabase.from("okr_settings").update({ target_value: payload }).eq("id", existing.id);
+      } else {
+        await supabase.from("okr_settings").insert({
+          type: "KR",
+          description: "CONFIG_LINE_BOT_MESSAGES",
+          target_value: payload,
+          is_active: true,
+        });
+      }
+    } catch (err) {
+      console.warn("[BOT ACTIVITY] Sync error:", err);
+    }
   }
 }
 
@@ -276,58 +273,56 @@ export async function getLastBotActivity(groupId: string): Promise<{ timestamp: 
   return null;
 }
 
-export function recordBotMessageId(id: string, groupId?: string, text?: string) {
+export async function recordBotMessageId(id: string, groupId?: string, text?: string): Promise<void> {
   if (!id) return;
   botSentMessageIds.add(id);
 
   if (groupId && text) {
-    recordBotActivity(groupId, text);
+    lastBotActivityByGroup.set(groupId, { timestamp: Date.now(), text });
   }
 
   // Persist to Supabase
   const supabase = getSupabase();
   if (supabase) {
-    (async () => {
-      try {
-        const { data: existing } = await supabase
-          .from("okr_settings")
-          .select("id, target_value")
-          .eq("description", "CONFIG_LINE_BOT_MESSAGES")
-          .maybeSingle();
+    try {
+      const { data: existing } = await supabase
+        .from("okr_settings")
+        .select("id, target_value")
+        .eq("description", "CONFIG_LINE_BOT_MESSAGES")
+        .maybeSingle();
 
-        let currentObj: any = { ids: [], lastActivity: {} };
-        if (existing?.target_value) {
-          try {
-            currentObj = JSON.parse(existing.target_value);
-          } catch {}
-        }
-        if (!Array.isArray(currentObj.ids)) currentObj.ids = [];
-        if (!currentObj.ids.includes(id)) {
-          currentObj.ids.push(id);
-          if (currentObj.ids.length > 500) {
-            currentObj.ids = currentObj.ids.slice(-500);
-          }
-        }
-        if (groupId && text) {
-          if (!currentObj.lastActivity) currentObj.lastActivity = {};
-          currentObj.lastActivity[groupId] = { timestamp: Date.now(), text: text.slice(0, 200) };
-        }
-
-        const payload = JSON.stringify(currentObj);
-        if (existing?.id) {
-          await supabase.from("okr_settings").update({ target_value: payload }).eq("id", existing.id);
-        } else {
-          await supabase.from("okr_settings").insert({
-            type: "KR",
-            description: "CONFIG_LINE_BOT_MESSAGES",
-            target_value: payload,
-            is_active: true,
-          });
-        }
-      } catch (err) {
-        console.warn("[BOT MSG ID] Sync error:", err);
+      let currentObj: any = { ids: [], lastActivity: {} };
+      if (existing?.target_value) {
+        try {
+          currentObj = JSON.parse(existing.target_value);
+        } catch {}
       }
-    })();
+      if (!Array.isArray(currentObj.ids)) currentObj.ids = [];
+      if (!currentObj.ids.includes(id)) {
+        currentObj.ids.push(id);
+        if (currentObj.ids.length > 500) {
+          currentObj.ids = currentObj.ids.slice(-500);
+        }
+      }
+      if (groupId && text) {
+        if (!currentObj.lastActivity) currentObj.lastActivity = {};
+        currentObj.lastActivity[groupId] = { timestamp: Date.now(), text: text.slice(0, 200) };
+      }
+
+      const payload = JSON.stringify(currentObj);
+      if (existing?.id) {
+        await supabase.from("okr_settings").update({ target_value: payload }).eq("id", existing.id);
+      } else {
+        await supabase.from("okr_settings").insert({
+          type: "KR",
+          description: "CONFIG_LINE_BOT_MESSAGES",
+          target_value: payload,
+          is_active: true,
+        });
+      }
+    } catch (err) {
+      console.warn("[BOT MSG ID] Sync error:", err);
+    }
   }
 }
 

@@ -203,6 +203,59 @@ export default function DashboardPage() {
     }
   }, []);
 
+  // Scheduled LINE Notification Heartbeat Backup (Guarantees 09:00 Morning Brief & Friday 16:30 Weekly Report fire on time)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const checkScheduledCron = async () => {
+      try {
+        const bkk = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+        const day = bkk.getDay(); // 1=Mon ... 5=Fri
+        if (day < 1 || day > 5) return;
+
+        const hours = bkk.getHours();
+        const minutes = bkk.getMinutes();
+        const yyyy = bkk.getFullYear();
+        const mm = String(bkk.getMonth() + 1).padStart(2, "0");
+        const dd = String(bkk.getDate()).padStart(2, "0");
+        const dateStr = `${yyyy}-${mm}-${dd}`;
+
+        const isMorningWindow = hours >= 9 && hours < 13;
+        const isFridayEveningWindow = day === 5 && ((hours === 16 && minutes >= 30) || (hours >= 17 && hours < 23));
+
+        if (!isMorningWindow && !isFridayEveningWindow) return;
+
+        const slotKey = isFridayEveningWindow
+          ? `cc_cron_slot_${dateStr}_friday_exec`
+          : `cc_cron_slot_${dateStr}_morning`;
+
+        if (localStorage.getItem(slotKey) === "done") return;
+
+        const res = await fetch("/api/cron", { method: "GET", cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        const status = data?.todayStatus || {};
+
+        if (isFridayEveningWindow && status.weekly_executive_report) {
+          localStorage.setItem(slotKey, "done");
+        } else if (isMorningWindow && (status.morning_brief || status.monthly_performance_summary)) {
+          localStorage.setItem(slotKey, "done");
+        }
+      } catch {
+        // Silent background heartbeat
+      }
+    };
+
+    const initialJitter = 3000 + Math.floor(Math.random() * 8000);
+    const timeoutId = setTimeout(checkScheduledCron, initialJitter);
+    const intervalId = setInterval(checkScheduledCron, 60000);
+
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(intervalId);
+    };
+  }, []);
+
   const handleSelectView = (view: "assignments" | "dashboards" | "data-reports" | null) => {
     setActiveView(view);
     setActiveSubReport(null);

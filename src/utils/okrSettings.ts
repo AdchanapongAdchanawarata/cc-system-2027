@@ -259,7 +259,7 @@ export const DEFAULT_KRS: KRMetric[] = [
     code: "KR4",
     name: "กำไรที่เกิดจากการให้บริการของทีม",
     weightPercent: 20,
-    baseTarget: 1500000,
+    baseTarget: 4000000,
     unit: "บาท",
     isCurrency: true,
     rMetrics: [
@@ -267,9 +267,9 @@ export const DEFAULT_KRS: KRMetric[] = [
         code: "R7",
         krCode: "KR4",
         name: "กำไรบริการภาครัฐ",
-        weightDescription: "เป้าหมาย 1,000,000 บาท",
+        weightDescription: "เป้าหมาย 3,000,000 บาท",
         weightPercent: 70,
-        targetValue: 1000000,
+        targetValue: 3000000,
         unit: "บาท",
         isCurrency: true
       },
@@ -277,9 +277,9 @@ export const DEFAULT_KRS: KRMetric[] = [
         code: "R8",
         krCode: "KR4",
         name: "กำไรบริการภาคเอกชน",
-        weightDescription: "เป้าหมาย 500,000 บาท",
+        weightDescription: "เป้าหมาย 1,000,000 บาท",
         weightPercent: 30,
-        targetValue: 500000,
+        targetValue: 1000000,
         unit: "บาท",
         isCurrency: true
       },
@@ -335,6 +335,107 @@ export const DEFAULT_TIPS: TIPMetric[] = [
     isPercentage: true
   }
 ];
+
+export const DEFAULT_MEMBER_RESPONSIBILITIES: MemberMetricResponsibility[] = [
+  {
+    memberId: "18c2cc99-e677-43fd-bbaf-fcb83e23210e",
+    memberName: "จ๊อบ AA",
+    rResponsibilities: { R1: 0, R2: 100, R3: 0, R4: 100, R5: 0, R6: 0, R7: 0, R8: 0, R9: 100 },
+    tipResponsibilities: { TIP1: 0, TIP2: 0, TIP9: 0, TIP10: 100 }
+  },
+  {
+    memberId: "daca31a4-5efd-475e-80ee-b9f38dd381cb",
+    memberName: "วา WK",
+    rResponsibilities: { R1: 0, R2: 100, R3: 0, R4: 100, R5: 0, R6: 0, R7: 0, R8: 0, R9: 100 },
+    tipResponsibilities: { TIP1: 0, TIP2: 0, TIP9: 0, TIP10: 100 }
+  },
+  {
+    memberId: "fa87becd-45b3-4590-b381-ded430ce7975",
+    memberName: "ก้อง IK",
+    rResponsibilities: { R1: 5, R2: 100, R3: 5, R4: 100, R5: 0, R6: 0, R7: 15, R8: 15, R9: 100 },
+    tipResponsibilities: { TIP1: 15, TIP2: 15, TIP9: 15, TIP10: 100 }
+  },
+  {
+    memberId: "d99de87a-eb50-4383-a050-1f24a52b4620",
+    memberName: "จอย RL",
+    rResponsibilities: { R1: 12, R2: 100, R3: 12, R4: 100, R5: 0, R6: 0, R7: 10, R8: 10, R9: 100 },
+    tipResponsibilities: { TIP1: 10, TIP2: 10, TIP9: 10, TIP10: 100 }
+  },
+  {
+    memberId: "47adfbc2-8d0e-4dc7-87ad-98895be82026",
+    memberName: "พิม AC",
+    rResponsibilities: { R1: 12, R2: 100, R3: 12, R4: 100, R5: 0, R6: 0, R7: 10, R8: 10, R9: 100 },
+    tipResponsibilities: { TIP1: 10, TIP2: 10, TIP9: 10, TIP10: 100 }
+  },
+  {
+    memberId: "7800682c-8aed-45cf-ab31-45473fd16e3d",
+    memberName: "เยียร์ LLP",
+    rResponsibilities: { R1: 12, R2: 100, R3: 12, R4: 100, R5: 0, R6: 0, R7: 10, R8: 10, R9: 100 },
+    tipResponsibilities: { TIP1: 10, TIP2: 10, TIP9: 10, TIP10: 100 }
+  },
+  {
+    memberId: "82faa669-a2b6-4497-88cf-8556a867176f",
+    memberName: "นิน MTN",
+    rResponsibilities: { R1: 12, R2: 100, R3: 12, R4: 100, R5: 0, R6: 0, R7: 10, R8: 10, R9: 100 },
+    tipResponsibilities: { TIP1: 10, TIP2: 10, TIP9: 10, TIP10: 100 }
+  },
+  {
+    memberId: "b04669b5-6e86-4629-9e66-57d464881653",
+    memberName: "ลูกอิน STK",
+    rResponsibilities: { R1: 5, R2: 100, R3: 5, R4: 100, R5: 20, R6: 20, R7: 15, R8: 15, R9: 100 },
+    tipResponsibilities: { TIP1: 10, TIP2: 10, TIP9: 10, TIP10: 100 }
+  },
+  {
+    memberId: "a2cf6e47-fc1c-4c19-b080-fe4b57f4a66a",
+    memberName: "เอ็นจอย SLR",
+    rResponsibilities: { R1: 13, R2: 100, R3: 13, R4: 100, R5: 20, R6: 20, R7: 5, R8: 5, R9: 100 },
+    tipResponsibilities: { TIP1: 10, TIP2: 10, TIP9: 10, TIP10: 100 }
+  },
+  {
+    memberId: "3ab19406-29cc-4430-b4bf-2cfe9a1c29b7",
+    memberName: "แก้ว KYK",
+    rResponsibilities: { R1: 12, R2: 100, R3: 12, R4: 100, R5: 20, R6: 20, R7: 5, R8: 5, R9: 100 },
+    tipResponsibilities: { TIP1: 10, TIP2: 10, TIP9: 10, TIP10: 100 }
+  },
+  {
+    memberId: "e2c2672d-81c4-411d-89e9-bcbb6eb374f5",
+    memberName: "โอ๊ต CNB",
+    rResponsibilities: { R1: 5, R2: 100, R3: 5, R4: 100, R5: 20, R6: 20, R7: 15, R8: 15, R9: 100 },
+    tipResponsibilities: { TIP1: 10, TIP2: 10, TIP9: 10, TIP10: 100 }
+  },
+  {
+    memberId: "6984154a-2975-4040-a557-aec9d090377f",
+    memberName: "ต้า TTY",
+    rResponsibilities: { R1: 12, R2: 100, R3: 12, R4: 100, R5: 20, R6: 20, R7: 5, R8: 5, R9: 100 },
+    tipResponsibilities: { TIP1: 5, TIP2: 5, TIP9: 5, TIP10: 100 }
+  }
+];
+
+export function findMemberResponsibility(
+  list: MemberMetricResponsibility[] | undefined,
+  memberId: string,
+  memberName?: string
+): MemberMetricResponsibility | undefined {
+  const source = list && list.length > 0 ? list : DEFAULT_MEMBER_RESPONSIBILITIES;
+  const byId = source.find((r) => r.memberId === memberId);
+  if (byId) return byId;
+  if (memberName) {
+    const cleanTarget = memberName.trim().toLowerCase();
+    const targetFirst = cleanTarget.split(/\s+/)[0];
+    const byName = source.find((r) => {
+      const cleanR = (r.memberName || "").trim().toLowerCase();
+      return cleanR === cleanTarget || (targetFirst.length >= 2 && cleanR.split(/\s+/)[0] === targetFirst);
+    });
+    if (byName) return byName;
+  }
+  return DEFAULT_MEMBER_RESPONSIBILITIES.find((r) => {
+    if (r.memberId === memberId) return true;
+    if (!memberName) return false;
+    const cleanTarget = memberName.trim().toLowerCase();
+    const cleanR = (r.memberName || "").trim().toLowerCase();
+    return cleanR === cleanTarget || cleanR.split(/\s+/)[0] === cleanTarget.split(/\s+/)[0];
+  });
+}
 
 export const SATISFACTION_CRITERIA = [
   {
@@ -498,12 +599,40 @@ export function calculateQuarterGrowth(
   };
 }
 
+function mergeMemberResponsibilities(stored?: MemberMetricResponsibility[]): MemberMetricResponsibility[] {
+  if (!Array.isArray(stored) || stored.length === 0) {
+    return DEFAULT_MEMBER_RESPONSIBILITIES.map(d => ({
+      ...d,
+      rResponsibilities: { ...d.rResponsibilities },
+      tipResponsibilities: { ...d.tipResponsibilities }
+    }));
+  }
+  const merged = stored.map(s => ({
+    ...s,
+    rResponsibilities: { ...s.rResponsibilities },
+    tipResponsibilities: { ...s.tipResponsibilities }
+  }));
+  DEFAULT_MEMBER_RESPONSIBILITIES.forEach(def => {
+    const exists = findMemberResponsibility(merged, def.memberId, def.memberName);
+    if (!exists) {
+      merged.push({
+        ...def,
+        rResponsibilities: { ...def.rResponsibilities },
+        tipResponsibilities: { ...def.tipResponsibilities }
+      });
+    } else if (exists.memberId !== def.memberId) {
+      exists.memberId = def.memberId;
+    }
+  });
+  return merged;
+}
+
 export function getStoredOKRSettings(): OKRSettingsState {
   if (typeof window === "undefined") {
     return {
       krs: DEFAULT_KRS,
       tips: DEFAULT_TIPS,
-      memberResponsibilities: [],
+      memberResponsibilities: mergeMemberResponsibilities([]),
       manualMetrics: { r5Reach: 0, r6Engagement: 0 },
       quarterlyRecords: []
     };
@@ -516,7 +645,7 @@ export function getStoredOKRSettings(): OKRSettingsState {
       return {
         krs: parsed.krs && parsed.krs.length > 0 ? parsed.krs : DEFAULT_KRS,
         tips: parsed.tips && parsed.tips.length > 0 ? parsed.tips : DEFAULT_TIPS,
-        memberResponsibilities: parsed.memberResponsibilities || [],
+        memberResponsibilities: mergeMemberResponsibilities(parsed.memberResponsibilities),
         manualMetrics: parsed.manualMetrics || { r5Reach: 0, r6Engagement: 0 },
         quarterlyRecords: parsed.quarterlyRecords || [],
         lastUpdated: parsed.lastUpdated
@@ -529,7 +658,7 @@ export function getStoredOKRSettings(): OKRSettingsState {
   return {
     krs: DEFAULT_KRS,
     tips: DEFAULT_TIPS,
-    memberResponsibilities: [],
+    memberResponsibilities: mergeMemberResponsibilities([]),
     manualMetrics: { r5Reach: 0, r6Engagement: 0 },
     quarterlyRecords: []
   };
@@ -573,7 +702,7 @@ export async function fetchOKRSettingsFromSupabase(): Promise<OKRSettingsState> 
           const merged: OKRSettingsState = {
             krs: parsed.krs && parsed.krs.length > 0 ? parsed.krs : DEFAULT_KRS,
             tips: parsed.tips && parsed.tips.length > 0 ? parsed.tips : DEFAULT_TIPS,
-            memberResponsibilities: Array.isArray(parsed.memberResponsibilities) ? parsed.memberResponsibilities : [],
+            memberResponsibilities: mergeMemberResponsibilities(parsed.memberResponsibilities),
             manualMetrics: parsed.manualMetrics || { r5Reach: 0, r6Engagement: 0 },
             quarterlyRecords: Array.isArray(parsed.quarterlyRecords) ? parsed.quarterlyRecords : [],
             lastUpdated: parsed.lastUpdated || new Date().toISOString()
@@ -818,7 +947,14 @@ export function computeRealtimeMetrics(
     }
   }
 
-  // 1. Analyze briefs
+  // 1. Analyze briefs (Ironclad Rule #1: Exclude deleted/purged/test tasks)
+  const validBriefs = (briefs || []).filter((b: any) => {
+    if (!b || b.status === "purged") return false;
+    const d = b.details || {};
+    if (d.is_deleted === true || d.is_permanently_deleted === true || d.is_test === true) return false;
+    return true;
+  });
+
   let internalCompletedCount = 0;
   let externalCompletedCount = 0;
   let internalPipelineCount = 0;
@@ -842,7 +978,7 @@ export function computeRealtimeMetrics(
   let allSatisfactionSum = 0;
   let allSatisfactionCount = 0;
 
-  briefs.forEach((b: any) => {
+  validBriefs.forEach((b: any) => {
     const isCompleted = b.status === "completed";
     const details = b.details || {};
     const isR3 = isR3Task(b);
@@ -1509,11 +1645,18 @@ export function computeMemberPacingAlerts(
   const currentMonthOfYear = fiscal.currentMonthOfFiscalYear;
   const currentWeekOfQuarter = fiscal.currentWeekOfQuarter;
 
-  // Member tasks
-  const memberTasks = briefs.filter((b: any) => {
-    if (b.status === "cancelled") return false;
+  // Exclude deleted, purged, cancelled, and test briefs (Ironclad Rule #1)
+  const validBriefs = (briefs || []).filter((b: any) => {
+    if (!b || b.status === "cancelled" || b.status === "purged") return false;
+    const d = b.details || {};
+    if (d.is_deleted === true || d.is_permanently_deleted === true || d.is_test === true) return false;
+    return true;
+  });
+
+  // Member tasks (Owner or Assistant with percentage > 0)
+  const memberTasks = validBriefs.filter((b: any) => {
     const isOwner = b.assignee_id === memberId;
-    const isAssistant = Array.isArray(b.details?.assistants) && b.details.assistants.some((a: any) => a.assignee_id === memberId);
+    const isAssistant = Array.isArray(b.details?.assistants) && b.details.assistants.some((a: any) => a.assignee_id === memberId && Number(a.percentage) > 0);
     return isOwner || isAssistant;
   });
 
@@ -1545,23 +1688,24 @@ export function computeMemberPacingAlerts(
   const tasksThisMonth = completedMemberTasks.filter(b => getTaskCompletedTime(b) >= startOfMonthTime);
   const tasksThisQuarter = completedMemberTasks.filter(b => getTaskCompletedTime(b) >= startOfQuarterTime);
 
-  // Determine member's unit (e.g. 'content', 'pr', 'creative', 'internal')
-  const resolvedUnit = (
+  // Determine member's unit (strip pipe-delimited metadata e.g. 'creative|head|active')
+  const rawUnit = (
     memberUnit ||
-    briefs.find((b: any) => b.assignee_id === memberId)?.unit ||
+    validBriefs.find((b: any) => b.assignee_id === memberId)?.unit ||
     ""
-  ).toLowerCase();
+  ).split("|")[0].trim().toLowerCase();
+  const resolvedUnit = rawUnit === "design" ? "creative" : (rawUnit === "management" ? "internal" : rawUnit);
 
-  // Distinct member counts for Content and PR teams (for 50:50 Reach/Engagement split)
+  // Distinct member counts for Content and PR teams (fallback if not explicitly configured)
   const contentMemberIds = new Set<string>();
   const prMemberIds = new Set<string>();
-  briefs.forEach((b: any) => {
-    const u = (b.unit || "").toLowerCase();
+  validBriefs.forEach((b: any) => {
+    const u = (b.unit || "").split("|")[0].trim().toLowerCase();
     if (u === "content" && b.assignee_id) contentMemberIds.add(b.assignee_id);
     if (u === "pr" && b.assignee_id) prMemberIds.add(b.assignee_id);
   });
   const contentMembersCount = Math.max(1, contentMemberIds.size || 2);
-  const prMembersCount = Math.max(1, prMemberIds.size || 2);
+  const prMembersCount = Math.max(1, prMemberIds.size || 3);
 
   // Latest Reach & Engagement from quarterly records or manual input
   let latestReach = settings.manualMetrics?.r5Reach || 0;
@@ -1577,11 +1721,45 @@ export function computeMemberPacingAlerts(
     }
   }
 
-  const resp = settings.memberResponsibilities?.find(r => r.memberId === memberId) || {
+  const resp = findMemberResponsibility(settings.memberResponsibilities, memberId, memberName) || {
     memberId,
     memberName,
     rResponsibilities: {},
     tipResponsibilities: {}
+  };
+
+  // Helper to extract genuine satisfaction score (matching computeRealtimeMetrics)
+  const extractSatScore = (b: any): number | null => {
+    const details = b?.details || {};
+    if (details.survey_status === "declined") return null;
+    const scores = details.satisfaction_scores;
+    if (typeof scores?.averagePercent === "number") {
+      return Number(scores.averagePercent);
+    }
+    if (typeof scores?.accuracy === "number") {
+      const sum = (scores.accuracy + (scores.timeliness || scores.accuracy) + (scores.quality || scores.accuracy) + (scores.attentiveness || scores.accuracy) + (scores.ownership || scores.accuracy));
+      return Math.round((sum / 25) * 100);
+    }
+    if (details.survey_status === "completed" || (typeof details.satisfaction_rate === "number" && details.satisfaction_rate > 0)) {
+      return Number(details.satisfaction_rate);
+    }
+    return null;
+  };
+
+  // Helper to compute member's task share percentage (Owner + Assistants)
+  const getMemberSharePct = (b: any): number => {
+    const details = b?.details || {};
+    const isOwner = b.assignee_id === memberId;
+    const assistants = (details.assistants || []).filter((a: any) => a.assignee_id && Number(a.percentage) > 0);
+    if (assistants.length > 0) {
+      if (isOwner) {
+        const totalAst = assistants.reduce((s: number, a: any) => s + (Number(a.percentage) || 0), 0);
+        return Math.max(0, 100 - totalAst);
+      }
+      const ast = assistants.find((a: any) => a.assignee_id === memberId);
+      return Number(ast?.percentage) || 0;
+    }
+    return isOwner ? 100 : 0;
   };
 
   const defaultEqualPct = Math.round((100 / (totalOpsCount || 1)) * 10) / 10;
@@ -1599,21 +1777,21 @@ export function computeMemberPacingAlerts(
     const isSat = r.isPercentage || r.unit === "%" || ["R2", "R4", "R9"].includes(r.code);
     const isReachOrEngage = r.code === "R5" || r.code === "R6";
 
-    // 50:50 allocation rule for Content and PR on R5 (Reach) and R6 (Engagement)
     let allocPct = defaultEqualPct;
     if (isSat) {
-      allocPct = 100;
+      allocPct = (typeof resp.rResponsibilities?.[r.code] === "number") ? resp.rResponsibilities[r.code] : 100;
+    } else if (typeof resp.rResponsibilities?.[r.code] === "number") {
+      allocPct = resp.rResponsibilities[r.code];
     } else if (isReachOrEngage) {
       if (resolvedUnit === "content") {
         allocPct = Math.round((50 / contentMembersCount) * 10) / 10;
       } else if (resolvedUnit === "pr") {
         allocPct = Math.round((50 / prMembersCount) * 10) / 10;
       } else {
-        // Other units (Creative, Internal, etc.) have 0% responsibility for Reach/Engagement
         allocPct = 0;
       }
     } else {
-      allocPct = (typeof resp.rResponsibilities?.[r.code] === 'number') ? resp.rResponsibilities[r.code] : 0;
+      allocPct = 0;
     }
 
     // 1. เป้าหมายทั้งปีงบประมาณ
@@ -1629,6 +1807,7 @@ export function computeMemberPacingAlerts(
     let actualThisWeek = 0;
     let actualThisMonth = 0;
     let actualThisQuarter = 0;
+    let evaluatedSatCount = 0;
 
     if (r.code === "R1") {
       actualAchieved = completedMemberTasks.filter(isR1Task).length;
@@ -1636,50 +1815,41 @@ export function computeMemberPacingAlerts(
       actualThisMonth = tasksThisMonth.filter(isR1Task).length;
       actualThisQuarter = tasksThisQuarter.filter(isR1Task).length;
     } else if (r.code === "R2" || r.code === "R4" || r.code === "R9") {
-      const calcSat = (tasks: any[]) => {
+      const filterByCategory = (tasks: any[]) => {
+        if (r.code === "R2") return tasks.filter(isR1Task);
+        if (r.code === "R4") return tasks.filter(isR3Task);
+        return tasks.filter(b => isCcPmProject(b));
+      };
+      const calcSat = (tasks: any[], trackCount: boolean = false) => {
+        const filtered = filterByCategory(tasks);
         let sumSat = 0;
         let cntSat = 0;
-        tasks.forEach(b => {
-          const details = b.details || {};
-          const scores = details.satisfaction_scores;
-          if (scores && typeof scores.averagePercent === "number" && details.survey_status !== "sent") {
-            sumSat += Number(scores.averagePercent);
-            cntSat += 1;
-          } else if (details.survey_status === "completed" && typeof details.satisfaction_rate === "number") {
-            sumSat += Number(details.satisfaction_rate);
+        filtered.forEach(b => {
+          const score = extractSatScore(b);
+          if (score !== null) {
+            sumSat += score;
             cntSat += 1;
           }
         });
+        if (trackCount) evaluatedSatCount = cntSat;
         return cntSat > 0 ? Math.round((sumSat / cntSat) * 10) / 10 : 0;
       };
-      actualAchieved = calcSat(completedMemberTasks);
-      actualThisWeek = calcSat(tasksThisWeek);
-      actualThisMonth = calcSat(tasksThisMonth);
-      actualThisQuarter = calcSat(tasksThisQuarter);
+      actualAchieved = calcSat(completedMemberTasks, true);
+      actualThisWeek = calcSat(tasksThisWeek, false);
+      actualThisMonth = calcSat(tasksThisMonth, false);
+      actualThisQuarter = calcSat(tasksThisQuarter, false);
     } else if (r.code === "R3") {
       actualAchieved = completedMemberTasks.filter(isR3Task).length;
       actualThisWeek = tasksThisWeek.filter(isR3Task).length;
       actualThisMonth = tasksThisMonth.filter(isR3Task).length;
       actualThisQuarter = tasksThisQuarter.filter(isR3Task).length;
     } else if (r.code === "R5") {
-      if (resolvedUnit === "content") {
-        actualAchieved = Math.round((latestReach * 0.5) / contentMembersCount);
-      } else if (resolvedUnit === "pr") {
-        actualAchieved = Math.round((latestReach * 0.5) / prMembersCount);
-      } else {
-        actualAchieved = 0;
-      }
+      actualAchieved = allocPct > 0 ? Math.round((latestReach * allocPct) / 100) : 0;
       actualThisQuarter = actualAchieved;
       actualThisMonth = Math.round(actualAchieved / 3);
       actualThisWeek = Math.round(actualAchieved / 13);
     } else if (r.code === "R6") {
-      if (resolvedUnit === "content") {
-        actualAchieved = Math.round((latestEngagement * 0.5) / contentMembersCount);
-      } else if (resolvedUnit === "pr") {
-        actualAchieved = Math.round((latestEngagement * 0.5) / prMembersCount);
-      } else {
-        actualAchieved = 0;
-      }
+      actualAchieved = allocPct > 0 ? Math.round((latestEngagement * allocPct) / 100) : 0;
       actualThisQuarter = actualAchieved;
       actualThisMonth = Math.round(actualAchieved / 3);
       actualThisWeek = Math.round(actualAchieved / 13);
@@ -1694,23 +1864,10 @@ export function computeMemberPacingAlerts(
           const isPrivate = sec === "private" || sec === "เอกชน" || sec === "ภาคเอกชน";
           if (isPrivate) return;
 
-          const isOwner = b.assignee_id === memberId;
-          const assistants = (details.assistants || []).filter((a: any) => a.assignee_id && Number(a.percentage) > 0);
-          let memberSharePct = 100;
-          if (assistants.length > 0) {
-            if (isOwner) {
-              const totalAst = assistants.reduce((s: number, a: any) => s + (Number(a.percentage) || 0), 0);
-              memberSharePct = Math.max(0, 100 - totalAst);
-            } else {
-              const ast = assistants.find((a: any) => a.assignee_id === memberId);
-              memberSharePct = Number(ast?.percentage) || 0;
-            }
-          } else if (!isOwner) {
-            memberSharePct = 0;
-          }
+          const memberSharePct = getMemberSharePct(b);
           const profit = Number(details.profit) || (Number(details.revenue || 0) - Number(details.cost || 0)) || 0;
-          if (profit > 0) {
-            val += Math.round((profit * (memberSharePct / 100) * allocPct) / 100);
+          if (profit > 0 && memberSharePct > 0) {
+            val += Math.round((profit * memberSharePct) / 100);
           }
         });
         return val;
@@ -1730,23 +1887,10 @@ export function computeMemberPacingAlerts(
           const isPrivate = sec === "private" || sec === "เอกชน" || sec === "ภาคเอกชน";
           if (!isPrivate) return;
 
-          const isOwner = b.assignee_id === memberId;
-          const assistants = (details.assistants || []).filter((a: any) => a.assignee_id && Number(a.percentage) > 0);
-          let memberSharePct = 100;
-          if (assistants.length > 0) {
-            if (isOwner) {
-              const totalAst = assistants.reduce((s: number, a: any) => s + (Number(a.percentage) || 0), 0);
-              memberSharePct = Math.max(0, 100 - totalAst);
-            } else {
-              const ast = assistants.find((a: any) => a.assignee_id === memberId);
-              memberSharePct = Number(ast?.percentage) || 0;
-            }
-          } else if (!isOwner) {
-            memberSharePct = 0;
-          }
+          const memberSharePct = getMemberSharePct(b);
           const profit = Number(details.profit) || (Number(details.revenue || 0) - Number(details.cost || 0)) || 0;
-          if (profit > 0) {
-            val += Math.round((profit * (memberSharePct / 100) * allocPct) / 100);
+          if (profit > 0 && memberSharePct > 0) {
+            val += Math.round((profit * memberSharePct) / 100);
           }
         });
         return val;
@@ -1788,13 +1932,14 @@ export function computeMemberPacingAlerts(
       monthlyPacingPct = 100;
       quarterlyPacingPct = 100;
     } else if (isSat) {
-      if (actualAchieved === 0) {
-        weeklyStatus = "behind";
-        monthlyStatus = "behind";
-        quarterlyStatus = "behind";
-        weeklyPacingPct = 0;
-        monthlyPacingPct = 0;
-        quarterlyPacingPct = 0;
+      // *เกณฑ์ความพึงพอใจมาตรฐาน 85.0% ทุกคน (ไม่ตกแม้ไม่ได้ทำแบบประเมิน)
+      if (evaluatedSatCount === 0) {
+        weeklyStatus = "on_track";
+        monthlyStatus = "on_track";
+        quarterlyStatus = "on_track";
+        weeklyPacingPct = 100;
+        monthlyPacingPct = 100;
+        quarterlyPacingPct = 100;
       } else if (actualAchieved >= 85.0) {
         weeklyStatus = "on_track";
         monthlyStatus = "on_track";
@@ -1886,7 +2031,9 @@ export function computeMemberPacingAlerts(
   // 2. Process TIP Metrics
   allTIPMetrics.forEach(t => {
     const isSat = t.isPercentage || t.unit === "%" || ["TIP10"].includes(t.code);
-    const allocPct = isSat ? 100 : ((typeof resp.tipResponsibilities?.[t.code] === 'number') ? resp.tipResponsibilities[t.code] : 0);
+    const allocPct = isSat
+      ? ((typeof resp.tipResponsibilities?.[t.code] === "number") ? resp.tipResponsibilities[t.code] : 100)
+      : ((typeof resp.tipResponsibilities?.[t.code] === "number") ? resp.tipResponsibilities[t.code] : 0);
 
     // 1. เป้าหมายทั้งปีงบประมาณ
     const annualTarget = isSat ? 85.0 : Math.round((t.baseTarget * allocPct) / 100);
@@ -1900,6 +2047,7 @@ export function computeMemberPacingAlerts(
     let actualThisWeek = 0;
     let actualThisMonth = 0;
     let actualThisQuarter = 0;
+    let evaluatedSatCount = 0;
 
     const calcProfit = (tasks: any[], privateOnly: boolean = false) => {
       let p = 0;
@@ -1910,9 +2058,10 @@ export function computeMemberPacingAlerts(
         const sec = (details.client_sector || details.sector || "").toLowerCase().trim();
         const isPrivate = sec === "private" || sec === "เอกชน" || sec === "ภาคเอกชน";
         if (!privateOnly || isPrivate) {
+          const memberSharePct = getMemberSharePct(b);
           const profit = Number(details.profit) || (Number(details.revenue || 0) - Number(details.cost || 0)) || 0;
-          if (profit > 0) {
-            p += Math.round((profit * allocPct) / 100);
+          if (profit > 0 && memberSharePct > 0) {
+            p += Math.round((profit * memberSharePct) / 100);
           }
         }
       });
@@ -1935,26 +2084,23 @@ export function computeMemberPacingAlerts(
       actualThisMonth = calcProfit(tasksThisMonth, false) * 5;
       actualThisQuarter = calcProfit(tasksThisQuarter, false) * 5;
     } else if (t.code === "TIP10") {
-      const calcSat = (tasks: any[]) => {
+      const calcSat = (tasks: any[], trackCount: boolean = false) => {
         let sumSat = 0;
         let cntSat = 0;
         tasks.forEach(b => {
-          const details = b.details || {};
-          const scores = details.satisfaction_scores;
-          if (scores && typeof scores.averagePercent === "number" && details.survey_status !== "sent") {
-            sumSat += Number(scores.averagePercent);
-            cntSat += 1;
-          } else if (details.survey_status === "completed" && typeof details.satisfaction_rate === "number") {
-            sumSat += Number(details.satisfaction_rate);
+          const score = extractSatScore(b);
+          if (score !== null) {
+            sumSat += score;
             cntSat += 1;
           }
         });
+        if (trackCount) evaluatedSatCount = cntSat;
         return cntSat > 0 ? Math.round((sumSat / cntSat) * 10) / 10 : 0;
       };
-      actualAchieved = calcSat(completedMemberTasks);
-      actualThisWeek = calcSat(tasksThisWeek);
-      actualThisMonth = calcSat(tasksThisMonth);
-      actualThisQuarter = calcSat(tasksThisQuarter);
+      actualAchieved = calcSat(completedMemberTasks, true);
+      actualThisWeek = calcSat(tasksThisWeek, false);
+      actualThisMonth = calcSat(tasksThisMonth, false);
+      actualThisQuarter = calcSat(tasksThisQuarter, false);
     } else {
       actualAchieved = completedMemberTasks.length;
       actualThisWeek = tasksThisWeek.length;
@@ -1981,26 +2127,39 @@ export function computeMemberPacingAlerts(
       monthlyPacingPct = 100;
       quarterlyPacingPct = 100;
     } else if (isSat) {
-      if (actualAchieved >= 85.0) {
+      if (evaluatedSatCount === 0) {
         weeklyStatus = "on_track";
         monthlyStatus = "on_track";
         quarterlyStatus = "on_track";
+        weeklyPacingPct = 100;
+        monthlyPacingPct = 100;
+        quarterlyPacingPct = 100;
+      } else if (actualAchieved >= 85.0) {
+        weeklyStatus = "on_track";
+        monthlyStatus = "on_track";
+        quarterlyStatus = "on_track";
+        weeklyPacingPct = Math.round((actualAchieved / 85.0) * 100);
+        monthlyPacingPct = weeklyPacingPct;
+        quarterlyPacingPct = weeklyPacingPct;
       } else if (actualAchieved >= 80.0) {
         weeklyStatus = "at_risk";
         monthlyStatus = "at_risk";
         quarterlyStatus = "at_risk";
         monthlyAtRiskCount++;
         quarterlyAtRiskCount++;
+        weeklyPacingPct = Math.round((actualAchieved / 85.0) * 100);
+        monthlyPacingPct = weeklyPacingPct;
+        quarterlyPacingPct = weeklyPacingPct;
       } else {
         weeklyStatus = "behind";
         monthlyStatus = "behind";
         quarterlyStatus = "behind";
         monthlyBehindCount++;
         quarterlyBehindCount++;
+        weeklyPacingPct = Math.round((actualAchieved / 85.0) * 100);
+        monthlyPacingPct = weeklyPacingPct;
+        quarterlyPacingPct = weeklyPacingPct;
       }
-      weeklyPacingPct = Math.round((actualAchieved / 85.0) * 100);
-      monthlyPacingPct = weeklyPacingPct;
-      quarterlyPacingPct = weeklyPacingPct;
     } else {
       weeklyPacingPct = weeklyExpected > 0 ? Math.round((actualAchieved / weeklyExpected) * 100) : 100;
       monthlyPacingPct = monthlyExpected > 0 ? Math.round((actualAchieved / monthlyExpected) * 100) : 100;

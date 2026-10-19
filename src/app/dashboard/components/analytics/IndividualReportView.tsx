@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Briefcase, 
   Users, 
@@ -35,7 +35,7 @@ import {
   Gem,
   Activity
 } from 'lucide-react';
-import { BriefTaskLike, MemberStats } from '@/utils/stats';
+import { BriefTaskLike, MemberStats, getTaskFinancialDistribution } from '@/utils/stats';
 import { MemberProfile } from '@/utils/memberProfile';
 import { computeMemberIntelligenceProfile, computeTeamWorkloadInsights } from '@/utils/teamAnalytics';
 import CustomSelect from '../CustomSelect';
@@ -44,6 +44,7 @@ import InteractiveDonutChart, { DonutSegment } from '../charts/InteractiveDonutC
 import PressureGaugeMeter from '../charts/PressureGaugeMeter';
 import { 
   getStoredOKRSettings, 
+  fetchOKRSettingsFromSupabase,
   computeMemberPacingAlerts, 
   MemberPacingSummary,
   MemberPacingMetric 
@@ -119,6 +120,19 @@ export default function IndividualReportView({
   const [dispatchSuccessMessage, setDispatchSuccessMessage] = useState<string | null>(null);
   const [showDispatchModal, setShowDispatchModal] = useState(false);
 
+  const [okrSettingsRevision, setOkrSettingsRevision] = useState(0);
+
+  useEffect(() => {
+    const handleOkrUpdate = () => setOkrSettingsRevision((prev) => prev + 1);
+    window.addEventListener('okr_settings_updated', handleOkrUpdate);
+    window.addEventListener('storage', handleOkrUpdate);
+    fetchOKRSettingsFromSupabase().then(() => setOkrSettingsRevision((prev) => prev + 1));
+    return () => {
+      window.removeEventListener('okr_settings_updated', handleOkrUpdate);
+      window.removeEventListener('storage', handleOkrUpdate);
+    };
+  }, []);
+
   // Compute OKR / KR / R / TIP Pacing & Alerts for this member
   const pacingSummary = useMemo<MemberPacingSummary>(() => {
     const settings = getStoredOKRSettings();
@@ -129,7 +143,7 @@ export default function IndividualReportView({
       briefs,
       currentProfileMember.unit
     );
-  }, [currentProfileMember.assignee_id, currentProfileMember.name, currentProfileMember.unit, briefs]);
+  }, [currentProfileMember.assignee_id, currentProfileMember.name, currentProfileMember.unit, briefs, okrSettingsRevision]);
 
   const filteredPacingMetrics = useMemo(() => {
     if (pacingMetricFilter === 'all') return pacingSummary.metrics;
@@ -197,25 +211,16 @@ export default function IndividualReportView({
 
     return briefs
       .map((brief) => {
-        const assistants = brief.details?.assistants || [];
-        const isOwner = brief.assignee_id === assigneeId;
-        const assistantMatch = assistants.find((a: any) => a.assignee_id === assigneeId);
+        const { totalSaveCost, ownerShare, assistantShares } = getTaskFinancialDistribution(brief);
+        const isOwner = ownerShare?.assignee_id === assigneeId;
+        const assistantMatch = assistantShares.find((a) => a.assignee_id === assigneeId);
 
         if (!isOwner && !assistantMatch) return null;
 
-        // Role & percentage
-        let percentage = 100;
-        let role: 'owner' | 'assistant' = 'owner';
-        if (isOwner) {
-          const totalAssistantPct = assistants.reduce((sum: number, a: any) => sum + (Number(a.percentage) || 0), 0);
-          percentage = Math.max(0, 100 - totalAssistantPct);
-        } else if (assistantMatch) {
-          role = 'assistant';
-          percentage = Number(assistantMatch.percentage) || 0;
-        }
-
-        const totalCost = Number(brief.details?.save_cost || brief.details?.revenue || 0);
-        const shareBaht = Math.round((totalCost * percentage) / 100);
+        const role: 'owner' | 'assistant' = isOwner ? 'owner' : 'assistant';
+        const percentage = isOwner ? (ownerShare?.percentage || 0) : (assistantMatch?.percentage || 0);
+        const shareBaht = isOwner ? (ownerShare?.save_cost || 0) : (assistantMatch?.save_cost || 0);
+        const totalCost = totalSaveCost;
 
         // Timeline milestones
         const createdTime = brief.created_at ? new Date(brief.created_at).getTime() : now;

@@ -28,6 +28,7 @@ import { getCloudJson, setCloudJson, CLOUD_KEYS } from "@/utils/cloudSyncService
 import { RSP_UNIVERSITIES, PressReleaseItem } from "./RspPressReport";
 import { Assignee3DAvatarBadge } from "@/components/Assignee3DAvatarBadge";
 import { isOperationalAssignee, ensureCoreOperationalAssignees, getAssigneeFallbackName } from "@/utils/memberProfile";
+import { isCcPmProject } from "@/utils/stats";
 
 const ALL_CATEGORIES_BY_UNIT: Record<string, { name: string; desc: string }[]> = {
   creative: [
@@ -428,18 +429,23 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
 
   const handleSaveCostChange = (val: number) => {
     setLocalSaveCost(val.toString());
-    onUpdateField(brief.id, 'details', {
+    const isPM = isCcPmProject(brief) || currentCategory === "PM โครงการของ CC";
+    const updates: any = {
       ...brief.details,
       save_cost: val,
       project_value: val.toString(),
-      revenue: val,
-      cost: 0,
-      profit: val
-    });
+    };
+    if (isPM) {
+      updates.revenue = val;
+      updates.cost = Number(brief.details?.cost || 0);
+      updates.profit = val - Number(brief.details?.cost || 0);
+    }
+    onUpdateField(brief.id, 'details', updates);
   };
 
   const handleCategoryChange = (val: string) => {
     const std = getStandardPriceForTask(unit, val, brief.project_name);
+    const isPM = val === "PM โครงการของ CC" || isCcPmProject({ ...brief, details: { ...brief.details, category: val } });
     const updates: any = {
       ...brief.details,
       category: val,
@@ -449,9 +455,11 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
     if (std !== null) {
       updates.save_cost = std;
       updates.project_value = std.toString();
-      updates.revenue = std;
-      updates.cost = 0;
-      updates.profit = std;
+      if (isPM) {
+        updates.revenue = std;
+        updates.cost = Number(brief.details?.cost || 0);
+        updates.profit = std - Number(brief.details?.cost || 0);
+      }
     }
     onUpdateField(brief.id, 'details', updates);
   };
@@ -1290,6 +1298,16 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                                   r_metrics: ['R3', 'R4']
                                 });
                                 onUpdateField(brief.id, "okr_links", ['KR2', 'R3', 'R4']);
+                              } else if (newOrg === 'STeP') {
+                                onUpdateField(brief.id, "details", { 
+                                  ...brief.details, 
+                                  team: val,
+                                  organization: 'STeP',
+                                  selected_okr: 'KR1',
+                                  okr_kr: 'KR1',
+                                  r_metrics: ['R1', 'R2']
+                                });
+                                onUpdateField(brief.id, "okr_links", ['KR1', 'R1', 'R2']);
                               } else {
                                 onUpdateField(brief.id, "details", { 
                                   ...brief.details, 
@@ -1729,29 +1747,34 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                                       onUpdateField(brief.id, 'okr_links', ['KR1', 'R1', 'R2']);
                                     } else if (item.key === 'CMU' || item.key === 'RSP') {
                                       // CMU or RSP -> Link to KR2 (External support for CMU & RSP), R3, R4
+                                      const existingTeam = (brief.details?.team || brief.decision_maker || '').trim();
+                                      const preservedTeam = existingTeam && existingTeam !== 'STeP' ? existingTeam : item.key;
                                       onUpdateField(brief.id, 'details', {
                                         ...brief.details,
                                         organization: item.key,
                                         organization_type: 'government',
                                         client_sector: 'government',
-                                        decision_maker: item.key,
-                                        team: item.key,
+                                        decision_maker: preservedTeam,
+                                        team: preservedTeam,
                                         selected_okr: 'KR2',
                                         okr_kr: 'KR2',
                                         r_metrics: ['R3', 'R4']
                                       });
-                                      onUpdateField(brief.id, 'decision_maker', item.key);
+                                      onUpdateField(brief.id, 'decision_maker', preservedTeam);
                                       onUpdateField(brief.id, 'okr_links', ['KR2', 'R3', 'R4']);
                                     } else {
                                       // STeP -> Link to KR1 (Internal support for STeP), R1, R2
+                                      const existingTeam = (brief.details?.team || brief.decision_maker || '').trim();
+                                      const preservedStepTeam = existingTeam && !['CMU', 'RSP', 'NMCO'].includes(existingTeam.toUpperCase()) ? existingTeam : 'STeP';
                                       onUpdateField(brief.id, 'details', {
                                         ...brief.details,
                                         organization: 'STeP',
+                                        team: preservedStepTeam,
                                         selected_okr: 'KR1',
                                         okr_kr: 'KR1',
                                         r_metrics: ['R1', 'R2']
                                       });
-                                      onUpdateField(brief.id, 'decision_maker', 'STeP');
+                                      onUpdateField(brief.id, 'decision_maker', preservedStepTeam);
                                       onUpdateField(brief.id, 'okr_links', ['KR1', 'R1', 'R2']);
                                     }
                                   }}
@@ -1774,15 +1797,25 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                               placeholder="ระบุชื่อหน่วยงานอื่นๆ (เช่น คณะ, สถาบัน หรือ หน่วยงานภายนอก)..."
                               onBlur={(e) => {
                                 const val = e.target.value.trim();
+                                const valUpper = val.toUpperCase();
+                                const isExternalOrg =
+                                  valUpper.includes('CMU') ||
+                                  valUpper.includes('RSP') ||
+                                  valUpper.includes('NMCO') ||
+                                  valUpper.includes('มหาวิทยาลัยเชียงใหม่') ||
+                                  valUpper.includes('มช.') ||
+                                  valUpper.includes('อุทยานวิทยาศาสตร์ภูมิภาค');
+                                const nextKr = isExternalOrg ? 'KR2' : 'KR1';
+                                const nextR = isExternalOrg ? ['R3', 'R4'] : ['R1', 'R2'];
                                 onUpdateField(brief.id, 'details', {
                                   ...brief.details,
                                   organization: val || 'อื่นๆ',
                                   organization_other: val,
-                                  selected_okr: 'KR2',
-                                  okr_kr: 'KR2',
-                                  r_metrics: ['R3', 'R4']
+                                  selected_okr: nextKr,
+                                  okr_kr: nextKr,
+                                  r_metrics: nextR
                                 });
-                                onUpdateField(brief.id, 'okr_links', ['KR2', 'R3', 'R4']);
+                                onUpdateField(brief.id, 'okr_links', [nextKr, ...nextR]);
                               }}
                               className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:border-slate-400"
                             />
@@ -2283,7 +2316,7 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                         </>
                       );
                     })()}
-                    {(brief.details?.project_code !== undefined || currentCategory === "PM โครงการของ CC" || brief.details?.revenue !== undefined) && (
+                    {(isCcPmProject(brief) || currentCategory === "PM โครงการของ CC") && (
                       <>
                         <DetailRow 
                           icon={<Tag size={14} className="text-blue-500 shrink-0" />} 

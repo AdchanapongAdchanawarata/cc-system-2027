@@ -26,6 +26,7 @@ import {
   saveStoredOKRSettings, 
   fetchOKRSettingsFromSupabase,
   saveOKRSettingsToSupabase,
+  findMemberResponsibility,
   OKRSettingsState, 
   DEFAULT_KRS, 
   DEFAULT_TIPS,
@@ -1931,11 +1932,11 @@ export default function SetupModal({ onClose, isReadOnly = false }: { onClose: (
                                   สายงาน
                                 </th>
                                 
-                                 {/* Dynamic R Columns */}
+                                {/* Dynamic R Columns */}
                                 {allRMetrics.map(r => {
                                   const isSat = isSatMetric(r.code, r.unit, r.isPercentage);
                                   const colSum = ops.reduce((sum, m) => {
-                                    const resp = okrState.memberResponsibilities?.find(res => res.memberId === m.id);
+                                    const resp = findMemberResponsibility(okrState.memberResponsibilities, m.id, m.name);
                                     const val = (typeof resp?.rResponsibilities?.[r.code] === 'number') ? resp.rResponsibilities[r.code] : 0;
                                     return sum + (typeof val === 'number' ? val : 0);
                                   }, 0);
@@ -1985,7 +1986,7 @@ export default function SetupModal({ onClose, isReadOnly = false }: { onClose: (
                                 {allTIPMetrics.map(t => {
                                   const isSat = isSatMetric(t.code, t.unit, t.isPercentage);
                                   const colSum = ops.reduce((sum, m) => {
-                                    const resp = okrState.memberResponsibilities?.find(res => res.memberId === m.id);
+                                    const resp = findMemberResponsibility(okrState.memberResponsibilities, m.id, m.name);
                                     const val = (typeof resp?.tipResponsibilities?.[t.code] === 'number') ? resp.tipResponsibilities[t.code] : 0;
                                     return sum + (typeof val === 'number' ? val : 0);
                                   }, 0);
@@ -2035,7 +2036,7 @@ export default function SetupModal({ onClose, isReadOnly = false }: { onClose: (
                             </thead>
                             <tbody className="divide-y divide-slate-100 bg-white">
                               {ops.map(m => {
-                                const resp = okrState.memberResponsibilities?.find(r => r.memberId === m.id) || {
+                                const resp = findMemberResponsibility(okrState.memberResponsibilities, m.id, m.name) || {
                                   memberId: m.id,
                                   memberName: m.name,
                                   rResponsibilities: {},
@@ -2044,8 +2045,9 @@ export default function SetupModal({ onClose, isReadOnly = false }: { onClose: (
 
                                 const updateRPct = (metricCode: string, val: number) => {
                                   const curList = okrState.memberResponsibilities ? [...okrState.memberResponsibilities] : [];
-                                  const existingIdx = curList.findIndex(r => r.memberId === m.id);
+                                  const existingIdx = curList.findIndex(r => r.memberId === m.id || (r.memberName || "").trim() === (m.name || "").trim());
                                   if (existingIdx !== -1) {
+                                    curList[existingIdx].memberId = m.id;
                                     curList[existingIdx].rResponsibilities = {
                                       ...curList[existingIdx].rResponsibilities,
                                       [metricCode]: val
@@ -2063,8 +2065,9 @@ export default function SetupModal({ onClose, isReadOnly = false }: { onClose: (
 
                                 const updateTIPPct = (metricCode: string, val: number) => {
                                   const curList = okrState.memberResponsibilities ? [...okrState.memberResponsibilities] : [];
-                                  const existingIdx = curList.findIndex(r => r.memberId === m.id);
+                                  const existingIdx = curList.findIndex(r => r.memberId === m.id || (r.memberName || "").trim() === (m.name || "").trim());
                                   if (existingIdx !== -1) {
+                                    curList[existingIdx].memberId = m.id;
                                     curList[existingIdx].tipResponsibilities = {
                                       ...curList[existingIdx].tipResponsibilities,
                                       [metricCode]: val

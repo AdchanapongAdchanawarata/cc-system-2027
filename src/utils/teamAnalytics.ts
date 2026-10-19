@@ -1037,8 +1037,13 @@ export function computeTeamWorkloadInsights({
   const ONE_DAY_MS = 86400000;
   const ONE_WEEK_MS = ONE_DAY_MS * 7;
 
-  // Pre-process briefs for rapid lookup
-  const nonCancelledBriefs = briefs.filter((b) => b.status !== 'cancelled');
+  // Pre-process briefs for rapid lookup (exclude cancelled, deleted, purged, and test tasks)
+  const nonCancelledBriefs = briefs.filter((b: any) => {
+    if (!b || b.status === 'cancelled' || b.status === 'purged') return false;
+    const d = b.details || {};
+    if (d.is_deleted === true || d.is_permanently_deleted === true || d.is_test === true) return false;
+    return true;
+  });
 
   // Determine realistic observation window based on available data
   let earliestCreated = now;
@@ -1091,7 +1096,7 @@ export function computeTeamWorkloadInsights({
     const participantIds = new Set<string>();
     if (b.assignee_id) participantIds.add(b.assignee_id);
     (b.details?.assistants || []).forEach((ast: any) => {
-      if (ast.assignee_id) participantIds.add(ast.assignee_id);
+      if (ast.assignee_id && Number(ast.percentage) > 0) participantIds.add(ast.assignee_id);
     });
 
     return {

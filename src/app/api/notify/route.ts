@@ -605,6 +605,12 @@ ${targetUrl}
 
         if (briefs) {
           briefs.forEach((b: any) => {
+            if (!b || b.status === 'cancelled' || b.status === 'purged') return;
+            const d = b.details || {};
+            if (d.is_deleted === true || d.is_permanently_deleted === true || d.is_test === true) return;
+            const tLower = ((b.project_name || '') + ' ' + (d.client_name || '')).toLowerCase();
+            if (tLower.includes('benchmark') || tLower.includes('stress-test') || tLower.includes('test system')) return;
+
             const hasAssignee = !!(b.assignees?.name || b.details?.assignee);
             // 1. Unassigned
             if (!hasAssignee) {

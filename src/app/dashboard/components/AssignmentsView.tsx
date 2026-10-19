@@ -1532,7 +1532,7 @@ export default function AssignmentsView() {
       if (selectedAssigneeIds.length > 0) {
         const matchesPrimary = b.assignee_id && selectedAssigneeIds.includes(b.assignee_id);
         const matchesAssistant = b.details?.assistants && Array.isArray(b.details.assistants) &&
-          b.details.assistants.some((ast: any) => selectedAssigneeIds.includes(ast.assignee_id));
+          b.details.assistants.some((ast: any) => selectedAssigneeIds.includes(ast.assignee_id) && Number(ast.percentage) > 0);
         const matchesUnassigned = selectedAssigneeIds.includes('unassigned') && !b.assignee_id;
         if (!matchesPrimary && !matchesAssistant && !matchesUnassigned) return false;
       }
@@ -1555,7 +1555,7 @@ export default function AssignmentsView() {
         if (myAssignee) {
           const isMine = b.assignee_id === myAssignee.id;
           const isMyAssist = b.details?.assistants && Array.isArray(b.details.assistants) &&
-            b.details.assistants.some((ast: any) => ast.assignee_id === myAssignee.id);
+            b.details.assistants.some((ast: any) => ast.assignee_id === myAssignee.id && Number(ast.percentage) > 0);
           if (!isMine && !isMyAssist) return false;
         }
       }

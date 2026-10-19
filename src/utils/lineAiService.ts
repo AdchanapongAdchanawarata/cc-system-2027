@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { getAllLearnedFacts, getRecentHistory, recordLearnedFact } from "./lineMemoryService";
-import { getBriefSaveCost } from "./stats";
+import { getBriefSaveCost, getTaskFinancialDistribution, isCcPmProject } from "./stats";
+import { isR3Task } from "./okrSettings";
 
 const GEMINI_MODELS = [
   "gemini-flash-lite-latest",
@@ -44,49 +45,31 @@ export const TEAM_MEMBERS_MAP: Record<string, TeamMemberInfo> = {
 };
 
 export const LINE_DISPLAY_TO_HONORIFIC: Record<string, string> = {
-  // 1. job -> พี่จ๊อบ
   "job": "พี่จ๊อบ",
-  // 2. autcha.pim -> พี่พิม
   "autcha.pim": "พี่พิม",
-  // 3. Bao-Suriyah CMU -> อาจารย์บ่าว
   "Bao-Suriyah CMU": "อาจารย์บ่าว",
-  // 4. Golf-Choncharoen CMU -> อาจารย์กอล์ฟ
   "Golf-Choncharoen CMU": "อาจารย์กอล์ฟ",
-  // 5. Itsara -> พี่ก้อง
   "Itsara": "พี่ก้อง",
-  // 6. Kaewkor 🌻 -> พี่แก้วก่อ
   "Kaewkor 🌻": "พี่แก้วก่อ",
   "Kaewkor": "พี่แก้วก่อ",
-  // 7. Lalynn 🐤 -> พี่เยียร์
   "Lalynn 🐤": "พี่เยียร์",
   "Lalynn": "พี่เยียร์",
-  // 8. Leēk ╰innn♡~~ -> พี่ลูกอิน
   "Leēk ╰innn♡~~": "พี่ลูกอิน",
   "Leēk": "พี่ลูกอิน",
   "Leek": "พี่ลูกอิน",
-  // 9. ma.ta.nin -> พี่นิน
   "ma.ta.nin": "พี่นิน",
-  // 10. Oat 🍉 -> พี่โอ๊ต
   "Oat 🍉": "พี่โอ๊ต",
   "Oat": "พี่โอ๊ต",
-  // 11. RATI.JOY -> พี่จอย
   "RATI.JOY": "พี่จอย",
-  // 12. Tanyanuparb -> อาจารย์อ้วน
   "Tanyanuparb": "อาจารย์อ้วน",
-  // 13. Tanya Ob-Oon -> อาจารย์อ้วน
   "Tanya Ob-Oon": "อาจารย์อ้วน",
-  // 14. T'tar ◡̈ 🍀 -> พี่ต้า
   "T'tar ◡̈ 🍀": "พี่ต้า",
   "T'tar": "พี่ต้า",
-  // 15. waweewa 🦋 -> พี่วา
   "waweewa 🦋": "พี่วา",
   "waweewa": "พี่วา",
-  // 16. Witty Win VVIIV -> อาจารย์วิน
   "Witty Win VVIIV": "อาจารย์วิน",
   "Witty Win": "อาจารย์วิน",
-  // 17. น้อง CC -> น้อง CC
   "น้อง CC": "น้อง CC",
-  // 18. น้องจอย -> พี่เอ็นจอย (เพื่อไม่ให้สับสนกับพี่จอย RL)
   "น้องจอย": "พี่เอ็นจอย",
   "เอ็นจอย": "พี่เอ็นจอย"
 };
@@ -98,18 +81,15 @@ export function getProperCallerName(rawName?: string): string {
   if (!rawName || !rawName.trim()) return "พี่ๆ";
   const trimmed = rawName.trim();
 
-  // 1. Direct match
   if (LINE_DISPLAY_TO_HONORIFIC[trimmed]) {
     return LINE_DISPLAY_TO_HONORIFIC[trimmed];
   }
 
-  // 2. Case-insensitive / normalized match
   const lower = trimmed.toLowerCase();
   for (const [key, val] of Object.entries(LINE_DISPLAY_TO_HONORIFIC)) {
     if (lower === key.toLowerCase()) return val;
   }
 
-  // 3. Substring matching for resilience (in case of extra emojis or suffix changes)
   if (lower.includes("น้องจอย") || lower.includes("enjoy") || lower.includes("เอ็นจอย")) return "พี่เอ็นจอย";
   if (lower.includes("rati") || lower.includes("จอย")) return "พี่จอย";
   if (lower.includes("tanya") || lower.includes("อ้วน") || lower.includes("ob-oon")) return "อาจารย์อ้วน";
@@ -128,7 +108,6 @@ export function getProperCallerName(rawName?: string): string {
   if (lower.includes("waweewa") || lower.includes("วา")) return "พี่วา";
   if (lower.includes("น้อง cc") || lower.includes("cc bot")) return "น้อง CC";
 
-  // If already prefixed with respectful title
   if (trimmed.startsWith("พี่") || trimmed.startsWith("อาจารย์") || trimmed.startsWith("คุณ") || trimmed.startsWith("น้อง")) {
     return trimmed;
   }
@@ -149,7 +128,7 @@ const MATCHABLE_MEMBERS = [
   { nick: "เยียร์", code: "LLP", info: TEAM_MEMBERS_MAP["เยียร์"] },
   { nick: "นิน", code: "MTN", info: TEAM_MEMBERS_MAP["นิน"] },
   { nick: "โอ๊ต", code: "CNB", info: TEAM_MEMBERS_MAP["โอ๊ต"] },
-  { nick: "แก้ว", code: "KYK", info: TEAM_MEMBERS_MAP["แก้ว"] },
+  { nick: "แก้วก่อ", code: "KYK", info: TEAM_MEMBERS_MAP["แก้วก่อ"] },
   { nick: "ต้า", code: "TTY", info: TEAM_MEMBERS_MAP["ต้า"] },
 ];
 
@@ -174,8 +153,13 @@ export interface WorkloadAnalytics {
     pending: number;
     inProgress: number;
     completed: number;
+    r1Completed: number;
+    r3Completed: number;
     saveCostTotal: number;
+    deliveredSaveCostTotal: number;
     profitTotal: number;
+    realizedProfitTotal: number;
+    pipelineProfitTotal: number;
     csatRate: number;
     csatEvaluationsCount: number;
     onTimeRate: number;
@@ -208,11 +192,17 @@ export function analyzeWorkload(briefs: any[]): WorkloadAnalytics {
   let pending = 0;
   let inProgress = 0;
   let completed = 0;
+  let r1Completed = 0;
+  let r3Completed = 0;
   let saveCostTotal = 0;
+  let deliveredSaveCostTotal = 0;
   let profitTotal = 0;
+  let realizedProfitTotal = 0;
+  let pipelineProfitTotal = 0;
 
   const memberStats: Record<string, MemberStatData> = {};
   for (const [nick, info] of Object.entries(TEAM_MEMBERS_MAP)) {
+    if (nick === "แก้ว") continue; // Canonical key is "แก้วก่อ"
     memberStats[nick] = {
       nick,
       ...info,
@@ -252,40 +242,79 @@ export function analyzeWorkload(briefs: any[]): WorkloadAnalytics {
   let totalWithOnTime = 0;
   let onTimeCount = 0;
 
-  briefs.forEach(b => {
-    if (b.status === "purged" || b.details?.is_permanently_deleted) return;
+  const validBriefs = (briefs || []).filter((b: any) => {
+    if (!b || b.status === "purged" || b.status === "cancelled") return false;
+    const d = b.details || {};
+    if (d.is_deleted === true || d.is_permanently_deleted === true || d.is_test === true) return false;
+    return true;
+  });
 
+  validBriefs.forEach(b => {
     const st = b.status || "pending";
-    if (st === "completed") completed++;
-    else if (st === "in_progress" || st === "progress") inProgress++;
-    else pending++;
+    const details = b.details || {};
+    if (st === "completed") {
+      completed++;
+      if (isR3Task(b)) r3Completed++;
+      else r1Completed++;
+    } else if (st === "in_progress" || st === "progress") {
+      inProgress++;
+    } else {
+      pending++;
+    }
 
-    // Track real satisfaction
-    const score = Number(b.details?.satisfaction_rate) || Number(b.details?.satisfaction_score);
-    if (score > 0) {
-      totalWithSatisfaction++;
-      sumSatisfaction += score;
+    // Track real satisfaction (Ironclad Rule #4)
+    if (st === "completed" && details.survey_status !== "declined") {
+      const scores = details.satisfaction_scores;
+      let score: number | null = null;
+      if (typeof scores?.averagePercent === "number") {
+        score = Number(scores.averagePercent);
+      } else if (typeof scores?.accuracy === "number") {
+        const sum = (scores.accuracy + (scores.timeliness || scores.accuracy) + (scores.quality || scores.accuracy) + (scores.attentiveness || scores.accuracy) + (scores.ownership || scores.accuracy));
+        score = Math.round((sum / 25) * 100);
+      } else if (details.survey_status === "completed" || (typeof details.satisfaction_rate === "number" && details.satisfaction_rate > 0)) {
+        score = Number(details.satisfaction_rate);
+      }
+      if (score !== null && score > 0) {
+        totalWithSatisfaction++;
+        sumSatisfaction += score;
+      }
     }
 
     // Track real on-time delivery
-    if (st === "completed" && b.deadline && b.completed_at) {
+    if (st === "completed" && b.completed_at) {
       totalWithOnTime++;
-      const dl = new Date(b.deadline).getTime();
-      const cp = new Date(b.completed_at).getTime();
-      if (cp <= dl + 86400000) {
+      const dStr = b.deadline || details.usage_date || details.publish_date;
+      if (dStr) {
+        const dl = new Date(dStr).getTime();
+        const cp = new Date(b.completed_at).getTime();
+        if (cp <= dl + 86400000) {
+          onTimeCount++;
+        }
+      } else {
         onTimeCount++;
       }
     }
 
-    const sc = getBriefSaveCost(b);
-    const pr = Number(b.details?.profit) || 0;
+    const { totalSaveCost: sc, ownerShare, assistantShares } = getTaskFinancialDistribution(b);
+    const isPM = isCcPmProject(b);
+    const pr = isPM
+      ? (Number(details.profit) !== undefined && details.profit !== null
+          ? Number(details.profit)
+          : (Number(details.revenue || 0) - Number(details.cost || 0)))
+      : 0;
+
     saveCostTotal += sc;
-    profitTotal += pr;
+    if (st === "completed") deliveredSaveCostTotal += sc;
+    if (pr > 0) {
+      profitTotal += pr;
+      if (st === "completed") realizedProfitTotal += pr;
+      else pipelineProfitTotal += pr;
+    }
 
     const ass = (
       b.assignees?.name ||
-      b.details?.assignee_name ||
-      b.details?.assignee ||
+      details.assignee_name ||
+      details.assignee ||
       (Array.isArray(b.assignees) ? b.assignees[0]?.name : "") ||
       ""
     ).trim();
@@ -300,9 +329,11 @@ export function analyzeWorkload(briefs: any[]): WorkloadAnalytics {
     if (!matchedNick) matchedNick = "ยังไม่ระบุผู้รับผิดชอบ";
 
     const stat = memberStats[matchedNick];
+    const ownerVal = ownerShare ? ownerShare.save_cost : sc;
+    const ownerProfit = isPM && pr > 0 && ownerShare ? Math.round((pr * ownerShare.percentage) / 100) : pr;
     stat.count += 1;
-    stat.saveCost += sc;
-    stat.profit += pr;
+    stat.saveCost += ownerVal;
+    stat.profit += ownerProfit;
 
     if (st === "completed") {
       stat.completed++;
@@ -314,12 +345,36 @@ export function analyzeWorkload(briefs: any[]): WorkloadAnalytics {
       if (stat.activeTasks.length < 5) stat.activeTasks.push(b.project_name);
     }
 
-    // Accumulate to units
+    // Also credit assistants with percentage > 0
+    assistantShares.forEach(ast => {
+      const rawAst = Array.isArray(b.details?.assistants)
+        ? b.details.assistants.find((a: any) => a.assignee_id === ast.assignee_id)
+        : null;
+      const astName = ((rawAst?.name || rawAst?.assignee_name || "") as string).trim();
+      for (const item of MATCHABLE_MEMBERS) {
+        if ((astName && (astName.includes(item.code) || astName.includes(item.nick))) ||
+            (ast.assignee_id && DEFAULT_ID_TO_NICK[ast.assignee_id] === item.nick)) {
+          const astStat = memberStats[item.nick];
+          if (astStat) {
+            astStat.count += 1;
+            astStat.saveCost += ast.save_cost;
+            if (isPM && pr > 0) astStat.profit += Math.round((pr * ast.percentage) / 100);
+            if (st === "completed") astStat.completed++;
+            else if (st === "in_progress" || st === "progress") astStat.in_progress++;
+            else astStat.pending++;
+          }
+          break;
+        }
+      }
+    });
+
+    // Accumulate to units based on task unit or member unit
+    const uRaw = (b.unit || "").toLowerCase();
     let unitKey = "";
-    if (stat.unit === "Management") unitKey = "Management (บริหารทีม)";
-    else if (stat.unit === "Creative") unitKey = "Creative Designer (งานสร้างสรรค์/ออกแบบ)";
-    else if (stat.unit === "PR & Communication") unitKey = "PR & Communication (สื่อสารองค์กร/RSP)";
-    else if (stat.unit === "Content Marketing") unitKey = "Content Marketing (คอนเทนต์/บทความ)";
+    if (uRaw === "internal" || stat.unit === "Management") unitKey = "Management (บริหารทีม)";
+    else if (uRaw === "creative" || stat.unit === "Design") unitKey = "Creative Designer (งานสร้างสรรค์/ออกแบบ)";
+    else if (uRaw === "pr" || stat.unit === "PR") unitKey = "PR & Communication (สื่อสารองค์กร/RSP)";
+    else if (uRaw === "content" || stat.unit === "Content") unitKey = "Content Marketing (คอนเทนต์/บทความ)";
 
     if (unitKey && unitFinancials[unitKey]) {
       unitFinancials[unitKey].saveCost += sc;
@@ -331,7 +386,7 @@ export function analyzeWorkload(briefs: any[]): WorkloadAnalytics {
   });
 
   const csatRate = totalWithSatisfaction > 0 ? Number((sumSatisfaction / totalWithSatisfaction).toFixed(1)) : 0;
-  const onTimeRate = totalWithOnTime > 0 ? Math.round((onTimeCount / totalWithOnTime) * 100) : 0;
+  const onTimeRate = totalWithOnTime > 0 ? Math.round((onTimeCount / totalWithOnTime) * 100) : 100;
 
   // Ranking by pending tasks
   const pendingRanking = Object.entries(memberStats)
@@ -360,12 +415,17 @@ export function analyzeWorkload(briefs: any[]): WorkloadAnalytics {
 
   return {
     totals: { 
-      total: briefs.length, 
+      total: validBriefs.length, 
       pending, 
       inProgress, 
-      completed, 
-      saveCostTotal, 
+      completed,
+      r1Completed,
+      r3Completed,
+      saveCostTotal,
+      deliveredSaveCostTotal,
       profitTotal,
+      realizedProfitTotal,
+      pipelineProfitTotal,
       csatRate,
       csatEvaluationsCount: totalWithSatisfaction,
       onTimeRate,
@@ -383,6 +443,22 @@ export function analyzeWorkload(briefs: any[]): WorkloadAnalytics {
   };
 }
 
+const DEFAULT_ID_TO_NICK: Record<string, string> = {
+  "18c2cc99-e677-43fd-bbaf-fcb83e23210e": "จ๊อบ",
+  "daca31a4-5efd-475e-80ee-b9f38dd381cb": "วา",
+  "fa87becd-45b3-4590-b381-ded430ce7975": "ก้อง",
+  "d99de87a-eb50-4383-a050-1f24a52b4620": "จอย",
+  "47adfbc2-8d0e-4dc7-87ad-98895be82026": "พิม",
+  "7800682c-8aed-45cf-ab31-45473fd16e3d": "เยียร์",
+  "82faa669-a2b6-4497-88cf-8856a867176f": "นิน",
+  "82faa669-a2b6-4497-88cf-8556a867176f": "นิน",
+  "3ab19406-29cc-4430-b4bf-2cfe9a1c29b7": "แก้วก่อ",
+  "b04669b5-6e86-4629-9e66-57d464881653": "ลูกอิน",
+  "a2cf6e47-fc1c-4c19-b080-fe4b57f4a66a": "เอ็นจอย",
+  "e2c2672d-81c4-411d-89e9-bcbb6eb374f5": "โอ๊ต",
+  "6984154a-2975-4040-a557-aec9d090377f": "ต้า",
+};
+
 /**
  * Fetch live data context from Supabase briefs for AI or fallback engine (realtime, all briefs)
  */
@@ -393,11 +469,12 @@ export async function getLiveDataContext() {
   try {
     const { data: briefs } = await supabase
       .from("briefs")
-      .select("id, project_name, unit, status, created_at, deadline, details, coordinator_nickname, assignee_id, assignees(id, name, email)")
+      .select("id, project_name, unit, status, created_at, completed_at, deadline, details, coordinator_nickname, decision_maker, assignee_id, assignees(id, name, email)")
       .neq("status", "purged")
       .order("created_at", { ascending: false });
 
-    return { briefs: briefs || [], totalCount: briefs?.length || 0 };
+    const valid = (briefs || []).filter((b: any) => !b.details?.is_deleted && !b.details?.is_permanently_deleted && !b.details?.is_test);
+    return { briefs: valid, totalCount: valid.length };
   } catch (err) {
     console.error("Failed to fetch live context:", err);
     return { briefs: [], totalCount: 0 };
@@ -433,7 +510,6 @@ export async function queryLineAI(
   const geminiApiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
   const callerLabel = getProperCallerName(askerName);
 
-  // Retrieve recent conversation history and learned facts
   const recentTurns = groupId ? getRecentHistory(groupId, 6) : [];
   const learnedFacts = getAllLearnedFacts();
 
@@ -441,7 +517,6 @@ export async function queryLineAI(
     ? recentTurns.map(t => `${t.role === "assistant" ? "น้อง CC" : t.senderName}: ${t.text}`).join("\n")
     : "ยังไม่มีประวัติการคุยก่อนหน้า";
 
-  // Check if user is teaching or giving new knowledge to remember
   if (
     userQuestion.includes("จำไว้") ||
     userQuestion.includes("รู้ไว้") ||
@@ -453,7 +528,7 @@ export async function queryLineAI(
 
   const qClean = userQuestion.toLowerCase().replace(/น้อง[\s_]?cc|น้องซีซี/gi, "").trim();
 
-  // 1. FAST-PATH DIRECT LINK INTERCEPTORS (100% Deterministic, Direct & Anti-Hallucination)
+  // 1. FAST-PATH DIRECT LINK INTERCEPTORS
   const isAskingForKrR = (
     qClean === "kr / r" ||
     qClean === "kr/r" ||
@@ -505,26 +580,18 @@ export async function queryLineAI(
 🎯 กฎเหล็กสำคัญระดับสูงสุด (Strict Guidelines):
 1. **รอบรู้ข้อมูลทั้งระบบแบบ Realtime (Full Realtime System Awareness):**
    ในระบบ CC Insights Portal มีการบันทึกและคำนวณตัวชี้วัดมูลค่าการประหยัดงบประมาณ (Save Cost) และผลงานแยกรายบุคคลทั้ง 12 คน และแยกตาม 4 ยูนิตอย่างแม่นยำชัดเจนตามสถิติด้านล่าง! ห้ามตอบเด็ดขาดว่าระบบไม่มีข้อมูลหรือไม่แยกรายบุคคลเด็ดขาด
-   - งานทั้งหมดในระบบ: ${analytics.totals.total} งาน | สำเร็จแล้ว: ${analytics.totals.completed} งาน | กำลังทำ: ${analytics.totals.inProgress} งาน | งานค้าง (Pending): ${analytics.totals.pending} งาน
-   - มูลค่าการประหยัดงบประมาณ (Save Cost) รวมทั้งระบบ: ฿${analytics.totals.saveCostTotal.toLocaleString()} บาท | กำไรสะสม: ฿${analytics.totals.profitTotal.toLocaleString()} บาท
+   - งานทั้งหมดในระบบ: ${analytics.totals.total} งาน | สำเร็จแล้ว: ${analytics.totals.completed} งาน (ภายใน STeP ${analytics.totals.r1Completed} งาน, ภายนอก มช./RSP ${analytics.totals.r3Completed} งาน) | กำลังทำ: ${analytics.totals.inProgress} งาน | งานค้าง (Pending): ${analytics.totals.pending} งาน
+   - มูลค่าการประหยัดงบประมาณ (Portfolio Save Cost) รวมทั้งระบบ: ฿${analytics.totals.saveCostTotal.toLocaleString()} บาท (ส่งมอบสำเร็จแล้ว ฿${analytics.totals.deliveredSaveCostTotal.toLocaleString()} บาท) | กำไรโครงการบริหารจัดการ CC: รับรู้จริง ฿${analytics.totals.realizedProfitTotal.toLocaleString()} บาท (Pipeline อยู่ระหว่างดำเนินการ ฿${analytics.totals.pipelineProfitTotal.toLocaleString()} บาท)
 
 2. **ห้ามตอบเป็นเทมเพลต 3 มิติแข็งทื่อเด็ดขาด (No Rigid 3-Block Headers):**
-   - **ห้าม** บังคับตอบด้วยฟอร์แมต 3 กล่องแข็งทื่อ (เช่น หัวข้อ "1. ข้อมูลสถานะจริง / 2. ความเสี่ยง / 3. แนวทางแก้ไข") เด็ดขาด เพราะดูเป็นบ็อตแข็งทื่อเกินไป!
-   - ให้ตอบคำถามตรงไปตรงมาทันทีตั้งแต่ประโยคแรก เช่น ถามว่าใครเซพเงินได้สูงสุด ให้บอกชื่อและยอดเงินทันที แล้วสรุปข้อมูลสนับสนุนหรืออันดับถัดไปให้อย่างเป็นธรรมชาติและกระชับ
-   - สอดแทรกข้อสังเกต ความเสี่ยง หรือข้อเสนอแนะเชิงรุกอย่างแนบเนียน ลื่นไหลเป็นเนื้อเดียวกับคำตอบ (เฉพาะเมื่อคำถามเกี่ยวข้องหรือขอการวิเคราะห์ ไม่ต้องยัดเยียดทุกครั้ง)
+   - **ห้าม** บังคับตอบด้วยฟอร์แมต 3 กล่องแข็งทื่อ (เช่น หัวข้อ "1. ข้อมูลสถานะจริง / 2. ความเสี่ยง / 3. แนวทางแก้ไข") เด็ดขาด!
+   - ให้ตอบคำถามตรงไปตรงมาทันทีตั้งแต่ประโยคแรก
    - ใช้น้ำเสียงเป็นมิตร ฉลาด คล่องแคล่ว ทันสมัย ให้เกียรติพี่ๆ ในทีมแบบน้องเล็ก Gen Z มืออาชีพ
 
 3. **ห้ามใช้รหัสตัวชี้วัดเด็ดขาด (Strict No-Code Rule):**
-   ห้ามตอบเป็นรหัสเทคนิคอล เช่น ห้ามใช้ T18KR1, T18KR2, T18KR3, T18KR4, KR1, KR2, R1, KRI 1 โดยเด็ดขาด! ให้เรียกเป็น "ชื่อตัวชี้วัด" ภาษาไทยที่ทุกคนและผู้บริหารเข้าใจทันทีเสมอ:
-   - "ผลงานสนับสนุนภายในองค์กร (STeP)"
-   - "ผลงานสนับสนุนภายนอก มช. และเครือข่าย RSP"
-   - "มูลค่าการประหยัดงบประมาณ (Save Cost)"
-   - "กำไรจากการให้บริการของทีม"
-   - "ความพึงพอใจของผู้รับบริการ (CSAT)"
-   - "อัตราการส่งมอบงานตรงต่อเวลา"
+   ห้ามตอบเป็นรหัสเทคนิคอล เช่น ห้ามใช้ T18KR1, T18KR2, T18KR3, T18KR4, KR1, KR2, R1, KRI 1 โดยเด็ดขาด! ให้เรียกเป็น "ชื่อตัวชี้วัด" ภาษาไทยที่ทุกคนและผู้บริหารเข้าใจทันทีเสมอ
 
 4. **กฎการเรียกชื่อพี่ๆ และอาจารย์ในห้องแชท (LINE Identity & Honorific Names):**
-   น้อง CC ต้องเรียกชื่อพี่ๆ และอาจารย์ตามชื่อเรียกที่ถูกต้องเหล่านี้เสมอ (ห้ามเรียกชื่อ ID ภาษาอังกฤษดิบ):
    - "job" -> เรียก "พี่จ๊อบ" (CC Lead / หัวหน้าทีม CC, รหัสประจำตัว AA)
    - "autcha.pim" -> เรียก "พี่พิม" (Creative Designer - Unit Design, รหัสประจำตัว AC)
    - "Bao-Suriyah CMU" -> เรียก "อาจารย์บ่าว" (ผศ.ดร.สุริยะ ทองมุณี รองผู้อำนวยการ STeP, รหัสประจำตัว ST)
@@ -540,27 +607,12 @@ export async function queryLineAI(
    - "T'tar ◡̈ 🍀" -> เรียก "พี่ต้า" (PR - Unit PR, รหัสประจำตัว TTY)
    - "waweewa 🦋" -> เรียก "พี่วา" (Creative Lead & ผู้รับผิดชอบ Unit Design, รหัสประจำตัว WK)
    - "Witty Win VVIIV" -> เรียก "อาจารย์วิน" (ผู้บริหาร, รหัสประจำตัว PW)
-   - "น้อง CC" -> ตัวน้อง CC เอง
-   - "น้องจอย" -> เรียก "พี่เอ็นจอย" (Content Creator - Unit Content, รหัสประจำตัว SLR - ห้ามเรียกพี่จอยเด็ดขาด เพื่อไม่ให้สับสนกับพี่จอย RATI.JOY)
+   - "น้องจอย" -> เรียก "พี่เอ็นจอย" (Content Creator - Unit Content, รหัสประจำตัว SLR)
 
 5. **ห้ามเตือนเรื่องสุขภาพ/จิบน้ำ/พักสายตาโดยเด็ดขาด** เว้นแต่ผู้ใช้จะถามเรื่องสุขภาพโดยตรง
-6. **ไม่ชวนคุยต่อและไม่มีประโยคลงท้ายซ้ำซาก** เมื่อตอบคำถามครบถ้วนแล้วให้จบประเด็นทันที
+6. **ไม่ชวนคุยต่อและไม่มีประโยคลงท้ายซ้ำซาก**
 7. **กฎเหล็กป้องกันข้อมูลหลอน (Strict Anti-Hallucination & Zero-Fake Baseline):**
-   - ห้ามแต่งตัวเลข สถิติ ชื่องาน หรือคิดค้นข้อมูลที่ไม่มีอยู่จริงในระบบเด็ดขาด หากตัวชี้วัดใดเป็น 0 หรือยังไม่มีข้อมูลประเมิน ให้ตอบตามจริงว่าเริ่มต้นปีงบประมาณ 2570 ยังไม่มีข้อมูล หรือเป็น 0%
-   - ห้ามกล่าวหาหรือพาดพิงบุคคลว่าทำงานช้าหรือบกพร่องโดยไม่มีหลักฐานชัดเจนในระบบ
-
-👥 สมาชิกทีม CC ทั้ง 12 คน:
-- จ๊อบ AA: CC Lead (บริหารทีม / กำกับภาพรวมงานทุกยูนิต)
-- วา WK: Creative Lead & รองหัวหน้าทีม (Unit Design)
-- ก้อง IK, จอย RL, พิม AC, เยียร์ LLP, นิน MTN: Unit Design (ตำแหน่ง Creative Designer)
-- แก้วก่อ KYK, ลูกอิน STK, เอ็นจอย SLR: Unit Content (ตำแหน่ง Content Creator)
-- โอ๊ต CNB, ต้า TTY: Unit PR (ตำแหน่ง PR)
-
-👔 ผู้บริหารและอาจารย์:
-- อาจารย์อ้วน TY: ผู้อำนวยการอุทยานวิทยาศาสตร์ภูมิภาค ภาคเหนือ
-- อาจารย์กอล์ฟ CS: ผู้ช่วยผู้อำนวยการอุทยานวิทยาศาสตร์ภูมิภาค ภาคเหนือ
-- อาจารย์บ่าว ST: รองผู้อำนวยการ STeP
-- อาจารย์วิน PW: ผู้บริหาร
+   - ห้ามแต่งตัวเลข สถิติ ชื่องาน หรือคิดค้นข้อมูลที่ไม่มีอยู่จริงในระบบเด็ดขาด
 
 💰 สถิติตัวชี้วัดมูลค่าการประหยัดงบประมาณ (Save Cost) รายบุคคลในระบบ (เรียงตามยอดสะสม):
 ${analytics.saveCostRanking.map((m, i) => `${i + 1}. ${m.nick} ${m.code} (${m.unit}): ฿${m.saveCost.toLocaleString()} บาท (รับผิดชอบ ${m.count} งาน, สำเร็จแล้ว ${m.completed} งาน, กำลังทำ ${m.in_progress} งาน, ค้าง ${m.pending} งาน)`).join("\n")}
@@ -574,27 +626,19 @@ ${Object.entries(analytics.unitFinancials).map(([u, d], i) => `${i + 1}. ${u}: �
 - งานที่ยังไม่ระบุผู้รับผิดชอบ: ${analytics.unassignedCount} งาน
 
 🎯 เป้าหมายตัวชี้วัดหลักของทีม CC (ปีงบประมาณ 2570):
-- ผลงานสนับสนุนภายในองค์กร (STeP): สำเร็จแล้ว ${analytics.totals.completed} งาน (จากเป้าหมายทั้งปี 1,200 งาน)
-- ผลงานสนับสนุนภายนอก มช. และเครือข่าย RSP: ดำเนินการต่อเนื่อง (เป้าหมาย 350 งาน)
-- มูลค่าการประหยัดงบประมาณ (Save Cost): สะสม ฿${analytics.totals.saveCostTotal.toLocaleString()} บาท (เป้าหมาย 1,000,000 บาท)
-- กำไรจากการให้บริการของทีม: รวม ฿${analytics.totals.profitTotal.toLocaleString()} บาท (เป้าหมาย 1,500,000 บาท)
-- ความพึงพอใจของผู้รับบริการ: เฉลี่ย ${analytics.totals.csatRate}% (${analytics.totals.csatEvaluationsCount > 0 ? `จาก ${analytics.totals.csatEvaluationsCount} การประเมิน` : "เริ่มต้นปีงบประมาณ 0% ยังไม่มีแบบประเมิน"}) | อัตราส่งมอบตรงเวลา ${analytics.totals.onTimeRate}% (${analytics.totals.deliveredCount > 0 ? `จาก ${analytics.totals.deliveredCount} งานที่ปิดสมบูรณ์` : "เริ่มต้นปีงบประมาณ 0% ยังไม่มีงานปิดส่งมอบ"})
+- ผลงานสนับสนุนภายในองค์กร (STeP): สำเร็จแล้ว ${analytics.totals.r1Completed} งาน (จากเป้าหมายทั้งปี 1,200 งาน)
+- ผลงานสนับสนุนภายนอก มช. และเครือข่าย RSP: สำเร็จแล้ว ${analytics.totals.r3Completed} งาน (จากเป้าหมายทั้งปี 350 งาน)
+- มูลค่าการประหยัดงบประมาณ (Save Cost): รวมในระบบ ฿${analytics.totals.saveCostTotal.toLocaleString()} บาท | ส่งมอบสำเร็จแล้ว ฿${analytics.totals.deliveredSaveCostTotal.toLocaleString()} บาท
+- กำไรจากการให้บริการของทีม: รับรู้จริง ฿${analytics.totals.realizedProfitTotal.toLocaleString()} บาท | Pipeline อยู่ระหว่างดำเนินงาน ฿${analytics.totals.pipelineProfitTotal.toLocaleString()} บาท (เป้าหมายทั้งปี 4,000,000 บาท)
+- ความพึงพอใจของผู้รับบริการ: ${analytics.totals.csatRate}% (ประเมินแล้ว ${analytics.totals.csatEvaluationsCount} งาน • เป้าหมาย ≥ 85%) | อัตราส่งมอบตรงเวลา ${analytics.totals.onTimeRate}% (จาก ${analytics.totals.deliveredCount} งานที่ปิดส่งมอบ)
 
-🌐 ลิงก์ระบบสำคัญทั้งหมดของทีม CC (ห้ามใส่ Placeholder ในวงเล็บเด็ดขาด! ให้ระบุ URL จริงเสมอ):
+🌐 ลิงก์ระบบสำคัญทั้งหมดของทีม CC:
 - CC Insights Portal & Dashboard ภาพรวม: ${SYSTEM_PORTAL_URLS.portal}
-- ระบบตัวชี้วัดเป้าหมาย OKRs & KR/R Metrics (KR1-KR4, R1-R9): ${SYSTEM_PORTAL_URLS.okrGoals}
-- กระดานติดตามและบริหารงานทีม CC (Task Assignments Board): ${SYSTEM_PORTAL_URLS.assignments}
-- ฟอร์มส่งบรีฟงานใหม่ (Request Creative Brief): ${SYSTEM_PORTAL_URLS.briefRequest}
-- ตรวจสอบสถานะงาน (Track Status): ${SYSTEM_PORTAL_URLS.trackStatus}
-- ศูนย์รายงานข้อมูล ISO/KM/WI (Data Reports): ${SYSTEM_PORTAL_URLS.dataReports}
-- ฟอร์มขอรับบริการศูนย์ออกแบบนวัตกรรม (IDC Form): ${SYSTEM_PORTAL_URLS.idcForm}
-- ฟอร์มงานข่าวและสื่อมวลชน RSP Press: ${SYSTEM_PORTAL_URLS.rspPressForm}
-- แบบประเมินความพึงพอใจ: ${SYSTEM_PORTAL_URLS.survey}
-
-กฎเหล็กเรื่องลิงก์และ URL (Strict Zero-Placeholder Rule):
-- ห้ามถามย้อนเด็ดขาดว่า "ต้องการลิงก์ตัวไหนคะ" เมื่อผู้ใช้ขอลิงก์ ให้แสดงลิงก์ที่ตรงกับบริบททันที!
-- ห้ามใส่ Placeholder หรือข้อความในวงเล็บ เช่น [แทรก URL ...], [ใส่ลิงก์ ...], [URL ...] โดยเด็ดขาด! ต้องให้ URL จริงแบบเต็มเสมอ!
-- หากคำถามเกี่ยวกับ KR / R หรือ OKR ให้ระบุ ${SYSTEM_PORTAL_URLS.okrGoals} เสมอ!
+- ระบบตัวชี้วัดเป้าหมาย OKRs & KR/R Metrics: ${SYSTEM_PORTAL_URLS.okrGoals}
+- กระดานติดตามและบริหารงานทีม CC: ${SYSTEM_PORTAL_URLS.assignments}
+- ฟอร์มส่งบรีฟงานใหม่: ${SYSTEM_PORTAL_URLS.briefRequest}
+- ตรวจสอบสถานะงาน: ${SYSTEM_PORTAL_URLS.trackStatus}
+- ศูนย์รายงานข้อมูล ISO/KM/WI: ${SYSTEM_PORTAL_URLS.dataReports}
 
 📚 ข้อมูลที่จดจำได้:
 ${learnedFacts.slice(0, 3).join("\n") || "ไม่มี"}
@@ -633,7 +677,6 @@ ${historyContext}
           }
           text = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
 
-          // Anti-Placeholder Sanitizer: Replace any bracketed URL placeholder with real URL!
           if (/\[(?:แทรก|ใส่)?\s*(?:URL|url|ลิงก์|ลิ้งค์|link)[\s\S]*?\]/i.test(text) || text.includes("[แทรก")) {
             const isKrR = userQuestion.toLowerCase().includes("kr") || userQuestion.toLowerCase().includes("okr") || userQuestion.includes("เป้าหมาย");
             const replacementUrl = isKrR ? SYSTEM_PORTAL_URLS.okrGoals : SYSTEM_PORTAL_URLS.portal;
@@ -656,7 +699,6 @@ ${historyContext}
     }
   }
 
-  // 2. High-Precision Zero-Cost Intelligent Fallback Engine
   return fallbackRuleEngine(userQuestion, briefs, analytics);
 }
 
@@ -666,11 +708,7 @@ ${historyContext}
 export function fallbackRuleEngine(query: string, briefs: any[], preAnalytics?: WorkloadAnalytics): string {
   const q = query.toLowerCase();
   const analytics = preAnalytics || analyzeWorkload(briefs);
-  const { totals, memberStats, pendingRanking, saveCostRanking, topSaveCostMember, topProductionSaveCostMember, unitFinancials, unassignedCount } = analytics;
-
-  const origin = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || "https://ccteam.vercel.app");
-  const briefFormUrl = `${origin}/request`;
-  const trackUrl = `${origin}/track`;
+  const { totals, memberStats, pendingRanking, saveCostRanking, topProductionSaveCostMember, unitFinancials, unassignedCount } = analytics;
 
   // 1. ใครเซฟเงิน / ใครเซพเงินได้สูงสุด / ยูนิตไหนประหยัดงบได้มากสุด / อันดับ Save Cost
   if (
@@ -689,31 +727,30 @@ export function fallbackRuleEngine(query: string, briefs: any[], preAnalytics?: 
     ).join("\n");
 
     const unitList = Object.entries(unitFinancials).map(([u, d]) => 
-      `• **${u}:** ฿${d.saveCost.toLocaleString()} บาท (${d.completed} งานสำเร็จ)`
+      `• **${u}:** ฿${d.saveCost.toLocaleString()} บาท (${d.completed} งานสำเร็จ / รวม ${d.count} งาน)`
     ).join("\n");
 
-    return `ผู้ที่ทำยอดประหยัดงบประมาณ (Save Cost) สูงสุดในภาพรวมทั้งระบบคือ **คุณ${top1 ? `${top1.nick} ${top1.code}` : "จ๊อบ AA"}** สะสมอยู่ที่ **฿${top1 ? top1.saveCost.toLocaleString() : "21,894,823"} บาท** จากบทบาทการบริหารและกำกับดูแลโครงการระดับองค์กรค่ะ ✨
+    return `ผู้ที่ทำยอดประหยัดงบประมาณ (Portfolio Save Cost) สูงสุดในภาพรวมทั้งระบบคือ **คุณ${top1 ? `${top1.nick} ${top1.code}` : "-"}** สะสมอยู่ที่ **฿${top1 ? top1.saveCost.toLocaleString() : "0"} บาท** ค่ะ ✨
 
-${topProd ? `และในสายงานผลิต (Production) ผู้สร้างมูลค่า Save Cost สูงสุดคือ **คุณ${topProd.nick} ${topProd.code} (${topProd.unit})** ทำยอดสะสมไปได้ **฿${topProd.saveCost.toLocaleString()} บาท** ค่ะ! 🎨\n` : ""}
+${topProd && topProd.nick !== top1?.nick ? `และในสายงานผลิต (Production) ผู้สร้างมูลค่า Save Cost สูงสุดคือ **คุณ${topProd.nick} ${topProd.code} (${topProd.unit})** ทำยอดสะสมไปได้ **฿${topProd.saveCost.toLocaleString()} บาท** ค่ะ! 🎨\n` : ""}
 🏆 **5 อันดับสมาชิกที่สร้างมูลค่า Save Cost สูงสุด:**
 ${rankList}
 
 🏢 **มูลค่า Save Cost แยกตาม 4 ยูนิต:**
 ${unitList}
 
-💡 *ข้อสังเกตเพิ่มเติม:* ยอดรวม Save Cost ทั้งระบบตอนนี้ทะลุเป้าหมายไปถึง **฿${totals.saveCostTotal.toLocaleString()} บาท** แล้วค่ะ โดยงานสัดส่วนใหญ่มาจากโครงการกลยุทธ์ระดับบริหาร และสายงานผลิตช่วยสร้างมูลค่าสนับสนุนองค์กรได้อย่างต่อเนื่องและยอดเยี่ยมเลยค่ะ 🌸`;
+💡 *สรุปภาพรวม:* ยอดรวม Portfolio Save Cost ทั้งระบบตอนนี้อยู่ที่ **฿${totals.saveCostTotal.toLocaleString()} บาท** (ส่งมอบสำเร็จแล้ว **฿${totals.deliveredSaveCostTotal.toLocaleString()} บาท**) ค่ะ 🌸`;
   }
 
-  // 2. ถามถึงงานของสมาชิกคนใดคนหนึ่ง (เช่น "งานของ จ๊อบ เป็นยังไงบ้าง", "งานพิม", "งานโอ๊ต", "งานของวา")
+  // 2. ถามถึงงานของสมาชิกคนใดคนหนึ่ง
   for (const item of MATCHABLE_MEMBERS) {
     if (q.includes(item.nick) || (item.code && q.includes(item.code.toLowerCase()))) {
       const s = memberStats[item.nick];
+      if (!s) continue;
       if (item.nick === "จ๊อบ") {
         return `สรุปภาพรวมงานของ**พี่จ๊อบ AA** (CC Lead) ให้ค่ะ ✨
 
-ตอนนี้ภาพรวมทีม CC ส่งมอบงานสำเร็จไปแล้ว ${totals.completed} งาน (${Math.round((totals.completed / (totals.total || 1)) * 100)}%) และสร้างมูลค่า Save Cost รวมทั้งระบบทะลุ **฿${totals.saveCostTotal.toLocaleString()} บาท** (ยอดเฉพาะโครงการในกำกับของพี่จ๊อบอยู่ที่ **฿${s.saveCost.toLocaleString()} บาท**)
-
-ในส่วนงานที่อยู่ระหว่างติดตามดูแลโดยตรง มีงานรอติดตาม/ประสานงาน ${s.pending} งาน และในระบบมีงานค้างสะสมในยูนิต PR อยู่ ${unitFinancials["PR & Communication (สื่อสารองค์กร/RSP)"]?.pending || 33} งาน แนะนำให้พิจารณาเกลี่ยงานข่าว RSP บางส่วนให้ยูนิต Content Marketing ช่วยซัพพอร์ต จะช่วยปลดล็อกคอขวดให้ทีมได้เร็วขึ้นค่ะ 🌸`;
+ตอนนี้ภาพรวมทีม CC ส่งมอบงานสำเร็จไปแล้ว ${totals.completed} งาน (จากทั้งหมด ${totals.total} งาน) สร้างมูลค่า Portfolio Save Cost รวมทั้งระบบ **฿${totals.saveCostTotal.toLocaleString()} บาท** (ส่งมอบสำเร็จแล้ว **฿${totals.deliveredSaveCostTotal.toLocaleString()} บาท**) โดยยอดเฉพาะงานในความรับผิดชอบของพี่จ๊อบอยู่ที่ **฿${s.saveCost.toLocaleString()} บาท** และกำไรโครงการบริหารจัดการ CC สะสม **฿${s.profit.toLocaleString()} บาท** ค่ะ 🌸`;
       }
 
       const activeList = s.activeTasks.length > 0 ? s.activeTasks.slice(0, 3).map((t: string) => `• ${t}`).join("\n") : "• ไม่มีงานค้างในมือ";
@@ -729,7 +766,7 @@ ${activeList}
 
 ${isHighLoad
   ? `💡 *ข้อแนะนำ:* ตอนนี้มีงานค้างสะสม ${s.pending} งาน อาจพิจารณาจัดลำดับความสำคัญ (Priority) หรือขอกำลังเสริมจากเพื่อนร่วมยูนิตเพื่อป้องกันงานชนกำหนดส่งมอบนะคะ ✨`
-  : `💡 *ข้อแนะนำ:* ปริมาณงานอยู่ในระดับที่จัดการได้คล่องตัวดีมาก แนะนำให้อัปเดตสถานะงานในระบบอย่างต่อเนื่อง เพื่อรักษาอัตราส่งมอบตรงเวลา 100% ค่าบ ✨`}`;
+  : `💡 *ข้อแนะนำ:* ปริมาณงานอยู่ในระดับที่จัดการได้คล่องตัวดีมาก แนะนำให้อัปเดตสถานะงานในระบบอย่างต่อเนื่อง เพื่อรักษาอัตราส่งมอบตรงเวลา ${totals.onTimeRate}% ค่าบ ✨`}`;
     }
   }
 
@@ -745,20 +782,19 @@ ${isHighLoad
     const top2 = pendingRanking[1];
     const top3 = pendingRanking[2];
 
-    return `ผู้ที่มีงานค้างสะสมสูงสุดในระบบตอนนี้คือ **คุณ${top1 ? `${top1.nick} ${top1.code}` : "โอ๊ต CNB"}** อยู่ที่ **${top1 ? top1.pending : 0} งาน** (ยูนิต ${top1 ? top1.unit : "PR & Communication"}) ค่ะ
+    return `ผู้ที่มีงานค้างสะสมสูงสุดในระบบตอนนี้คือ **คุณ${top1 ? `${top1.nick} ${top1.code}` : "-"}** อยู่ที่ **${top1 ? top1.pending : 0} งาน** (ยูนิต ${top1 ? top1.unit : "-"}) ค่ะ
 
 📊 **สถานะงานค้างและอันดับในระบบ:**
 • งานค้างสะสมทั้งหมดในระบบ: **${totals.pending} งาน** (จากทั้งหมด ${totals.total} งาน)
 • สมาชิกที่มีงานค้างรองลงมา: คุณ${top2 ? `${top2.nick} (${top2.pending} งาน)` : "-"}, คุณ${top3 ? `${top3.nick} (${top3.pending} งาน)` : "-"}
 • งานที่ยังไม่ระบุผู้รับผิดชอบ: ${unassignedCount} งาน
 
-💡 **ข้อสังเกตและแนวทางปลดล็อกคอขวด:**
-1. งานค้างส่วนใหญ่ในยูนิต PR มาจากข่าวเครือข่าย RSP ที่ต้องรอคอนเฟิร์มข้อมูลและภาพจากหน่วยงานภายนอก ทำให้ค้างในระบบนานกว่าปกติ
-2. เสนอให้เกลี่ยงานเขียนข่าวยกร่างเบื้องต้นให้ยูนิต Content Marketing ช่วยซัพพอร์ต จะช่วยลดภาระงานค้างของคุณ${top1 ? top1.nick : "โอ๊ต"} ลงได้อย่างรวดเร็ว
-3. แนะนำให้หัวหน้ายูนิตเร่ง Re-assign งานที่ยังไม่มีผู้รับผิดชอบ (${unassignedCount} งาน) เพื่อให้เริ่มรันคิวได้ทันทีค่ะ ✨`;
+💡 **ข้อสังเกตและแนวทางบริหารจัดการ:**
+1. แนะนำให้หัวหน้ายูนิตตรวจสอบลำดับความสำคัญของงานที่ค้างและช่วยเกลี่ยผู้ช่วย (Assistant) เสริมในงานที่มีสโคปใหญ่
+2. หากมีงานที่ยังไม่มีผู้รับผิดชอบ (${unassignedCount} งาน) แนะนำให้เร่ง Assign เพื่อให้เริ่มรันคิวได้ทันทีค่ะ ✨`;
   }
 
-  // 4. ขอละเอียดกว่านี้ / ตัวชี้วัด / ผลงาน / OKR / KPI / TIP (No Codes - Pure Names!)
+  // 4. ขอละเอียดกว่านี้ / ตัวชี้วัด / ผลงาน / OKR / KPI / TIP
   if (
     q.includes("ละเอียด") ||
     q.includes("kr") ||
@@ -770,17 +806,15 @@ ${isHighLoad
     return `สรุปความคืบหน้าตัวชี้วัดและผลงานของทีม CC (ปีงบประมาณ 2570) ให้ค่ะ 🏆
 
 📈 **ผลการดำเนินงานเทียบเป้าหมาย:**
-• **ผลงานสนับสนุนภายในองค์กร (STeP):** ส่งมอบสำเร็จแล้ว **${totals.completed} งาน** (จากเป้าหมายทั้งปี 1,200 งาน)
-• **ผลงานสนับสนุนภายนอก มช. และเครือข่าย RSP:** ดำเนินการต่อเนื่อง (เป้าหมาย 350 งาน)
-• **มูลค่าการประหยัดงบประมาณ (Save Cost):** สร้างมูลค่าสะสม **฿${totals.saveCostTotal.toLocaleString()} บาท** (ทะลุเป้าหมาย 1,000,000 บาทแล้ว 🚀)
-• **กำไรจากการให้บริการของทีม:** รวม **฿${totals.profitTotal.toLocaleString()} บาท** (ทะลุเป้าหมาย 1,500,000 บาทแล้ว 🎉)
-• **ความพึงพอใจของผู้รับบริการ (CSAT):** เฉลี่ย **98.4%** (เกณฑ์มาตรฐานองค์กร ≥85%)
-• **อัตราการส่งมอบงานตรงต่อเวลา:** **100% เต็ม**
+• **ผลงานสนับสนุนภายในองค์กร (STeP):** ส่งมอบสำเร็จแล้ว **${totals.r1Completed} งาน** (จากเป้าหมายทั้งปี 1,200 งาน)
+• **ผลงานสนับสนุนภายนอก มช. และเครือข่าย RSP:** ส่งมอบสำเร็จแล้ว **${totals.r3Completed} งาน** (จากเป้าหมายทั้งปี 350 งาน)
+• **มูลค่าการประหยัดงบประมาณ (Save Cost):** รวมในระบบ **฿${totals.saveCostTotal.toLocaleString()} บาท** (ส่งมอบสำเร็จแล้ว **฿${totals.deliveredSaveCostTotal.toLocaleString()} บาท**)
+• **กำไรโครงการบริหารจัดการของทีม:** รับรู้จริง **฿${totals.realizedProfitTotal.toLocaleString()} บาท** | Pipeline อยู่ระหว่างดำเนินงาน **฿${totals.pipelineProfitTotal.toLocaleString()} บาท** (เป้าหมายทั้งปี 4,000,000 บาท)
+• **ความพึงพอใจของผู้รับบริการ (CSAT):** **${totals.csatRate}%** (ประเมินแล้ว ${totals.csatEvaluationsCount} งาน • เป้าหมาย ≥ 85%)
+• **อัตราการส่งมอบงานตรงต่อเวลา:** **${totals.onTimeRate}%** (จาก ${totals.deliveredCount} งานที่ส่งมอบสำเร็จ)
 
 🔗 **ระบบตัวชี้วัดเป้าหมาย OKRs & KR/R:**
-${SYSTEM_PORTAL_URLS.okrGoals}
-
-💡 *ข้อสังเกตและแนวทางขับเคลื่อน:* ตัวชี้วัดด้านมูลค่าการประหยัดงบและกำไรทะลุเป้าหมายอย่างยอดเยี่ยม สำหรับผลงานสนับสนุนภายในองค์กรแนะนำให้เร่งผลักดันงานค้าง ${totals.pending} งาน และใช้ประโยชน์จาก Standard Template เพื่อเพิ่มอัตราการผลิตงานประจำเดือนอย่างต่อเนื่องค่ะ ✨`;
+${SYSTEM_PORTAL_URLS.okrGoals}`;
   }
 
   // 5. รายงานภาพรวมเดือนนี้ / สรุปภาพรวม
@@ -788,27 +822,27 @@ ${SYSTEM_PORTAL_URLS.okrGoals}
     const pendingRate = Math.round((totals.pending / (totals.total || 1)) * 100);
     const completedRate = Math.round((totals.completed / (totals.total || 1)) * 100);
 
+    const unitLines = Object.entries(unitFinancials)
+      .map(([u, d]) => `• ${u}: เสร็จ ${d.completed}/${d.count} งาน (Save Cost ฿${d.saveCost.toLocaleString()} บาท)`)
+      .join("\n");
+
     return `สรุปภาพรวมการดำเนินงานของทีม CC ทั้งระบบในปัจจุบันค่ะ ✨
 
 📊 **สถิติภาพรวมงาน:**
 • รวมงานในระบบทั้งหมด: **${totals.total} งาน**
-  - ส่งมอบสำเร็จแล้ว: **${totals.completed} งาน** (${completedRate}%)
+  - ส่งมอบสำเร็จแล้ว: **${totals.completed} งาน** (${completedRate}%) [ภายใน STeP ${totals.r1Completed} งาน • ภายนอก มช./RSP ${totals.r3Completed} งาน]
   - กำลังดำเนินการ: **${totals.inProgress} งาน**
   - รอทำ (Pending): **${totals.pending} งาน** (${pendingRate}%)
   - รอมอบหมาย (Unassigned): **${unassignedCount} งาน**
-• มูลค่าประหยัดงบประมาณสะสม (Save Cost): **฿${totals.saveCostTotal.toLocaleString()} บาท**
-• กำไรสะสมจากการให้บริการ: **฿${totals.profitTotal.toLocaleString()} บาท**
+• มูลค่าประหยัดงบประมาณสะสม (Portfolio Save Cost): **฿${totals.saveCostTotal.toLocaleString()} บาท** (ส่งมอบสำเร็จแล้ว **฿${totals.deliveredSaveCostTotal.toLocaleString()} บาท**)
+• กำไรโครงการบริหารจัดการ CC: รับรู้จริง **฿${totals.realizedProfitTotal.toLocaleString()} บาท** | Pipeline อยู่ระหว่างดำเนินงาน **฿${totals.pipelineProfitTotal.toLocaleString()} บาท**
+• ความพึงพอใจเฉลี่ย: **${totals.csatRate}%** (ประเมินแล้ว ${totals.csatEvaluationsCount} งาน • เป้าหมาย ≥ 85%)
 
-👥 **ยูนิตที่ขับเคลื่อนงานหลัก:**
-• Creative Designer: เสร็จ 133 งาน (Save Cost ฿3.04M)
-• Content Marketing: เสร็จ 94 งาน (Save Cost ฿325K)
-• PR & Communication: เสร็จ 71 งาน (Save Cost ฿1.66M)
-• Management: เสร็จ 17 โครงการ (Save Cost ฿21.89M)
+👥 **ผลงานแยกตาม 4 ยูนิต:**
+${unitLines}
 
 🔗 **CC Insights Portal & Dashboard ภาพรวม:**
-${SYSTEM_PORTAL_URLS.portal}
-
-💡 *ข้อสังเกตสำหรับทีม:* ปัจจุบันมีงานค้าง ${totals.pending} งาน โดยกระจุกตัวอยู่ที่งานข่าว RSP และงานออกแบบบางส่วน แนะนำให้จัด Quick Standup สั้นๆ สัปดาห์ละครั้งเพื่อสแกนและเคลียร์งานที่รอข้อมูลภายนอกให้เดินหน้าต่อได้ราบรื่นค่ะ 🌸`;
+${SYSTEM_PORTAL_URLS.portal}`;
   }
 
   // 6. ขอลิงก์ส่งบรีฟ / ฟอร์มขอรับบริการ / ลิงก์ระบบสำคัญ
@@ -857,14 +891,16 @@ ${SYSTEM_PORTAL_URLS.dataReports}
   // 7. งานด่วน / Urgent
   if (q.includes("ด่วน") || q.includes("urgent")) {
     const urgentTasks = briefs.filter(b => {
+      if (!b || b.status === "completed" || b.status === "cancelled" || b.status === "purged") return false;
+      if (b.details?.is_deleted || b.details?.is_permanently_deleted || b.details?.is_test) return false;
       const isMarkedUrgent = b.details?.is_urgent === true || b.details?.isUrgent === true;
       const deadlineStr = b.deadline || b.details?.usage_date || b.details?.publish_date;
       let isNearDeadline = false;
-      if (deadlineStr && b.status !== "completed") {
+      if (deadlineStr) {
         const diffDays = (new Date(deadlineStr).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
         if (diffDays >= 0 && diffDays <= 2) isNearDeadline = true;
       }
-      return (isMarkedUrgent || isNearDeadline) && b.status !== "completed";
+      return isMarkedUrgent || isNearDeadline;
     });
 
     if (urgentTasks.length === 0) {
@@ -886,8 +922,10 @@ ${SYSTEM_PORTAL_URLS.dataReports}
   if (q.includes("วันนี้") || q.includes("today")) {
     const todayStr = new Date().toISOString().split("T")[0];
     const todayTasks = briefs.filter(b => {
+      if (!b || b.status === "completed" || b.status === "cancelled" || b.status === "purged") return false;
+      if (b.details?.is_deleted || b.details?.is_permanently_deleted || b.details?.is_test) return false;
       const dStr = b.deadline || b.details?.usage_date || b.details?.publish_date;
-      return dStr && dStr.startsWith(todayStr) && b.status !== "completed";
+      return dStr && dStr.startsWith(todayStr);
     });
 
     if (todayTasks.length === 0) {
@@ -905,11 +943,12 @@ ${SYSTEM_PORTAL_URLS.dataReports}
 
   // 9. ความผิดปกติ / ความเสี่ยง
   if (q.includes("ผิดปกติ") || q.includes("ความเสี่ยง") || q.includes("เตือน") || q.includes("anomaly") || q.includes("risk")) {
-    const noAssignee = briefs.filter(b => !b.assignees && !b.details?.assignee && b.status !== "completed");
+    const activeBriefs = briefs.filter(b => b && b.status !== "completed" && b.status !== "cancelled" && b.status !== "purged" && !b.details?.is_deleted && !b.details?.is_permanently_deleted && !b.details?.is_test);
+    const noAssignee = activeBriefs.filter(b => !b.assignees && !b.details?.assignee && !b.assignee_id);
     const now = Date.now();
-    const overdue = briefs.filter(b => {
-      const dStr = b.deadline || b.details?.usage_date;
-      return dStr && new Date(dStr).getTime() < now && b.status !== "completed";
+    const overdue = activeBriefs.filter(b => {
+      const dStr = b.deadline || b.details?.usage_date || b.details?.publish_date;
+      return dStr && new Date(dStr).getTime() < now;
     });
 
     return `สแกนจุดเฝ้าระวังและความเสี่ยงในระบบ CC ให้เรียบร้อยค่ะ ⚠️
@@ -947,3 +986,4 @@ ${SYSTEM_PORTAL_URLS.dataReports}
 • "รายงานภาพรวมเดือนนี้"
 • หรือขอบรีฟ/ติดตามงานได้ทันทีค่า 🌸`;
 }
+

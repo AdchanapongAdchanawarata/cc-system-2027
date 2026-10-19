@@ -205,9 +205,6 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
   
   const defaultDates = useMemo(() => {
     const end = new Date(today);
-    const start = new Date(today);
-    start.setMonth(start.getMonth() - 1);
-    
     const formatDate = (d: Date) => {
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -216,12 +213,12 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
     };
 
     return {
-      startDate: formatDate(start),
+      startDate: '2026-09-01',
       endDate: formatDate(end)
     };
   }, [today]);
 
-  const [timeframe, setTimeframe] = useState<StockTimeframe>('1M');
+  const [timeframe, setTimeframe] = useState<StockTimeframe>('ALL');
   const [granularity, setGranularity] = useState<TimelineGranularity>('auto');
   const [startDate, setStartDate] = useState<string>(defaultDates.startDate);
   const [endDate, setEndDate] = useState<string>(defaultDates.endDate);
@@ -368,7 +365,7 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
     const opsCount = assignees.filter(a => isOperationalAssignee(a)).length;
     // Dynamic scaling: If anyone leaves/inactive, total system targets scale proportionally down
     // without ever pushing or increasing individual targets on remaining creative members
-    return computeRealtimeMetrics(effectiveBriefs, okrSettings, opsCount || 11, Math.max(opsCount, 11));
+    return computeRealtimeMetrics(effectiveBriefs, okrSettings, opsCount || 12, Math.max(opsCount, 12));
   }, [effectiveBriefs, assignees, okrSettings]);
 
   const handleUpdateBriefField = async (id: string, field: string, value: any) => {
@@ -742,7 +739,7 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
         unitLabel: pu.label,
         leadName: pu.lead,
         isInternal: pu.isInternal,
-        memberCount: pu.isInternal ? assignees.length : membersInUnit.length,
+        memberCount: pu.isInternal ? operationalAssignees.length : membersInUnit.length,
         totalSaveCost,
         ownerSaveCost,
         assistantSaveCost,
@@ -756,7 +753,7 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
         ),
       };
     }).sort((a, b) => b.totalSaveCost - a.totalSaveCost);
-  }, [PREDEFINED_UNITS, effectiveBriefs, assignees, unitMemberStatsMap]);
+  }, [PREDEFINED_UNITS, effectiveBriefs, operationalAssignees, unitMemberStatsMap]);
 
   // Filtered unit stats according to active top unit filter
   const displayedUnitStats = useMemo(() => {
@@ -807,16 +804,21 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
         }
       });
 
-      // Satisfaction score for this unit
+      // Satisfaction score for this unit (Unify with computeRealtimeMetrics)
       let satSum = 0;
       let satCount = 0;
       completedUnitBriefs.forEach((b) => {
         const details = b.details || {};
+        if (details.survey_status === "declined") return;
         const scores = details.satisfaction_scores;
-        if (scores && typeof scores.averagePercent === "number" && details.survey_status !== "sent") {
+        if (typeof scores?.averagePercent === "number") {
           satSum += Number(scores.averagePercent);
           satCount++;
-        } else if (details.survey_status === "completed" && typeof details.satisfaction_rate === "number") {
+        } else if (typeof scores?.accuracy === "number") {
+          const sum = (scores.accuracy + (scores.timeliness || scores.accuracy) + (scores.quality || scores.accuracy) + (scores.attentiveness || scores.accuracy) + (scores.ownership || scores.accuracy));
+          satSum += Math.round((sum / 25) * 100);
+          satCount++;
+        } else if (details.survey_status === "completed" || (typeof details.satisfaction_rate === "number" && details.satisfaction_rate > 0)) {
           satSum += Number(details.satisfaction_rate);
           satCount++;
         }
@@ -835,7 +837,7 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
         unitLabel: pu.label,
         leadName: pu.lead,
         isInternal: pu.isInternal,
-        memberCount: pu.isInternal ? assignees.length : membersInUnit.length,
+        memberCount: pu.isInternal ? operationalAssignees.length : membersInUnit.length,
         completedCount: completedUnitBriefs.length,
         totalTasks: unitBriefs.length,
         unassignedCount,
@@ -856,7 +858,7 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
 
     if (unitFilter === "All") return list;
     return list.filter((u) => u.unit.toLowerCase() === unitFilter.toLowerCase());
-  }, [PREDEFINED_UNITS, effectiveBriefs, assignees, unitMemberStatsMap, unitFilter]);
+  }, [PREDEFINED_UNITS, effectiveBriefs, operationalAssignees, unitMemberStatsMap, unitFilter]);
 
   // Member OKR Contribution Stats for Tab 2 (Goals)
   const memberGoalStats = useMemo(() => {
@@ -864,7 +866,7 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
       const memberTasks = effectiveBriefs.filter((b) => {
         if (b.status === "cancelled") return false;
         const isOwner = b.assignee_id === member.assignee_id;
-        const isAst = Array.isArray(b.details?.assistants) && b.details.assistants.some((a: any) => a.assignee_id === member.assignee_id);
+        const isAst = Array.isArray(b.details?.assistants) && b.details.assistants.some((a: any) => a.assignee_id === member.assignee_id && Number(a.percentage) > 0);
         return isOwner || isAst;
       });
 
@@ -913,24 +915,29 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
         }
       });
 
-      // Average satisfaction score for this member
+      // Average satisfaction score for this member (Unify with computeRealtimeMetrics)
       let satSum = 0;
       let satCnt = 0;
       completed.forEach((b) => {
         const details = b.details || {};
+        if (details.survey_status === "declined") return;
         const scores = details.satisfaction_scores;
-        if (scores && typeof scores.averagePercent === "number" && details.survey_status !== "sent") {
+        if (typeof scores?.averagePercent === "number") {
           satSum += Number(scores.averagePercent);
           satCnt++;
-        } else if (details.survey_status === "completed" && typeof details.satisfaction_rate === "number") {
+        } else if (typeof scores?.accuracy === "number") {
+          const sum = (scores.accuracy + (scores.timeliness || scores.accuracy) + (scores.quality || scores.accuracy) + (scores.attentiveness || scores.accuracy) + (scores.ownership || scores.accuracy));
+          satSum += Math.round((sum / 25) * 100);
+          satCnt++;
+        } else if (details.survey_status === "completed" || (typeof details.satisfaction_rate === "number" && details.satisfaction_rate > 0)) {
           satSum += Number(details.satisfaction_rate);
           satCnt++;
         }
       });
       const avgSat = satCnt > 0 ? Math.round(satSum / satCnt) : 0;
 
-      // Total goal-aligned tasks (completed tasks only)
-      const totalGoalTasks = r1Count + r3Count + pmCompletedCount;
+      // Total goal-aligned tasks (completed tasks only: every completed task is either R1 or R3)
+      const totalGoalTasks = r1Count + r3Count;
 
       return {
         ...member,

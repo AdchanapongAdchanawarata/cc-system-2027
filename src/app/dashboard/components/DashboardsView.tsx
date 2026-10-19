@@ -1873,6 +1873,7 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
               onOpenSurveyHub={() => setShowSurveyHubModal(true)}
               onOpenReachEngagement={() => setShowReachEngageModal(true)}
               onRefreshData={fetchDashboardData}
+              onSelectBrief={(b) => setSelectedBriefForModal(b)}
             />
 
             {/* Copy Link HTML button */}

@@ -59,31 +59,6 @@ export function OverdueClockIcon({ size = 20, className = "text-[#E03131]" }: { 
   );
 }
 
-// Clean, minimal Surveillance/Watch icon (crisp eye contour with filled pupil)
-export function WatchEyeIcon({ size = 10, className = "text-black shrink-0" }: { size?: number; className?: string }) {
-  return (
-    <svg 
-      width={size} 
-      height={size} 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2.3" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
-      className={className}
-    >
-      <path d="M2 12s3.8-7 10-7 10 7 10 7-3.8 7-10 7-10-7-10-7Z" />
-      <circle cx="12" cy="12" r="2.8" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
-export type WatchReasonItem = {
-  title: string;
-  detail?: string;
-};
-
 type Brief = {
   id: string;
   project_name: string;
@@ -230,7 +205,7 @@ export default function AssignmentsView() {
   const [okrs, setOkrs] = useState<OKR[]>([]);
   const [selectedBrief, setSelectedBrief] = useState<Brief | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [quickFilter, setQuickFilter] = useState<"all" | "my_tasks" | "unassigned" | "overdue">("all");
+  const [quickFilter, setQuickFilter] = useState<"all" | "my_tasks" | "unassigned" | "overdue" | "due_48h">("all");
   
   // Drag and Drop state
   const [draggedBriefId, setDraggedBriefId] = useState<string | null>(null);
@@ -277,8 +252,7 @@ export default function AssignmentsView() {
   const [activeCardTooltip, setActiveCardTooltip] = useState<{
     top: number;
     left: number;
-    type: "watch" | "urgent" | "overdue";
-    reasons?: WatchReasonItem[];
+    type: "urgent" | "overdue";
     badgeHeader?: string;
     badgeColorClass?: string;
     bodyText?: string;
@@ -294,35 +268,6 @@ export default function AssignmentsView() {
       window.removeEventListener("scroll", handleScroll, { capture: true });
     };
   }, []);
-
-  const handleWatchMouseEnter = (e: React.MouseEvent<HTMLElement>, reasons: WatchReasonItem[]) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const popoverWidth = 330;
-    const estimatedHeight = 145 + reasons.length * 42;
-    const margin = 8;
-
-    let top = rect.top - estimatedHeight - margin;
-    // Flip below the badge if clipping against viewport top (e.g. card at the top of Kanban column)
-    if (top < 12) {
-      top = rect.bottom + margin;
-    }
-
-    // Align horizontally with badge, clamped to viewport boundaries
-    let left = rect.left;
-    if (left + popoverWidth > window.innerWidth - 12) {
-      left = window.innerWidth - popoverWidth - 12;
-    }
-    if (left < 12) {
-      left = 12;
-    }
-
-    setActiveCardTooltip({
-      top,
-      left,
-      type: "watch",
-      reasons,
-    });
-  };
 
   const handleCornerMouseEnter = (
     e: React.MouseEvent<HTMLElement>,
@@ -1576,7 +1521,7 @@ export default function AssignmentsView() {
         if (!matchesPrimary && !matchesAssistant && !matchesUnassigned) return false;
       }
 
-      // 3. Quick Filter (my_tasks, unassigned, overdue)
+      // 3. Quick Filter (my_tasks, unassigned, overdue, due_48h)
       if (quickFilter === "unassigned") {
         if (b.assignee_id || b.status !== "pending") return false;
       } else if (quickFilter === "overdue") {
@@ -1584,6 +1529,9 @@ export default function AssignmentsView() {
         const deadline = b.details?.publish_date || b.deadline || b.details?.target_deadline;
         const isOverdue = isNotDone && deadline && new Date(deadline).getTime() < new Date().setHours(0, 0, 0, 0);
         if (!isOverdue) return false;
+      } else if (quickFilter === "due_48h") {
+        const sla = getSlaPreOverdueStatus(b);
+        if (sla.level !== "due_today" && sla.level !== "due_tomorrow" && sla.level !== "due_48h") return false;
       } else if (quickFilter === "my_tasks") {
         const currentName = (typeof window !== "undefined" ? localStorage.getItem("cc_user_name") : "") || "";
         const currentEmail = (typeof window !== "undefined" ? localStorage.getItem("cc_user_email") : "") || "";
@@ -1636,23 +1584,23 @@ export default function AssignmentsView() {
       <div className="flex flex-col xl:flex-row xl:items-center justify-between mb-2 sm:mb-2.5 gap-2 pb-2 border-b border-surface-border print:hidden shrink-0">
         
         {/* Left Side: Tasks Title + Unit Tabs */}
-        <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap sm:flex-nowrap">
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap sm:flex-nowrap min-w-0">
           <div className="flex items-center gap-1.5 shrink-0">
             <span className="p-1 sm:p-1.5 rounded-lg bg-[#E03131]/10 text-[#E03131]">
               <LayoutList size={18} className="sm:w-[20px] sm:h-[20px]" />
             </span>
-            <h2 className="text-base sm:text-lg md:text-xl font-bold tracking-tight text-foreground mr-1">
+            <h2 className="text-base sm:text-lg md:text-xl font-bold tracking-tight text-foreground mr-0.5">
               Tasks
             </h2>
           </div>
 
           {/* Unit Selector: All CC, Creative, Content, PR, Internal */}
-          <div className="grid grid-cols-5 w-full sm:w-auto inline-flex bg-surface p-0.5 rounded-xl border border-surface-border shadow-2xs">
+          <div className="grid grid-cols-5 w-full sm:w-auto inline-flex bg-surface p-0.5 rounded-xl border border-surface-border shadow-2xs shrink-0">
             {["All CC", "Creative", "Content", "PR", "Internal"].map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`py-1.5 px-2 sm:px-3.5 text-center text-xs font-semibold rounded-lg transition-all truncate cursor-pointer ${
+                className={`py-1.5 px-2 sm:px-3 text-center text-xs font-semibold rounded-lg transition-all whitespace-nowrap cursor-pointer ${
                   filter === f
                     ? "bg-[#E03131] text-white shadow-2xs font-bold"
                     : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
@@ -1664,11 +1612,11 @@ export default function AssignmentsView() {
           </div>
 
           {/* Smart Quick Filters */}
-          <div className="hidden lg:flex items-center gap-1 bg-surface p-0.5 rounded-xl border border-surface-border shadow-2xs text-[11px]">
+          <div className="hidden lg:inline-flex items-center gap-0.5 bg-surface p-0.5 rounded-xl border border-surface-border shadow-2xs text-[11px] shrink-0">
             <button
               type="button"
               onClick={() => setQuickFilter("all")}
-              className={`px-2 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+              className={`px-2 py-1 rounded-lg font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 quickFilter === "all" ? "bg-zinc-900 text-white shadow-xs font-bold" : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -1677,7 +1625,7 @@ export default function AssignmentsView() {
             <button
               type="button"
               onClick={() => setQuickFilter("my_tasks")}
-              className={`px-2 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+              className={`px-2 py-1 rounded-lg font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 quickFilter === "my_tasks" ? "bg-orange-500 text-white shadow-xs font-bold" : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -1686,7 +1634,7 @@ export default function AssignmentsView() {
             <button
               type="button"
               onClick={() => setQuickFilter("unassigned")}
-              className={`px-2 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+              className={`px-2 py-1 rounded-lg font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 quickFilter === "unassigned" ? "bg-rose-500 text-white shadow-xs font-bold" : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -1695,7 +1643,7 @@ export default function AssignmentsView() {
             <button
               type="button"
               onClick={() => setQuickFilter("overdue")}
-              className={`px-2 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+              className={`px-2 py-1 rounded-lg font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 quickFilter === "overdue" ? "bg-amber-500 text-white shadow-xs font-bold" : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -1705,10 +1653,10 @@ export default function AssignmentsView() {
         </div>
 
         {/* Right Side: Search + กรองคน + History Controls + Trash Bin (Single Unified Row) */}
-        <div className="flex items-center gap-1.5 sm:gap-2 w-full xl:w-auto">
+        <div className="flex items-center gap-1.5 w-full xl:w-auto justify-end min-w-0">
           
           {/* Search Bar */}
-          <div className="relative flex-1 min-w-0 sm:w-48 md:w-56">
+          <div className="relative flex-1 min-w-[110px] sm:w-40 md:w-44 xl:w-40 2xl:w-52">
             <input 
               type="text" 
               placeholder="ค้นหา รหัส, ชื่อ, ข้อความ..." 
@@ -1985,6 +1933,9 @@ export default function AssignmentsView() {
               assignees={assignees}
               onOpenSurveyHub={() => setIsSurveyHubOpen(true)}
               onRefreshData={fetchData}
+              onSelectBrief={(b) => setSelectedBrief(b)}
+              onFilterDue48h={() => setQuickFilter((prev) => (prev === "due_48h" ? "all" : "due_48h"))}
+              isDue48hFilterActive={quickFilter === "due_48h"}
             />
 
             {/* Daily Mission Direct Button */}
@@ -2244,52 +2195,6 @@ export default function AssignmentsView() {
                 const isUrgent = (isExplicitUrgent || isSlaUrgent || (daysUntilDue !== null && daysUntilDue >= 0 && daysUntilDue <= 3)) && !isOverdue && brief.status !== 'completed' && brief.status !== 'cancelled';
                 const hasTopBadge = isOverdue || isUrgent;
 
-                const revCount = brief.details?.revisions_count || 0;
-                
-                // Construct detailed reasons for Surveillance / Quality Watch (Structured line breaks & clean phrasing)
-                const watchReasons: WatchReasonItem[] = [];
-                if (revCount >= 3) {
-                  watchReasons.push({
-                    title: `แก้ไขงานแล้ว ${revCount} ครั้ง`,
-                    detail: "เกินเกณฑ์ควบคุมคุณภาพ WI (ไม่เกิน 3 ครั้ง)"
-                  });
-                } else if (revCount === 2) {
-                  watchReasons.push({
-                    title: "แก้ไขงานแล้ว 2 ครั้ง",
-                    detail: "ใกล้แตะเพดานควบคุมคุณภาพ WI (3 ครั้ง)"
-                  });
-                }
-
-                if (brief.status === 'pending') {
-                  if (brief.assignee_id && ages.pendingDays > 3) {
-                    watchReasons.push({
-                      title: `ค้างอยู่ใน To-Do List นาน ${ages.pendingDays} วัน`,
-                      detail: "เกณฑ์ปกติกำหนดให้ไม่เกิน 3 วัน"
-                    });
-                  } else if (!brief.assignee_id && ages.unassignedDays > 3) {
-                    watchReasons.push({
-                      title: `รอมอบหมายผู้รับผิดชอบนาน ${ages.unassignedDays} วัน`,
-                      detail: "เกณฑ์ปกติกำหนดให้ไม่เกิน 3 วัน"
-                    });
-                  }
-                } else if (brief.status === 'in_progress') {
-                  if (ages.inProgressDays > 14) {
-                    watchReasons.push({
-                      title: `กำลังดำเนินการต่อเนื่องนาน ${ages.inProgressDays} วัน`,
-                      detail: "อยู่ในสถานะ In-Progress นานกว่าเกณฑ์ 14 วัน"
-                    });
-                  }
-                }
-
-                if (brief.status === 'pending' && daysUntilDue !== null && daysUntilDue <= 2 && daysUntilDue >= 0) {
-                  watchReasons.push({
-                    title: `ใกล้ถึงกำหนดส่ง (เหลือ ${daysUntilDue === 0 ? "วันนี้" : `${daysUntilDue} วัน`})`,
-                    detail: "สถานะปัจจุบันยังไม่ได้เริ่ม In-Progress"
-                  });
-                }
-
-                const isUnderWatch = watchReasons.length > 0 && brief.status !== 'completed' && brief.status !== 'cancelled';
-
                 const isDraggingThis = draggedBriefId === brief.id;
                 const isTargetElsewhere = Boolean(dragOverColId && (dragOverColId !== col.id || (dragOverBriefId && dragOverBriefId !== brief.id)));
 
@@ -2356,7 +2261,7 @@ export default function AssignmentsView() {
                       </div>
                     ) : null}
 
-                    {/* Card Header: Task Code + Watch Badge (Unclipped Popover Portal) */}
+                    {/* Card Header: Task Code + SLA Warning Badge */}
                     <div className={`flex items-center gap-1.5 flex-wrap min-w-0 mb-1 select-none ${hasTopBadge ? 'pr-7' : 'pr-0'}`}>
                       <span className={`font-bold text-xs ${
                         brief.unit?.toLowerCase() === "creative" ? "text-[#7c3aed] dark:text-[#c4b5fd]" : 
@@ -2399,18 +2304,6 @@ export default function AssignmentsView() {
                         }
                         return null;
                       })()}
-
-                      {/* Surveillance / Watch Badge (Unclipped Top Layer via Portal) */}
-                      {isUnderWatch && (
-                        <span 
-                          onClick={(e) => e.stopPropagation()}
-                          onMouseEnter={(e) => handleWatchMouseEnter(e, watchReasons)}
-                          onMouseLeave={handleCardTooltipMouseLeave}
-                          className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10.5px] font-black bg-[#FFD43B] hover:bg-[#FCC419] text-black shadow-xs transition-all cursor-help relative select-none"
-                        >
-                          <span className="tracking-tight font-black text-black leading-none">เฝ้าระวัง</span>
-                        </span>
-                      )}
                     </div>
 
                     {/* Task Name - Clamped to max 2 lines */}
@@ -2824,69 +2717,21 @@ export default function AssignmentsView() {
 
       {/* Top Layer Card Tooltip Portal (Luminous Glowing Border + Translucent See-through Glass Popup) */}
       {activeCardTooltip && typeof document !== "undefined" && createPortal(
-        activeCardTooltip.type === "watch" ? (
-          <div
-            style={{
-              top: `${activeCardTooltip.top}px`,
-              left: `${activeCardTooltip.left}px`,
-              width: "330px",
-            }}
-            className="fixed z-[99999] pointer-events-none flex flex-col p-3.5 bg-white/45 dark:bg-zinc-950/50 text-slate-900 dark:text-zinc-100 rounded-2xl border border-white/90 dark:border-white/30 backdrop-blur-md shadow-[0_0_22px_rgba(255,255,255,0.95),0_0_35px_rgba(251,191,36,0.25),0_14px_40px_rgba(0,0,0,0.14)] ring-1 ring-white/90 dark:ring-white/20 animate-in fade-in zoom-in-95 duration-150 font-sans select-none"
-          >
-            {/* Minimal Grid Header */}
-            <div className="flex items-center justify-between gap-2 pb-1.5 mb-2 border-b border-black/[0.08] dark:border-white/[0.1]">
-              <span className="text-[9px] font-bold font-mono tracking-[0.2em] text-slate-600 dark:text-zinc-300 uppercase">
-                MONITORING • CRITERIA
-              </span>
-              <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-white/70 dark:bg-white/10 border border-white/80 dark:border-white/10 text-slate-800 dark:text-zinc-100 font-bold shadow-2xs">
-                {activeCardTooltip.reasons?.length || 0} ITEMS
-              </span>
-            </div>
-
-            <div className="text-xs font-bold text-slate-950 dark:text-white mb-2.5 tracking-tight">
-              เหตุผลการเฝ้าระวังคุณภาพงาน
-            </div>
-
-            <div className="space-y-2.5">
-              {activeCardTooltip.reasons?.map((reason, idx) => (
-                <div key={idx} className="flex items-start gap-2.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.6)] shrink-0 mt-1.5" />
-                  <div className="flex-1 flex flex-col gap-0.5 leading-snug">
-                    <span className="text-[12px] font-bold text-slate-950 dark:text-white tracking-tight">
-                      {reason.title}
-                    </span>
-                    {reason.detail && (
-                      <span className="text-[10.5px] font-medium text-slate-600 dark:text-zinc-300">
-                        {reason.detail}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-2.5 pt-2 border-t border-black/[0.08] dark:border-white/[0.1] flex items-center justify-between text-[9px] font-mono text-slate-500 dark:text-zinc-400 font-medium tracking-wide">
-              <span>CC QUALITY SYSTEM</span>
-              <span>ISO 9001:2015</span>
-            </div>
-          </div>
-        ) : (
-          <div
-            style={{
-              top: `${activeCardTooltip.top}px`,
-              left: `${activeCardTooltip.left}px`,
-              width: "230px",
-            }}
-            className="fixed z-[99999] pointer-events-none flex flex-col p-2.5 bg-white/50 dark:bg-zinc-950/50 text-slate-900 dark:text-zinc-100 rounded-xl border border-white/90 dark:border-white/30 backdrop-blur-md shadow-[0_0_18px_rgba(255,255,255,0.95),0_0_30px_rgba(239,68,68,0.22),0_10px_30px_rgba(0,0,0,0.12)] ring-1 ring-white/90 dark:ring-white/20 animate-in fade-in zoom-in-95 duration-100 font-sans select-none text-left"
-          >
-            <span className={`text-[8.5px] font-mono tracking-[0.2em] uppercase font-bold ${activeCardTooltip.badgeColorClass || "text-slate-700"}`}>
-              {activeCardTooltip.badgeHeader}
-            </span>
-            <span className="text-[11.5px] font-bold text-slate-900 dark:text-zinc-100 mt-0.5 leading-snug">
-              {activeCardTooltip.bodyText}
-            </span>
-          </div>
-        ),
+        <div
+          style={{
+            top: `${activeCardTooltip.top}px`,
+            left: `${activeCardTooltip.left}px`,
+            width: "230px",
+          }}
+          className="fixed z-[99999] pointer-events-none flex flex-col p-2.5 bg-white/50 dark:bg-zinc-950/50 text-slate-900 dark:text-zinc-100 rounded-xl border border-white/90 dark:border-white/30 backdrop-blur-md shadow-[0_0_18px_rgba(255,255,255,0.95),0_0_30px_rgba(239,68,68,0.22),0_10px_30px_rgba(0,0,0,0.12)] ring-1 ring-white/90 dark:ring-white/20 animate-in fade-in zoom-in-95 duration-100 font-sans select-none text-left"
+        >
+          <span className={`text-[8.5px] font-mono tracking-[0.2em] uppercase font-bold ${activeCardTooltip.badgeColorClass || "text-slate-700"}`}>
+            {activeCardTooltip.badgeHeader}
+          </span>
+          <span className="text-[11.5px] font-bold text-slate-900 dark:text-zinc-100 mt-0.5 leading-snug">
+            {activeCardTooltip.bodyText}
+          </span>
+        </div>,
         document.body
       )}
     </div>

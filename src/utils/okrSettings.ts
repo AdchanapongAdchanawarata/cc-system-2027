@@ -624,6 +624,19 @@ function mergeMemberResponsibilities(stored?: MemberMetricResponsibility[]): Mem
       exists.memberId = def.memberId;
     }
   });
+
+  // Self-heal stale localStorage responsibility sums if R1, R3, or R7 do not equal 100%
+  const r1Sum = Math.round(merged.reduce((acc, m) => acc + (Number(m.rResponsibilities?.R1) || 0), 0));
+  const r3Sum = Math.round(merged.reduce((acc, m) => acc + (Number(m.rResponsibilities?.R3) || 0), 0));
+  const r7Sum = Math.round(merged.reduce((acc, m) => acc + (Number(m.rResponsibilities?.R7) || 0), 0));
+  if (r1Sum !== 100 || r3Sum !== 100 || r7Sum !== 100) {
+    return DEFAULT_MEMBER_RESPONSIBILITIES.map(d => ({
+      ...d,
+      rResponsibilities: { ...d.rResponsibilities },
+      tipResponsibilities: { ...d.tipResponsibilities }
+    }));
+  }
+
   return merged;
 }
 

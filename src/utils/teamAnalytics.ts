@@ -313,7 +313,7 @@ export function getBriefTimeWindow(brief: BriefTaskLike): BriefTimeWindow | null
     deadlineStr: deadlineShort,
     deadlineFull,
     workingDays,
-    text: `สั่ง ${briefDateStr} (${daysLabel})`,
+    text: `สั่ง ${briefDateStr}   (${daysLabel})`,
     tooltip: `วันสั่งงาน: ${briefDateFull} | กำหนดส่ง: ${deadlineFull} | ระยะเวลาล่วงหน้าก่อนรับงาน: ${workingDays} วัน (เกณฑ์มาตรฐาน ${slaLeadTime} วัน)`,
     isUrgent,
     slaLeadTime

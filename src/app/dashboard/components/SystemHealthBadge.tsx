@@ -280,12 +280,12 @@ export default function SystemHealthBadge({
                               {brief.unit || "CC"}
                             </span>
                             <span
-                              className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                              className={`px-2.5 py-1 rounded-full text-[11px] font-black tracking-normal shadow-xs ${
                                 sla.level === "due_today"
                                   ? "bg-rose-600 text-white animate-pulse"
                                   : sla.level === "due_tomorrow"
                                   ? "bg-orange-500 text-white"
-                                  : "bg-amber-100 text-amber-800 border border-amber-300"
+                                  : "bg-amber-100 text-amber-900 border border-amber-300"
                               }`}
                             >
                               {sla.label}

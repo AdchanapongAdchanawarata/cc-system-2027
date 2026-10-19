@@ -2290,11 +2290,11 @@ export default function AssignmentsView() {
                           return (
                             <span
                               title={slaWarn.label}
-                              className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9.5px] font-black tracking-tight leading-none select-none ${
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-black tracking-normal select-none shadow-xs ${
                                 slaWarn.level === "due_today"
-                                  ? "bg-rose-600 text-white shadow-2xs animate-pulse"
+                                  ? "bg-rose-600 text-white animate-pulse"
                                   : slaWarn.level === "due_tomorrow"
-                                  ? "bg-orange-500 text-white shadow-2xs"
+                                  ? "bg-orange-500 text-white"
                                   : "bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800/60"
                               }`}
                             >

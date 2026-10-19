@@ -1103,7 +1103,7 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                       const currentAssistants = brief.details?.assistants || [];
                       onUpdateField(brief.id, 'details', {
                         ...brief.details,
-                        assistants: [...currentAssistants, { assignee_id: '', percentage: 0 }]
+                        assistants: [...currentAssistants, { assignee_id: '', percentage: 20 }]
                       });
                     }}
                     className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-[#e03131] hover:text-white bg-rose-50 hover:bg-[#e03131] border border-rose-200 hover:border-[#e03131] rounded-full transition-all cursor-pointer shadow-2xs shrink-0"
@@ -1141,6 +1141,9 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                                     onChange={(val) => {
                                       const newAssistants = [...(brief.details.assistants)];
                                       newAssistants[index].assignee_id = val;
+                                      if (!Number(newAssistants[index].percentage) || Number(newAssistants[index].percentage) <= 0) {
+                                        newAssistants[index].percentage = 20;
+                                      }
                                       onUpdateField(brief.id, 'details', { ...brief.details, assistants: newAssistants });
                                     }}
                                     options={[
@@ -1154,15 +1157,27 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                                 <div className="w-[76px] relative flex items-center border border-slate-200 focus-within:border-slate-400 rounded-full bg-white shadow-xs transition-colors h-[32px] shrink-0 px-2">
                                   <input 
                                     type="number" 
-                                    min="0" 
+                                    min="1" 
                                     max="100" 
                                     className="w-full bg-transparent pl-1 pr-4 py-0.5 text-[12px] text-center focus:outline-none font-semibold text-slate-700 font-mono no-spinner [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                     value={assistant.percentage === 0 ? '' : assistant.percentage}
-                                    placeholder="0"
+                                    placeholder="20"
                                     onChange={(e) => {
                                       const newAssistants = [...(brief.details.assistants)];
                                       newAssistants[index].percentage = parseInt(e.target.value) || 0;
                                       onUpdateField(brief.id, 'details', { ...brief.details, assistants: newAssistants });
+                                    }}
+                                    onBlur={() => {
+                                      const currentPct = Number(brief.details?.assistants?.[index]?.percentage) || 0;
+                                      if (currentPct <= 0) {
+                                        const newAssistants = [...(brief.details.assistants)];
+                                        if (!newAssistants[index].assignee_id) {
+                                          newAssistants.splice(index, 1);
+                                        } else {
+                                          newAssistants[index].percentage = 10;
+                                        }
+                                        onUpdateField(brief.id, 'details', { ...brief.details, assistants: newAssistants });
+                                      }
                                     }}
                                   />
                                   <span className="absolute right-2.5 text-slate-400 text-[11px] pointer-events-none font-bold">%</span>

@@ -48,6 +48,7 @@ import {
   encodeMemberUnit 
 } from "@/utils/memberProfile";
 import { getMemberSurveyUrl } from "@/utils/surveyTokens";
+import { resolveCanonicalAssignee } from "@/utils/dataIntegrityGuard";
 import CustomSelect, { Option } from "./CustomSelect";
 
 const ASSIGNEE_UNIT_OPTIONS: Option[] = [
@@ -394,7 +395,8 @@ export default function SetupModal({ onClose, isReadOnly = false }: { onClose: (
       alert("โหมดผู้เข้าชม (Viewer Mode): ไม่สามารถเพิ่มสมาชิกใหม่ได้");
       return;
     }
-    if (!newAssignee.name.trim()) return;
+    const cleanName = newAssignee.name.trim();
+    if (!cleanName) return;
 
     const encodedUnit = encodeMemberUnit(newAssignee.unit, newAssignee.role, {
       fullName: newAssignee.fullName,
@@ -402,14 +404,36 @@ export default function SetupModal({ onClose, isReadOnly = false }: { onClose: (
       phone: newAssignee.phone
     });
 
-    const payload = {
-      name: newAssignee.name.trim(),
-      email: newAssignee.email?.trim() || null,
-      unit: encodedUnit,
-      is_active: true
-    };
+    // Architectural Safeguard: Preserve canonical UUIDs and prevent duplicate rows
+    const canonical = resolveCanonicalAssignee(cleanName);
+    const existingMember = assignees.find(
+      (a) =>
+        (canonical && a.id === canonical.id) ||
+        a.name.trim().toLowerCase() === cleanName.toLowerCase()
+    );
 
-    await supabase.from('assignees').insert([payload]);
+    if (existingMember) {
+      await supabase
+        .from('assignees')
+        .update({
+          name: canonical ? canonical.name : cleanName,
+          email: newAssignee.email?.trim() || existingMember.email || null,
+          unit: encodedUnit,
+          is_active: true
+        })
+        .eq('id', existingMember.id);
+    } else {
+      const payload: Record<string, any> = {
+        name: canonical ? canonical.name : cleanName,
+        email: newAssignee.email?.trim() || null,
+        unit: encodedUnit,
+        is_active: true
+      };
+      if (canonical) {
+        payload.id = canonical.id;
+      }
+      await supabase.from('assignees').upsert([payload]);
+    }
 
     setNewAssignee({ 
       name: "", 
@@ -472,6 +496,29 @@ export default function SetupModal({ onClose, isReadOnly = false }: { onClose: (
 
   const handleDeleteAssignee = async (id: string, name: string) => {
     if (isReadOnly) return;
+
+    // Architectural Safeguard: Block hard DELETE if member is a core operational member or has linked tasks
+    const canonical = resolveCanonicalAssignee(id) || resolveCanonicalAssignee(name);
+    const linkedTasksCount = activeBriefs.filter(
+      (b: any) =>
+        b.assignee_id === id ||
+        b.details?.assignee_name === name ||
+        (Array.isArray(b.details?.assistants) && b.details.assistants.some((ast: any) => ast.assignee_id === id))
+    ).length;
+
+    if (canonical || linkedTasksCount > 0) {
+      const shouldDeactivate = confirm(
+        `🛡️ ระบบป้องกันข้อมูลสูญหาย (Ironclad Integrity Guard):\n\n` +
+        `ไม่สามารถลบถาวร (Hard Delete) รายชื่อ "${name}" ได้ เนื่องจากเป็นสมาชิกหลักของทีม หรือมีประวัติงานที่เชื่อมโยงอยู่ (${linkedTasksCount} งาน) การลบถาวรจะทำให้งานหลุดจากผู้รับผิดชอบและค่า KR/R ผิดพลาด\n\n` +
+        `คุณต้องการเปลี่ยนสถานะของ "${name}" เป็น "พักการใช้งาน (Inactive)" แทนหรือไม่? (ข้อมูลงานและ UUID เดิมจะถูกรักษาไว้ 100%)`
+      );
+      if (shouldDeactivate) {
+        await supabase.from('assignees').update({ is_active: false }).eq('id', id);
+        fetchData();
+      }
+      return;
+    }
+
     if (confirm(`คุณต้องการลบรายชื่อ "${name}" ออกจากทีมใช่หรือไม่?`)) {
       await supabase.from('assignees').delete().eq('id', id);
       fetchData();

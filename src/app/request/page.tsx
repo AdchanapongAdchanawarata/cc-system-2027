@@ -13,6 +13,7 @@ import { generateNextTaskCode, getUnitPrefix } from "@/utils/taskCodeService";
 import { getSavedContact, saveContact, ContactProfile } from "@/utils/contactMemory";
 import ContactMemoryBanner from "@/components/ContactMemoryBanner";
 import HalloweenBats from "@/components/HalloweenBats";
+import { enforceCanonicalBriefIntegrity } from "@/utils/dataIntegrityGuard";
 
 type UnitType = 'creative' | 'content' | 'pr';
 
@@ -734,16 +735,24 @@ function FormContent() {
         details.urgent_reason = `ระยะเวลาทำงาน ${currentTiming.workingDays} วัน น้อยกว่าเกณฑ์มาตรฐาน ${currentTiming.requiredLeadTime} วัน`;
       }
 
+      // Enforce Ironclad Write-Time Integrity (OKR tags + Financial Separation)
+      const canonical = enforceCanonicalBriefIntegrity({
+        unit: activeUnit,
+        project_name,
+        decision_maker,
+        details,
+      });
+
       // Insert into briefs table
       const { error: insertError } = await supabase.from('briefs').insert({
         unit: activeUnit,
         coordinator_nickname,
-        decision_maker,
+        decision_maker: canonical.decision_maker,
         requester_email,
         requester_phone,
         project_name,
-        details,
-        okr_links: isNmco ? ['KR2', 'R3', 'R4'] : ['KR1', 'R1', 'R2'],
+        details: canonical.details,
+        okr_links: canonical.okr_links,
         deadline: computedDeadline,
         status: 'pending'
       });

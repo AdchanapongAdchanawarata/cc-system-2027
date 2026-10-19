@@ -16,6 +16,7 @@ import { OFFICIAL_STEP_TEAMS } from "@/utils/teamAnalytics";
 import StepQuotationModal, { StepQuotationData, formatCurrency } from "./StepQuotationModal";
 import { isOperationalAssignee, ensureCoreOperationalAssignees } from "@/utils/memberProfile";
 import { getSavedContact, saveContact } from "@/utils/contactMemory";
+import { enforceCanonicalBriefIntegrity } from "@/utils/dataIntegrityGuard";
 
 type OKR = { id: string; type: string; description: string };
 type Assignee = { id: string; name: string; unit: string; is_active?: boolean };
@@ -630,6 +631,14 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
         detailsPayload.idc_code = generatedTaskCode;
       }
 
+      const canonical = enforceCanonicalBriefIntegrity({
+        unit: 'internal',
+        project_name: finalTaskTitle,
+        decision_maker: finalDecisionMaker,
+        okr_links: okrLinks,
+        details: detailsPayload,
+      });
+
       const { error } = await supabase.from('briefs').insert([{
         project_name: finalTaskTitle,
         unit: 'internal',
@@ -637,11 +646,11 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
         priority: formData.priority,
         deadline: formData.deadline || null,
         assignee_id: finalAssigneeId,
-        okr_links: okrLinks,
-        details: detailsPayload,
+        okr_links: canonical.okr_links,
+        details: canonical.details,
         requester_email: finalRequesterEmail,
         coordinator_nickname: finalCoordinator,
-        decision_maker: finalDecisionMaker
+        decision_maker: canonical.decision_maker
       }]);
 
       if (error) throw error;

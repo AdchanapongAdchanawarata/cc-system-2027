@@ -23,6 +23,7 @@ import {
 import { resolveTaskCode } from "@/utils/taskCodeService";
 import { MemberProfile, parseMemberRecord, getMemberOfficialEmail, isExecutive, isOperationalAssignee, ensureCoreOperationalAssignees } from "@/utils/memberProfile";
 import { createClient } from "@/utils/supabase/client";
+import { enforceCanonicalBriefIntegrity, runAutomatedDatabaseIntegrityHeal } from "@/utils/dataIntegrityGuard";
 import { 
   BriefTaskLike, 
   MemberStats, 
@@ -370,35 +371,41 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
 
   const handleUpdateBriefField = async (id: string, field: string, value: any) => {
     try {
-      setBriefs((prev) =>
-        prev.map((b) => {
-          if (b.id !== id) return b;
-          if (field.startsWith("details.")) {
-            const subField = field.replace("details.", "");
-            return { ...b, details: { ...b.details, [subField]: value } };
-          }
-          return { ...b, [field]: value };
-        })
-      );
-      if (selectedBriefForModal && selectedBriefForModal.id === id) {
-        setSelectedBriefForModal((prev) => {
-          if (!prev) return null;
-          if (field.startsWith("details.")) {
-            const subField = field.replace("details.", "");
-            return { ...prev, details: { ...prev.details, [subField]: value } };
-          }
-          return { ...prev, [field]: value };
-        });
-      }
+      const cur = briefs.find((b) => b.id === id);
+      let patchPayload: Record<string, any> = {};
 
       if (field.startsWith("details.")) {
         const subField = field.replace("details.", "");
-        const cur = briefs.find((b) => b.id === id);
         const nextDetails = { ...(cur?.details || {}), [subField]: value };
-        await supabase.from("briefs").update({ details: nextDetails }).eq("id", id);
+        const canonical = enforceCanonicalBriefIntegrity({
+          unit: cur?.unit,
+          project_name: cur?.project_name,
+          decision_maker: cur?.decision_maker,
+          okr_links: (cur as any)?.okr_links,
+          details: nextDetails,
+        });
+        patchPayload = { details: canonical.details, okr_links: canonical.okr_links };
+      } else if (field === "details") {
+        const canonical = enforceCanonicalBriefIntegrity({
+          unit: cur?.unit,
+          project_name: cur?.project_name,
+          decision_maker: cur?.decision_maker,
+          okr_links: (cur as any)?.okr_links,
+          details: value,
+        });
+        patchPayload = { details: canonical.details, okr_links: canonical.okr_links };
       } else {
-        await supabase.from("briefs").update({ [field]: value }).eq("id", id);
+        patchPayload = { [field]: value };
       }
+
+      setBriefs((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, ...patchPayload } : b))
+      );
+      if (selectedBriefForModal && selectedBriefForModal.id === id) {
+        setSelectedBriefForModal((prev) => (prev ? { ...prev, ...patchPayload } : null));
+      }
+
+      await supabase.from("briefs").update(patchPayload).eq("id", id);
     } catch (err) {
       console.error("Failed to update brief:", err);
     }
@@ -413,6 +420,7 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
+      runAutomatedDatabaseIntegrityHeal(supabase).catch(() => {});
       // 1. Fetch cloud synchronized OKR settings
       try {
         await fetchOKRSettingsFromSupabase();

@@ -35,6 +35,7 @@ import {
 import { getCloudJson, setCloudJson, CLOUD_KEYS } from "@/utils/cloudSyncService";
 import { getSavedContact, saveContact, ContactProfile } from "@/utils/contactMemory";
 import ContactMemoryBanner from "@/components/ContactMemoryBanner";
+import { enforceCanonicalBriefIntegrity } from "@/utils/dataIntegrityGuard";
 
 // Assignee Oat (โอ๊ต CNB) ID
 const OAT_ASSIGNEE_ID = "e2c2672d-81c4-411d-89e9-bcbb6eb374f5";
@@ -271,16 +272,10 @@ export default function RspPressFormPage() {
 
       // 2. Sync ทางที่สอง: ซิงค์ไปหน้าบอร์ดรวม (Tasks Board / AssignmentsView)
       // งาน internal โอ๊ตเป็นคนทำ (โอ๊ต CNB) ประเภทงาน: เขียนข่าว ( นอกเหนือจาก Task งาน ) ภาระงานของ RSP มูลค่าประหยัด 1,500 บาท
-      const { error: briefError } = await supabase.from("briefs").insert([{
-        project_name: taskTitle,
+      const canonical = enforceCanonicalBriefIntegrity({
         unit: "internal",
-        status: "pending",
-        priority: "Medium",
-        assignee_id: OAT_ASSIGNEE_ID,
-        coordinator_nickname: formData.reporterName.trim(),
-        requester_email: formData.reporterContact.trim() || "chonnikarn@step.cmu.ac.th",
+        project_name: taskTitle,
         decision_maker: uniName,
-        deadline: formData.date,
         details: {
           task_code: generatedCode,
           rsp_code: generatedCode,
@@ -298,9 +293,6 @@ export default function RspPressFormPage() {
           service_category: formData.targetAudience || "ข่าวการจัดกิจกรรม/โครงการ",
           save_cost: 1500,
           project_value: "1500",
-          revenue: 1500,
-          cost: 0,
-          profit: 1500,
           assignee_name: OAT_NAME,
           university_id: formData.universityId,
           university_name: uniName,
@@ -315,6 +307,20 @@ export default function RspPressFormPage() {
           reporter_contact: formData.reporterContact.trim(),
           source: "rsp_press_form"
         }
+      });
+
+      const { error: briefError } = await supabase.from("briefs").insert([{
+        project_name: taskTitle,
+        unit: "internal",
+        status: "pending",
+        priority: "Medium",
+        assignee_id: OAT_ASSIGNEE_ID,
+        coordinator_nickname: formData.reporterName.trim(),
+        requester_email: formData.reporterContact.trim() || "chonnikarn@step.cmu.ac.th",
+        decision_maker: canonical.decision_maker,
+        deadline: formData.date,
+        okr_links: canonical.okr_links,
+        details: canonical.details
       }]);
 
       if (briefError) {

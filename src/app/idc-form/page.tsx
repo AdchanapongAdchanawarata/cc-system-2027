@@ -22,6 +22,7 @@ import ModernSelect, { ModernSelectOption } from "@/components/ModernSelect";
 import { generateNextTaskCode } from "@/utils/taskCodeService";
 import { getSavedContact, saveContact, ContactProfile } from "@/utils/contactMemory";
 import ContactMemoryBanner from "@/components/ContactMemoryBanner";
+import { enforceCanonicalBriefIntegrity } from "@/utils/dataIntegrityGuard";
 
 // Assignee Pim (พิม AC) ID
 const PIM_ASSIGNEE_ID = "47adfbc2-8d0e-4dc7-87ad-98895be82026";
@@ -212,20 +213,14 @@ export default function IDCFormPage() {
       // 1. Insert into Supabase 'briefs' table (Task รวม - Unit Internal, Assignee: พิม)
       const taskTitle = `[ศูนย์ออกแบบนวัตกรรม] ให้คำปรึกษา: ${serviceLabel} - ${formData.companyName.trim()}`;
 
-      const { error: briefError } = await supabase.from('briefs').insert([{
-        project_name: taskTitle,
+      const canonical = enforceCanonicalBriefIntegrity({
         unit: 'internal',
-        status: 'pending',
-        priority: 'Medium',
-        deadline: today, // Requirement: Deadline (กำหนดส่ง) คือวันที่กรอกข้อมูลเข้ามา
-        assignee_id: PIM_ASSIGNEE_ID,
-        coordinator_nickname: formData.clientName.trim(),
-        requester_email: formData.email.trim() || 'idc@step.cmu.ac.th',
+        project_name: taskTitle,
         decision_maker: orgText,
         details: {
-          category: 'Design',
+          category: 'ให้คำปรึกษาด้านการออกแบบ',
           pm_work_type: 'creative',
-          pm_work_category: serviceLabel, // ข้อมูลตามเลข 1 ต้องเป็นข้อมูลแบบเดียวกัน
+          pm_work_category: serviceLabel,
           service_category: serviceLabel,
           service_label: serviceLabel,
           service_main: serviceLabel,
@@ -233,9 +228,9 @@ export default function IDCFormPage() {
           idc_code: generatedCode,
           client_name: formData.clientName.trim(),
           company_name: formData.companyName.trim(),
-          organization: orgText, // ข้อมูลตามเลข 2 ต้องเป็นข้อมูลแบบเดียวกัน
+          organization: 'STeP',
           organization_type: sectorKey,
-          client_sector: sectorKey, // ข้อมูลตามเลข 2 ต้องเป็นข้อมูลแบบเดียวกัน
+          client_sector: sectorKey,
           team: orgText,
           deadline: today,
           submission_date: today,
@@ -251,14 +246,28 @@ export default function IDCFormPage() {
           service_quantities: serviceQuantities,
           service_other_detail: formData.serviceOtherDetail.trim(),
           piece_count: totalPieces,
-          revenue: 0,
+          save_cost: 3500,
           description: formData.projectBrief.trim() || `คำขอรับคำปรึกษาศูนย์ออกแบบและพัฒนานวัตกรรม: ${serviceLabel}\nผู้รับบริการ: ${formData.clientName.trim()} (${formData.companyName.trim()})\nเบอร์โทร: ${formData.phone.trim()}`,
           project_brief: formData.projectBrief.trim(),
           details: formData.projectBrief.trim() || `คำขอรับคำปรึกษาศูนย์ออกแบบและพัฒนานวัตกรรม: ${serviceLabel}\nผู้รับบริการ: ${formData.clientName.trim()} (${formData.companyName.trim()})\nเบอร์โทร: ${formData.phone.trim()}`,
           survey_token: token,
           survey_sent: false,
           assignee_name: PIM_NAME,
-        }
+        },
+      });
+
+      const { error: briefError } = await supabase.from('briefs').insert([{
+        project_name: taskTitle,
+        unit: 'internal',
+        status: 'pending',
+        priority: 'Medium',
+        deadline: today, // Requirement: Deadline (กำหนดส่ง) คือวันที่กรอกข้อมูลเข้ามา
+        assignee_id: PIM_ASSIGNEE_ID,
+        coordinator_nickname: formData.clientName.trim(),
+        requester_email: formData.email.trim() || 'idc@step.cmu.ac.th',
+        decision_maker: canonical.decision_maker,
+        okr_links: canonical.okr_links,
+        details: canonical.details
       }]);
 
       if (briefError) {

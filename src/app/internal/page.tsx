@@ -14,6 +14,7 @@ import {
   saveContact 
 } from "@/utils/contactMemory";
 import ContactMemoryBanner from "@/components/ContactMemoryBanner";
+import { enforceCanonicalBriefIntegrity } from "@/utils/dataIntegrityGuard";
 
 const TEAMS = [
   { abbr: "NMCO", th: "ประสานงานอุทยานฯ ภาคเหนือ และ อว." },
@@ -118,6 +119,20 @@ export default function InternalTaskForm() {
       const supabase = createClient();
       const generatedCode = await generateNextTaskCode("IT");
 
+      const canonical = enforceCanonicalBriefIntegrity({
+        unit: "internal",
+        project_name: taskName,
+        decision_maker: team,
+        details: {
+          task_code: generatedCode,
+          category: taskCategory,
+          type: taskCategory,
+          description,
+          notes: description,
+          team,
+        },
+      });
+
       const { error } = await supabase.from("briefs").insert([{
         project_name: taskName,
         unit: "internal",
@@ -127,22 +142,9 @@ export default function InternalTaskForm() {
         coordinator_nickname: nick,
         requester_email: email,
         requester_phone: phone,
-        decision_maker: team,
-        okr_links: (team || "").toUpperCase().includes("NMCO") ? ["KR2", "R3", "R4"] : ["KR1", "R1", "R2"],
-        details: {
-          task_code: generatedCode,
-          category: taskCategory,
-          type: taskCategory,
-          description,
-          notes: description,
-          organization: (team || "").toUpperCase().includes("NMCO") ? "RSP" : "STeP",
-          organization_type: (team || "").toUpperCase().includes("NMCO") ? "government" : "internal",
-          client_sector: (team || "").toUpperCase().includes("NMCO") ? "government" : "internal",
-          selected_okr: (team || "").toUpperCase().includes("NMCO") ? "KR2" : "KR1",
-          okr_kr: (team || "").toUpperCase().includes("NMCO") ? "KR2" : "KR1",
-          r_metrics: (team || "").toUpperCase().includes("NMCO") ? ["R3", "R4"] : ["R1", "R2"],
-          team
-        }
+        decision_maker: canonical.decision_maker,
+        okr_links: canonical.okr_links,
+        details: canonical.details
       }]);
 
       if (error) {

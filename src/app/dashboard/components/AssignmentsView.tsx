@@ -29,6 +29,7 @@ import {
   playAssignmentChime,
   triggerActiveAssignmentAlert,
 } from "@/utils/browserNotification";
+import { enforceCanonicalBriefIntegrity, runAutomatedDatabaseIntegrityHeal } from "@/utils/dataIntegrityGuard";
 
 // Custom Clockwise Overdue Icon matching user's reference (circular arrow with clock hands)
 export function OverdueClockIcon({ size = 20, className = "text-[#E03131]" }: { size?: number; className?: string }) {
@@ -86,6 +87,7 @@ type Brief = {
   completed_at?: string;
   requester_email: string;
   coordinator_nickname: string;
+  decision_maker?: string;
   assignee_id: string | null;
   priority: string;
   deadline: string | null;
@@ -596,6 +598,9 @@ export default function AssignmentsView() {
 
     const { data: okrData } = await supabase.from('okr_settings').select('id, type, description').eq('is_active', true);
     if (okrData) setOkrs(okrData);
+
+    // Run non-destructive background integrity guard once per session
+    runAutomatedDatabaseIntegrityHeal(supabase).catch(() => {});
   };
 
   const isViewer = typeof window !== "undefined" && localStorage.getItem("cc_user_role") === "viewer";
@@ -608,10 +613,6 @@ export default function AssignmentsView() {
       return;
     }
     const brief = briefs.find(b => b.id === id);
-    setBriefs(prev => prev.map(b => b.id === id ? { ...b, ...updates } : b));
-    if (selectedBrief && selectedBrief.id === id) {
-      setSelectedBrief(prev => prev ? { ...prev, ...updates } : null);
-    }
     if (updates.deadline) {
       const curDetails = updates.details || brief?.details || {};
       updates.details = {
@@ -619,6 +620,27 @@ export default function AssignmentsView() {
         deadline: updates.deadline,
         target_deadline: updates.deadline,
       };
+    }
+
+    // Enforce Ironclad Write-Time Integrity whenever details or decision_maker is updated
+    if (brief && (updates.details || updates.decision_maker)) {
+      const canonical = enforceCanonicalBriefIntegrity({
+        unit: updates.unit || brief.unit,
+        project_name: updates.project_name || brief.project_name,
+        decision_maker: updates.decision_maker !== undefined ? updates.decision_maker : brief.decision_maker,
+        okr_links: updates.okr_links || brief.okr_links,
+        details: updates.details || brief.details,
+      });
+      updates.details = canonical.details;
+      updates.okr_links = canonical.okr_links;
+      if (updates.decision_maker !== undefined) {
+        updates.decision_maker = canonical.decision_maker;
+      }
+    }
+
+    setBriefs(prev => prev.map(b => b.id === id ? { ...b, ...updates } : b));
+    if (selectedBrief && selectedBrief.id === id) {
+      setSelectedBrief(prev => prev ? { ...prev, ...updates } : null);
     }
 
     await supabase.from('briefs').update(updates).eq('id', id);

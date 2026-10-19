@@ -23,7 +23,13 @@ import {
 import { resolveTaskCode } from "@/utils/taskCodeService";
 import { MemberProfile, parseMemberRecord, getMemberOfficialEmail, isExecutive, isOperationalAssignee, ensureCoreOperationalAssignees } from "@/utils/memberProfile";
 import { createClient } from "@/utils/supabase/client";
-import { enforceCanonicalBriefIntegrity, runAutomatedDatabaseIntegrityHeal } from "@/utils/dataIntegrityGuard";
+import { getCurrentActor } from "@/utils/auditLogger";
+import {
+  enforceCanonicalBriefIntegrity,
+  runAutomatedDatabaseIntegrityHeal,
+  appendTaskRevisionSnapshot,
+  computeSystemIntegrityReport,
+} from "@/utils/dataIntegrityGuard";
 import { 
   BriefTaskLike, 
   MemberStats, 
@@ -49,6 +55,8 @@ import TeamSynthesisDashboard from "./analytics/TeamSynthesisDashboard";
 import FullComprehensivePdfReport from "./analytics/FullComprehensivePdfReport";
 import SatisfactionSurveyChart from "./charts/SatisfactionSurveyChart";
 import QuarterlyReachEngagementModal from "./QuarterlyReachEngagementModal";
+import SurveyFollowUpHubModal from "./SurveyFollowUpHubModal";
+import SystemHealthBadge from "./SystemHealthBadge";
 import BriefDetailsModal from "./BriefDetailsModal";
 import { 
   get12MonthsTimeline, 
@@ -347,6 +355,7 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
 
   const [okrSettingsRevision, setOkrSettingsRevision] = useState(0);
   const [showReachEngageModal, setShowReachEngageModal] = useState(false);
+  const [showSurveyHubModal, setShowSurveyHubModal] = useState(false);
 
   useEffect(() => {
     const handleOkrUpdate = () => {
@@ -362,6 +371,11 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
 
   const okrSettings = useMemo(() => getStoredOKRSettings(), [okrSettingsRevision]);
 
+  const systemHealthReport = useMemo(
+    () => computeSystemIntegrityReport(briefs, assignees, okrSettings),
+    [briefs, assignees, okrSettings]
+  );
+
   const realtimeMetrics = useMemo(() => {
     const opsCount = assignees.filter(a => isOperationalAssignee(a)).length;
     // Dynamic scaling: If anyone leaves/inactive, total system targets scale proportionally down
@@ -372,11 +386,15 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
   const handleUpdateBriefField = async (id: string, field: string, value: any) => {
     try {
       const cur = briefs.find((b) => b.id === id);
+      const actor = getCurrentActor();
       let patchPayload: Record<string, any> = {};
 
       if (field.startsWith("details.")) {
         const subField = field.replace("details.", "");
         const nextDetails = { ...(cur?.details || {}), [subField]: value };
+        if (cur) {
+          nextDetails.revision_history = appendTaskRevisionSnapshot(cur, { details: nextDetails }, actor.name);
+        }
         const canonical = enforceCanonicalBriefIntegrity({
           unit: cur?.unit,
           project_name: cur?.project_name,
@@ -386,16 +404,27 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
         });
         patchPayload = { details: canonical.details, okr_links: canonical.okr_links };
       } else if (field === "details") {
+        const nextDetails = { ...(value || {}) };
+        if (cur) {
+          nextDetails.revision_history = appendTaskRevisionSnapshot(cur, { details: nextDetails }, actor.name);
+        }
         const canonical = enforceCanonicalBriefIntegrity({
           unit: cur?.unit,
           project_name: cur?.project_name,
           decision_maker: cur?.decision_maker,
           okr_links: (cur as any)?.okr_links,
-          details: value,
+          details: nextDetails,
         });
         patchPayload = { details: canonical.details, okr_links: canonical.okr_links };
       } else {
         patchPayload = { [field]: value };
+        if (cur) {
+          const revHistory = appendTaskRevisionSnapshot(cur, patchPayload, actor.name);
+          patchPayload.details = {
+            ...(cur.details || {}),
+            revision_history: revHistory,
+          };
+        }
       }
 
       setBriefs((prev) =>
@@ -1837,6 +1866,15 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
           </div>
           
           <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 print:hidden">
+            {/* Feature 6 & 3 & 4 & 5: Live System Health & OKR Booster Badge */}
+            <SystemHealthBadge
+              briefs={briefs}
+              assignees={assignees}
+              onOpenSurveyHub={() => setShowSurveyHubModal(true)}
+              onOpenReachEngagement={() => setShowReachEngageModal(true)}
+              onRefreshData={fetchDashboardData}
+            />
+
             {/* Copy Link HTML button */}
             <button
               onClick={handleCopyShareLink}
@@ -3306,6 +3344,69 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
                 </div>
               </div>
 
+              {/* Feature 5 & Feature 3: Proactive OKR Booster Hub (R5/R6 Cut-off Reminder + Pending Survey Follow-up Hub) */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 print:hidden">
+                {/* Feature 5: R5 (Reach) & R6 (Engagement) Monthly Cut-off Reminder Banner */}
+                <div className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs transition-all ${
+                  systemHealthReport.needsR5R6Update
+                    ? "bg-gradient-to-r from-indigo-50 via-purple-50/70 to-white border-indigo-300 ring-1 ring-indigo-200/60"
+                    : "bg-gradient-to-r from-slate-50 to-white border-slate-200"
+                }`}>
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                        systemHealthReport.needsR5R6Update
+                          ? "bg-indigo-600 text-white animate-pulse"
+                          : "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                      }`}>
+                        {systemHealthReport.needsR5R6Update ? "📢 แจ้งเตือนก่อนตัดรอบรายงาน" : "✅ ข้อมูล R5 & R6 ล่าสุด"}
+                      </span>
+                      <span className="text-xs font-black text-slate-900">
+                        KR3: ยอดการเข้าถึง (R5) & การมีส่วนร่วม (R6)
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                      {systemHealthReport.r5R6DaysSinceUpdate !== null
+                        ? `อัปเดตล่าสุดเมื่อ ${systemHealthReport.r5R6DaysSinceUpdate} วันที่แล้ว • แบ่งสัดส่วนอัตโนมัติ Content 50% / PR 50%`
+                        : "กรุณาอัปเดตยอด Reach (R5) และ Engagement (R6) รายเดือน/ไตรมาส เพื่อให้รายงานผู้บริหารแม่นยำ 100%"}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowReachEngageModal(true)}
+                    className="shrink-0 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <TrendingUp size={13} />
+                    <span>อัปเดตยอด R5 & R6</span>
+                  </button>
+                </div>
+
+                {/* Feature 3: Pending Survey Follow-up Hub Banner */}
+                <div className="p-4 rounded-2xl border border-amber-200/90 bg-gradient-to-r from-amber-50/90 via-orange-50/40 to-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500 text-white">
+                        ⭐ R2 • R4 • R9 • TIP10
+                      </span>
+                      <span className="text-xs font-black text-slate-900">
+                        ศูนย์ติดตามแบบประเมินความพึงพอใจลูกค้า
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                      ประเมินแล้ว <strong className="text-emerald-700">{systemHealthReport.evaluatedSurveyCount} งาน</strong> จากงานส่งมอบสำเร็จ {systemHealthReport.completedTasksCount} งาน • รอติดตามผลอีก <strong className="text-amber-700">{systemHealthReport.pendingSurveyCount} งาน</strong>
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowSurveyHubModal(true)}
+                    className="shrink-0 px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <Star size={13} className="fill-white" />
+                    <span>ติดตามผลประเมิน ({systemHealthReport.pendingSurveyCount})</span>
+                  </button>
+                </div>
+              </div>
+
               {/* Top Overview & Summary KPI Badges */}
               <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-4">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
@@ -4043,6 +4144,15 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
         onClose={() => setShowReachEngageModal(false)}
         settings={okrSettings}
         onSaveSettings={() => setOkrSettingsRevision((prev) => prev + 1)}
+      />
+
+      {/* Feature 3: Pending Survey Follow-up Hub Modal */}
+      <SurveyFollowUpHubModal
+        isOpen={showSurveyHubModal}
+        onClose={() => setShowSurveyHubModal(false)}
+        briefs={briefs}
+        assignees={assignees}
+        onSelectBrief={(b) => setSelectedBriefForModal(b)}
       />
 
       {/* ========================================================================= */}

@@ -14,6 +14,8 @@ import BriefDetailsModal from "./BriefDetailsModal";
 import TrashBinModal from "./TrashBinModal";
 import InProgressEmailModal from "./InProgressEmailModal";
 import CompletedEmailModal from "./CompletedEmailModal";
+import SurveyFollowUpHubModal from "./SurveyFollowUpHubModal";
+import SystemHealthBadge from "./SystemHealthBadge";
 import DailyMissionModal from "@/components/DailyMissionModal";
 import { getStandardPriceForTask, shouldInternalTaskSkipEmail, shouldSkipEmailForInProgress, shouldSkipEmailForCompleted, getLeadTimeForTask } from "@/utils/pricing";
 import { globalHistoryManager } from "@/utils/historyManager";
@@ -29,7 +31,12 @@ import {
   playAssignmentChime,
   triggerActiveAssignmentAlert,
 } from "@/utils/browserNotification";
-import { enforceCanonicalBriefIntegrity, runAutomatedDatabaseIntegrityHeal } from "@/utils/dataIntegrityGuard";
+import {
+  enforceCanonicalBriefIntegrity,
+  runAutomatedDatabaseIntegrityHeal,
+  appendTaskRevisionSnapshot,
+  getSlaPreOverdueStatus,
+} from "@/utils/dataIntegrityGuard";
 
 // Custom Clockwise Overdue Icon matching user's reference (circular arrow with clock hands)
 export function OverdueClockIcon({ size = 20, className = "text-[#E03131]" }: { size?: number; className?: string }) {
@@ -244,6 +251,7 @@ export default function AssignmentsView() {
 
   // Completed Handover & Survey Email Draft Modal state
   const [pendingCompletedBrief, setPendingCompletedBrief] = useState<Brief | null>(null);
+  const [isSurveyHubOpen, setIsSurveyHubOpen] = useState(false);
 
   // Mobile Kanban Column Tab Switcher State
   const [mobileStatusTab, setMobileStatusTab] = useState<string>("pending");
@@ -619,6 +627,15 @@ export default function AssignmentsView() {
         ...curDetails,
         deadline: updates.deadline,
         target_deadline: updates.deadline,
+      };
+    }
+
+    // Feature 2: Append revision snapshot before mutating key fields
+    if (brief) {
+      const revHistory = appendTaskRevisionSnapshot(brief, updates, currentActor.name);
+      updates.details = {
+        ...(updates.details || brief.details || {}),
+        revision_history: revHistory,
       };
     }
 
@@ -1962,6 +1979,14 @@ export default function AssignmentsView() {
               )}
             </button>
 
+            {/* Feature 6 & 3 & 4: Live System Health & Pending Survey Hub Badge */}
+            <SystemHealthBadge
+              briefs={briefs}
+              assignees={assignees}
+              onOpenSurveyHub={() => setIsSurveyHubOpen(true)}
+              onRefreshData={fetchData}
+            />
+
             {/* Daily Mission Direct Button */}
             <button
               type="button"
@@ -2353,6 +2378,28 @@ export default function AssignmentsView() {
                         </span>
                       )}
 
+                      {/* Feature 4: SLA Pre-Overdue Shield (24-48h Early Warning Pill) */}
+                      {(() => {
+                        const slaWarn = getSlaPreOverdueStatus(brief);
+                        if (slaWarn.level === "due_today" || slaWarn.level === "due_tomorrow" || slaWarn.level === "due_48h") {
+                          return (
+                            <span
+                              title={slaWarn.label}
+                              className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9.5px] font-black tracking-tight leading-none select-none ${
+                                slaWarn.level === "due_today"
+                                  ? "bg-rose-600 text-white shadow-2xs animate-pulse"
+                                  : slaWarn.level === "due_tomorrow"
+                                  ? "bg-orange-500 text-white shadow-2xs"
+                                  : "bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800/60"
+                              }`}
+                            >
+                              {slaWarn.shortLabel}
+                            </span>
+                          );
+                        }
+                        return null;
+                      })()}
+
                       {/* Surveillance / Watch Badge (Unclipped Top Layer via Portal) */}
                       {isUnderWatch && (
                         <span 
@@ -2661,6 +2708,15 @@ export default function AssignmentsView() {
           onCancel={handleCancelCompleted}
         />
       )}
+
+      {/* Feature 3: Pending Survey Follow-up Hub Modal */}
+      <SurveyFollowUpHubModal
+        isOpen={isSurveyHubOpen}
+        onClose={() => setIsSurveyHubOpen(false)}
+        briefs={briefs}
+        assignees={assignees}
+        onSelectBrief={(b) => setSelectedBrief(b)}
+      />
 
       {/* Trash Bin Modal */}
       <TrashBinModal 

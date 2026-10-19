@@ -12,7 +12,8 @@ import {
   DollarSign, Briefcase, TrendingUp, Palette, Layers, Flag, ListChecks, 
   Ban, AlertCircle, Paperclip, Plus, Trash2, LifeBuoy, MapPin, Camera, 
   Check, Sparkles, PiggyBank, Star, MessageSquare, Minus, Building2,
-  Landmark, Network, Globe, Link2, Copy, Loader2, ExternalLink, Newspaper
+  Landmark, Network, Globe, Link2, Copy, Loader2, ExternalLink, Newspaper,
+  Lock, Unlock, RotateCcw, History
 } from "lucide-react";
 import { getStandardPriceForTask, shouldInternalTaskSkipEmail, shouldSkipEmailForInProgress, shouldSkipEmailForCompleted, getLeadTimeForTask } from "@/utils/pricing";
 import SatisfactionSurveyModal from "./SatisfactionSurveyModal";
@@ -29,6 +30,7 @@ import { RSP_UNIVERSITIES, PressReleaseItem } from "./RspPressReport";
 import { Assignee3DAvatarBadge } from "@/components/Assignee3DAvatarBadge";
 import { isOperationalAssignee, ensureCoreOperationalAssignees, getAssigneeFallbackName } from "@/utils/memberProfile";
 import { isCcPmProject } from "@/utils/stats";
+import { TaskRevisionEntry } from "@/utils/dataIntegrityGuard";
 
 const ALL_CATEGORIES_BY_UNIT: Record<string, { name: string; desc: string }[]> = {
   creative: [
@@ -250,6 +252,70 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
   const [showInProgressEmailModal, setShowInProgressEmailModal] = useState(false);
   const [showCompletedEmailModal, setShowCompletedEmailModal] = useState(false);
   const [showQuotationModal, setShowQuotationModal] = useState(false);
+  const [isCompletedTaskLocked, setIsCompletedTaskLocked] = useState<boolean>(brief.status === "completed");
+
+  useEffect(() => {
+    setIsCompletedTaskLocked(brief.status === "completed");
+  }, [brief.id, brief.status]);
+
+  const checkFinancialLock = (): boolean => {
+    if (brief.status === "completed" && isCompletedTaskLocked) {
+      const unlockNow = confirm(
+        "🔒 ใบงานนี้ส่งมอบสำเร็จ (Completed) และถูกล็อกตัวเลขการเงิน/OKR ไว้เพื่อป้องกันรายงานย้อนหลังคลาดเคลื่อน\n\nคุณต้องการปลดล็อกชั่วคราวเพื่อแก้ไขข้อมูลใช่หรือไม่?"
+      );
+      if (unlockNow) {
+        setIsCompletedTaskLocked(false);
+        return true;
+      }
+      setLocalSaveCost(currentSaveCost.toString());
+      return false;
+    }
+    return true;
+  };
+
+  const handleRollbackRevision = (rev: TaskRevisionEntry) => {
+    if (!confirm(`⏪ ยืนยันการย้อนกลับข้อมูลใบงานไปเป็นเวอร์ชันเมื่อ ${new Date(rev.timestamp).toLocaleString("th-TH")} หรือไม่?`)) {
+      return;
+    }
+    const snap = rev.snapshot;
+    const restoredDetails: Record<string, any> = {
+      ...brief.details,
+      category: snap.category ?? brief.details?.category,
+      organization: snap.organization ?? brief.details?.organization,
+      team: snap.team ?? brief.details?.team,
+      save_cost: snap.save_cost ?? brief.details?.save_cost,
+      project_value: String(snap.save_cost ?? brief.details?.save_cost ?? 0),
+      selected_okr: snap.selected_okr ?? brief.details?.selected_okr,
+      okr_kr: snap.okr_kr ?? brief.details?.okr_kr,
+      r_metrics: snap.r_metrics ?? brief.details?.r_metrics,
+      assistants: snap.assistants ?? [],
+    };
+    if (snap.revenue !== undefined) restoredDetails.revenue = snap.revenue;
+    if (snap.cost !== undefined) restoredDetails.cost = snap.cost;
+    if (snap.profit !== undefined) restoredDetails.profit = snap.profit;
+
+    if (snap.project_name && snap.project_name !== brief.project_name) {
+      onUpdateField(brief.id, "project_name", snap.project_name);
+    }
+    if (snap.assignee_id !== undefined && snap.assignee_id !== brief.assignee_id) {
+      onUpdateField(brief.id, "assignee_id", snap.assignee_id || "");
+    }
+    if (snap.deadline !== undefined && snap.deadline !== brief.deadline) {
+      onUpdateField(brief.id, "deadline", snap.deadline);
+    }
+    if (snap.decision_maker && snap.decision_maker !== brief.decision_maker) {
+      onUpdateField(brief.id, "decision_maker", snap.decision_maker);
+    }
+    if (Array.isArray(snap.okr_links)) {
+      onUpdateField(brief.id, "okr_links", snap.okr_links);
+    }
+    onUpdateField(brief.id, "details", restoredDetails);
+    if (snap.save_cost !== undefined) {
+      setLocalSaveCost(String(snap.save_cost));
+    }
+    setSurveyNotifySuccess(`✅ ย้อนกลับข้อมูลใบงานเป็นเวอร์ชันเมื่อ ${new Date(rev.timestamp).toLocaleTimeString("th-TH")} เรียบร้อยแล้ว`);
+    setTimeout(() => setSurveyNotifySuccess(null), 4000);
+  };
 
   const handleConfirmInProgressModal = async (emailData: { to: string; cc: string[]; subject: string; body: string; from?: string; senderName?: string; assigneeId?: string }) => {
     const targetAssigneeId = emailData.assigneeId || brief.assignee_id;
@@ -428,6 +494,7 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
   };
 
   const handleSaveCostChange = (val: number) => {
+    if (!checkFinancialLock()) return;
     setLocalSaveCost(val.toString());
     const isPM = isCcPmProject(brief) || currentCategory === "PM โครงการของ CC";
     const updates: any = {
@@ -444,6 +511,7 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
   };
 
   const handleCategoryChange = (val: string) => {
+    if (!checkFinancialLock()) return;
     const std = getStandardPriceForTask(unit, val, brief.project_name);
     const isPM = val === "PM โครงการของ CC" || isCcPmProject({ ...brief, details: { ...brief.details, category: val } });
     const updates: any = {
@@ -885,6 +953,63 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                   <span>ยังไม่มีข้อมูลใบเสนอราคาสำหรับงานนี้ คุณสามารถกดปุ่ม "สร้างใบเสนอราคาใหม่" เพื่อออกเอกสารมาตรฐาน STeP CMU ได้ทันที</span>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Feature 1: Completed Task Financial & OKR Lock Banner */}
+          {brief.status === "completed" && (
+            <div
+              className={`p-3.5 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all ${
+                isCompletedTaskLocked
+                  ? "bg-emerald-50/80 border-emerald-200/90 text-emerald-950"
+                  : "bg-amber-50/90 border-amber-300 text-amber-950"
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <div
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                    isCompletedTaskLocked ? "bg-emerald-600 text-white" : "bg-amber-500 text-white"
+                  }`}
+                >
+                  {isCompletedTaskLocked ? <Lock size={15} /> : <Unlock size={15} />}
+                </div>
+                <div>
+                  <div className="text-xs font-black flex items-center gap-1.5">
+                    <span>
+                      {isCompletedTaskLocked
+                        ? "🔒 ล็อกตัวเลขการเงินและ OKR อัตโนมัติ (งานส่งมอบสำเร็จแล้ว)"
+                        : "🔓 ปลดล็อกการแก้ไขชั่วคราว (กำลังแก้ไขงานที่ส่งมอบแล้ว)"}
+                    </span>
+                  </div>
+                  <p className="text-[11px] opacity-80">
+                    {isCompletedTaskLocked
+                      ? "ป้องกันการเผลอแก้ไขค่า Save Cost, หมวดหมู่งาน หรือแท็ก OKR ย้อนหลัง"
+                      : "ทุกการแก้ไขจะถูกบันทึก Snapshot อัตโนมัติในประวัติการแก้ไขด้านล่าง (สามารถย้อนกลับได้ใน 1 คลิก)"}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsCompletedTaskLocked((prev) => !prev)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer ${
+                  isCompletedTaskLocked
+                    ? "bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300"
+                    : "bg-amber-600 hover:bg-amber-700 text-white"
+                }`}
+              >
+                {isCompletedTaskLocked ? (
+                  <>
+                    <Unlock size={13} />
+                    <span>ปลดล็อกเพื่อแก้ไข</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock size={13} />
+                    <span>ล็อกกลับทันที</span>
+                  </>
+                )}
+              </button>
             </div>
           )}
 
@@ -2869,6 +2994,73 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                 );
               })()}
             </div>
+          </div>
+
+          {/* Feature 2: Task Revision History & 1-Click Rollback (Max 5 Versions) */}
+          <div className="bg-slate-50/70 rounded-xl border border-slate-200/90 p-4 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-slate-800 text-white flex items-center justify-center shrink-0">
+                  <History size={14} />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                    <span>ประวัติการแก้ไขใบงาน & ย้อนกลับ (Task Revision History)</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-slate-200 text-slate-700">
+                      {Array.isArray(brief.details?.revision_history) ? brief.details.revision_history.length : 0}/5 เวอร์ชันล่าสุด
+                    </span>
+                  </h4>
+                  <p className="text-[11px] text-slate-500">
+                    ระบบบันทึก Snapshot ก่อนการแก้ไขข้อมูลสำคัญอัตโนมัติ สามารถกดปุ่มย้อนกลับค่าเดิมได้ใน 1 คลิก
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {Array.isArray(brief.details?.revision_history) && brief.details.revision_history.length > 0 ? (
+              <div className="space-y-2 pt-1">
+                {brief.details.revision_history.map((rev: TaskRevisionEntry, idx: number) => (
+                  <div
+                    key={rev.id || idx}
+                    className="p-3 rounded-xl bg-white border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs shadow-2xs"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono font-bold text-[10px]">
+                          v{brief.details.revision_history.length - idx}
+                        </span>
+                        <span className="font-bold text-slate-800">
+                          แก้โดย: {rev.actorName}
+                        </span>
+                        <span className="text-[11px] text-slate-400 font-mono">
+                          • {new Date(rev.timestamp).toLocaleString("th-TH")}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-600 mt-1">
+                        รายการที่เปลี่ยน: <strong className="text-slate-800">{rev.summary}</strong>
+                      </div>
+                      <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                        ค่าเดิมก่อนแก้: สถานะ={rev.snapshot?.status || "-"} • Save Cost=฿{Number(rev.snapshot?.save_cost || 0).toLocaleString()} • OKR={rev.snapshot?.selected_okr || "KR1"}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleRollbackRevision(rev)}
+                      className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-amber-600 text-white text-[11px] font-bold flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
+                      title="ย้อนกลับข้อมูลใบงานไปเป็นค่าก่อนการแก้ไขครั้งนี้"
+                    >
+                      <RotateCcw size={12} />
+                      <span>ย้อนกลับเวอร์ชันนี้</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-[11px] text-slate-400 italic py-1">
+                ยังไม่มีประวัติการแก้ไขสำหรับใบงานนี้ (เมื่อมีการเปลี่ยนสถานะ, Save Cost, หมวดหมู่ หรือผู้รับผิดชอบ ระบบจะเก็บ Snapshot ให้อัตโนมัติ)
+              </div>
+            )}
           </div>
 
         </div>

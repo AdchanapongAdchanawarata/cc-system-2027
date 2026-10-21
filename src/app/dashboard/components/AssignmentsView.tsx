@@ -2270,8 +2270,8 @@ export default function AssignmentsView() {
                     ) : null}
 
                     {/* Card Header: Task Code + SLA Warning Badge */}
-                    <div className={`flex items-center gap-1.5 flex-wrap min-w-0 mb-1 select-none ${hasTopBadge ? 'pr-7' : 'pr-0'}`}>
-                      <span className={`font-bold text-xs ${
+                    <div className={`flex items-center gap-1.5 min-w-0 mb-1 select-none ${hasTopBadge ? 'pr-7' : 'pr-0'}`}>
+                      <span className={`font-bold text-xs shrink-0 ${
                         brief.unit?.toLowerCase() === "creative" ? "text-[#7c3aed] dark:text-[#c4b5fd]" : 
                         brief.unit?.toLowerCase() === "content" ? "text-[#db2777] dark:text-[#f472b6]" : 
                         brief.unit?.toLowerCase() === "pr" ? "text-[#1d4ed8] dark:text-[#93c5fd]" : 
@@ -2284,7 +2284,7 @@ export default function AssignmentsView() {
                       {/* Brief Date & Available Working Days to Deadline (วันสั่งงานและระยะเวลาทำงานจางๆ) */}
                       {briefTimeWindow && (
                         <span 
-                          className="text-[10px] sm:text-[10.5px] font-medium text-slate-400 dark:text-zinc-500 tracking-tight"
+                          className="text-[10px] sm:text-[10.5px] font-medium text-slate-400 dark:text-zinc-500 tracking-tight shrink min-w-0 truncate"
                           title={briefTimeWindow.tooltip}
                         >
                           {briefTimeWindow.text}
@@ -2298,7 +2298,7 @@ export default function AssignmentsView() {
                           return (
                             <span
                               title={slaWarn.label}
-                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-black tracking-normal select-none shadow-xs ${
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-black tracking-normal select-none shadow-xs shrink-0 ml-auto ${
                                 slaWarn.level === "due_today"
                                   ? "bg-rose-600 text-white animate-pulse"
                                   : slaWarn.level === "due_tomorrow"

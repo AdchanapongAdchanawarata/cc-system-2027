@@ -296,13 +296,13 @@ export function getBriefTimeWindow(brief: BriefTaskLike): BriefTimeWindow | null
 
   let daysLabel = "";
   if (workingDays === 0) {
-    daysLabel = "ก่อนรับงาน 0 วัน";
+    daysLabel = "ก่อนเดดไลน์ 0 วัน";
   } else if (workingDays === 1) {
-    daysLabel = "ก่อนรับงาน 1 วัน";
+    daysLabel = "ก่อนเดดไลน์ 1 วัน";
   } else if (workingDays < 0) {
     daysLabel = "กระชั้นชิด";
   } else {
-    daysLabel = `ก่อนรับงาน ${workingDays} วัน`;
+    daysLabel = `ก่อนเดดไลน์ ${workingDays} วัน`;
   }
 
   const isUrgent = workingDays <= 3 || workingDays < slaLeadTime || brief.details?.is_urgent === true;
@@ -313,8 +313,8 @@ export function getBriefTimeWindow(brief: BriefTaskLike): BriefTimeWindow | null
     deadlineStr: deadlineShort,
     deadlineFull,
     workingDays,
-    text: `สั่ง ${briefDateStr}   (${daysLabel})`,
-    tooltip: `วันสั่งงาน: ${briefDateFull} | กำหนดส่ง: ${deadlineFull} | ระยะเวลาล่วงหน้าก่อนรับงาน: ${workingDays} วัน (เกณฑ์มาตรฐาน ${slaLeadTime} วัน)`,
+    text: `สั่ง ${briefDateStr}  ( ${daysLabel} )`,
+    tooltip: `วันสั่งงาน: ${briefDateFull} | กำหนดส่ง: ${deadlineFull} | ระยะเวลาล่วงหน้าก่อนเดดไลน์: ${workingDays} วัน (เกณฑ์มาตรฐาน ${slaLeadTime} วัน)`,
     isUrgent,
     slaLeadTime
   };

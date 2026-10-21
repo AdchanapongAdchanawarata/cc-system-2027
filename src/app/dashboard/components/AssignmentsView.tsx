@@ -2400,8 +2400,8 @@ export default function AssignmentsView() {
                       </div>
 
                       {/* Row 2: Badges + Task Age in single unified line */}
-                      <div className="flex items-center justify-between gap-1 h-5 pt-0.5 border-t border-slate-100 dark:border-slate-800/60">
-                        <div className="flex gap-1 items-center min-w-0 overflow-hidden">
+                      <div className="flex items-center justify-between gap-1 min-h-[22px] pt-1 border-t border-slate-100 dark:border-slate-800/60">
+                        <div className="flex gap-1 items-center min-w-0 flex-wrap">
                           <span className={`text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase shrink-0 ${
                             brief.unit?.toLowerCase() === "creative" ? "bg-[#8b5cf6]" : 
                             brief.unit?.toLowerCase() === "content" ? "bg-[#ec4899]" : 
@@ -2411,27 +2411,35 @@ export default function AssignmentsView() {
                           }`}>
                             {brief.unit}
                           </span>
-                          {((brief as any).decision_maker || brief.details?.team) && (
-                            <span 
-                              className="text-slate-600 dark:text-slate-300 text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-slate-200 dark:border-surface-border bg-slate-50 dark:bg-surface-border/50 uppercase truncate max-w-[130px] shrink-1 min-w-0"
-                              title={(brief as any).decision_maker || brief.details?.team}
-                            >
-                              {(brief as any).decision_maker || brief.details?.team}
-                            </span>
-                          )}
-                          {/* Assistant Pill (expands when room allows) */}
+                          {((brief as any).decision_maker || brief.details?.team) && (() => {
+                            const teamVal = ((brief as any).decision_maker || brief.details?.team || "").toString().trim();
+                            if (teamVal.toLowerCase() === (brief.unit || "").toLowerCase()) return null;
+                            return (
+                              <span 
+                                className="text-slate-600 dark:text-slate-300 text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-slate-200 dark:border-surface-border bg-slate-50 dark:bg-surface-border/50 uppercase shrink-0"
+                                title={teamVal}
+                              >
+                                {teamVal}
+                              </span>
+                            );
+                          })()}
+                          {/* Assistant Pill (compact nickname + percentage) */}
                           {brief.details?.assistants && brief.details.assistants.some((a: any) => a.assignee_id && Number(a.percentage) > 0) && (() => {
                             const activeAsts = brief.details.assistants.filter((a: any) => a.assignee_id && Number(a.percentage) > 0);
                             const totalPct = activeAsts.reduce((sum: number, a: any) => sum + (Number(a.percentage) || 0), 0);
                             const firstAst = assignees.find((as: any) => as.id === activeAsts[0]?.assignee_id);
-                            const firstAstName = firstAst?.name || getAssigneeFallbackName(activeAsts[0]?.assignee_id);
+                            const firstAstName = (firstAst as any)?.nickname || (firstAst as any)?.nick || (firstAst?.name ? firstAst.name.split(" ")[0] : "") || getAssigneeFallbackName(activeAsts[0]?.assignee_id);
+                            const astLabel = activeAsts.length === 1 
+                              ? `${firstAstName} (${totalPct}%)` 
+                              : `+${activeAsts.length} (${totalPct}%)`;
+
                             return (
-                              <div className="group/ast relative inline-flex">
+                              <div className="group/ast relative inline-flex shrink-0">
                                 <span 
-                                  className="inline-flex items-center gap-0.5 text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/60 px-1 py-0.5 rounded-full shrink-1 min-w-0 max-w-[110px] truncate cursor-help"
+                                  className="inline-flex items-center gap-0.5 text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/60 px-1.5 py-0.5 rounded-full shrink-0 cursor-help"
                                 >
                                   <Users size={9} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                  <span className="truncate">+{activeAsts.length} {activeAsts.length === 1 && firstAstName ? `${firstAstName} ` : ''}({totalPct}%)</span>
+                                  <span>{astLabel}</span>
                                 </span>
                                 {/* Dieter Rams Assistant Card - Semi-transparent Zero Shadow */}
                                 <div className="hidden group-hover/ast:flex flex-col absolute left-0 bottom-full mb-1.5 z-50 whitespace-nowrap p-2.5 bg-neutral-900/90 backdrop-blur-md text-white rounded-xl border border-white/20 text-left pointer-events-none font-sans min-w-[160px] shadow-none">
@@ -2467,7 +2475,7 @@ export default function AssignmentsView() {
 
                             if (isEvaluated) {
                               return (
-                                <div className="group/sat relative inline-flex">
+                                <div className="group/sat relative inline-flex shrink-0">
                                   <span 
                                     className="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 px-1.5 py-0.5 rounded-full shrink-0 cursor-help"
                                   >
@@ -2488,14 +2496,8 @@ export default function AssignmentsView() {
                               );
                             }
 
-                            if (shouldInternalTaskSkipEmail(brief)) {
-                              return (
-                                <span 
-                                  className="inline-flex items-center gap-0.5 text-[9px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 px-1.5 py-0.5 rounded-full shrink-0"
-                                >
-                                  <span>บันทึกแล้ว</span>
-                                </span>
-                              );
+                            if (shouldInternalTaskSkipEmail(brief) || brief.details?.skip_survey || brief.details?.no_evaluation_needed) {
+                              return null;
                             }
 
                             return (

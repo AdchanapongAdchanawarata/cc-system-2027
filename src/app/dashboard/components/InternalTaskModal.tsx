@@ -323,11 +323,12 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
       setFormData(prev => ({ ...prev, category: val, assignee_id: nextAssigneeId }));
     }
 
+    const isQuote = val.trim() === 'ทำใบเสนอราคา' || val.trim() === 'ทำใบเสนราคา' || val.toLowerCase().includes('ใบเสนอราคา') || val.toLowerCase().includes('quotation');
     const matched = pricingList.find(p => p.service_name.toLowerCase() === val.toLowerCase());
-    const stdPrice = matched ? matched.standard_price : (val.trim() === "PM โครงการของ CC" ? 50000 : 1500);
+    const stdPrice = isQuote ? 100 : (matched ? matched.standard_price : (val.trim() === "PM โครงการของ CC" ? 50000 : 1500));
     
     if (!manualSaveCostEdit) {
-      setSaveCost(quotationTotal > 0 ? quotationTotal : stdPrice);
+      setSaveCost(isQuote ? 100 : (quotationTotal > 0 ? quotationTotal : stdPrice));
     }
   };
 
@@ -623,10 +624,10 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
       // Handle Quotation system details (ตามมาตรฐาน 100% STeP CMU)
       if (isQuotation) {
         detailsPayload.quotation = quotationData;
-        const totalQuote = quotationTotal || finalSaveCost;
+        const totalQuote = quotationTotal || (finalSaveCost > 100 ? finalSaveCost : 0);
         detailsPayload.revenue = totalQuote;
-        detailsPayload.save_cost = totalQuote;
-        detailsPayload.project_value = totalQuote.toString();
+        detailsPayload.save_cost = 100;
+        detailsPayload.project_value = totalQuote > 0 ? totalQuote.toString() : "100";
 
         // Quotation completes immediately upon issuance and skips evaluation entirely
         detailsPayload.survey_status = 'declined';
@@ -1877,7 +1878,7 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
                 team: 'CC',
                 quotation: data,
                 revenue: totalAmount,
-                save_cost: totalAmount,
+                save_cost: 100,
                 project_value: totalAmount.toString(),
                 assignee_name: matchedAssignee ? matchedAssignee.name : (localStorage.getItem("cc_user_name") || "CC Team"),
                 survey_status: 'declined',

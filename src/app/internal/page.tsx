@@ -158,6 +158,7 @@ export default function InternalTaskForm() {
           notes: description,
           team,
           ...(isQuote ? {
+            save_cost: 100,
             survey_status: 'declined',
             skip_survey: true,
             no_evaluation_needed: true,

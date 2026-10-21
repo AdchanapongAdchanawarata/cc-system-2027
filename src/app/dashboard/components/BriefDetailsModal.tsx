@@ -3218,7 +3218,7 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
             onUpdateField(brief.id, 'details', {
               ...brief.details,
               quotation: data,
-              save_cost: totalAmount,
+              save_cost: isQuoteTask ? 100 : totalAmount,
               revenue: totalAmount,
               project_value: totalAmount.toString(),
               ...(isQuoteTask ? {

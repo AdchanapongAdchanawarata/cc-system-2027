@@ -9,7 +9,7 @@
  */
 
 import { isCcPmProject, isR3Task } from "./okrSettings";
-import { getStandardPriceForTask, shouldInternalTaskSkipEmail } from "./pricing";
+import { getStandardPriceForTask, shouldInternalTaskSkipEmail, isQuotationTask } from "./pricing";
 
 export interface CanonicalAssigneeEntry {
   id: string;
@@ -199,13 +199,17 @@ export function enforceCanonicalBriefIntegrity(input: BriefIntegrityInput): Brie
     rawDetails.project_value = String(rev > 0 ? rev : profit);
   } else {
     rawDetails.is_pm_project = false;
-    // Strip any accidental PM financial fields from non-PM tasks
-    delete rawDetails.revenue;
+    const isQuote = isQuotationTask({ unit, project_name: projectName, details: rawDetails });
+    if (!isQuote) {
+      delete rawDetails.revenue;
+    }
     delete rawDetails.cost;
     delete rawDetails.profit;
 
     let saveCost = Number(rawDetails.save_cost);
-    if (isNaN(saveCost) || saveCost < 0) {
+    if (isQuote) {
+      saveCost = 100;
+    } else if (isNaN(saveCost) || saveCost < 0) {
       saveCost = getStandardPriceForTask(unit, category, projectName) || 0;
     } else if (saveCost === 0 && category) {
       const stdPrice = getStandardPriceForTask(unit, category, projectName);
@@ -214,7 +218,7 @@ export function enforceCanonicalBriefIntegrity(input: BriefIntegrityInput): Brie
       }
     }
     rawDetails.save_cost = saveCost;
-    rawDetails.project_value = String(saveCost);
+    rawDetails.project_value = isQuote && rawDetails.revenue ? String(rawDetails.revenue) : String(saveCost);
   }
 
   return {

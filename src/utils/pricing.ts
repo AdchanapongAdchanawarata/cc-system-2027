@@ -55,7 +55,7 @@ export const DEFAULT_STEP_PRICING: ServicePriceItem[] = [
   { unit: 'content', service_name: 'อื่นๆ (โปรดระบุ)', standard_price: 1000, lead_time_days: 3, description: 'งานบริการคอนเทนต์อื่นๆ นอกเหนือจากที่ระบุไว้' },
 
   // --- Internal ---
-  { unit: 'internal', service_name: 'ทำใบเสนอราคา', standard_price: 1500, lead_time_days: 2, description: 'สร้างและออกเอกสารใบเสนอราคา (Quotation) ตามมาตรฐาน STeP CMU' },
+  { unit: 'internal', service_name: 'ทำใบเสนอราคา', standard_price: 100, lead_time_days: 2, description: 'สร้างและออกเอกสารใบเสนอราคา (Quotation) ตามมาตรฐาน STeP CMU' },
   { unit: 'internal', service_name: 'งานเอกสาร/การเงินโครงการ', standard_price: 1500, lead_time_days: 3, description: 'ทำงานเอกสาร/การเงินโครงการที่เกี่ยวข้องกับการจัดซื้อจัดจ้าง' },
   { unit: 'internal', service_name: 'งานขึ้นรูป Proposal / TOR', standard_price: 5000, lead_time_days: 7, description: 'ทำงานเอกสาร กราฟิก ภาพประกอบ ทีเดียอื่นๆ เพื่อประกอบการ...' },
   { unit: 'internal', service_name: 'งาน Admin / STeP + RSP', standard_price: 1000, lead_time_days: 2, description: 'งาน Admin จัดการข้อมูลหลังบ้าน Social Media ของ STeP แ...' },
@@ -161,10 +161,23 @@ export async function savePricingToCloud(list: ServicePriceItem[]): Promise<bool
 }
 
 export function getStandardPriceForTask(unit: string | undefined, category: string | undefined, projectName?: string): number | null {
-  const list = getActivePricingList();
-  const normalizedUnit = (unit || '').toLowerCase().trim();
   const normalizedCat = (category || '').toLowerCase().trim();
   const normalizedProj = (projectName || '').toLowerCase().trim();
+
+  // กฎเหล็ก: ทำใบเสนอราคา คิดราคา savecost 100 บาทเสมอ
+  if (
+    normalizedCat.includes("ใบเสนอราคา") ||
+    normalizedCat.includes("ใบเสนราคา") ||
+    normalizedCat.includes("quotation") ||
+    normalizedProj.startsWith("[quotation]") ||
+    normalizedProj.includes("ใบเสนอราคา") ||
+    normalizedProj.includes("ใบเสนราคา")
+  ) {
+    return 100;
+  }
+
+  const list = getActivePricingList();
+  const normalizedUnit = (unit || '').toLowerCase().trim();
 
   // 1. Direct match with category and unit
   if (normalizedCat) {

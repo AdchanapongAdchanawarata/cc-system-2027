@@ -4,7 +4,7 @@
  * between Team Leads (e.g., จ๊อบ AA), Unit Leads (e.g., วา WK), and Team Members.
  */
 
-import { getStandardPriceForTask } from './pricing';
+import { getStandardPriceForTask, isQuotationTask } from './pricing';
 
 export interface AssistantAllocation {
   assignee_id: string;
@@ -47,6 +47,9 @@ export interface PersonShare {
 }
 
 export function getBriefSaveCost(brief: BriefTaskLike): number {
+  if (isQuotationTask(brief)) {
+    return 100;
+  }
   const isPM = isCcPmProject(brief);
   if (isPM) {
     const profit = Number(brief.details?.profit !== undefined ? brief.details.profit : ((Number(brief.details?.revenue) || 0) - (Number(brief.details?.cost) || 0)));

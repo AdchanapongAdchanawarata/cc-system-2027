@@ -364,6 +364,33 @@ export function isRspTask(brief: {
 }
 
 /**
+ * ตรวจสอบว่าเป็นงานใบเสนอราคา (Quotation) หรือไม่
+ * งานประเภทนี้ถือว่าเสร็จสิ้นทันทีเมื่อออกเอกสาร และไม่ต้องมีการประเมินใดๆ ทั้งสิ้น
+ */
+export function isQuotationTask(brief: {
+  unit?: string | null;
+  project_name?: string | null;
+  details?: any;
+}): boolean {
+  if (!brief) return false;
+  const projectName = (brief.project_name || '').toString().toLowerCase();
+  const category = (brief.details?.category || brief.details?.service_category || '').toString().toLowerCase();
+  const taskCode = (brief.details?.task_code || brief.details?.job_code || '').toString().toUpperCase();
+  return (
+    Boolean(brief.details?.quotation) ||
+    brief.details?.is_quotation === true ||
+    brief.details?.quotation_auto_completed === true ||
+    taskCode.startsWith('QT') ||
+    projectName.startsWith('[quotation]') ||
+    projectName.includes('ใบเสนอราคา') ||
+    projectName.includes('ใบเสนราคา') ||
+    category.includes('ใบเสนอราคา') ||
+    category.includes('ใบเสนราคา') ||
+    category.includes('quotation')
+  );
+}
+
+/**
  * กฎเหล็กการส่งอีเมลสำหรับขั้นตอน IN PROGRESS:
  * - งานภายนอก (Creative, Content, PR) -> ส่งอีเมลแจ้งเริ่มงาน (Kickoff) เสมอ 100% (return false)
  * - งานภายใน (Internal Tasks):
@@ -379,6 +406,9 @@ export function shouldSkipEmailForInProgress(brief: {
   if (brief.details?.is_deleted || brief.details?.is_permanently_deleted || (brief as any).status === 'purged') {
     return true;
   }
+  // งานใบเสนอราคา ข้ามการส่งเมลทุกกรณี
+  if (isQuotationTask(brief)) return true;
+
   // ถ้าไม่ใช่งานภายใน (เช่น Creative, Content, PR) ต้องส่งอีเมลเริ่มงานเสมอ
   if (!isInternalTask(brief)) return false;
 
@@ -406,6 +436,15 @@ export function shouldSkipEmailForCompleted(brief: {
   if (brief.details?.is_deleted || brief.details?.is_permanently_deleted || (brief as any).status === 'purged') {
     return true;
   }
+  // งานใบเสนอราคา หรือมีเครื่องหมายยกเว้นการประเมิน ข้ามการส่งเมลส่งมอบและแบบประเมิน 100%
+  if (
+    isQuotationTask(brief) ||
+    brief.details?.skip_survey === true ||
+    brief.details?.no_evaluation_needed === true
+  ) {
+    return true;
+  }
+
   // ถ้าไม่ใช่งานภายใน (เช่น Creative, Content, PR) ต้องส่งอีเมลส่งมอบงานและแบบประเมินเสมอ
   if (!isInternalTask(brief)) return false;
 
@@ -427,6 +466,7 @@ export function isInternalTaskRequiringEmail(brief: {
   project_name?: string | null;
   details?: any;
 }): boolean {
+  if (isQuotationTask(brief)) return false;
   if (!isInternalTask(brief)) return true;
   return isIdcOrEntrepreneurTask(brief) || isRspTask(brief);
 }
@@ -447,6 +487,7 @@ export function shouldInternalTaskSkipEmail(
   if (brief.details?.is_deleted || brief.details?.is_permanently_deleted || (brief as any).status === 'purged') {
     return true;
   }
+  if (isQuotationTask(brief)) return true;
   if (!isInternalTask(brief)) return false;
   if (status === 'in_progress') return shouldSkipEmailForInProgress(brief);
   if (status === 'completed') return shouldSkipEmailForCompleted(brief);
@@ -457,12 +498,25 @@ export function shouldInternalTaskSkipEmail(
  * ตรวจสอบว่างานภายใน (Internal Task) เป็นกรณีพิเศษที่ยังคงต้องถูกประเมินความพึงพอใจหรือไม่
  * ข้อตกลงกรณีพิเศษ:
  * - รหัสงาน RSP หรือ IDC หรือ ให้คำปรึกษา/รับโจทย์ผู้ประกอบการ
+ * - งานใบเสนอราคา หรือมี skip_survey/no_evaluation_needed: ไม่ต้องประเมินเด็ดขาด (return false)
  */
 export function isInternalTaskRequiringEvaluation(brief: {
   unit?: string | null;
   project_name?: string | null;
   details?: any;
 }): boolean {
+  if (!brief) return false;
+
+  // กฎเหล็ก: งานใบเสนอราคา หรือที่ระบุไม่ต้องประเมิน ต้องไม่ถูกประเมินเด็ดขาด 100%
+  if (
+    isQuotationTask(brief) ||
+    brief.details?.skip_survey === true ||
+    brief.details?.no_evaluation_needed === true ||
+    brief.details?.survey_status === 'declined'
+  ) {
+    return false;
+  }
+
   if (!isInternalTask(brief)) return true; // งานภายนอก (Creative, Content, PR) ต้องประเมินตามปกติ
   
   // ตรวจสอบกรณีพิเศษ IDC หรือ RSP ก่อน
@@ -497,6 +551,7 @@ export function shouldSkipEvaluationForInternalTask(brief: {
   project_name?: string | null;
   details?: any;
 }): boolean {
+  if (isQuotationTask(brief)) return true;
   if (!isInternalTask(brief)) return false; // งานภายนอกไม่ใช่ internal จึงไม่ถูกตัด
   return !isInternalTaskRequiringEvaluation(brief);
 }

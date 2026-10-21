@@ -17,7 +17,7 @@ import CompletedEmailModal from "./CompletedEmailModal";
 import SurveyFollowUpHubModal from "./SurveyFollowUpHubModal";
 import SystemHealthBadge from "./SystemHealthBadge";
 import DailyMissionModal from "@/components/DailyMissionModal";
-import { getStandardPriceForTask, shouldInternalTaskSkipEmail, shouldSkipEmailForInProgress, shouldSkipEmailForCompleted, getLeadTimeForTask } from "@/utils/pricing";
+import { getStandardPriceForTask, shouldInternalTaskSkipEmail, shouldSkipEmailForInProgress, shouldSkipEmailForCompleted, getLeadTimeForTask, isQuotationTask } from "@/utils/pricing";
 import { globalHistoryManager } from "@/utils/historyManager";
 import { resolveTaskCode, generateNextTaskCode, getUnitPrefix } from "@/utils/taskCodeService";
 import { logActivity, getCurrentActor, getAuditLogs } from "@/utils/auditLogger";
@@ -747,8 +747,16 @@ export default function AssignmentsView() {
     if (field === 'status') {
       if (value === 'in_progress' && !brief.in_progress_at) updates.in_progress_at = now;
       if (value === 'completed' || value === 'cancelled') updates.completed_at = now;
+      if (value === 'completed' && isQuotationTask(brief)) {
+        const details = { ...(updates.details || brief.details || {}) };
+        details.survey_status = 'declined';
+        details.skip_survey = true;
+        details.no_evaluation_needed = true;
+        details.satisfaction_survey_completed = true;
+        updates.details = details;
+      }
       if (reason) {
-        const details = { ...(brief.details || {}) };
+        const details = { ...(updates.details || brief.details || {}) };
         details.status_revert_reason = reason;
         details.status_reverted_at = now;
         updates.details = details;

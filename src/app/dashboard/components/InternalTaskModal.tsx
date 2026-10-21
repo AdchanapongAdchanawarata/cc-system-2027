@@ -14,7 +14,7 @@ import ModernSelect, { ModernSelectOption } from "@/components/ModernSelect";
 import CustomSelect from "./CustomSelect";
 import { OFFICIAL_STEP_TEAMS } from "@/utils/teamAnalytics";
 import StepQuotationModal, { StepQuotationData, formatCurrency } from "./StepQuotationModal";
-import { isOperationalAssignee, ensureCoreOperationalAssignees } from "@/utils/memberProfile";
+import { isOperationalAssignee, ensureCoreOperationalAssignees, getLoggedInAssigneeId } from "@/utils/memberProfile";
 import { getSavedContact, saveContact } from "@/utils/contactMemory";
 import { enforceCanonicalBriefIntegrity } from "@/utils/dataIntegrityGuard";
 
@@ -113,6 +113,7 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
   const [showQuotationModal, setShowQuotationModal] = useState(false);
   const [quotationData, setQuotationData] = useState<StepQuotationData | null>(null);
   const [quotationTotal, setQuotationTotal] = useState<number>(0);
+  const [createdBriefId, setCreatedBriefId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -122,7 +123,17 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
 
       // 2. Fetch Assignees (Active members of CC Team - exclude executives, guarantee all 12 core members)
       const { data: assigneeData } = await supabase.from('assignees').select('id, name, unit, is_active').eq('is_active', true).order('name');
-      setAssignees(ensureCoreOperationalAssignees(assigneeData || []));
+      const coreAssignees = ensureCoreOperationalAssignees(assigneeData || []);
+      setAssignees(coreAssignees);
+
+      // Auto-assign currently logged-in user in internal tasks / quotations
+      const loggedInId = getLoggedInAssigneeId(coreAssignees);
+      if (loggedInId) {
+        setFormData(prev => ({
+          ...prev,
+          assignee_id: prev.assignee_id || loggedInId
+        }));
+      }
 
       // 3. Fetch Service Pricing (from Supabase or local storage or default STeP list)
       try {
@@ -162,11 +173,13 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
 
   // Options for ModernSelect matching reference UI
   const assigneeOptions: ModernSelectOption[] = useMemo(() => {
+    const loggedInId = getLoggedInAssigneeId(assignees);
     return [
       { value: "", label: "Unassigned" },
       ...assignees.map(a => ({
         value: a.id,
-        label: a.name
+        label: a.name + (a.id === loggedInId ? " (คุณ)" : ""),
+        badge: a.id === loggedInId ? "Logged In" : undefined
       }))
     ];
   }, [assignees]);
@@ -288,7 +301,7 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
 
   // Category change handler with auto Save Cost update & popup trigger
   const handleCategoryChange = (val: string) => {
-    let nextAssigneeId = formData.assignee_id;
+    let nextAssigneeId = formData.assignee_id || getLoggedInAssigneeId(assignees);
     if ((val.trim() === "ให้คำปรึกษา / รับโจทย์ ผู้ประกอบการ" || val.includes("ให้คำปรึกษา / รับโจทย์ ผู้ประกอบการ")) && !formData.assignee_id) {
       const pim = assignees.find(a => a.name.includes("พิม"));
       if (pim) nextAssigneeId = pim.id;
@@ -481,7 +494,8 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
       let finalCoordinator = selectedAssignee ? selectedAssignee.name : 'Internal Work';
       let finalRequesterEmail = 'internal@step.cmu.ac.th';
       let finalDecisionMaker = formData.team || 'CC';
-      let finalAssigneeId = formData.assignee_id || null;
+      const effectiveAssigneeId = formData.assignee_id || getLoggedInAssigneeId(assignees);
+      let finalAssigneeId = effectiveAssigneeId || null;
 
       if (isConsultationProject) {
         if (!idcFormData.clientName.trim() || !idcFormData.companyName.trim()) {
@@ -604,13 +618,23 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
         }
       }
 
+      const isQuotation = formData.category === 'ทำใบเสนอราคา' || formData.category === 'ทำใบเสนราคา' || Boolean(quotationData) || isQuotationProject;
+
       // Handle Quotation system details (ตามมาตรฐาน 100% STeP CMU)
-      if (formData.category === 'ทำใบเสนอราคา' || formData.category === 'ทำใบเสนราคา' || quotationData) {
+      if (isQuotation) {
         detailsPayload.quotation = quotationData;
         const totalQuote = quotationTotal || finalSaveCost;
         detailsPayload.revenue = totalQuote;
         detailsPayload.save_cost = totalQuote;
         detailsPayload.project_value = totalQuote.toString();
+
+        // Quotation completes immediately upon issuance and skips evaluation entirely
+        detailsPayload.survey_status = 'declined';
+        detailsPayload.skip_survey = true;
+        detailsPayload.no_evaluation_needed = true;
+        detailsPayload.satisfaction_survey_completed = true;
+        detailsPayload.quotation_auto_completed = true;
+        detailsPayload.completed_at = new Date().toISOString();
 
         if (quotationData?.customerName) {
           finalCoordinator = quotationData.customerName;
@@ -624,8 +648,8 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
       }
 
       // Generate guaranteed sequential task code for FY70 (e.g. IT70-1, IT70-2, IT70-3...)
-      const prefix = isConsultationProject ? 'IDC' : (isQuotationProject || quotationData) ? 'QT' : 'IT';
-      const generatedTaskCode = await generateNextTaskCode(prefix);
+      const prefix = isConsultationProject ? 'IDC' : isQuotation ? 'QT' : 'IT';
+      const generatedTaskCode = detailsPayload.task_code || await generateNextTaskCode(prefix);
       detailsPayload.task_code = generatedTaskCode;
       if (prefix === 'IDC') {
         detailsPayload.idc_code = generatedTaskCode;
@@ -639,21 +663,40 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
         details: detailsPayload,
       });
 
-      const { error } = await supabase.from('briefs').insert([{
-        project_name: finalTaskTitle,
-        unit: 'internal',
-        status: 'pending',
-        priority: formData.priority,
-        deadline: formData.deadline || null,
-        assignee_id: finalAssigneeId,
-        okr_links: canonical.okr_links,
-        details: canonical.details,
-        requester_email: finalRequesterEmail,
-        coordinator_nickname: finalCoordinator,
-        decision_maker: canonical.decision_maker
-      }]);
+      const nowIso = new Date().toISOString();
 
-      if (error) throw error;
+      if (createdBriefId) {
+        const { error } = await supabase.from('briefs').update({
+          project_name: finalTaskTitle,
+          status: isQuotation ? 'completed' : 'pending',
+          completed_at: isQuotation ? nowIso : null,
+          priority: formData.priority,
+          deadline: formData.deadline || null,
+          assignee_id: finalAssigneeId,
+          okr_links: canonical.okr_links,
+          details: canonical.details,
+          requester_email: finalRequesterEmail,
+          coordinator_nickname: finalCoordinator,
+          decision_maker: canonical.decision_maker
+        }).eq('id', createdBriefId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('briefs').insert([{
+          project_name: finalTaskTitle,
+          unit: 'internal',
+          status: isQuotation ? 'completed' : 'pending',
+          priority: formData.priority,
+          deadline: formData.deadline || null,
+          completed_at: isQuotation ? nowIso : null,
+          assignee_id: finalAssigneeId,
+          okr_links: canonical.okr_links,
+          details: canonical.details,
+          requester_email: finalRequesterEmail,
+          coordinator_nickname: finalCoordinator,
+          decision_maker: canonical.decision_maker
+        }]);
+        if (error) throw error;
+      }
 
       // Automatically remember contact
       if (isConsultationProject) {
@@ -1771,7 +1814,7 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
                 disabled={loading}
                 className="flex items-center gap-2 px-6 py-2.5 bg-[#E03131] hover:bg-[#c92a2a] text-white text-xs font-bold rounded-xl transition-all shadow-xs disabled:opacity-50"
               >
-                <Save size={16} /> {loading ? "กำลังบันทึก..." : "บันทึกงานภายใน"}
+                <Save size={16} /> {loading ? "กำลังบันทึก..." : (isQuotationProject || quotationData ? "บันทึกและส่งมอบสำเร็จ (Completed)" : "บันทึกงานภายใน")}
               </button>
             </div>
           </div>
@@ -1784,7 +1827,7 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
         <StepQuotationModal
           initialData={quotationData || undefined}
           onClose={() => setShowQuotationModal(false)}
-          onSave={(data, totalAmount) => {
+          onSave={async (data, totalAmount) => {
             setQuotationData(data);
             setQuotationTotal(totalAmount);
             setSaveCost(totalAmount);
@@ -1801,16 +1844,95 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
               dl30 = d.toISOString().split("T")[0];
             }
 
+            const quoteTitle = (!formData.project_name || formData.project_name.startsWith("[Quotation]") || formData.project_name === "ทำใบเสนอราคา")
+              ? `[Quotation] ${data.docId} - ${data.customerName || 'ลูกค้า'}`
+              : formData.project_name;
+            const quoteDesc = (!formData.description || formData.description.startsWith("ใบเสนอราคาเลขที่"))
+              ? `ใบเสนอราคาเลขที่ ${data.docId}\nลูกค้า: ${data.customerName}\nรายการบริการ:\n${(data.items || []).map((it, idx) => `${idx + 1}. ${it.description} x ${it.quantity} (฿${(it.quantity * it.price).toLocaleString()})`).join("\n")}\nรวมทั้งสิ้น: ฿${formatCurrency(totalAmount)}`
+              : formData.description;
+
             setFormData(prev => ({
               ...prev,
-              project_name: (!prev.project_name || prev.project_name.startsWith("[Quotation]") || prev.project_name === "ทำใบเสนอราคา")
-                ? `[Quotation] ${data.docId} - ${data.customerName || 'ลูกค้า'}`
-                : prev.project_name,
+              category: "ทำใบเสนอราคา",
+              project_name: quoteTitle,
               deadline: dl30 || prev.deadline,
-              description: (!prev.description || prev.description.startsWith("ใบเสนอราคาเลขที่"))
-                ? `ใบเสนอราคาเลขที่ ${data.docId}\nลูกค้า: ${data.customerName}\nรายการบริการ:\n${(data.items || []).map((it, idx) => `${idx + 1}. ${it.description} x ${it.quantity} (฿${(it.quantity * it.price).toLocaleString()})`).join("\n")}\nรวมทั้งสิ้น: ฿${formatCurrency(totalAmount)}`
-                : prev.description
+              description: quoteDesc
             }));
+
+            // Direct auto-save to Completed per user rule:
+            // "พอกรอกเสร็จได้ใบเสนอราคาให้ไปที่ complete เลยเพราะถือว่าเสร็จแล้วและไม่ต้องประเมินใดๆ"
+            try {
+              const effectiveAssignee = formData.assignee_id || getLoggedInAssigneeId(assignees);
+              const matchedAssignee = assignees.find(a => a.id === effectiveAssignee);
+              const generatedTaskCode = await generateNextTaskCode('QT');
+              const nowIso = new Date().toISOString();
+
+              const quoteDetailsPayload: any = {
+                task_code: generatedTaskCode,
+                category: 'ทำใบเสนอราคา',
+                type: 'ทำใบเสนอราคา',
+                description: quoteDesc,
+                notes: `ออกใบเสนอราคาสำเร็จเลขที่ ${data.docId}`,
+                team: 'CC',
+                quotation: data,
+                revenue: totalAmount,
+                save_cost: totalAmount,
+                project_value: totalAmount.toString(),
+                assignee_name: matchedAssignee ? matchedAssignee.name : (localStorage.getItem("cc_user_name") || "CC Team"),
+                survey_status: 'declined',
+                skip_survey: true,
+                no_evaluation_needed: true,
+                satisfaction_survey_completed: true,
+                quotation_auto_completed: true,
+                completed_at: nowIso,
+              };
+
+              if (data.customerPhone) {
+                quoteDetailsPayload.requester_phone = data.customerPhone;
+              }
+
+              const canonicalQuote = enforceCanonicalBriefIntegrity({
+                unit: 'internal',
+                project_name: quoteTitle,
+                decision_maker: 'CC',
+                okr_links: ['KR1', 'R1', 'R2'],
+                details: quoteDetailsPayload,
+              });
+
+              if (createdBriefId) {
+                await supabase.from('briefs').update({
+                  project_name: quoteTitle,
+                  status: 'completed',
+                  completed_at: nowIso,
+                  assignee_id: effectiveAssignee || null,
+                  details: canonicalQuote.details,
+                  deadline: dl30 || null,
+                  coordinator_nickname: data.customerName || 'ลูกค้า'
+                }).eq('id', createdBriefId);
+              } else {
+                const { data: ins, error: insErr } = await supabase.from('briefs').insert([{
+                  project_name: quoteTitle,
+                  unit: 'internal',
+                  status: 'completed',
+                  completed_at: nowIso,
+                  priority: 'Medium',
+                  deadline: dl30 || null,
+                  assignee_id: effectiveAssignee || null,
+                  okr_links: canonicalQuote.okr_links,
+                  details: canonicalQuote.details,
+                  requester_email: 'internal@step.cmu.ac.th',
+                  coordinator_nickname: data.customerName || 'ลูกค้า',
+                  decision_maker: 'CC'
+                }]).select('id').single();
+
+                if (!insErr && ins) {
+                  setCreatedBriefId(ins.id);
+                }
+              }
+              window.dispatchEvent(new CustomEvent("cc_tasks_updated"));
+            } catch (autoSaveErr) {
+              console.warn("Auto save quotation brief warning:", autoSaveErr);
+            }
 
             // DO NOT close modal on save - user stays inside to print/export until they click close (X)!
           }}

@@ -541,3 +541,50 @@ export function isOperationalAssignee(
   return !isExecutive(memberOrUnit) && !isViewer(memberOrUnit);
 }
 
+/**
+ * Automatically resolves the logged-in user's Assignee ID from localStorage / session
+ * matching against cc_user_id, cc_user_email, cc_user_name, or cc_user_fullname.
+ */
+export function getLoggedInAssigneeId(
+  assigneeList: Array<{ id: string; name?: string; email?: string }>
+): string {
+  if (typeof window === "undefined" || !assigneeList || assigneeList.length === 0) return "";
+
+  const storedId = localStorage.getItem("cc_user_id");
+  if (storedId && assigneeList.some(a => a.id === storedId)) {
+    return storedId;
+  }
+
+  const email = (localStorage.getItem("cc_user_email") || "").toLowerCase().trim();
+  const name = (localStorage.getItem("cc_user_name") || "").toLowerCase().trim();
+  const fullName = (localStorage.getItem("cc_user_fullname") || "").toLowerCase().trim();
+
+  // 1. Direct email match
+  if (email) {
+    const byEmail = assigneeList.find(a => (a.email || "").toLowerCase().trim() === email);
+    if (byEmail) {
+      try { localStorage.setItem("cc_user_id", byEmail.id); } catch {}
+      return byEmail.id;
+    }
+  }
+
+  // 2. Direct name match (e.g. "จ๊อบ AA", "พิม", "วา", "อาร์ม", etc.)
+  if (name || fullName) {
+    const byName = assigneeList.find(a => {
+      const aName = (a.name || "").toLowerCase().trim();
+      if (!aName) return false;
+      return (
+        (name && (aName.includes(name) || name.includes(aName))) ||
+        (fullName && (aName.includes(fullName) || fullName.includes(aName)))
+      );
+    });
+    if (byName) {
+      try { localStorage.setItem("cc_user_id", byName.id); } catch {}
+      return byName.id;
+    }
+  }
+
+  return "";
+}
+
+

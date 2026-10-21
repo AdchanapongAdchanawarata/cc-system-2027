@@ -239,7 +239,18 @@ export default function StepQuotationModal({
   const [excludeVat, setExcludeVat] = useState(initialData?.excludeVat ?? true);
 
   // Signatures (Item 4: ModernDatePicker)
-  const [preparerName, setPreparerName] = useState(initialData?.preparerName || "พนักงานออกแบบสร้างสรรค์");
+  const [preparerName, setPreparerName] = useState(() => {
+    if (initialData?.preparerName && initialData.preparerName !== "พนักงานออกแบบสร้างสรรค์") {
+      return initialData.preparerName;
+    }
+    if (typeof window !== "undefined") {
+      const storedFullname = localStorage.getItem("cc_user_fullname");
+      if (storedFullname) return storedFullname;
+      const storedName = localStorage.getItem("cc_user_name");
+      if (storedName) return storedName;
+    }
+    return initialData?.preparerName || "พนักงานออกแบบสร้างสรรค์";
+  });
   const [preparerDate, setPreparerDate] = useState(initialData?.preparerDate || new Date().toISOString().split("T")[0]);
   const [preparerSig, setPreparerSig] = useState<string | null>(initialData?.preparerSignature || null);
 

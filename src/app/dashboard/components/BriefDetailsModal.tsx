@@ -3205,13 +3205,36 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
               dl30 = d.toISOString().split("T")[0];
             }
 
+            const isQuoteTask = Boolean(
+              brief.project_name?.startsWith("[Quotation]") || 
+              brief.details?.category === "ทำใบเสนอราคา" ||
+              brief.details?.category === "ทำใบเสนราคา" ||
+              (brief.details?.task_code || "").startsWith("QT") ||
+              brief.unit === "internal"
+            );
+
+            const nowIso = new Date().toISOString();
+
             onUpdateField(brief.id, 'details', {
               ...brief.details,
               quotation: data,
               save_cost: totalAmount,
               revenue: totalAmount,
-              project_value: totalAmount.toString()
+              project_value: totalAmount.toString(),
+              ...(isQuoteTask ? {
+                survey_status: 'declined',
+                skip_survey: true,
+                no_evaluation_needed: true,
+                satisfaction_survey_completed: true,
+                quotation_auto_completed: true,
+                completed_at: nowIso,
+              } : {})
             });
+
+            if (isQuoteTask) {
+              onUpdateField(brief.id, 'status', 'completed');
+              onUpdateField(brief.id, 'completed_at', nowIso);
+            }
 
             if (dl30) {
               onUpdateField(brief.id, 'deadline', dl30);

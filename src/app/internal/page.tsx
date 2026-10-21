@@ -15,6 +15,7 @@ import {
 } from "@/utils/contactMemory";
 import ContactMemoryBanner from "@/components/ContactMemoryBanner";
 import { enforceCanonicalBriefIntegrity } from "@/utils/dataIntegrityGuard";
+import { getLoggedInAssigneeId, ensureCoreOperationalAssignees } from "@/utils/memberProfile";
 
 const TEAMS = [
   { abbr: "NMCO", th: "ประสานงานอุทยานฯ ภาคเหนือ และ อว." },
@@ -57,6 +58,10 @@ export default function InternalTaskForm() {
   const [requesterPhone, setRequesterPhone] = useState("");
   const [savedProfile, setSavedProfile] = useState<ContactProfile | null>(null);
 
+  // Assignee auto-assign for logged-in user
+  const [assignees, setAssignees] = useState<any[]>([]);
+  const [assigneeId, setAssigneeId] = useState<string>("");
+
   useEffect(() => {
     const saved = getSavedContact();
     if (saved) {
@@ -66,6 +71,25 @@ export default function InternalTaskForm() {
       if (saved.email) setRequesterEmail(saved.email);
       if (saved.phone) setRequesterPhone(saved.phone);
     }
+
+    // Auto-detect logged-in user and set assignee
+    const fetchAssignees = async () => {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase.from('assignees').select('id, name, unit, is_active').eq('is_active', true).order('name');
+        if (data) {
+          const core = ensureCoreOperationalAssignees(data);
+          setAssignees(core);
+          const loggedInId = getLoggedInAssigneeId(core);
+          if (loggedInId) {
+            setAssigneeId(loggedInId);
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to load assignees for internal page", e);
+      }
+    };
+    fetchAssignees();
   }, []);
 
   const handleProfileSelect = (p: ContactProfile) => {
@@ -117,7 +141,10 @@ export default function InternalTaskForm() {
       });
 
       const supabase = createClient();
-      const generatedCode = await generateNextTaskCode("IT");
+      const isQuote = taskCategory === "ทำใบเสนอราคา" || taskCategory === "ทำใบเสนราคา" || taskName.startsWith("[Quotation]") || taskName.includes("ใบเสนอราคา");
+      const generatedCode = await generateNextTaskCode(isQuote ? "QT" : "IT");
+      const effectiveAssigneeId = assigneeId || getLoggedInAssigneeId(assignees);
+      const nowIso = new Date().toISOString();
 
       const canonical = enforceCanonicalBriefIntegrity({
         unit: "internal",
@@ -130,15 +157,25 @@ export default function InternalTaskForm() {
           description,
           notes: description,
           team,
+          ...(isQuote ? {
+            survey_status: 'declined',
+            skip_survey: true,
+            no_evaluation_needed: true,
+            satisfaction_survey_completed: true,
+            quotation_auto_completed: true,
+            completed_at: nowIso,
+          } : {})
         },
       });
 
       const { error } = await supabase.from("briefs").insert([{
         project_name: taskName,
         unit: "internal",
-        status: "pending",
+        status: isQuote ? "completed" : "pending",
+        completed_at: isQuote ? nowIso : null,
         priority,
         deadline: dueDate || null,
+        assignee_id: effectiveAssigneeId || null,
         coordinator_nickname: nick,
         requester_email: email,
         requester_phone: phone,

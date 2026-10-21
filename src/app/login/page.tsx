@@ -85,6 +85,9 @@ export default function LoginPage() {
         );
       
       const role = isViewerRole ? "viewer" : (isAdmin ? "admin" : "assignee");
+      if (matchedMember.id) {
+        localStorage.setItem("cc_user_id", matchedMember.id);
+      }
       localStorage.setItem("cc_user_role", role);
       localStorage.setItem("cc_actual_role", role);
       localStorage.setItem("cc_user_email", normalizedEmail);

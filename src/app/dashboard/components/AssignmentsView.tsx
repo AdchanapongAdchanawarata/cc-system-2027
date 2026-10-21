@@ -2201,6 +2201,7 @@ export default function AssignmentsView() {
                 const isSlaUrgent = daysUntilDue !== null && daysUntilDue >= 0 && daysUntilDue < slaLeadTime;
                 // ไอคอนงานด่วนจะขึ้นเมื่อ: กำหนดสถานะด่วนพิเศษ, เข้าข่ายสั่งกระชั้นชิดกว่าระยะเวลามาตรฐาน, หรือเหลือน้อยกว่า 3 วัน
                 const isUrgent = (isExplicitUrgent || isSlaUrgent || (daysUntilDue !== null && daysUntilDue >= 0 && daysUntilDue <= 3)) && !isOverdue && brief.status !== 'completed' && brief.status !== 'cancelled';
+                const hasTopBadge = isOverdue || isUrgent;
 
                 const isDraggingThis = draggedBriefId === brief.id;
                 const isTargetElsewhere = Boolean(dragOverColId && (dragOverColId !== col.id || (dragOverBriefId && dragOverBriefId !== brief.id)));
@@ -2235,51 +2236,63 @@ export default function AssignmentsView() {
                       onClick={() => setSelectedBrief(brief)}
                       className="bg-surface p-2.5 rounded-xl border border-surface-border shadow-2xs hover:shadow-md hover:border-slate-300 dark:hover:border-zinc-700 transition-all cursor-grab active:cursor-grabbing group flex flex-col justify-between relative min-h-[105px] select-none"
                     >
-                    {/* Card Header: Task Code + Brief Date + Unified Minimal Status Pill */}
-                    <div className="flex items-center justify-between gap-1.5 min-w-0 mb-1 select-none">
-                      <div className="flex items-center gap-1.5 min-w-0 truncate">
-                        <span className={`font-bold text-[11px] sm:text-xs shrink-0 ${
-                          brief.unit?.toLowerCase() === "creative" ? "text-[#7c3aed] dark:text-[#c4b5fd]" : 
-                          brief.unit?.toLowerCase() === "content" ? "text-[#db2777] dark:text-[#f472b6]" : 
-                          brief.unit?.toLowerCase() === "pr" ? "text-[#1d4ed8] dark:text-[#93c5fd]" : 
-                          brief.unit?.toLowerCase() === "internal" ? "text-slate-800 dark:text-slate-100" : 
-                          "text-[#047857] dark:text-[#6ee7b7]"
-                        }`}>
-                          {getTaskCode(brief.unit, brief.id)}
-                        </span>
-
-                        {/* Brief Date & Available Working Days to Deadline (วันสั่งงานและระยะเวลาทำงานจางๆ) */}
-                        {briefTimeWindow && (
-                          <span 
-                            className="text-[9.5px] sm:text-[10px] font-medium text-slate-400 dark:text-zinc-500 tracking-tight shrink min-w-0 truncate"
-                            title={briefTimeWindow.tooltip}
-                          >
-                            {briefTimeWindow.text}
-                          </span>
+                    {/* Corner Status Icons: Overdue Clock (นาฬิกา) or Urgent Flame (ไฟ) */}
+                    {isOverdue ? (
+                      <div 
+                        onMouseEnter={(e) => handleCornerMouseEnter(
+                          e,
+                          "overdue",
+                          "STATUS • OVERDUE",
+                          "text-rose-600 dark:text-rose-400",
+                          `เลยกำหนดส่งตามแผนงาน ${Math.abs(daysUntilDue ?? 0)} วัน`
                         )}
+                        onMouseLeave={handleCardTooltipMouseLeave}
+                        className="absolute top-2.5 right-2.5 z-20 text-[#E03131] dark:text-rose-500 flex items-center justify-center animate-in zoom-in-75 duration-200 cursor-help"
+                      >
+                        <OverdueClockIcon size={19} className="text-[#E03131] dark:text-rose-500" />
                       </div>
+                    ) : isUrgent ? (
+                      <div 
+                        onMouseEnter={(e) => handleCornerMouseEnter(
+                          e,
+                          "urgent",
+                          isSlaUrgent ? "LEAD TIME CRITICAL" : "DEADLINE ALERT",
+                          "text-amber-600 dark:text-amber-400",
+                          isSlaUrgent 
+                            ? `มาตรฐาน ${slaLeadTime} วัน • เหลือ ${daysUntilDue === 0 ? "วันนี้" : `${daysUntilDue} วัน`}` 
+                            : `กำหนดส่งภายใน ${daysUntilDue === 0 ? "วันนี้" : `${daysUntilDue} วัน`}`
+                        )}
+                        onMouseLeave={handleCardTooltipMouseLeave}
+                        className="absolute top-2.5 right-2.5 z-20 text-[#E03131] dark:text-rose-500 flex items-center justify-center animate-in zoom-in-75 duration-200 cursor-help"
+                      >
+                        <Flame size={19} className="fill-[#E03131] dark:fill-rose-500 text-[#E03131] dark:text-rose-500" />
+                      </div>
+                    ) : null}
 
-                      {/* Unified Minimal Header Status Pill (Zero Collision, Pure Minimal) */}
+                    {/* Card Header: Task Code + SLA Warning Badge */}
+                    <div className={`flex items-center gap-1.5 min-w-0 mb-1 select-none ${hasTopBadge ? 'pr-6' : 'pr-0'}`}>
+                      <span className={`font-bold text-[11px] sm:text-xs shrink-0 ${
+                        brief.unit?.toLowerCase() === "creative" ? "text-[#7c3aed] dark:text-[#c4b5fd]" : 
+                        brief.unit?.toLowerCase() === "content" ? "text-[#db2777] dark:text-[#f472b6]" : 
+                        brief.unit?.toLowerCase() === "pr" ? "text-[#1d4ed8] dark:text-[#93c5fd]" : 
+                        brief.unit?.toLowerCase() === "internal" ? "text-slate-800 dark:text-slate-100" : 
+                        "text-[#047857] dark:text-[#6ee7b7]"
+                      }`}>
+                        {getTaskCode(brief.unit, brief.id)}
+                      </span>
+
+                      {/* Brief Date & Available Working Days to Deadline (วันสั่งงานและระยะเวลาทำงานจางๆ) */}
+                      {briefTimeWindow && (
+                        <span 
+                          className="text-[9.5px] sm:text-[10px] font-medium text-slate-400 dark:text-zinc-500 tracking-tight shrink min-w-0 truncate"
+                          title={briefTimeWindow.tooltip}
+                        >
+                          {briefTimeWindow.text}
+                        </span>
+                      )}
+
+                      {/* Feature 4: SLA Pre-Overdue Shield (24-48h Early Warning Pill) */}
                       {(() => {
-                        if (isOverdue) {
-                          return (
-                            <span
-                              onMouseEnter={(e) => handleCornerMouseEnter(
-                                e,
-                                "overdue",
-                                "STATUS • OVERDUE",
-                                "text-rose-600 dark:text-rose-400",
-                                `เลยกำหนดส่งตามแผนงาน ${Math.abs(daysUntilDue ?? 0)} วัน`
-                              )}
-                              onMouseLeave={handleCardTooltipMouseLeave}
-                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold tracking-tight select-none shadow-xs shrink-0 leading-none whitespace-nowrap bg-rose-600 text-white animate-pulse cursor-help"
-                            >
-                              <OverdueClockIcon size={12} className="text-white shrink-0" />
-                              <span>เลยกำหนด</span>
-                            </span>
-                          );
-                        }
-
                         const slaWarn = getSlaPreOverdueStatus(brief);
                         if (slaWarn.level === "due_today" || slaWarn.level === "due_tomorrow" || slaWarn.level === "due_48h") {
                           const icon = slaWarn.level === "due_today" ? "⏰" : "⏳";
@@ -2287,7 +2300,7 @@ export default function AssignmentsView() {
                           return (
                             <span
                               title={slaWarn.label}
-                              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold tracking-tight select-none shadow-xs shrink-0 leading-none whitespace-nowrap ${
+                              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold tracking-tight select-none shadow-xs shrink-0 ml-auto leading-none whitespace-nowrap ${
                                 slaWarn.level === "due_today"
                                   ? "bg-rose-600 text-white animate-pulse"
                                   : slaWarn.level === "due_tomorrow"
@@ -2295,33 +2308,11 @@ export default function AssignmentsView() {
                                   : "bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800/60"
                               }`}
                             >
-                              <span className="text-[11px] leading-none shrink-0 -my-0.5">{icon}</span>
+                              <span className="text-[12px] sm:text-[13px] leading-none shrink-0 -my-0.5">{icon}</span>
                               <span className="leading-none">{textLabel}</span>
                             </span>
                           );
                         }
-
-                        if (isUrgent) {
-                          return (
-                            <span 
-                              onMouseEnter={(e) => handleCornerMouseEnter(
-                                e,
-                                "urgent",
-                                isSlaUrgent ? "LEAD TIME CRITICAL" : "DEADLINE ALERT",
-                                "text-amber-600 dark:text-amber-400",
-                                isSlaUrgent 
-                                  ? `มาตรฐาน ${slaLeadTime} วัน • เหลือ ${daysUntilDue === 0 ? "วันนี้" : `${daysUntilDue} วัน`}` 
-                                  : `กำหนดส่งภายใน ${daysUntilDue === 0 ? "วันนี้" : `${daysUntilDue} วัน`}`
-                              )}
-                              onMouseLeave={handleCardTooltipMouseLeave}
-                              className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold tracking-tight select-none shadow-xs shrink-0 leading-none whitespace-nowrap bg-amber-500 text-white cursor-help"
-                            >
-                              <Flame size={11} className="fill-white text-white shrink-0" />
-                              <span>ด่วน</span>
-                            </span>
-                          );
-                        }
-
                         return null;
                       })()}
                     </div>

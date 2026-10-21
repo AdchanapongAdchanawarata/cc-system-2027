@@ -484,7 +484,7 @@ export function getSlaPreOverdueStatus(brief: any): SlaWarningStatus {
       level: "due_today",
       daysLeft: 0,
       label: "⏰ ครบกำหนดวันนี้! (Due Today)",
-      shortLabel: "⏰ ส่งวันนี้!",
+      shortLabel: "⏰ ส่งวันนี้",
     };
   }
   if (diffDays === 1) {
@@ -492,7 +492,7 @@ export function getSlaPreOverdueStatus(brief: any): SlaWarningStatus {
       level: "due_tomorrow",
       daysLeft: 1,
       label: "⏳ ครบกำหนดพรุ่งนี้ (เหลือ 24 ชม.)",
-      shortLabel: "⏳ พรุ่งนี้ (24h)",
+      shortLabel: "⏳ พรุ่งนี้",
     };
   }
   if (diffDays === 2) {

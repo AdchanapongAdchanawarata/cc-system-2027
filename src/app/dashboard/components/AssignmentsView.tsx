@@ -2295,6 +2295,8 @@ export default function AssignmentsView() {
                       {(() => {
                         const slaWarn = getSlaPreOverdueStatus(brief);
                         if (slaWarn.level === "due_today" || slaWarn.level === "due_tomorrow" || slaWarn.level === "due_48h") {
+                          const icon = slaWarn.level === "due_today" ? "⏰" : "⏳";
+                          const textLabel = slaWarn.level === "due_tomorrow" ? "ส่งพรุ่งนี้" : (slaWarn.level === "due_today" ? "ส่งวันนี้" : "เหลือ 2 วัน");
                           return (
                             <span
                               title={slaWarn.label}
@@ -2306,7 +2308,8 @@ export default function AssignmentsView() {
                                   : "bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800/60"
                               }`}
                             >
-                              {slaWarn.shortLabel}
+                              <span className="text-[12px] sm:text-[13px] leading-none shrink-0 -my-0.5">{icon}</span>
+                              <span className="leading-none">{textLabel}</span>
                             </span>
                           );
                         }

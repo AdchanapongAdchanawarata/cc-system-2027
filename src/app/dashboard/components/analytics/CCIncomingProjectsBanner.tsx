@@ -165,97 +165,101 @@ export default function CCIncomingProjectsBanner({
       </div>
 
       {/* 2. Financial Summary Cards (ผลรวม รายรับ ต้นทุน กำไร) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
         
         {/* รายรับรวม (Total Revenue) */}
-        <div className="bg-white dark:bg-surface rounded-2xl border border-emerald-200/80 dark:border-emerald-500/30 p-4 shadow-2xs hover:shadow-xs transition-shadow relative overflow-hidden group">
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <span className="text-xs font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-              <DollarSign size={15} className="text-emerald-600 dark:text-emerald-400" />
-              รายรับรวม (Revenue)
+        <div className="bg-white dark:bg-surface rounded-2xl border border-emerald-200/80 dark:border-emerald-500/30 p-3 sm:p-4 shadow-2xs hover:shadow-xs transition-shadow relative overflow-hidden group">
+          <div className="flex items-center justify-between gap-1.5 mb-1.5">
+            <span className="text-[11px] sm:text-xs font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1 min-w-0 truncate">
+              <DollarSign size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span className="truncate">รายรับรวม</span>
+              <span className="hidden sm:inline text-[10px] text-emerald-600/80">(Revenue)</span>
             </span>
-            <span className="w-6 h-6 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-[10px] font-bold">
+            <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-md sm:rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
               +฿
             </span>
           </div>
-          <div className="text-xl sm:text-2xl font-black font-mono text-emerald-950 dark:text-emerald-300 tracking-tight">
+          <div className="text-base sm:text-xl lg:text-2xl font-black font-mono text-emerald-950 dark:text-emerald-300 tracking-tight truncate">
             ฿{totals.totalRevenue.toLocaleString()}
           </div>
-          <div className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80 font-medium mt-1 flex items-center gap-1">
+          <div className="text-[10px] sm:text-[11px] text-emerald-700/80 dark:text-emerald-400/80 font-medium mt-1 truncate">
             <span>รายรับเงินเข้าโครงการทั้งหมด</span>
           </div>
           <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-100/40 dark:bg-emerald-500/10 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none" />
         </div>
 
         {/* ต้นทุนรวม (Total Cost) */}
-        <div className="bg-white dark:bg-surface rounded-2xl border border-rose-200/80 dark:border-rose-500/30 p-4 shadow-2xs hover:shadow-xs transition-shadow relative overflow-hidden group">
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <span className="text-xs font-bold text-rose-800 dark:text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
-              <CreditCard size={15} className="text-rose-600 dark:text-rose-400" />
-              ต้นทุนรวม (Cost)
+        <div className="bg-white dark:bg-surface rounded-2xl border border-rose-200/80 dark:border-rose-500/30 p-3 sm:p-4 shadow-2xs hover:shadow-xs transition-shadow relative overflow-hidden group">
+          <div className="flex items-center justify-between gap-1.5 mb-1.5">
+            <span className="text-[11px] sm:text-xs font-bold text-rose-800 dark:text-rose-400 uppercase tracking-wider flex items-center gap-1 min-w-0 truncate">
+              <CreditCard size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
+              <span className="truncate">ต้นทุนรวม</span>
+              <span className="hidden sm:inline text-[10px] text-rose-600/80">(Cost)</span>
             </span>
-            <span className="w-6 h-6 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 flex items-center justify-center text-[10px] font-bold">
+            <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-md sm:rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
               -฿
             </span>
           </div>
-          <div className="text-xl sm:text-2xl font-black font-mono text-rose-950 dark:text-rose-300 tracking-tight">
+          <div className="text-base sm:text-xl lg:text-2xl font-black font-mono text-rose-950 dark:text-rose-300 tracking-tight truncate">
             ฿{totals.totalCost.toLocaleString()}
           </div>
-          <div className="text-[11px] text-rose-700/80 dark:text-rose-400/80 font-medium mt-1 flex items-center gap-1">
+          <div className="text-[10px] sm:text-[11px] text-rose-700/80 dark:text-rose-400/80 font-medium mt-1 truncate">
             <span>ต้นทุนและค่าใช้จ่ายดำเนินงาน</span>
           </div>
           <div className="absolute top-0 right-0 w-24 h-24 bg-rose-100/40 dark:bg-rose-500/10 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none" />
         </div>
 
         {/* กำไรสุทธิ (Total Profit) */}
-        <div className={`bg-white dark:bg-surface rounded-2xl border p-4 shadow-2xs hover:shadow-xs transition-shadow relative overflow-hidden group ${
+        <div className={`bg-white dark:bg-surface rounded-2xl border p-3 sm:p-4 shadow-2xs hover:shadow-xs transition-shadow relative overflow-hidden group ${
           totals.totalProfit >= 0 ? "border-indigo-200/80 dark:border-indigo-500/30" : "border-rose-300 dark:border-rose-500/30 bg-rose-50/30 dark:bg-rose-950/20"
         }`}>
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <span className="text-xs font-bold text-indigo-800 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
-              <TrendingUp size={15} className="text-indigo-600 dark:text-indigo-400" />
-              กำไรสุทธิ (Profit)
+          <div className="flex items-center justify-between gap-1.5 mb-1.5">
+            <span className="text-[11px] sm:text-xs font-bold text-indigo-800 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1 min-w-0 truncate">
+              <TrendingUp size={14} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+              <span className="truncate">กำไรสุทธิ</span>
+              <span className="hidden sm:inline text-[10px] text-indigo-600/80">(Profit)</span>
             </span>
             {totals.totalRevenue > 0 && (
-              <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold ${
+              <span className={`px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-extrabold shrink-0 whitespace-nowrap ${
                 totals.marginRate >= 0 ? "bg-indigo-100 dark:bg-indigo-950/70 text-indigo-800 dark:text-indigo-300" : "bg-rose-100 dark:bg-rose-950/70 text-rose-800 dark:text-rose-300"
               }`}>
-                {totals.marginRate}% Margin
+                {totals.marginRate}%<span className="hidden sm:inline"> Margin</span>
               </span>
             )}
           </div>
-          <div className={`text-xl sm:text-2xl font-black font-mono tracking-tight ${
+          <div className={`text-base sm:text-xl lg:text-2xl font-black font-mono tracking-tight truncate ${
             totals.totalProfit >= 0 ? "text-indigo-950 dark:text-indigo-300" : "text-rose-600 dark:text-rose-400"
           }`}>
             ฿{totals.totalProfit.toLocaleString()}
           </div>
-          <div className="text-[11px] text-indigo-700/80 dark:text-indigo-400/80 font-medium mt-1 flex items-center gap-1">
+          <div className="text-[10px] sm:text-[11px] text-indigo-700/80 dark:text-indigo-400/80 font-medium mt-1 truncate">
             <span>{totals.totalProfit >= 0 ? "กำไรสุทธิเข้าทีม CC" : "ผลการดำเนินงานติดลบ"}</span>
           </div>
           <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-100/40 dark:bg-indigo-500/10 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none" />
         </div>
 
         {/* จำนวนโครงการทั้งหมด (Total Projects) */}
-        <div className="bg-white dark:bg-surface rounded-2xl border border-slate-200 dark:border-surface-border p-4 shadow-2xs hover:shadow-xs transition-shadow relative overflow-hidden group">
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-              <Briefcase size={15} className="text-slate-600 dark:text-slate-400" />
-              โครงการทั้งหมด
+        <div className="bg-white dark:bg-surface rounded-2xl border border-slate-200 dark:border-surface-border p-3 sm:p-4 shadow-2xs hover:shadow-xs transition-shadow relative overflow-hidden group">
+          <div className="flex items-center justify-between gap-1.5 mb-1.5">
+            <span className="text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1 min-w-0 truncate">
+              <Briefcase size={14} className="text-slate-600 dark:text-slate-400 shrink-0" />
+              <span className="truncate">โครงการทั้งหมด</span>
             </span>
-            <span className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-surface-border text-slate-700 dark:text-slate-300 flex items-center justify-center text-[10px] font-bold">
+            <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-md sm:rounded-lg bg-slate-100 dark:bg-surface-border text-slate-700 dark:text-slate-300 flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
               {totals.totalProjects}
             </span>
           </div>
-          <div className="text-xl sm:text-2xl font-black font-mono text-slate-900 dark:text-foreground tracking-tight">
+          <div className="text-base sm:text-xl lg:text-2xl font-black font-mono text-slate-900 dark:text-foreground tracking-tight truncate">
             {totals.totalProjects} <span className="text-xs font-normal text-slate-500 dark:text-muted-foreground">โครงการ</span>
           </div>
-          <div className="text-[11px] text-slate-600 dark:text-muted-foreground font-medium mt-1 flex items-center gap-2">
-            <span className="text-emerald-700 dark:text-emerald-400 font-bold">เสร็จ {totals.completedCount}</span>
+          <div className="text-[10px] sm:text-[11px] text-slate-600 dark:text-muted-foreground font-medium mt-1 flex items-center gap-1.5 truncate">
+            <span className="text-emerald-700 dark:text-emerald-400 font-bold shrink-0">เสร็จ {totals.completedCount}</span>
             <span>•</span>
-            <span className="text-blue-700 dark:text-blue-400 font-bold">ทำ {totals.inProgressCount}</span>
+            <span className="text-blue-700 dark:text-blue-400 font-bold shrink-0">ทำ {totals.inProgressCount}</span>
             <span>•</span>
-            <span className="text-amber-700 dark:text-amber-400 font-bold">รอ {totals.pendingCount}</span>
+            <span className="text-amber-700 dark:text-amber-400 font-bold shrink-0">รอ {totals.pendingCount}</span>
           </div>
+          <div className="absolute top-0 right-0 w-24 h-24 bg-slate-100/50 dark:bg-slate-700/10 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none" />
         </div>
 
       </div>

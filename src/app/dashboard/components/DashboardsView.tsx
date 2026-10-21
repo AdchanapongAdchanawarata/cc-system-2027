@@ -1846,7 +1846,7 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
   }
 
   return (
-    <div className="w-full flex flex-col h-full bg-surface rounded-2xl border border-surface-border p-4 md:p-6 shadow-xs animate-in fade-in duration-200">
+    <div className="w-full flex flex-col h-full bg-surface rounded-2xl border border-surface-border p-3 sm:p-4 md:p-6 shadow-xs animate-in fade-in duration-200">
       
       {/* Top Header & Navigation */}
       <div className="flex flex-col gap-3.5 mb-5 pb-4 border-b border-surface-border print:hidden">
@@ -1910,11 +1910,12 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
             {/* Save PDF button opposite Insights icon */}
             <button
               onClick={() => window.print()}
-              className="inline-flex items-center gap-1 px-2.5 sm:px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
+              className="inline-flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
               title="บันทึกหรือพิมพ์รายงานเป็น PDF"
             >
               <Download size={12} className="shrink-0" />
-              <span>Save PDF</span>
+              <span className="hidden sm:inline">Save PDF</span>
+              <span className="sm:hidden text-[10px]">PDF</span>
             </button>
           </div>
         </div>

@@ -220,12 +220,14 @@ export default function MemberWorkloadHorizontalChart({
               <BarChart3 size={20} />
             </div>
             <div>
-              <h3 className="text-base md:text-lg font-bold text-foreground flex items-center gap-2">
-                ปริมาณภาระงานรายบุคคล (Member Workload Distribution)
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-base md:text-lg font-bold text-foreground">
+                  ปริมาณภาระงานรายบุคคล <span className="hidden sm:inline text-sm font-normal text-muted-foreground">(Member Workload Distribution)</span>
+                </h3>
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 whitespace-nowrap shrink-0">
                   {activeMembers.length} / {operationalAssignees.length} คนมีงาน
                 </span>
-              </h3>
+              </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 แผนภูมิแนวนอนเรียงลำดับจากผู้มีภาระงานมากที่สุด ผสมสัดส่วนสถานะงาน (เสร็จ / กำลังทำ / รอทำ)
               </p>

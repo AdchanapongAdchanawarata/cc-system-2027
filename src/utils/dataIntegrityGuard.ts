@@ -263,9 +263,12 @@ export async function runAutomatedDatabaseIntegrityHeal(
         (d.organization || "").toUpperCase().includes("NMCO");
       const misclassifiedNmco = isNmco && (d.selected_okr !== "KR2" || !Array.isArray(b.okr_links) || !b.okr_links.includes("KR2"));
 
-      if (hasGhostAst || hasStrayPmFields || missingOkr || misclassifiedNmco) {
+      const hasQtTaskCode = (d.task_code || "").toString().startsWith("QT");
+
+      if (hasGhostAst || hasStrayPmFields || missingOkr || misclassifiedNmco || hasQtTaskCode) {
         const cleanedDetails = {
           ...d,
+          ...(hasQtTaskCode ? { task_code: d.task_code.replace(/^QT/, "IT") } : {}),
           ...(Array.isArray(d.assistants) ? { assistants: sanitizeAssistantsList(d.assistants, true) } : {}),
         };
         const normalized = enforceCanonicalBriefIntegrity({

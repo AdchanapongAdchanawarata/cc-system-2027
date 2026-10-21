@@ -2,7 +2,7 @@ import { createClient } from "@/utils/supabase/client";
 
 export const FISCAL_YEAR = "70"; // ปีงบประมาณ 2570 (เริ่ม 1 ต.ค. 2569)
 
-export type TaskPrefix = "DS" | "CT" | "PR" | "IT" | "IDC" | "RSP" | "QT";
+export type TaskPrefix = "DS" | "CT" | "PR" | "IT" | "IDC" | "RSP";
 
 export interface TaskSequenceCounters {
   DS: number;
@@ -11,7 +11,7 @@ export interface TaskSequenceCounters {
   IT: number;
   IDC: number;
   RSP: number;
-  QT: number;
+  QT?: number;
 }
 
 const DEFAULT_COUNTERS: TaskSequenceCounters = {
@@ -21,7 +21,6 @@ const DEFAULT_COUNTERS: TaskSequenceCounters = {
   IT: 0,
   IDC: 0,
   RSP: 0,
-  QT: 0,
 };
 
 const SEQUENCE_CONFIG_KEY = "CONFIG_TASK_SEQUENCES_JSON";
@@ -39,7 +38,7 @@ export function getUnitPrefix(unit?: string | null, category?: string | null): T
     return "RSP";
   }
   if (cat.includes("ใบเสนอราคา") || cat.includes("quotation")) {
-    return "QT";
+    return "IT";
   }
 
   const u = (unit || "internal").toLowerCase().trim();
@@ -226,6 +225,9 @@ export function resolveTaskCode(
 
   // 1. Direct saved immutable task code
   if (brief.details?.task_code) {
+    if (brief.details.task_code.startsWith("QT")) {
+      return brief.details.task_code.replace(/^QT/, "IT");
+    }
     return brief.details.task_code;
   }
   if (brief.details?.idc_code && brief.details.idc_code.includes(`${FISCAL_YEAR}-`)) {

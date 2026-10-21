@@ -142,7 +142,7 @@ export default function InternalTaskForm() {
 
       const supabase = createClient();
       const isQuote = taskCategory === "ทำใบเสนอราคา" || taskCategory === "ทำใบเสนราคา" || taskName.startsWith("[Quotation]") || taskName.includes("ใบเสนอราคา");
-      const generatedCode = await generateNextTaskCode(isQuote ? "QT" : "IT");
+      const generatedCode = await generateNextTaskCode("IT");
       const effectiveAssigneeId = assigneeId || getLoggedInAssigneeId(assignees);
       const nowIso = new Date().toISOString();
 

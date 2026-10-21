@@ -648,7 +648,8 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
       }
 
       // Generate guaranteed sequential task code for FY70 (e.g. IT70-1, IT70-2, IT70-3...)
-      const prefix = isConsultationProject ? 'IDC' : isQuotation ? 'QT' : 'IT';
+      // Quotation is a sub-group under IT, so main task code prefix is ALWAYS IT
+      const prefix = isConsultationProject ? 'IDC' : 'IT';
       const generatedTaskCode = detailsPayload.task_code || await generateNextTaskCode(prefix);
       detailsPayload.task_code = generatedTaskCode;
       if (prefix === 'IDC') {
@@ -1864,7 +1865,7 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
             try {
               const effectiveAssignee = formData.assignee_id || getLoggedInAssigneeId(assignees);
               const matchedAssignee = assignees.find(a => a.id === effectiveAssignee);
-              const generatedTaskCode = await generateNextTaskCode('QT');
+              const generatedTaskCode = await generateNextTaskCode('IT');
               const nowIso = new Date().toISOString();
 
               const quoteDetailsPayload: any = {

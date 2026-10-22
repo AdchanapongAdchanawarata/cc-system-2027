@@ -1589,7 +1589,7 @@ export default function AssignmentsView() {
     <div className="w-full flex flex-col h-[calc(100dvh-70px)] md:h-[calc(100vh-80px)] min-h-[640px] md:min-h-[760px] mb-2 bg-surface rounded-2xl border border-surface-border shadow-xs overflow-hidden p-2 sm:p-3 md:p-3.5 animate-in fade-in duration-200">
       
       {/* Header Toolbar: Tasks + Unit Selector (Left) & Search + กรองคน + Undo/Redo + Trash (Right) */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between mb-2 sm:mb-2.5 gap-2 pb-2 border-b border-surface-border print:hidden shrink-0">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between mb-2 sm:mb-2.5 gap-2 pb-2 border-b border-surface-border print:hidden shrink-0 relative z-30">
         
         {/* Left Side: Tasks Title + Unit Tabs */}
         <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap sm:flex-nowrap min-w-0">
@@ -1661,7 +1661,7 @@ export default function AssignmentsView() {
         </div>
 
         {/* Right Side: Search + กรองคน + History Controls + Trash Bin (Single Unified Row) */}
-        <div className="flex items-center gap-1.5 w-full xl:w-auto justify-start sm:justify-end overflow-x-auto no-scrollbar py-0.5 min-w-0">
+        <div className="flex items-center gap-1.5 w-full xl:w-auto justify-start sm:justify-end min-w-0">
           
           {/* Search Bar */}
           <div className="relative flex-1 min-w-[110px] sm:w-40 md:w-44 xl:w-40 2xl:w-52">
@@ -1703,9 +1703,9 @@ export default function AssignmentsView() {
                   className="fixed inset-0 z-40" 
                   onClick={() => setIsAssigneeFilterOpen(false)} 
                 />
-                <div className="absolute right-0 top-full mt-1.5 w-64 sm:w-72 bg-white rounded-2xl shadow-xl border border-zinc-200 p-2.5 z-50 text-xs animate-in fade-in zoom-in-95 duration-150">
-                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-zinc-100">
-                    <span className="font-bold text-zinc-900 flex items-center gap-1.5">
+                <div className="absolute right-0 top-full mt-1.5 w-64 sm:w-72 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 p-2.5 z-50 text-xs animate-in fade-in zoom-in-95 duration-150 text-foreground">
+                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-zinc-100 dark:border-zinc-800">
+                    <span className="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
                       <Users size={13} className="text-[#f97316]" />
                       <span>กรองตามผู้รับผิดชอบงาน</span>
                     </span>
@@ -1713,7 +1713,7 @@ export default function AssignmentsView() {
                       <button
                         type="button"
                         onClick={() => setSelectedAssigneeIds([])}
-                        className="text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:underline cursor-pointer"
+                        className="text-[11px] font-bold text-rose-600 dark:text-rose-400 hover:text-rose-700 hover:underline cursor-pointer"
                       >
                         ล้างตัวกรอง
                       </button>
@@ -1727,18 +1727,18 @@ export default function AssignmentsView() {
                       onClick={() => setSelectedAssigneeIds([])}
                       className={`w-full text-left px-2.5 py-1.5 rounded-xl transition-all flex items-center justify-between cursor-pointer ${
                         selectedAssigneeIds.length === 0
-                          ? "bg-zinc-900 text-white font-bold"
-                          : "hover:bg-zinc-100 text-zinc-700"
+                          ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-bold"
+                          : "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
                       }`}
                     >
                       <span className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${selectedAssigneeIds.length === 0 ? "bg-[#f97316]" : "bg-zinc-300"}`} />
+                        <span className={`w-2 h-2 rounded-full ${selectedAssigneeIds.length === 0 ? "bg-[#f97316]" : "bg-zinc-300 dark:bg-zinc-600"}`} />
                         <span>ทุกคน (All Members)</span>
                       </span>
                       {selectedAssigneeIds.length === 0 && <Check size={13} className="text-[#f97316]" />}
                     </button>
 
-                    <div className="my-1 border-t border-zinc-100" />
+                    <div className="my-1 border-t border-zinc-100 dark:border-zinc-800" />
 
                     {/* Member Options with Checkboxes */}
                     {assignees.map((a) => {
@@ -1759,8 +1759,8 @@ export default function AssignmentsView() {
                           }}
                           className={`w-full text-left px-2.5 py-1.5 rounded-xl transition-all flex items-center justify-between cursor-pointer ${
                             isSelected
-                              ? "bg-orange-50 text-orange-950 font-bold border border-orange-200"
-                              : "hover:bg-zinc-50 text-zinc-700"
+                              ? "bg-orange-50 dark:bg-orange-950/40 text-orange-950 dark:text-orange-200 font-bold border border-orange-200 dark:border-orange-800/60"
+                              : "hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
                           }`}
                         >
                           <div className="flex items-center gap-2 truncate mr-1">
@@ -1773,7 +1773,7 @@ export default function AssignmentsView() {
                             <span className="truncate">{a.name}</span>
                           </div>
                           <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${
-                            isSelected ? "bg-orange-200 text-orange-900" : "bg-zinc-100 text-zinc-500"
+                            isSelected ? "bg-orange-200 dark:bg-orange-900 text-orange-900 dark:text-orange-100" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
                           }`}>
                             {taskCount}
                           </span>
@@ -1798,8 +1798,8 @@ export default function AssignmentsView() {
                           }}
                           className={`w-full text-left px-2.5 py-1.5 rounded-xl transition-all flex items-center justify-between cursor-pointer mt-1 ${
                             isUnassignedSelected
-                              ? "bg-rose-50 text-rose-950 font-bold border border-rose-200"
-                              : "hover:bg-zinc-50 text-zinc-600"
+                              ? "bg-rose-50 dark:bg-rose-950/40 text-rose-950 dark:text-rose-200 font-bold border border-rose-200 dark:border-rose-800/60"
+                              : "hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                           }`}
                         >
                           <div className="flex items-center gap-2 truncate mr-1">
@@ -1812,7 +1812,7 @@ export default function AssignmentsView() {
                             <span className="truncate">ยังไม่ได้กำหนดคนรับ</span>
                           </div>
                           <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${
-                            isUnassignedSelected ? "bg-rose-200 text-rose-900" : "bg-zinc-100 text-zinc-500"
+                            isUnassignedSelected ? "bg-rose-200 dark:bg-rose-900 text-rose-900 dark:text-rose-100" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
                           }`}>
                             {unassignedCount}
                           </span>
@@ -1821,14 +1821,14 @@ export default function AssignmentsView() {
                     })()}
                   </div>
 
-                  <div className="pt-2 mt-2 border-t border-zinc-100 flex items-center justify-between">
-                    <span className="text-[10.5px] text-zinc-400">
+                  <div className="pt-2 mt-2 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                    <span className="text-[10.5px] text-zinc-400 dark:text-zinc-500">
                       ติ๊กเพื่อเทียบงานหลายคนพร้อมกัน
                     </span>
                     <button
                       type="button"
                       onClick={() => setIsAssigneeFilterOpen(false)}
-                      className="px-3 py-1 bg-zinc-900 text-white rounded-lg text-[11px] font-bold hover:bg-zinc-800 transition-colors cursor-pointer"
+                      className="px-3 py-1 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg text-[11px] font-bold hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors cursor-pointer"
                     >
                       ตกลง
                     </button>

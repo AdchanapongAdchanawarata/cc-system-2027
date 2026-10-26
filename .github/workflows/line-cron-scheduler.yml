@@ -1,0 +1,24 @@
+name: CC TEAM LINE Automated Scheduler & Watchdog
+
+on:
+  schedule:
+    # 02:00 UTC = 09:00 AM Bangkok (Mon-Fri) - Morning Brief & Monthly Performance Summary
+    - cron: '0 2 * * 1-5'
+    # 09:30 UTC = 16:30 PM Bangkok (Friday) - Weekly Executive Report
+    - cron: '30 9 * * 5'
+    # Fallback Watchdog runs every 2 hours during Bangkok business hours (09:00, 11:00, 13:00, 15:00, 17:00 BKK)
+    # The route is idempotent and uses DB locks, so it only triggers tasks that are due and not yet sent.
+    - cron: '0 4,6,8,10 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  trigger-scheduler:
+    name: Ping CC TEAM /api/cron
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Heartbeat to Vercel Endpoint
+        run: |
+          echo "Pinging CC TEAM /api/cron at $(date -u)"
+          RESPONSE=$(curl -sS -X GET "https://ccteam.vercel.app/api/cron" -H "User-Agent: GitHub-Actions-Scheduler/1.0")
+          echo "Response from server:"
+          echo "$RESPONSE"

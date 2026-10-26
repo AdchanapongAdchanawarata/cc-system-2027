@@ -9,11 +9,12 @@ import {
   Calculator, History, Calendar, BarChart3, PlusCircle, ArrowUpRight, ArrowDownRight, Minus,
   AlertTriangle, Link2, ExternalLink,
   Database, HardDrive, ShieldAlert, Archive, RefreshCw, Download, FileSpreadsheet,
-  Lock, Unlock, ShieldCheck, Eye
+  Lock, Unlock, ShieldCheck, Eye, BellRing
 } from "lucide-react";
 import GoogleSheetsSyncHub from "./GoogleSheetsSyncHub";
 import AuditLogsAndBackupHub from "./AuditLogsAndBackupHub";
 import AiControlHub from "./AiControlHub";
+import LineDispatchHub from "./LineDispatchHub";
 import { 
   getStorageQuotaStats, 
   purgeCompletedTaskAttachments, 
@@ -125,7 +126,7 @@ const DEFAULT_PRICING: Omit<ServicePricing, 'id'>[] = DEFAULT_STEP_PRICING.map(i
 }));
 
 export default function SetupModal({ onClose, isReadOnly = false }: { onClose: () => void; isReadOnly?: boolean }) {
-  const [activeTab, setActiveTab] = useState<"team" | "okr" | "pricing" | "storage" | "sheets-sync" | "ai-control" | "advice-history">("team");
+  const [activeTab, setActiveTab] = useState<"team" | "okr" | "pricing" | "storage" | "sheets-sync" | "ai-control" | "advice-history" | "line-dispatch">("team");
   const [assignees, setAssignees] = useState<Assignee[]>([]);
   const [activeBriefs, setActiveBriefs] = useState<any[]>([]);
   const [okrs, setOkrs] = useState<OKR[]>([]);
@@ -193,8 +194,10 @@ export default function SetupModal({ onClose, isReadOnly = false }: { onClose: (
   };
 
   const handlePurgeLocalCache = () => {
-    const res = purgeLocalCache();
-    alert(`⚡ เคลียร์ไฟล์แคชและข้อมูลชั่วคราวเรียบร้อย (ประหยัดพื้นที่ ~${res.freedKb} KB)`);
+    const res = purgeLocalCache("all_cache");
+    setCleanMessage(
+      `⚡ ล้างแคชเบราว์เซอร์สำเร็จเรียบร้อย! คืนพื้นที่ได้ ~${res.freedKb} KB (ลบแคชไป ${res.removedKeysCount} รายการ • ปัจจุบันเหลือ ${res.remainingKb} KB) โดยข้อมูลสำคัญและการเข้าสู่ระบบยังคงปลอดภัย 100%`
+    );
     refreshQuotaStats();
   };
 
@@ -685,10 +688,10 @@ export default function SetupModal({ onClose, isReadOnly = false }: { onClose: (
         )}
 
         {/* Navigation Tabs */}
-        <div className="flex px-6 pt-3 border-b border-slate-100 gap-8 bg-white">
+        <div className="flex px-4 sm:px-6 pt-3 border-b border-slate-100 gap-2 sm:gap-5 md:gap-6 bg-white overflow-x-auto custom-scrollbar select-none scroll-smooth">
           <button 
             onClick={() => setActiveTab("team")}
-            className={`pb-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all ${
+            className={`pb-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all shrink-0 whitespace-nowrap ${
               activeTab === "team" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
@@ -697,7 +700,7 @@ export default function SetupModal({ onClose, isReadOnly = false }: { onClose: (
           
           <button 
             onClick={() => setActiveTab("okr")}
-            className={`pb-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all ${
+            className={`pb-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all shrink-0 whitespace-nowrap ${
               activeTab === "okr" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
@@ -706,7 +709,7 @@ export default function SetupModal({ onClose, isReadOnly = false }: { onClose: (
 
           <button 
             onClick={() => setActiveTab("pricing")}
-            className={`pb-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all ${
+            className={`pb-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all shrink-0 whitespace-nowrap ${
               activeTab === "pricing" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
@@ -715,7 +718,7 @@ export default function SetupModal({ onClose, isReadOnly = false }: { onClose: (
 
           <button 
             onClick={() => setActiveTab("storage")}
-            className={`pb-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all ${
+            className={`pb-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all shrink-0 whitespace-nowrap ${
               activeTab === "storage" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
@@ -723,8 +726,24 @@ export default function SetupModal({ onClose, isReadOnly = false }: { onClose: (
           </button>
 
           <button 
+            onClick={() => setActiveTab("line-dispatch")}
+            className={`pb-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all shrink-0 whitespace-nowrap ${
+              activeTab === "line-dispatch" 
+                ? "border-emerald-600 text-emerald-700 font-bold" 
+                : "border-transparent text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <BellRing size={16} className="text-emerald-600" />
+            <span>LINE Dispatch &amp; Scheduler</span>
+          </button>
+
+          <button 
             onClick={() => setActiveTab("sheets-sync")}
-            className={`pb-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all ${
+            className={`pb-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all shrink-0 whitespace-nowrap ${
               activeTab === "sheets-sync" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
@@ -733,16 +752,16 @@ export default function SetupModal({ onClose, isReadOnly = false }: { onClose: (
 
           <button 
             onClick={() => setActiveTab("ai-control")}
-            className={`pb-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all ${
+            className={`pb-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all shrink-0 whitespace-nowrap ${
               activeTab === "ai-control" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
-            <Sparkles size={16} /> AI Control & Guardrails
+            <Sparkles size={16} /> AI Control &amp; Guardrails
           </button>
 
           <button 
             onClick={() => setActiveTab("advice-history")}
-            className={`pb-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all ${
+            className={`pb-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all shrink-0 whitespace-nowrap ${
               activeTab === "advice-history" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
@@ -2794,9 +2813,19 @@ export default function SetupModal({ onClose, isReadOnly = false }: { onClose: (
                         <Archive size={14} className="text-purple-600" />
                         <span>แคชเบราว์เซอร์ (Browser Cache)</span>
                       </span>
-                      <span className="font-mono font-bold text-slate-900">
-                        {quotaStats ? `${quotaStats.localStorageKb} KB / 5,120 KB` : "คำนวณ..."}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-slate-900">
+                          {quotaStats ? `${quotaStats.localStorageKb} KB / 5,120 KB` : "คำนวณ..."}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handlePurgeLocalCache}
+                          className="px-2.5 py-0.5 text-[10.5px] font-bold text-purple-700 bg-purple-100 hover:bg-purple-200 active:scale-95 rounded-full transition-all cursor-pointer shadow-2xs"
+                          title="ล้างแคชข้อมูลออฟไลน์ในเครื่องนี้เพื่อคืนพื้นที่ทันที โดยไม่หลุดออกจากระบบ"
+                        >
+                          ล้างแคชนี้
+                        </button>
+                      </div>
                     </div>
                     <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
                       <div
@@ -2816,7 +2845,15 @@ export default function SetupModal({ onClose, isReadOnly = false }: { onClose: (
                   <div className="flex items-center gap-2.5">
                     <Info size={18} className="text-amber-600 shrink-0" />
                     <span className="leading-relaxed">
-                      <strong>สถานะข้อมูลพร้อมคืนพื้นที่:</strong> มีโครงการที่เสร็จสิ้นแล้ว <strong>{quotaStats?.completedBriefsCount || 0} โครงการ</strong> ซึ่งมีไฟล์แนบที่สามารถล้างเพื่อประหยัดพื้นที่ได้ <strong>{quotaStats?.purgeableFilesCount || 0} ไฟล์ (~{quotaStats?.purgeableEstimatedMb || 0} MB)</strong>
+                      {quotaStats?.purgeableFilesCount === 0 ? (
+                        <>
+                          <strong>สถานะไฟล์แนบ:</strong> โครงการที่เสร็จสิ้นแล้ว ({quotaStats?.completedBriefsCount || 0} โครงการ) <strong>ถูกล้างไฟล์แนบประหยัดพื้นที่เรียบร้อยแล้ว</strong> (ไม่มีไฟล์แนบค้างใน Storage Bucket • คลังไฟล์แนบเหลือพื้นที่ว่าง {1024 - Math.round(quotaStats?.storageEstimatedMb || 0)} MB)
+                        </>
+                      ) : (
+                        <>
+                          <strong>สถานะข้อมูลพร้อมคืนพื้นที่:</strong> มีโครงการที่เสร็จสิ้นแล้ว <strong>{quotaStats?.completedBriefsCount || 0} โครงการ</strong> ซึ่งมีไฟล์แนบที่สามารถล้างเพื่อประหยัดพื้นที่ได้ <strong>{quotaStats?.purgeableFilesCount || 0} ไฟล์ (~{quotaStats?.purgeableEstimatedMb || 0} MB)</strong>
+                        </>
+                      )}
                     </span>
                   </div>
                   <button
@@ -2825,7 +2862,7 @@ export default function SetupModal({ onClose, isReadOnly = false }: { onClose: (
                     disabled={!quotaStats || quotaStats.purgeableFilesCount === 0}
                     className="px-4 py-2 rounded-full bg-amber-600 hover:bg-amber-700 text-white font-bold shrink-0 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs whitespace-nowrap"
                   >
-                    ล้างไฟล์ส่วนนี้ทันที
+                    {quotaStats?.purgeableFilesCount === 0 ? "ไฟล์ในระบบถูกล้างเรียบร้อย" : "ล้างไฟล์ส่วนนี้ทันที"}
                   </button>
                 </div>
               </div>
@@ -2880,6 +2917,13 @@ export default function SetupModal({ onClose, isReadOnly = false }: { onClose: (
                 </div>
               </div>
               <AuditLogsAndBackupHub />
+            </div>
+          )}
+
+          {/* TAB 8: LINE DISPATCH & SCHEDULER MONITOR */}
+          {activeTab === "line-dispatch" && (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              <LineDispatchHub />
             </div>
           )}
         </div>

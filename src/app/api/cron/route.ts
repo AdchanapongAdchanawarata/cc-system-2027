@@ -135,11 +135,159 @@ function isActionLockedOrDone(dayRecord: Record<string, any>, actionKey: string)
 }
 
 export async function GET(request: Request) {
+  const url = new URL(request.url);
+  if (url.searchParams.get('mode') === 'status' || url.searchParams.get('inspect') === '1') {
+    return handleGetStatus(request);
+  }
   return handleCronDispatch(request);
 }
 
 export async function POST(request: Request) {
+  try {
+    const clone = request.clone();
+    const body = await clone.json().catch(() => ({}));
+    if (body.action === 'force_run') {
+      return handleForceRun(body);
+    }
+  } catch {}
   return handleCronDispatch(request);
+}
+
+async function handleGetStatus(request: Request) {
+  try {
+    const { hours, minutes, day, dateStr, timeStr, bkk } = getBangkokDate();
+    const tracker = await loadTrackerAsync();
+    const { getLineQuotaStatus, shouldSendMorningBriefToday } = await import('@/utils/lineBotConfig');
+    const [quota, pacing] = await Promise.all([
+      getLineQuotaStatus().catch(() => null),
+      shouldSendMorningBriefToday(bkk).catch(() => null),
+    ]);
+
+    // Check for missed weekly reports in the past 14 days
+    const missedDetections: Array<{ date: string; type: string; reason: string }> = [];
+    const sortedDates = Object.keys(tracker).sort();
+    for (const d of sortedDates) {
+      if (d >= dateStr) continue; // Only check past dates
+      const [y, m, dt] = d.split('-').map(Number);
+      if (!y || !m || !dt) continue;
+      const testDate = new Date(y, m - 1, dt);
+      const dayOfWeek = testDate.getDay();
+      // Friday check (day 5)
+      if (dayOfWeek === 5) {
+        const lastDay = new Date(y, m, 0).getDate();
+        const isLastFriday = (dt + 7) > lastDay;
+        if (!isLastFriday) {
+          const record = tracker[d] || {};
+          if (!record.weekly_executive_report && !record.weekly_executive_report_manual) {
+            missedDetections.push({
+              date: d,
+              type: 'weekly_executive_report',
+              reason: 'วันศุกร์รอบปกติ (ไม่ใช่ศุกร์สิ้นเดือน) แต่ไม่มีประวัติการส่งรายงานผู้บริหาร 16:30 น. (อาจเกิดจาก Vercel Cron ไม่ได้ Trigger)',
+            });
+          }
+        }
+      }
+    }
+
+    // Calculate upcoming events
+    const curYear = bkk.getFullYear();
+    const curMonth = bkk.getMonth();
+    const lastDayCurMonth = new Date(curYear, curMonth + 1, 0).getDate();
+
+    let lastWorkdayOfMonthDate = lastDayCurMonth;
+    for (let dd = lastDayCurMonth; dd >= 1; dd--) {
+      const testD = new Date(curYear, curMonth, dd);
+      const dow = testD.getDay();
+      if (dow >= 1 && dow <= 5) {
+        lastWorkdayOfMonthDate = dd;
+        break;
+      }
+    }
+
+    const mmStr = String(curMonth + 1).padStart(2, '0');
+    const lastWorkdayStr = `${curYear}-${mmStr}-${String(lastWorkdayOfMonthDate).padStart(2, '0')}`;
+
+    const upcomingEvents = [
+      {
+        action: 'monthly_performance_summary',
+        name: 'รายงานสรุปผลงานประจำเดือน & KR4 Profit (Monthly Performance Summary)',
+        targetGroup: 'CC TEAM (Executive)',
+        targetMembers: quota?.execMembers || 17,
+        scheduledDate: lastWorkdayStr,
+        scheduledTime: '09:00 น.',
+        isNextEvent: true,
+        note: 'วันทำการสุดท้ายของเดือน ตุลาคม ส่งตรงเข้ากลุ่ม CC TEAM สรุปผลงาน, Save Cost, โครงการ CC PM, OKRs และผลประเมินความพึงพอใจ',
+      },
+      {
+        action: 'weekly_executive_report',
+        name: 'รายงานสรุปผลงานประจำสัปดาห์ (Weekly Executive Report)',
+        targetGroup: 'CC TEAM (Executive)',
+        targetMembers: quota?.execMembers || 17,
+        scheduledDate: '2026-11-06',
+        scheduledTime: '16:30 น.',
+        note: 'วันศุกร์แรกของเดือนพฤศจิกายน (วันศุกร์ที่ 30 ต.ค. ถูกยกเว้นเนื่องจากมีรายงานประจำเดือนช่วงเช้าแล้ว เพื่อไม่ให้ส่งซ้ำซ้อน)',
+      },
+      {
+        action: 'morning_brief',
+        name: 'Morning Brief สรุปงานประจำวัน & แจกภารกิจ',
+        targetGroup: 'Creative step (NOTY)',
+        targetMembers: quota?.notyMembers || 12,
+        scheduledTime: '09:00 น. (จันทร์ - พฤหัสฯ ตามการเกลี่ยโควต้า)',
+        note: pacing?.reason || 'ระบบเกลี่ยโควต้าสมดุล',
+      }
+    ];
+
+    return NextResponse.json({
+      success: true,
+      bangkokTime: `${dateStr} ${timeStr}`,
+      dateStr,
+      todayStatus: tracker[dateStr] || {},
+      tracker,
+      quota,
+      pacing,
+      upcomingEvents,
+      missedDetections,
+    });
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}
+
+async function handleForceRun(body: any) {
+  const targetAction = body.targetAction;
+  const extra = body.extra || {};
+  const { dateStr, timeStr } = getBangkokDate();
+
+  if (!['weekly_executive_report', 'morning_brief', 'monthly_performance_summary'].includes(targetAction)) {
+    return NextResponse.json({ success: false, message: 'Invalid targetAction' }, { status: 400 });
+  }
+
+  try {
+    const { ok, data } = await invokeNotifyInProcess(targetAction, { force: true, ...extra });
+    const tracker = await loadTrackerAsync();
+    if (!tracker[dateStr]) tracker[dateStr] = {};
+
+    if (ok && (data?.lineSent || data?.skipped)) {
+      tracker[dateStr][`${targetAction}_manual`] = new Date().toISOString();
+      if (body.targetDate && tracker[body.targetDate]) {
+        tracker[body.targetDate][`${targetAction}_recovered`] = new Date().toISOString();
+      }
+      await saveTrackerAsync(tracker);
+      return NextResponse.json({
+        success: true,
+        message: `จัดส่ง ${targetAction} สำเร็จแล้ว`,
+        data,
+      });
+    } else {
+      return NextResponse.json({
+        success: false,
+        message: `ไม่สามารถส่ง ${targetAction} ได้: ${data?.error || data?.message || 'LINE API or Server error'}`,
+        data,
+      }, { status: 500 });
+    }
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
 }
 
 async function handleCronDispatch(request: Request) {

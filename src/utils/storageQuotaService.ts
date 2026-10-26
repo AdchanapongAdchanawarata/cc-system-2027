@@ -279,34 +279,83 @@ export async function purgeOldPurgedTasksArchival(daysThreshold: number = 90): P
   }
 }
 
-export function purgeLocalCache(): { freedKb: number } {
-  if (typeof window === "undefined") return { freedKb: 0 };
+/**
+ * Essential authentication, identity, and preference keys that MUST NEVER be removed
+ * so that user login session, name, role, email, and theme mode remain 100% intact.
+ */
+export const ESSENTIAL_USER_SESSION_KEYS = [
+  "cc_user_id",
+  "cc_user_role",
+  "cc_actual_role",
+  "cc_user_email",
+  "cc_user_name",
+  "cc_user_fullname",
+  "cc_user_unit",
+  "cc_theme_mode",
+];
+
+export function isEssentialKey(key: string): boolean {
+  if (ESSENTIAL_USER_SESSION_KEYS.includes(key)) return true;
+  if (key.startsWith("sb-") && key.includes("-auth-token")) return true;
+  return false;
+}
+
+export function purgeLocalCache(mode: "all_cache" | "temp_only" = "all_cache"): {
+  freedKb: number;
+  remainingKb: number;
+  removedKeysCount: number;
+} {
+  if (typeof window === "undefined") return { freedKb: 0, remainingKb: 0, removedKeysCount: 0 };
 
   let beforeBytes = 0;
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    if (k) beforeBytes += (localStorage.getItem(k) || "").length * 2;
+    if (k) beforeBytes += (k.length * 2) + ((localStorage.getItem(k) || "").length * 2);
   }
 
-  const tempPrefixes = ["temp_", "mock_", "debug_", "draft_preview_", "cache_"];
   const keysToRemove: string[] = [];
 
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    if (k && tempPrefixes.some(p => k.startsWith(p))) {
+    if (!k) continue;
+
+    // NEVER remove essential authentication / session keys
+    if (isEssentialKey(k)) continue;
+
+    if (mode === "all_cache") {
+      // In all_cache mode, delete all non-essential local cache
+      // (offline replica lists, 3d avatar configs, quotes, weather, alert logs, seen flags)
+      // All core business data will re-fetch seamlessly from Supabase on demand.
       keysToRemove.push(k);
+    } else {
+      // In temp_only mode, delete temporary prefixes
+      const tempPrefixes = [
+        "temp_", "mock_", "debug_", "draft_preview_", "cache_",
+        "cc_daily_briefing_seen_", "cc_mission_ack_", "cc_cron_slot_",
+        "cc_recent_assignment_alerts"
+      ];
+      if (tempPrefixes.some(p => k.startsWith(p))) {
+        keysToRemove.push(k);
+      }
     }
   }
 
-  keysToRemove.forEach(k => localStorage.removeItem(k));
+  keysToRemove.forEach(k => {
+    try {
+      localStorage.removeItem(k);
+    } catch {}
+  });
 
   let afterBytes = 0;
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    if (k) afterBytes += (localStorage.getItem(k) || "").length * 2;
+    if (k) afterBytes += (k.length * 2) + ((localStorage.getItem(k) || "").length * 2);
   }
 
-  return { freedKb: Math.max(0, Math.round((beforeBytes - afterBytes) / 1024)) };
+  const freedKb = Math.max(0, Math.round((beforeBytes - afterBytes) / 1024));
+  const remainingKb = Math.round(afterBytes / 1024);
+
+  return { freedKb, remainingKb, removedKeysCount: keysToRemove.length };
 }
 
 export async function exportDatabaseBackup(): Promise<boolean> {

@@ -558,7 +558,9 @@ export default function AssignmentsView() {
 
   const isViewer = typeof window !== "undefined" && localStorage.getItem("cc_user_role") === "viewer";
   const currentActor = getCurrentActor();
-  const isAdmin = currentActor.role === "admin" || currentActor.email.toLowerCase().includes("adchanapong") || currentActor.name.includes("จ๊อบ");
+  const effectiveRole = typeof window !== "undefined" ? (localStorage.getItem("cc_user_role") || currentActor.role || "assignee") : currentActor.role;
+  const isNamedJobOrAdmin = currentActor.email.toLowerCase().includes("adchanapong") || currentActor.name.includes("จ๊อบ");
+  const isAdmin = effectiveRole === "admin" || (isNamedJobOrAdmin && effectiveRole !== "assignee" && effectiveRole !== "viewer");
 
   const updateFieldInternal = async (id: string, updates: any) => {
     if (isViewer) {
@@ -1255,8 +1257,8 @@ export default function AssignmentsView() {
   // --- SOFT DELETE TO TRASH (WITH CONFIRMATION & 50-STEP UNDO) ---
   const handleDeleteTask = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (isViewer) {
-      alert("โหมดผู้เข้าชม (Viewer Mode): คุณมีสิทธิ์อ่านอย่างเดียว ไม่สามารถลบงานได้");
+    if (!isAdmin) {
+      alert("เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถลบงานลงถังขยะได้ (Assignee ไม่มีสิทธิ์ลบงาน)");
       return;
     }
     const brief = briefs.find(b => b.id === id);
@@ -1300,6 +1302,10 @@ export default function AssignmentsView() {
 
   // --- RESTORE FROM TRASH (WITH UNDO) ---
   const handleRestoreTask = async (id: string) => {
+    if (!isAdmin) {
+      alert("เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถกู้คืนงานจากถังขยะได้");
+      return;
+    }
     const brief = briefs.find(b => b.id === id);
     if (!brief) return;
 
@@ -1329,6 +1335,10 @@ export default function AssignmentsView() {
 
   // --- PERMANENT DELETE ---
   const handlePermanentDelete = async (id: string) => {
+    if (!isAdmin) {
+      alert("เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถลบงานออกจากระบบอย่างถาวรได้");
+      return;
+    }
     const target = briefs.find(b => b.id === id);
     setBriefs(prev => prev.filter(b => b.id !== id));
     await supabase.from('briefs').update({
@@ -1360,6 +1370,10 @@ export default function AssignmentsView() {
 
   // --- EMPTY TRASH ---
   const handleEmptyTrash = async () => {
+    if (!isAdmin) {
+      alert("เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถล้างถังขยะได้");
+      return;
+    }
     const trashedBriefsToPurge = briefs.filter(b => b.details?.is_deleted && b.status !== 'purged');
     if (trashedBriefsToPurge.length === 0) return;
 
@@ -1397,6 +1411,10 @@ export default function AssignmentsView() {
   // --- DUPLICATE TASK (WITH UNDO) ---
   const handleDuplicateTask = async (e: React.MouseEvent, brief: Brief) => {
     e.stopPropagation();
+    if (!isAdmin) {
+      alert("เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถคัดลอก (Copy / Duplicate) Task ได้ (Assignee ไม่มีสิทธิ์คัดลอกงาน)");
+      return;
+    }
     const { id, created_at, ...rest } = brief;
     rest.project_name = `${rest.project_name} (Copy)`;
     // Ensure duplicate is active
@@ -1869,20 +1887,22 @@ export default function AssignmentsView() {
             </button>
           </div>
 
-          {/* Trash Bin Button - h-8 height matched */}
-          <button
-            onClick={() => setIsTrashOpen(true)}
-            className="h-8 flex items-center gap-1 px-2.5 rounded-xl bg-surface border border-surface-border shadow-2xs text-xs font-semibold text-foreground hover:border-rose-300 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer relative shrink-0"
-            title="เปิดถังขยะ (Trash Bin)"
-          >
-            <Trash2 size={13} className={trashedBriefs.length > 0 ? "text-rose-500" : "text-muted-foreground"} />
-            <span className="hidden sm:inline">ถังขยะ</span>
-            {trashedBriefs.length > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[9px] font-mono font-bold leading-none">
-                {trashedBriefs.length}
-              </span>
-            )}
-          </button>
+          {/* Trash Bin Button - Admin Only */}
+          {isAdmin && (
+            <button
+              onClick={() => setIsTrashOpen(true)}
+              className="h-8 flex items-center gap-1 px-2.5 rounded-xl bg-surface border border-surface-border shadow-2xs text-xs font-semibold text-foreground hover:border-rose-300 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer relative shrink-0"
+              title="เปิดถังขยะ (Trash Bin - เฉพาะ Admin)"
+            >
+              <Trash2 size={13} className={trashedBriefs.length > 0 ? "text-rose-500" : "text-muted-foreground"} />
+              <span className="hidden sm:inline">ถังขยะ</span>
+              {trashedBriefs.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[9px] font-mono font-bold leading-none">
+                  {trashedBriefs.length}
+                </span>
+              )}
+            </button>
+          )}
 
           {/* Active Desktop Notification Bell Toggle with History Dropdown */}
           <div className="relative shrink-0 flex items-center gap-1">
@@ -2543,23 +2563,25 @@ export default function AssignmentsView() {
                       </div>
                     </div>
                       
-                    {/* Quick Actions (Hover) */}
-                    <div className="absolute bottom-1.5 right-1.5 flex flex-row items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm p-0.5 rounded-md shadow-sm border border-slate-200 dark:border-slate-700">
-                      <button 
-                        onClick={(e) => handleDuplicateTask(e, brief)}
-                        className="p-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors shadow-2xs"
-                        title="Duplicate Task"
-                      >
-                        <Copy size={11} />
-                      </button>
-                      <button 
-                        onClick={(e) => handleDeleteTask(e, brief.id)}
-                        className="p-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors shadow-2xs"
-                        title="Delete Task"
-                      >
-                        <Trash2 size={11} />
-                      </button>
-                    </div>
+                    {/* Quick Actions (Hover) - Admin Only */}
+                    {isAdmin && (
+                      <div className="absolute bottom-1.5 right-1.5 flex flex-row items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm p-0.5 rounded-md shadow-sm border border-slate-200 dark:border-slate-700">
+                        <button 
+                          onClick={(e) => handleDuplicateTask(e, brief)}
+                          className="p-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors shadow-2xs cursor-pointer"
+                          title="คัดลอกงาน (Duplicate Task - เฉพาะ Admin)"
+                        >
+                          <Copy size={11} />
+                        </button>
+                        <button 
+                          onClick={(e) => handleDeleteTask(e, brief.id)}
+                          className="p-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors shadow-2xs cursor-pointer"
+                          title="ย้ายงานลงถังขยะ (Delete Task - เฉพาะ Admin)"
+                        >
+                          <Trash2 size={11} />
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                     {/* ClickUp Blank Insertion Placeholder AFTER */}

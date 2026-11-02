@@ -8,6 +8,7 @@ import {
 } from "@/utils/halloweenLeaderboardService";
 
 export default function HalloweenTop5Leaderboard() {
+  const [active, setActive] = useState(false);
   const [top5, setTop5] = useState<HalloweenScoreEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,6 +24,12 @@ export default function HalloweenTop5Leaderboard() {
   };
 
   useEffect(() => {
+    // Only active during Halloween season (October)
+    const now = new Date();
+    const isOctober = now.getMonth() === 9 && now.getDate() <= 31;
+    setActive(isOctober);
+    if (!isOctober) return;
+
     loadScores();
 
     // Listen for leaderboard updates
@@ -40,6 +47,8 @@ export default function HalloweenTop5Leaderboard() {
       window.dispatchEvent(new CustomEvent("open-halloween-game"));
     }
   };
+
+  if (!active) return null;
 
   return (
     <div 

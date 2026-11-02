@@ -343,7 +343,7 @@ function UrgentLeadTimeWarningBanner({
         <div className="bg-white/70 dark:bg-zinc-900/70 rounded-xl p-2.5 border border-amber-200/40 dark:border-amber-800/30 flex items-center justify-between">
           <div>
             <div className="text-[11px] text-zinc-500 dark:text-zinc-400">ผู้ช่วยหัวหน้าทีม CC</div>
-            <div className="font-bold text-zinc-800 dark:text-zinc-100">วะ WK</div>
+            <div className="font-bold text-zinc-800 dark:text-zinc-100">วา WK</div>
           </div>
           <span className="text-[11px] text-amber-800 dark:text-amber-300 font-mono bg-amber-100/70 dark:bg-amber-900/40 px-2 py-0.5 rounded-md">
             085-1071229
@@ -840,7 +840,7 @@ function FormContent() {
 ชื่องาน: ${submittedResult.projectName}
 ผู้สั่งงาน: คุณ${submittedResult.coordinatorNickname} (${submittedResult.team})
 กำหนดส่ง: ${submittedResult.deadlineStr} (ระยะเวลาทำงาน ${submittedResult.workingDays ?? "-"} วัน / เกณฑ์ปกติ ${submittedResult.requiredLeadTime} วัน)
-รบกวนพี่จ๊อบ AA / พี่วะ WK ช่วยพิจารณาจัดสรรคิวงานด่วนนี้ด้วยครับ/ค่ะ ขอบคุณครับ` : "";
+รบกวนพี่จ๊อบ AA / พี่วา WK ช่วยพิจารณาจัดสรรคิวงานด่วนนี้ด้วยครับ/ค่ะ ขอบคุณครับ` : "";
 
     const copyDirectMessage = () => {
       if (!directLineMsg) return;
@@ -875,7 +875,7 @@ function FormContent() {
                   </h3>
                   <p className="text-xs sm:text-sm text-amber-900/90 dark:text-amber-200 leading-relaxed">
                     เนื่องจากมีระยะเวลาทำงานสั้นกว่าเกณฑ์มาตรฐาน ({submittedResult.requiredLeadTime} วันทำการ) 
-                    <strong className="text-red-700 dark:text-red-300"> ควรแจ้งหัวหน้าทีม (จ๊อบ AA) หรือผู้ช่วยหัวหน้าทีม (วะ WK) CC ให้ทราบโดยตรงทันที</strong> เพื่อให้รีบจัดสรรคิวและดำเนินงานได้ทันตามกำหนด
+                    <strong className="text-red-700 dark:text-red-300"> ควรแจ้งหัวหน้าทีม (จ๊อบ AA) หรือผู้ช่วยหัวหน้าทีม (วา WK) CC ให้ทราบโดยตรงทันที</strong> เพื่อให้รีบจัดสรรคิวและดำเนินงานได้ทันตามกำหนด
                   </p>
                 </div>
               </div>
@@ -910,7 +910,7 @@ function FormContent() {
                   </div>
                   <div className="bg-white/80 dark:bg-zinc-900/80 p-2.5 rounded-xl border border-amber-200/50 flex items-center justify-between">
                     <div>
-                      <div className="font-bold text-zinc-800 dark:text-zinc-100">วะ WK (ผู้ช่วยหัวหน้าทีม)</div>
+                      <div className="font-bold text-zinc-800 dark:text-zinc-100">วา WK (ผู้ช่วยหัวหน้าทีม)</div>
                       <div className="text-[11px] text-zinc-500">wasita@step.cmu.ac.th</div>
                     </div>
                     <a href="tel:0851071229" className="text-xs font-mono font-bold text-primary bg-primary/10 px-2 py-1 rounded-lg hover:bg-primary/20 transition-colors">
@@ -935,7 +935,7 @@ function FormContent() {
                   ) : (
                     <>
                       <Copy size={16} />
-                      คัดลอกข้อความสรุปเพื่อส่ง LINE ให้พี่จ๊อบ / พี่วะ ทันที
+                      คัดลอกข้อความสรุปเพื่อส่ง LINE ให้พี่จ๊อบ / พี่วา ทันที
                     </>
                   )}
                 </button>

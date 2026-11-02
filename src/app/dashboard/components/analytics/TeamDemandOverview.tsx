@@ -585,7 +585,7 @@ export default function TeamDemandOverview({
                 แนวทางปฏิบัติการเพื่อการให้คำแนะนำ & บริหารจัดการงานด่วน (Operational Coaching Framework)
               </span>
               <span className="text-[11px] text-slate-400">
-                ผู้ประสานงานหลัก: <strong>หัวหน้าทีม (จ๊อบ AA)</strong> / <strong>ผู้ช่วยหัวหน้าทีม (วะ WK)</strong>
+                ผู้ประสานงานหลัก: <strong>หัวหน้าทีม (จ๊อบ AA)</strong> / <strong>ผู้ช่วยหัวหน้าทีม (วา WK)</strong>
               </span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-1 text-[11px] text-slate-300">

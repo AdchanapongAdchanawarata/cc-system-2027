@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { 
   FileSpreadsheet, CheckCircle2, Clock, Mail, ExternalLink, 
   Copy, Download, Send, RefreshCw, AlertCircle, Sparkles, UserCheck, Users,
-  Code2, Check
+  Code2, Check, Calendar
 } from "lucide-react";
 import { 
   TEAM_MEMBERS, 
@@ -37,34 +37,48 @@ export default function GoogleSheetsSyncHub({ tasks = [], assignees = [] }: Goog
   const [webhookUrl, setWebhookUrl] = useState("");
   const [isSavingUrl, setIsSavingUrl] = useState(false);
 
-  const [serverRRows, setServerRRows] = useState<SheetDataRRow[] | null>(null);
-  const [serverKRRows, setServerKRRows] = useState<SheetDataKRRow[] | null>(null);
-  const [isLoadingLive, setIsLoadingLive] = useState(false);
+  // Month selector for monthly reporting
+  const monthOptions = useMemo(() => {
+    const list = [];
+    const base = new Date();
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(base.getFullYear(), base.getMonth() - i, 15, 12, 0, 0);
+      const mCode = getMonthCode(d);
+      const yCE = d.getFullYear();
+      const yBE = yCE + 543;
+      const thMonthName = d.toLocaleDateString("th-TH", { month: "long" });
+      list.push({
+        label: i === 0 ? `เดือนปัจจุบัน: ${thMonthName} ${yBE} (${mCode})` : `${thMonthName} ${yBE} (${mCode})`,
+        monthCode: mCode,
+        year: yCE,
+        date: d,
+        isCurrent: i === 0
+      });
+    }
+    return list;
+  }, []);
 
-  // Time & calculated rows
-  const now = new Date();
-  const currentWeek = getWeekCode(now);
-  const currentMonth = getMonthCode(now);
-  const currentFY = getFiscalYear(now);
+  const [selectedMonthIdx, setSelectedMonthIdx] = useState(0);
+  const selectedDate = monthOptions[selectedMonthIdx]?.date || new Date();
 
-  const calculatedRRows = calculateAllRRows(tasks, assignees, now);
-  const calculatedKRRows = calculateAllKRRows(tasks, now);
+  // Time & calculated rows (strictly computed for selected month)
+  const currentWeek = getWeekCode(selectedDate);
+  const currentMonth = getMonthCode(selectedDate);
+  const currentFY = getFiscalYear(selectedDate);
 
-  const rRows: SheetDataRRow[] = serverRRows && serverRRows.length > 0 ? serverRRows : calculatedRRows;
-  const krRows: SheetDataKRRow[] = serverKRRows && serverKRRows.length > 0 ? serverKRRows : calculatedKRRows;
+  const calculatedRRows = useMemo(() => {
+    return calculateAllRRows(tasks, assignees, selectedDate);
+  }, [tasks, assignees, selectedDate]);
 
-  // Load from API on mount
+  const calculatedKRRows = useMemo(() => {
+    return calculateAllKRRows(tasks, selectedDate);
+  }, [tasks, selectedDate]);
+
+  const rRows: SheetDataRRow[] = calculatedRRows;
+  const krRows: SheetDataKRRow[] = calculatedKRRows;
+
+  // Load saved webhook on mount
   useEffect(() => {
-    setIsLoadingLive(true);
-    fetch("/api/sheets-sync")
-      .then(res => res.json())
-      .then(data => {
-        if (data.rRows && data.rRows.length > 0) setServerRRows(data.rRows);
-        if (data.krRows && data.krRows.length > 0) setServerKRRows(data.krRows);
-      })
-      .catch(err => console.error("Error loading sync data from API:", err))
-      .finally(() => setIsLoadingLive(false));
-
     const saved = localStorage.getItem("cc_google_sheets_webhook_url");
     if (saved) setWebhookUrl(saved);
   }, []);
@@ -104,13 +118,18 @@ export default function GoogleSheetsSyncHub({ tasks = [], assignees = [] }: Goog
       const res = await fetch("/api/sheets-sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, force: true, updatedBy: "admin_manual_hub" })
+        body: JSON.stringify({ 
+          type, 
+          force: true, 
+          updatedBy: "admin_manual_hub",
+          asOfDate: selectedDate.toISOString()
+        })
       });
       const data = await res.json();
       if (data.status === "success") {
         setSyncStatus({
           success: true,
-          message: `นำส่งข้อมูลสำเร็จ! (${type === 'R' ? '108 แถว Data_R' : type === 'KR' ? '4 แถว Data_KR' : 'ทั้ง R และ KR'}) พร้อมส่งอีเมลแจ้งสมาชิกครบ 12 ท่าน`,
+          message: `นำส่งข้อมูลเฉพาะเดือน ${currentMonth} สำเร็จ! (${type === 'R' ? '108 แถว Data_R' : type === 'KR' ? '4 แถว Data_KR' : 'ทั้ง R และ KR'}) พร้อมส่งอีเมลแจ้งสมาชิกครบ 12 ท่าน`,
           syncedAt: new Date().toLocaleTimeString("th-TH")
         });
       } else if (data.status === "skipped") {
@@ -165,7 +184,7 @@ export default function GoogleSheetsSyncHub({ tasks = [], assignees = [] }: Goog
               ระบบเชื่อมโยงและนำส่งข้อมูล Google Sheet (R & KR)
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-3xl">
-              คำนวณและประมวลผลค่า R (รายบุคคล 9 ตัวแปร) สะสมปัจจุบันส่งทุกวันศุกร์ 17.00 น. และค่า KR (รายทีม 4 ตัวแปร) ส่งทุกวันสุดท้ายของเดือน 17.00 น. พร้อมระบบอีเมลแจ้งเตือนอัตโนมัติไปยังบุคลากรครบทั้ง 12 ท่าน
+              คำนวณและประมวลผลค่า R (รายบุคคล 9 ตัวแปร) ประจำเดือน ส่งทุกวันศุกร์ 17.00 น. และค่า KR (รายทีม 4 ตัวแปร) ส่งทุกวันสุดท้ายของเดือน 17.00 น. (คำนวณเฉพาะผลงานในเดือนนั้นๆ ไม่คิดรวมสะสมข้ามเดือน ตามกฎเหล็กความถูกต้องของข้อมูล)
             </p>
           </div>
 
@@ -223,6 +242,40 @@ export default function GoogleSheetsSyncHub({ tasks = [], assignees = [] }: Goog
             <p className="text-[11px] text-slate-500 mt-0.5">
               ส่งสรุปผลการนำส่ง R & KR รายรอบเข้าอีเมลทุกคนอัตโนมัติ
             </p>
+          </div>
+        </div>
+
+        {/* Month Selector Bar (Specific Month Filter) */}
+        <div className="mt-6 pt-5 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-200/60">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center text-white shrink-0 shadow-2xs">
+              <Calendar size={17} />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                <span>เลือกเดือนที่ต้องการดู / นำส่ง Google Sheet (เฉพาะเดือนที่เลือกเท่านั้น)</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                  ไม่ใช่ข้อมูลรวมสะสม
+                </span>
+              </div>
+              <div className="text-[11px] text-slate-500">
+                ระบบจะคำนวณเฉพาะผลงานที่ส่งมอบและแล้วเสร็จจริงภายในเดือนนี้เท่านั้น
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <select
+              value={selectedMonthIdx}
+              onChange={(e) => setSelectedMonthIdx(Number(e.target.value))}
+              className="px-4 py-2 rounded-xl border border-slate-300 bg-white text-xs font-bold text-slate-900 shadow-2xs focus:outline-none focus:border-slate-900 cursor-pointer hover:border-slate-400 transition-colors"
+            >
+              {monthOptions.map((opt, idx) => (
+                <option key={opt.monthCode + opt.year} value={idx}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -312,10 +365,10 @@ export default function GoogleSheetsSyncHub({ tasks = [], assignees = [] }: Goog
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
               <div>
                 <h3 className="text-base font-black text-slate-900">
-                  ตารางสรุปผลงานสะสมรายบุคคล (T18R1 – T18R9)
+                  ตารางสรุปผลงานประจำเดือนรายบุคคล (T18R1 – T18R9)
                 </h3>
                 <p className="text-xs text-slate-500">
-                  รอบสัปดาห์: {currentWeek} {currentMonth} FY{currentFY} • กรอกทุกตัวแปร หากไม่มีค่าระบบจะลงเป็น 0
+                  รอบประจำเดือน: {currentMonth} FY{currentFY} (สัปดาห์ {currentWeek}) • ข้อมูลเฉพาะเดือน {currentMonth} (กรอกทุกตัวแปร หากไม่มีค่าระบบจะลงเป็น 0)
                 </p>
               </div>
               <div className="text-xs text-slate-500">
@@ -389,7 +442,7 @@ export default function GoogleSheetsSyncHub({ tasks = [], assignees = [] }: Goog
                   ตารางตัวชี้วัดความสำเร็จของทีม (T18KR1 – T18KR4)
                 </h3>
                 <p className="text-xs text-slate-500">
-                  รอบเดือน: {currentMonth} FY{currentFY} • ผลการดำเนินงานสะสมในฐานะทีม CC TEAM
+                  รอบประจำเดือน: {currentMonth} FY{currentFY} • ข้อมูลเฉพาะเดือน {currentMonth} เท่านั้น (ไม่คิดรวมสะสม)
                 </p>
               </div>
               <div className="text-xs text-slate-500">
@@ -421,7 +474,7 @@ export default function GoogleSheetsSyncHub({ tasks = [], assignees = [] }: Goog
 
                     <div className="pt-2 border-t border-slate-200/80 flex items-baseline justify-between">
                       <div>
-                        <div className="text-[10px] text-slate-400 font-bold uppercase">ค่าสะสมปัจจุบัน</div>
+                        <div className="text-[10px] text-slate-400 font-bold uppercase">ผลงานเฉพาะเดือนนี้</div>
                         <div className="text-2xl font-black font-mono text-emerald-700">
                           {isMoney ? `฿${r.value.toLocaleString()}` : `${r.value.toLocaleString()} ${def?.unit}`}
                         </div>

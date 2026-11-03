@@ -341,8 +341,18 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const isAutoSync = searchParams.get('action') === 'auto_sync';
   const isCheckStatus = searchParams.get('action') === 'check_status';
+  const monthParam = searchParams.get('month');
 
-  const now = new Date();
+  let now = new Date();
+  if (monthParam) {
+    const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    const mIdx = monthNames.indexOf(monthParam.toUpperCase());
+    if (mIdx >= 0) {
+      const yr = Number(searchParams.get('year')) || now.getFullYear();
+      now = new Date(yr, mIdx, 15, 12, 0, 0);
+    }
+  }
+
   const week = getWeekCode(now);
   const month = getMonthCode(now);
   const fy = getFiscalYear(now);
@@ -483,7 +493,7 @@ export async function POST(request: Request) {
     const targetType: 'R' | 'KR' | 'both' = body.type || 'both';
     const isForce = Boolean(body.force);
 
-    const now = new Date();
+    const now = body.asOfDate ? new Date(body.asOfDate) : new Date();
     const week = getWeekCode(now);
     const month = getMonthCode(now);
     const fy = getFiscalYear(now);

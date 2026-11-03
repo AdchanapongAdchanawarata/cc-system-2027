@@ -58,7 +58,7 @@ export const R_DEFINITIONS: RDefinition[] = [
     unit: "งาน",
     target: 1200,
     fy: 2570,
-    description: "จำนวนชิ้นงานภายในองค์กร (STeP) ที่บุคลากรเป็นผู้ดูแลหลักหรือผู้ช่วย"
+    description: "จำนวนชิ้นงานภายในองค์กร (STeP) ประจำเดือน ที่บุคลากรเป็นผู้ดูแลหลักหรือผู้ช่วย"
   },
   {
     rId: "T18R2",
@@ -66,7 +66,7 @@ export const R_DEFINITIONS: RDefinition[] = [
     unit: "ร้อยละ",
     target: 85,
     fy: 2570,
-    description: "คะแนนความพึงพอใจเฉลี่ย (CSAT %) จากงานภายในองค์กร"
+    description: "คะแนนความพึงพอใจเฉลี่ย (CSAT %) จากงานภายในองค์กรประจำเดือน"
   },
   {
     rId: "T18R3",
@@ -74,7 +74,7 @@ export const R_DEFINITIONS: RDefinition[] = [
     unit: "งาน",
     target: 350,
     fy: 2570,
-    description: "จำนวนชิ้นงานภายนอกที่ทำให้ มช. และ RSP"
+    description: "จำนวนชิ้นงานภายนอกประจำเดือน ที่ทำให้ มช. และ RSP"
   },
   {
     rId: "T18R4",
@@ -82,23 +82,23 @@ export const R_DEFINITIONS: RDefinition[] = [
     unit: "ร้อยละ",
     target: 85,
     fy: 2570,
-    description: "คะแนนความพึงพอใจเฉลี่ย (CSAT %) จากงาน มช. และ RSP"
+    description: "คะแนนความพึงพอใจเฉลี่ย (CSAT %) จากงาน มช. และ RSP ประจำเดือน"
   },
   {
     rId: "T18R5",
-    name: "จำนวน Reach (กรอกผลลัพธ์สะสมในระบบ)",
+    name: "จำนวน Reach (กรอกผลลัพธ์ประจำเดือน)",
     unit: "reach",
     target: 6000000,
     fy: 2570,
-    description: "ยอด Reach สื่อประชาสัมพันธ์และการเผยแพร่สะสม"
+    description: "ยอด Reach สื่อประชาสัมพันธ์และการเผยแพร่ประจำเดือน"
   },
   {
     rId: "T18R6",
-    name: "จำนวน Engagement (กรอกผลลัพธ์สะสมในระบบ)",
+    name: "จำนวน Engagement (กรอกผลลัพธ์ประจำเดือน)",
     unit: "engagements",
     target: 60000,
     fy: 2570,
-    description: "ยอด Engagement สื่อประชาสัมพันธ์และการเผยแพร่สะสม"
+    description: "ยอด Engagement สื่อประชาสัมพันธ์และการเผยแพร่ประจำเดือน"
   },
   {
     rId: "T18R7",
@@ -106,7 +106,7 @@ export const R_DEFINITIONS: RDefinition[] = [
     unit: "บาท",
     target: 1000000,
     fy: 2570,
-    description: "กำไรสะสมจากการให้บริการโครงการภาครัฐ"
+    description: "กำไรจากการให้บริการโครงการภาครัฐประจำเดือน"
   },
   {
     rId: "T18R8",
@@ -114,7 +114,7 @@ export const R_DEFINITIONS: RDefinition[] = [
     unit: "บาท",
     target: 500000,
     fy: 2570,
-    description: "กำไรสะสมจากการให้บริการโครงการภาคเอกชน"
+    description: "กำไรจากการให้บริการโครงการภาคเอกชนประจำเดือน"
   },
   {
     rId: "T18R9",
@@ -122,7 +122,7 @@ export const R_DEFINITIONS: RDefinition[] = [
     unit: "ร้อยละ",
     target: 85,
     fy: 2570,
-    description: "คะแนนความพึงพอใจเฉลี่ย (CSAT %) จากงานบริการสร้างรายได้"
+    description: "คะแนนความพึงพอใจเฉลี่ย (CSAT %) จากงานบริการสร้างรายได้ประจำเดือน"
   }
 ];
 
@@ -142,7 +142,7 @@ export const KR_DEFINITIONS: KRDefinition[] = [
     unit: "งาน",
     target: 1200,
     fy: 2570,
-    description: "จำนวนผลงานภายในองค์กรสะสมรวมทั้งทีม (STeP)"
+    description: "จำนวนผลงานภายในองค์กรประจำเดือนรวมทั้งทีม (STeP)"
   },
   {
     krId: "T18KR2",
@@ -150,7 +150,7 @@ export const KR_DEFINITIONS: KRDefinition[] = [
     unit: "งาน",
     target: 350,
     fy: 2570,
-    description: "จำนวนผลงานภายนอกสะสมรวมทั้งทีมที่สนับสนุน มช. และ RSP"
+    description: "จำนวนผลงานภายนอกประจำเดือนรวมทั้งทีมที่สนับสนุน มช. และ RSP"
   },
   {
     krId: "T18KR3",
@@ -158,7 +158,7 @@ export const KR_DEFINITIONS: KRDefinition[] = [
     unit: "บาท",
     target: 1000000,
     fy: 2570,
-    description: "มูลค่าการรับรู้ (Media / PR / Save Cost Value) รวมสะสม"
+    description: "มูลค่าการรับรู้ (Media / PR / Save Cost Value) ประจำเดือน"
   },
   {
     krId: "T18KR4",
@@ -166,7 +166,7 @@ export const KR_DEFINITIONS: KRDefinition[] = [
     unit: "บาท",
     target: 1500000,
     fy: 2570,
-    description: "กำไรสะสมจากการให้บริการของทีมรวมทั้งหมด (ภาครัฐ 1.0M + เอกชน 0.5M)"
+    description: "กำไรจากการให้บริการของทีมประจำเดือนรวมทั้งหมด (ภาครัฐ + เอกชน)"
   }
 ];
 
@@ -230,6 +230,42 @@ export function formatTimestamp(date: Date = new Date()): string {
 // Computation Engine: Calculate R (Individual) & KR (Team)
 // -------------------------------------------------------------
 
+/**
+ * ตรวจสอบว่าภารกิจหรือผลงานนี้เกิดขึ้นและแล้วเสร็จในเดือนเป้าหมาย (asOfDate) หรือไม่
+ * ตามกฎเหล็ก: คิดเฉพาะข้อมูลของเดือนนั้นๆ เท่านั้น ไม่รวมสะสมข้ามเดือน
+ */
+export function isTaskInTargetMonth(task: any, asOfDate: Date = new Date()): boolean {
+  if (!task) return false;
+
+  // แปลง asOfDate เป็นเวลาตามเขตประเทศไทย (Asia/Bangkok)
+  const asOfBkk = new Date(asOfDate.toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+  const targetYear = asOfBkk.getFullYear();
+  const targetMonth = asOfBkk.getMonth(); // 0 to 11
+
+  // สำหรับงานที่เสร็จสิ้น ใช้วันที่ส่งมอบ/เสร็จสิ้นจริงเป็นเกณฑ์สูงสุด
+  let dateRaw: string | number | null = 
+    task.completed_at || 
+    task.details?.completed_at || 
+    task.details?.delivery_date;
+
+  if (!dateRaw && task.status === "completed" && task.updated_at) {
+    dateRaw = task.updated_at;
+  }
+
+  // หากไม่มี timestamp การเสร็จสิ้น ให้ใช้ deadline หรือ created_at
+  if (!dateRaw) {
+    dateRaw = task.deadline || task.created_at;
+  }
+
+  if (!dateRaw) return false;
+
+  const d = new Date(dateRaw);
+  if (isNaN(d.getTime())) return false;
+
+  const taskBkk = new Date(d.toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+  return taskBkk.getFullYear() === targetYear && taskBkk.getMonth() === targetMonth;
+}
+
 export function calculateAllRRows(
   tasks: any[] = [],
   assignees: any[] = [],
@@ -273,9 +309,10 @@ export function calculateAllRRows(
     );
     const targetAssigneeId = dbAssignee ? dbAssignee.id : null;
 
-    // Filter member's active tasks (as owner or assistant)
+    // Filter member's active tasks strictly belonging to this target month
     const memberTasks = validTasks.filter(t => {
       if (!t) return false;
+      if (!isTaskInTargetMonth(t, asOfDate)) return false;
       const isOwner = targetAssigneeId ? t.assignee_id === targetAssigneeId : false;
       const isNameOwner = t.assignee_name && (t.assignee_name.includes(member.code) || t.assignee_name.includes(member.displayName));
       const isAssistant = Array.isArray(t.details?.assistants) && t.details.assistants.some((ast: any) => 
@@ -285,14 +322,14 @@ export function calculateAllRRows(
       return isOwner || isNameOwner || isAssistant;
     });
 
-    // ONLY COMPLETED tasks count for delivered R metrics (R1 - R4)
+    // ONLY COMPLETED tasks in this month count for delivered R metrics (R1 - R4)
     const completedTasks = memberTasks.filter(t => t.status === "completed");
 
-    // T18R1: จำนวนผลงานที่สนับสนุนการให้บริการภายในองค์กร (STeP)
+    // T18R1: จำนวนผลงานที่สนับสนุนการให้บริการภายในองค์กร (STeP) ประจำเดือน
     const internalTasks = completedTasks.filter(t => isR1Task(t));
     const r1Value = internalTasks.length;
 
-    // T18R2: ร้อยละความพึงพอใจ (ภายในองค์กร) - ต้องเป็นคะแนนประเมินจริงเท่านั้น ไม่ใส่ค่าสมมติ
+    // T18R2: ร้อยละความพึงพอใจ (ภายในองค์กร) ประจำเดือน - ต้องเป็นคะแนนประเมินจริงเท่านั้น ไม่ใส่ค่าสมมติ
     let internalSatSum = 0;
     let internalSatCnt = 0;
     internalTasks.forEach(t => {
@@ -307,11 +344,11 @@ export function calculateAllRRows(
       ? Math.round(internalSatSum / internalSatCnt) 
       : 0;
 
-    // T18R3: จำนวนผลงานภายนอกที่สนับสนุนการทำงานของ มช. และ RSP
+    // T18R3: จำนวนผลงานภายนอกที่สนับสนุนการทำงานของ มช. และ RSP ประจำเดือน
     const externalTasks = completedTasks.filter(t => isR3Task(t));
     const r3Value = externalTasks.length;
 
-    // T18R4: ร้อยละความพึงพอใจ (ภายนอก มช./RSP) - ต้องเป็นคะแนนประเมินจริงเท่านั้น
+    // T18R4: ร้อยละความพึงพอใจ (ภายนอก มช./RSP) ประจำเดือน - ต้องเป็นคะแนนประเมินจริงเท่านั้น
     let externalSatSum = 0;
     let externalSatCnt = 0;
     externalTasks.forEach(t => {
@@ -326,12 +363,13 @@ export function calculateAllRRows(
       ? Math.round(externalSatSum / externalSatCnt) 
       : 0;
 
-    // T18R5: Reach (สะสมประจำตัวตามสัดส่วนยูนิต Content 50% / PR 50% หรือผลลัพธ์ตรงจากงาน)
+    // T18R5: Reach ประจำเดือน (ตามสัดส่วนยูนิต Content 50% / PR 50% หรือผลลัพธ์ตรงจากงาน)
+    const monthlyReachShare = Math.round((latestReach / 3) * 0.5);
     let r5Value = 0;
     if (member.unit === "content") {
-      r5Value = Math.round((latestReach * 0.5) / contentMembersCount);
+      r5Value = Math.round(monthlyReachShare / contentMembersCount);
     } else if (member.unit === "pr") {
-      r5Value = Math.round((latestReach * 0.5) / prMembersCount);
+      r5Value = Math.round(monthlyReachShare / prMembersCount);
     }
     let taskReachSum = 0;
     for (const t of completedTasks) {
@@ -340,12 +378,13 @@ export function calculateAllRRows(
     }
     r5Value = Math.max(r5Value, taskReachSum);
 
-    // T18R6: Engagement (สะสมประจำตัวตามสัดส่วนยูนิต Content 50% / PR 50% หรือผลลัพธ์ตรงจากงาน)
+    // T18R6: Engagement ประจำเดือน (ตามสัดส่วนยูนิต Content 50% / PR 50% หรือผลลัพธ์ตรงจากงาน)
+    const monthlyEngageShare = Math.round((latestEngagement / 3) * 0.5);
     let r6Value = 0;
     if (member.unit === "content") {
-      r6Value = Math.round((latestEngagement * 0.5) / contentMembersCount);
+      r6Value = Math.round(monthlyEngageShare / contentMembersCount);
     } else if (member.unit === "pr") {
-      r6Value = Math.round((latestEngagement * 0.5) / prMembersCount);
+      r6Value = Math.round(monthlyEngageShare / prMembersCount);
     }
     let taskEngageSum = 0;
     for (const t of completedTasks) {
@@ -354,13 +393,13 @@ export function calculateAllRRows(
     }
     r6Value = Math.max(r6Value, taskEngageSum);
 
-    // T18R7 & T18R8: กำไรที่เกิดจากการให้บริการจากภาครัฐ/เอกชน (เฉพาะ PM โครงการของ CC)
+    // T18R7 & T18R8: กำไรที่เกิดจากการให้บริการจากภาครัฐ/เอกชน ประจำเดือน (เฉพาะ PM โครงการของ CC ที่ส่งมอบเสร็จสิ้นในเดือนนี้)
     let r7Value = 0;
     let r8Value = 0;
     let revenueSatSum = 0;
     let revenueSatCnt = 0;
 
-    memberTasks.forEach(t => {
+    completedTasks.forEach(t => {
       const details = t.details || {};
       const isPM = isCcPmProject(t);
       const profit = Number(details.profit !== undefined && details.profit !== null 
@@ -403,7 +442,7 @@ export function calculateAllRRows(
       }
     });
 
-    // T18R9: ร้อยละความพึงพอใจ (งานบริการสร้างรายได้) - ต้องเป็นคะแนนประเมินจริงเท่านั้น
+    // T18R9: ร้อยละความพึงพอใจ (งานบริการสร้างรายได้) ประจำเดือน - ต้องเป็นคะแนนประเมินจริงเท่านั้น
     const r9Value = revenueSatCnt > 0 
       ? Math.round(revenueSatSum / revenueSatCnt) 
       : 0;
@@ -449,16 +488,19 @@ export function calculateAllKRRows(
   const timestamp = formatTimestamp(asOfDate);
   const validTasks = (tasks || []).filter(t => t && t.status !== "purged" && !t.details?.is_permanently_deleted && t.status !== "cancelled");
 
-  // ONLY COMPLETED tasks count toward delivered KR achievements
-  const completedTasks = validTasks.filter(t => t.status === "completed");
+  // กรองเฉพาะงานในเดือนเป้าหมาย (asOfDate) เท่านั้น
+  const monthlyTasks = validTasks.filter(t => isTaskInTargetMonth(t, asOfDate));
 
-  // T18KR1: จำนวนผลงานภายในองค์กร (STeP)
+  // ONLY COMPLETED tasks count toward delivered KR achievements
+  const completedTasks = monthlyTasks.filter(t => t.status === "completed");
+
+  // T18KR1: จำนวนผลงานภายในองค์กร (STeP) ประจำเดือนนี้
   const kr1Value = completedTasks.filter(t => !isR3Task(t)).length;
 
-  // T18KR2: จำนวนผลงานภายนอกที่สนับสนุนการทำงานของ มช. และ RSP
+  // T18KR2: จำนวนผลงานภายนอกที่สนับสนุนการทำงานของ มช. และ RSP ประจำเดือนนี้
   const kr2Value = completedTasks.filter(t => isR3Task(t)).length;
 
-  // T18KR3: มูลค่าการรับรู้ที่องค์กรได้รับ (Media / PR / Save Cost Value)
+  // T18KR3: มูลค่าการรับรู้ที่องค์กรได้รับ (Media / PR / Save Cost Value) ประจำเดือนนี้
   const okrSettings = getStoredOKRSettings();
   let manualR5 = okrSettings.manualMetrics?.r5Reach || 0;
   let manualR6 = okrSettings.manualMetrics?.r6Engagement || 0;
@@ -468,18 +510,18 @@ export function calculateAllKRRows(
       return b.quarter.localeCompare(a.quarter);
     });
     if (sorted[0]) {
-      manualR5 = sorted[0].reach;
-      manualR6 = sorted[0].engagement;
+      manualR5 = Math.round(sorted[0].reach / 3);
+      manualR6 = Math.round(sorted[0].engagement / 3);
     }
   }
 
-  const { totalValueBaht } = computeReachEngagementValues(manualR5, manualR6, 6000000, 60000);
+  const { totalValueBaht } = computeReachEngagementValues(manualR5, manualR6, 6000000 / 12, 60000 / 12);
   const totalCompletedSaveCost = completedTasks.reduce((sum, t) => sum + (Number(t.details?.save_cost) || 0), 0);
-  const kr3Value = totalValueBaht > 0 ? totalValueBaht : totalCompletedSaveCost;
+  const kr3Value = totalValueBaht > 0 ? (totalValueBaht + totalCompletedSaveCost) : totalCompletedSaveCost;
 
-  // T18KR4: กำไรที่เกิดจากการให้บริการของทีม (เฉพาะ PM โครงการของ CC เท่านั้น)
+  // T18KR4: กำไรที่เกิดจากการให้บริการของทีมประจำเดือนนี้ (เฉพาะ PM โครงการของ CC ที่ส่งมอบเสร็จสิ้นในเดือนนี้)
   let kr4Value = 0;
-  for (const t of validTasks) {
+  for (const t of completedTasks) {
     if (!t) continue;
     if (isCcPmProject(t)) {
       const profit = Number(t.details?.profit !== undefined && t.details?.profit !== null
@@ -494,19 +536,19 @@ export function calculateAllKRRows(
   const valuesMap: Record<string, { value: number; ref: string }> = {
     T18KR1: {
       value: kr1Value,
-      ref: `ผลงานภายในองค์กร CC Team ประจำเดือน ${month} ${fy} (รวมสะสม ${kr1Value} ชิ้นงาน)`
+      ref: `ผลงานภายในองค์กร CC Team ประจำเดือน ${month} ${fy} (เฉพาะเดือน ${month}: ${kr1Value} ชิ้นงาน)`
     },
     T18KR2: {
       value: kr2Value,
-      ref: `ผลงานสนับสนุน มช. และ RSP ประจำเดือน ${month} ${fy} (รวมสะสม ${kr2Value} ชิ้นงาน)`
+      ref: `ผลงานสนับสนุน มช. และ RSP ประจำเดือน ${month} ${fy} (เฉพาะเดือน ${month}: ${kr2Value} ชิ้นงาน)`
     },
     T18KR3: {
       value: kr3Value,
-      ref: `มูลค่าการรับรู้และ Save Cost สื่อสารองค์กร ประจำเดือน ${month} ${fy} (รวมสะสม ฿${kr3Value.toLocaleString()})`
+      ref: `มูลค่าการรับรู้และ Save Cost สื่อสารองค์กร ประจำเดือน ${month} ${fy} (เฉพาะเดือน ${month}: ฿${kr3Value.toLocaleString()})`
     },
     T18KR4: {
       value: kr4Value,
-      ref: `กำไรจากการให้บริการโครงการของทีม CC ประจำเดือน ${month} ${fy} (รวมสะสม ฿${kr4Value.toLocaleString()})`
+      ref: `กำไรจากการให้บริการโครงการของทีม CC ประจำเดือน ${month} ${fy} (เฉพาะเดือน ${month}: ฿${kr4Value.toLocaleString()})`
     }
   };
 

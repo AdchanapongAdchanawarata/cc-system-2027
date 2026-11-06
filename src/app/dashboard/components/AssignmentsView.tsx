@@ -1526,7 +1526,7 @@ export default function AssignmentsView() {
   // Active briefs (Filter out trashed & purged briefs)
   const activeBriefs = briefs.filter(b => !b.details?.is_deleted && !b.details?.is_permanently_deleted && b.status !== 'purged');
 
-  // Helper to accurately match task to unit tab (PR tab includes RSP tasks; Internal tab excludes RSP tasks)
+  // Helper to accurately match task to unit tab (Both Internal and PR tabs include RSP tasks)
   const isBriefInUnitTab = (b: Brief, tab: string) => {
     if (tab === "All CC") return true;
     const targetUnit = tab.toLowerCase();
@@ -1535,8 +1535,8 @@ export default function AssignmentsView() {
                       (b.details?.rsp_code || "").startsWith("RSP") ||
                       b.details?.source === "rsp_press_form" ||
                       (b.project_name || "").startsWith("[RSP]");
+    if (targetUnit === "internal") return briefUnit === "internal" || isRspTask;
     if (targetUnit === "pr") return briefUnit === "pr" || isRspTask;
-    if (targetUnit === "internal") return briefUnit === "internal" && !isRspTask;
     return briefUnit === targetUnit;
   };
 

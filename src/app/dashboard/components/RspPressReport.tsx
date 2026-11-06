@@ -604,14 +604,14 @@ export default function RspPressReport() {
     const OAT_NAME = "โอ๊ต CNB";
 
     const canonical = enforceCanonicalBriefIntegrity({
-      unit: "pr",
+      unit: "internal",
       project_name: taskTitle,
       decision_maker: uniName,
       details: {
         task_code: generatedCode,
         rsp_code: generatedCode,
         title: formData.title.trim(),
-        category: "ข่าวประชาสัมพันธ์เครือข่าย RSP",
+        category: "เขียนข่าว ( นอกเหนือจาก Task งาน )",
         type: "เขียนข่าว ( นอกเหนือจาก Task งาน )",
         service: "เขียนข่าว ( นอกเหนือจาก Task งาน )",
         work_organization: "RSP",
@@ -644,7 +644,7 @@ export default function RspPressReport() {
     try {
       await supabase.from("briefs").insert([{
         project_name: taskTitle,
-        unit: "pr",
+        unit: "internal",
         status: "pending",
         priority: "Medium",
         assignee_id: OAT_ID,

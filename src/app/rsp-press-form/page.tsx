@@ -271,16 +271,16 @@ export default function RspPressFormPage() {
       }
 
       // 2. Sync ทางที่สอง: ซิงค์ไปหน้าบอร์ดรวม (Tasks Board / AssignmentsView)
-      // งานฝ่าย PR โอ๊ตเป็นคนทำ (โอ๊ต CNB) ประเภทงาน: ข่าวประชาสัมพันธ์เครือข่าย RSP ภาระงานของ RSP มูลค่าประหยัด 1,500 บาท
+      // งานฝ่าย Internal/RSP โอ๊ตเป็นคนทำ (โอ๊ต CNB) ประเภทงาน: เขียนข่าว ( นอกเหนือจาก Task งาน ) ภาระงานของ RSP มูลค่าประหยัด 1,500 บาท
       const canonical = enforceCanonicalBriefIntegrity({
-        unit: "pr",
+        unit: "internal",
         project_name: taskTitle,
         decision_maker: uniName,
         details: {
           task_code: generatedCode,
           rsp_code: generatedCode,
           title: formData.title.trim(),
-          category: "ข่าวประชาสัมพันธ์เครือข่าย RSP",
+          category: "เขียนข่าว ( นอกเหนือจาก Task งาน )",
           type: "เขียนข่าว ( นอกเหนือจาก Task งาน )",
           service: "เขียนข่าว ( นอกเหนือจาก Task งาน )",
           work_organization: "RSP",
@@ -311,7 +311,7 @@ export default function RspPressFormPage() {
 
       const { error: briefError } = await supabase.from("briefs").insert([{
         project_name: taskTitle,
-        unit: "pr",
+        unit: "internal",
         status: "pending",
         priority: "Medium",
         assignee_id: OAT_ASSIGNEE_ID,

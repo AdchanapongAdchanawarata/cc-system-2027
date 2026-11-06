@@ -2229,6 +2229,7 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                               <div className="space-y-1.5">
                                 <div className="flex items-center gap-2">
                                   <input
+                                    key={brief.id + (brief.details?.news_url || "")}
                                     type="url"
                                     defaultValue={brief.details?.news_url || ""}
                                     placeholder="https://... (วางลิงก์ข่าวออนไลน์ที่เผยแพร่เรียบร้อยแล้วที่นี่)"

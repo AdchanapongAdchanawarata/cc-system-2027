@@ -8,7 +8,8 @@ import {
   UserCircle2, CalendarDays, Tags, KanbanSquare, Flame, 
   CheckCircle2, XCircle, Trash2, Copy, Clock, ClockAlert, History, 
   Users, Star, MessageSquare, Undo2, Redo2, RotateCcw, AlertCircle, Mail,
-  LayoutList, ChevronDown, Check, Search, Eye, Bell, BellRing, BellOff, Lock
+  LayoutList, ChevronDown, Check, Search, Eye, Bell, BellRing, BellOff, Lock,
+  Globe, ExternalLink
 } from "lucide-react";
 import BriefDetailsModal from "./BriefDetailsModal";
 import TrashBinModal from "./TrashBinModal";
@@ -2453,6 +2454,21 @@ export default function AssignmentsView() {
                               </span>
                             );
                           })()}
+                          {/* Published News Link Pill for RSP Press Releases */}
+                          {brief.details?.news_url && (
+                            <a
+                              href={brief.details.news_url.startsWith("http") ? brief.details.news_url : `https://${brief.details.news_url}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 text-[9px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800/60 px-1.5 py-0.5 rounded-full shrink-0 transition-all cursor-pointer hover:underline"
+                              title={`เปิดดูข่าวที่เผยแพร่แล้ว: ${brief.details.news_url}`}
+                            >
+                              <Globe size={10} className="shrink-0" />
+                              <span>เปิดลิงก์ข่าว</span>
+                              <ExternalLink size={9} className="shrink-0 opacity-70" />
+                            </a>
+                          )}
                           {/* Assistant Pill (compact nickname + percentage) */}
                           {brief.details?.assistants && brief.details.assistants.some((a: any) => a.assignee_id && Number(a.percentage) > 0) && (() => {
                             const activeAsts = brief.details.assistants.filter((a: any) => a.assignee_id && Number(a.percentage) > 0);

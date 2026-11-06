@@ -34,7 +34,12 @@ export function getUnitPrefix(unit?: string | null, category?: string | null): T
   if (cat.includes("idc") || cat.includes("ให้คำปรึกษา / รับโจทย์") || cat.includes("ศูนย์ออกแบบนวัตกรรม")) {
     return "IDC";
   }
-  if (cat.includes("rsp") || cat.includes("press release")) {
+  if (
+    cat.includes("rsp") ||
+    cat.includes("press release") ||
+    cat.includes("ข่าวประชาสัมพันธ์") ||
+    cat.includes("เขียนข่าว")
+  ) {
     return "RSP";
   }
   if (cat.includes("ใบเสนอราคา") || cat.includes("quotation")) {

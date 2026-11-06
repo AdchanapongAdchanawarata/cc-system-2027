@@ -47,6 +47,8 @@ import ModernSelect, { ModernSelectOption } from "@/components/ModernSelect";
 import ModernDatePicker from "@/components/ModernDatePicker";
 import { createClient } from "@/utils/supabase/client";
 import { getCloudJson, setCloudJson, CLOUD_KEYS } from "@/utils/cloudSyncService";
+import { generateNextTaskCode } from "@/utils/taskCodeService";
+import { enforceCanonicalBriefIntegrity } from "@/utils/dataIntegrityGuard";
 
 export type StockTimeframe = "1D" | "1W" | "1M" | "3M" | "6M" | "1Y" | "YTD" | "ALL" | "CUSTOM";
 
@@ -328,7 +330,7 @@ export default function RspPressReport() {
         const { data: briefRows } = await supabase
           .from("briefs")
           .select("id, project_name, details, deadline, coordinator_nickname, requester_email, decision_maker, status")
-          .or("unit.eq.internal,project_name.ilike.%[RSP]%");
+          .or("unit.eq.pr,unit.eq.internal,project_name.ilike.%[RSP]%");
 
         if (briefRows && briefRows.length > 0) {
           const rspBriefs = briefRows.filter((b: any) => {
@@ -427,7 +429,7 @@ export default function RspPressReport() {
       const { data: briefRows } = await supabase
         .from("briefs")
         .select("id, project_name, details")
-        .or("unit.eq.internal,project_name.ilike.%[RSP]%");
+        .or("unit.eq.pr,unit.eq.internal,project_name.ilike.%[RSP]%");
       if (briefRows && briefRows.length > 0) {
         for (const b of briefRows) {
           const d = b.details || {};
@@ -569,10 +571,10 @@ export default function RspPressReport() {
       return;
     }
 
-    const newCode = `RSP-PR-${new Date().getFullYear()}-${String(records.length + 1).padStart(3, "0")}`;
+    const generatedCode = await generateNextTaskCode("RSP");
     const newItem: PressReleaseItem = {
       id: `pr-${Date.now()}`,
-      code: newCode,
+      code: generatedCode,
       universityId: formData.universityId,
       title: formData.title.trim(),
       date: formData.date,
@@ -594,54 +596,64 @@ export default function RspPressReport() {
     setCloudJson(CLOUD_KEYS.RSP_PRESS_RECORDS, updatedRecords, "cc_rsp_press_records_v2_fy70");
 
     // 2. Sync ทางที่สอง: ซิงค์ไปหน้าบอร์ดรวม (Task Board / AssignmentsView)
-    // งาน internal โอ๊ตเป็นคนทำ (โอ๊ต CNB) ประเภทงาน: เขียนข่าว ( นอกเหนือจาก Task งาน ) ภาระงานของ RSP มูลค่าประหยัด 1,500 บาท
+    // งานฝ่าย PR โอ๊ตเป็นคนทำ (โอ๊ต CNB) ประเภทงาน: ข่าวประชาสัมพันธ์เครือข่าย RSP ภาระงานของ RSP มูลค่าประหยัด 1,500 บาท
     const uni = RSP_UNIVERSITIES.find(u => u.id === formData.universityId);
     const uniName = uni ? uni.name : formData.universityId;
     const taskTitle = `[RSP] ข่าวประชาสัมพันธ์: ${formData.title.trim()} (${uniName})`;
     const OAT_ID = "e2c2672d-81c4-411d-89e9-bcbb6eb374f5";
     const OAT_NAME = "โอ๊ต CNB";
 
+    const canonical = enforceCanonicalBriefIntegrity({
+      unit: "pr",
+      project_name: taskTitle,
+      decision_maker: uniName,
+      details: {
+        task_code: generatedCode,
+        rsp_code: generatedCode,
+        title: formData.title.trim(),
+        category: "ข่าวประชาสัมพันธ์เครือข่าย RSP",
+        type: "เขียนข่าว ( นอกเหนือจาก Task งาน )",
+        service: "เขียนข่าว ( นอกเหนือจาก Task งาน )",
+        work_organization: "RSP",
+        internal_organization: "RSP",
+        organization: "RSP",
+        organization_type: "government",
+        client_sector: "government",
+        pm_work_type: "pr",
+        pm_work_category: formData.targetAudience || "ข่าวการจัดกิจกรรม/โครงการ",
+        service_category: formData.targetAudience || "ข่าวการจัดกิจกรรม/โครงการ",
+        save_cost: 1500,
+        project_value: "1500",
+        revenue: 1500,
+        cost: 0,
+        profit: 1500,
+        assignee_name: OAT_NAME,
+        university_id: formData.universityId,
+        university_name: uniName,
+        target_audience: formData.targetAudience,
+        publish_date: formData.date,
+        news_url: formData.newsUrl.trim(),
+        attachment_name: formData.attachmentName,
+        description: formData.details.trim(),
+        reporter_name: formData.reporterName.trim(),
+        reporter_contact: formData.reporterContact.trim(),
+        source: "rsp_press_form"
+      }
+    });
+
     try {
       await supabase.from("briefs").insert([{
         project_name: taskTitle,
-        unit: "internal",
+        unit: "pr",
         status: "pending",
         priority: "Medium",
         assignee_id: OAT_ID,
         coordinator_nickname: formData.reporterName.trim(),
         requester_email: formData.reporterContact.trim() || "chonnikarn@step.cmu.ac.th",
-        decision_maker: uniName,
+        decision_maker: canonical.decision_maker,
         deadline: formData.date,
-        details: {
-          category: "เขียนข่าว ( นอกเหนือจาก Task งาน )",
-          type: "เขียนข่าว ( นอกเหนือจาก Task งาน )",
-          service: "เขียนข่าว ( นอกเหนือจาก Task งาน )",
-          work_organization: "RSP",
-          internal_organization: "RSP",
-          organization: "RSP",
-          organization_type: "government",
-          client_sector: "government",
-          pm_work_type: "pr",
-          pm_work_category: formData.targetAudience || "ข่าวการจัดกิจกรรม/โครงการ",
-          service_category: formData.targetAudience || "ข่าวการจัดกิจกรรม/โครงการ",
-          save_cost: 1500,
-          project_value: "1500",
-          revenue: 1500,
-          cost: 0,
-          profit: 1500,
-          assignee_name: OAT_NAME,
-          university_id: formData.universityId,
-          university_name: uniName,
-          target_audience: formData.targetAudience,
-          publish_date: formData.date,
-          news_url: formData.newsUrl.trim(),
-          attachment_name: formData.attachmentName,
-          description: formData.details.trim(),
-          reporter_name: formData.reporterName.trim(),
-          reporter_contact: formData.reporterContact.trim(),
-          rsp_code: newCode,
-          source: "rsp_press_form"
-        }
+        okr_links: canonical.okr_links,
+        details: canonical.details
       }]);
     } catch (supabaseErr) {
       console.error("Error syncing brief to Supabase:", supabaseErr);

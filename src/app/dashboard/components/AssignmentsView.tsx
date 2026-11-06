@@ -1526,16 +1526,26 @@ export default function AssignmentsView() {
   // Active briefs (Filter out trashed & purged briefs)
   const activeBriefs = briefs.filter(b => !b.details?.is_deleted && !b.details?.is_permanently_deleted && b.status !== 'purged');
 
+  // Helper to accurately match task to unit tab (PR tab includes RSP tasks; Internal tab excludes RSP tasks)
+  const isBriefInUnitTab = (b: Brief, tab: string) => {
+    if (tab === "All CC") return true;
+    const targetUnit = tab.toLowerCase();
+    const briefUnit = (b.unit || "").toLowerCase();
+    const isRspTask = (b.details?.task_code || "").startsWith("RSP") ||
+                      (b.details?.rsp_code || "").startsWith("RSP") ||
+                      b.details?.source === "rsp_press_form" ||
+                      (b.project_name || "").startsWith("[RSP]");
+    if (targetUnit === "pr") return briefUnit === "pr" || isRspTask;
+    if (targetUnit === "internal") return briefUnit === "internal" && !isRspTask;
+    return briefUnit === targetUnit;
+  };
+
   // Sort active briefs descending for display so newest is on top
   const displayBriefs = activeBriefs
     .filter(b => {
       // 1. Strict filter by Unit Tab (All CC, Creative, Content, PR, Internal)
-      if (filter !== "All CC") {
-        const targetUnit = filter.toLowerCase();
-        const briefUnit = (b.unit || "").toLowerCase();
-        if (briefUnit !== targetUnit) {
-          return false;
-        }
+      if (!isBriefInUnitTab(b, filter)) {
+        return false;
       }
 
       // 2. Filter by Assignee (supports multi-select comparison and unassigned)
@@ -1761,7 +1771,7 @@ export default function AssignmentsView() {
                     {/* Member Options with Checkboxes */}
                     {assignees.map((a) => {
                       const isSelected = selectedAssigneeIds.includes(a.id);
-                      const scopedBriefs = filter === "All CC" ? activeBriefs : activeBriefs.filter(b => (b.unit || '').toLowerCase() === filter.toLowerCase());
+                      const scopedBriefs = activeBriefs.filter(b => isBriefInUnitTab(b, filter));
                       const taskCount = scopedBriefs.filter(b => b.assignee_id === a.id).length;
 
                       return (
@@ -1802,7 +1812,7 @@ export default function AssignmentsView() {
                     {/* Unassigned Option */}
                     {(() => {
                       const isUnassignedSelected = selectedAssigneeIds.includes('unassigned');
-                      const scopedBriefs = filter === "All CC" ? activeBriefs : activeBriefs.filter(b => (b.unit || '').toLowerCase() === filter.toLowerCase());
+                      const scopedBriefs = activeBriefs.filter(b => isBriefInUnitTab(b, filter));
                       const unassignedCount = scopedBriefs.filter(b => !b.assignee_id).length;
                       return (
                         <button

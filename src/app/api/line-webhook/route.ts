@@ -72,9 +72,19 @@ async function handleLineEvent(
     // a) LINE @Mention specifically targeting the bot (@CC Report / @น้อง CC)
     const isMentioned = !!(event.message?.mention?.mentionees?.some((m: any) => m.isSelf === true));
     
-    // b) Calling bot strictly by name (e.g. น้อง cc, @น้อง cc, น้องซีซี)
-    const botTriggerRegex = /(?:^|[\s@])(น้อง[\s_]?cc|น้องซีซี|น้อง\s*cc)/i;
-    const isNameCalled = botTriggerRegex.test(rawText) || lowerRaw.includes("น้อง cc") || lowerRaw.includes("น้องcc") || lowerRaw.includes("น้องซีซี");
+    // b) Calling bot strictly by name (e.g. น้อง cc, @น้อง cc, น้องซีซี, บอท cc)
+    const botTriggerRegex = /(?:^|[\s@])(น้อง[\s_]?cc|น้อง[\s_]?ซี[\s_]?ซี|น้องซีซี|น้อง\s*cc|น้อง[\s_]?บอท|น้อง[\s_]?bot|บอท[\s_]?cc|bot[\s_]?cc|@น้อง[\s_]?cc|@cc)/i;
+    const isNameCalled = botTriggerRegex.test(rawText) ||
+      lowerRaw.includes("น้อง cc") ||
+      lowerRaw.includes("น้องcc") ||
+      lowerRaw.includes("น้องซีซี") ||
+      lowerRaw.includes("น้อง ซีซี") ||
+      lowerRaw.includes("น้องบอท") ||
+      lowerRaw.includes("น้อง bot") ||
+      lowerRaw.includes("บอท cc") ||
+      lowerRaw.includes("bot cc") ||
+      lowerRaw.startsWith("@cc") ||
+      lowerRaw.includes("@น้อง cc");
     
     // c) Registration commands (allowed in groups and 1-on-1)
     const isRegistration = lowerRaw.includes("ลงทะเบียน noty") || lowerRaw.includes("ลงทะเบียน cc") || lowerRaw.includes("bind noty") || lowerRaw.includes("bind cc") || lowerRaw === "id" || lowerRaw === "เช็ค id";
@@ -259,6 +269,27 @@ async function handleLineEvent(
 
     try {
       let sent = false;
+      // Helper to chunk reply if exceeding 4,000 characters
+      const chunks: string[] = [];
+      if (finalMessage.length <= 4000) {
+        chunks.push(finalMessage);
+      } else {
+        const paragraphs = finalMessage.split('\n\n');
+        let cur = '';
+        for (const p of paragraphs) {
+          if (!cur) {
+            cur = p;
+          } else if (cur.length + p.length + 2 <= 4000) {
+            cur += '\n\n' + p;
+          } else {
+            chunks.push(cur);
+            cur = p;
+          }
+        }
+        if (cur) chunks.push(cur);
+      }
+      const replyMessageObjs = chunks.slice(0, 5).map(c => ({ type: "text", text: c }));
+
       if (replyToken) {
         const replyRes = await fetch("https://api.line.me/v2/bot/message/reply", {
           method: "POST",
@@ -268,7 +299,7 @@ async function handleLineEvent(
           },
           body: JSON.stringify({
             replyToken,
-            messages: [{ type: "text", text: finalMessage }],
+            messages: replyMessageObjs,
           }),
         });
 
@@ -302,7 +333,7 @@ async function handleLineEvent(
               },
               body: JSON.stringify({
                 to: targetId,
-                messages: [{ type: "text", text: finalMessage }],
+                messages: replyMessageObjs,
               }),
             });
             console.log(`[LINE PUSH FALLBACK] Status: ${pushRes.status}`);

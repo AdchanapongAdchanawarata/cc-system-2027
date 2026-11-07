@@ -19,6 +19,6 @@ jobs:
       - name: Send Heartbeat to Vercel Endpoint
         run: |
           echo "Pinging CC TEAM /api/cron at $(date -u)"
-          RESPONSE=$(curl -sS -X GET "https://ccteam.vercel.app/api/cron" -H "User-Agent: GitHub-Actions-Scheduler/1.0")
+          RESPONSE=$(curl -sS --max-time 60 --retry 2 --retry-delay 5 -X GET "https://ccteam.vercel.app/api/cron" -H "User-Agent: GitHub-Actions-Scheduler/1.0")
           echo "Response from server:"
           echo "$RESPONSE"

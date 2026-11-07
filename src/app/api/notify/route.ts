@@ -36,7 +36,46 @@ function getBangkokDateStr(d: Date = getBangkokNow()): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-// Helper to push LINE message
+// Helper to cleanly split text into LINE message chunks (LINE limit is 5,000 chars per message bubble)
+function splitTextIntoLineChunks(text: string, maxLen: number = 4000): string[] {
+  if (text.length <= maxLen) return [text];
+  const chunks: string[] = [];
+  const paragraphs = text.split('\n\n');
+  let currentChunk = '';
+
+  for (const para of paragraphs) {
+    if (!currentChunk) {
+      if (para.length > maxLen) {
+        const lines = para.split('\n');
+        for (const line of lines) {
+          if (!currentChunk) {
+            currentChunk = line;
+          } else if (currentChunk.length + line.length + 1 <= maxLen) {
+            currentChunk += '\n' + line;
+          } else {
+            chunks.push(currentChunk);
+            currentChunk = line;
+          }
+        }
+      } else {
+        currentChunk = para;
+      }
+    } else if (currentChunk.length + para.length + 2 <= maxLen) {
+      currentChunk += '\n\n' + para;
+    } else {
+      chunks.push(currentChunk);
+      currentChunk = para;
+    }
+  }
+
+  if (currentChunk) {
+    chunks.push(currentChunk);
+  }
+
+  return chunks;
+}
+
+// Helper to push LINE message (with automated chunking up to 5 bubbles per push payload)
 async function pushLineMessage(targetId: string, text: string, mention?: any) {
   const lineToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
   if (!lineToken || !targetId) {
@@ -56,42 +95,68 @@ async function pushLineMessage(targetId: string, text: string, mention?: any) {
   };
 
   try {
-    const messageObj: any = { type: 'text', text };
-    if (mention && Array.isArray(mention.mentionees) && mention.mentionees.length > 0) {
-      messageObj.mention = mention;
-    }
-    let res = await sendRequest({
-      to: targetId,
-      messages: [messageObj],
-    });
-
-    // Fallback: If failed with mention (e.g. 400 bad request due to mentionee type/index in 1-on-1 or API limits), retry without mention
-    if (!res.ok && messageObj.mention) {
-      console.warn(`[LINE PUSH] Mention failed (${res.status}), retrying without mention object...`);
-      res = await sendRequest({
-        to: targetId,
-        messages: [{ type: 'text', text }],
-      });
+    const chunks = splitTextIntoLineChunks(text, 4000);
+    // LINE allows up to 5 message bubbles in a single push API payload
+    const batches: string[][] = [];
+    for (let i = 0; i < chunks.length; i += 5) {
+      batches.push(chunks.slice(i, i + 5));
     }
 
-    if (res.ok) {
-      console.log(`[LINE PUSH SUCCESS] To: ${targetId}`);
-      try {
-        const resData = await res.json().catch(() => ({}));
-        const promises: Promise<any>[] = [];
-        if (resData?.sentMessages && Array.isArray(resData.sentMessages)) {
-          resData.sentMessages.forEach((m: any) => {
-            if (m?.id) promises.push(recordBotMessageId(m.id, targetId, text));
-          });
+    let overallOk = true;
+    let lastError: any = null;
+
+    for (let bIndex = 0; bIndex < batches.length; bIndex++) {
+      const batchChunks = batches[bIndex];
+      const messageObjs = batchChunks.map((chunk, idx) => {
+        const msg: any = { type: 'text', text: chunk };
+        // Mention is only attached to the first bubble of the first batch
+        if (bIndex === 0 && idx === 0 && mention && Array.isArray(mention.mentionees) && mention.mentionees.length > 0) {
+          msg.mention = mention;
         }
-        promises.push(recordBotActivity(targetId, text));
-        await Promise.allSettled(promises);
-      } catch (e) {}
+        return msg;
+      });
+
+      let res = await sendRequest({
+        to: targetId,
+        messages: messageObjs,
+      });
+
+      // Fallback: If failed with mention (e.g. 400 bad request due to mentionee type/index in 1-on-1 or API limits), retry without mention
+      if (!res.ok && messageObjs.some((m: any) => m.mention)) {
+        console.warn(`[LINE PUSH] Mention failed (${res.status}), retrying without mention object...`);
+        const nonMentionObjs = batchChunks.map(chunk => ({ type: 'text', text: chunk }));
+        res = await sendRequest({
+          to: targetId,
+          messages: nonMentionObjs,
+        });
+      }
+
+      if (res.ok) {
+        console.log(`[LINE PUSH SUCCESS] To: ${targetId} (Batch ${bIndex + 1}/${batches.length}, Bubbles: ${messageObjs.length})`);
+        try {
+          const resData = await res.json().catch(() => ({}));
+          const promises: Promise<any>[] = [];
+          if (resData?.sentMessages && Array.isArray(resData.sentMessages)) {
+            resData.sentMessages.forEach((m: any) => {
+              if (m?.id) promises.push(recordBotMessageId(m.id, targetId, text));
+            });
+          }
+          promises.push(recordBotActivity(targetId, text));
+          await Promise.allSettled(promises);
+        } catch (e) {}
+      } else {
+        const err = await res.json().catch(() => ({}));
+        console.error(`[LINE PUSH FAILED] (Batch ${bIndex + 1})`, err);
+        overallOk = false;
+        lastError = err;
+        break;
+      }
+    }
+
+    if (overallOk) {
       return { ok: true };
     } else {
-      const err = await res.json().catch(() => ({}));
-      console.error(`[LINE PUSH FAILED]`, err);
-      return { ok: false, error: err };
+      return { ok: false, error: lastError };
     }
   } catch (err: any) {
     console.error(`[LINE PUSH NETWORK ERROR]`, err);
@@ -563,6 +628,7 @@ ${targetUrl}
         success: true,
         message: 'ส่ง Morning Brief ประจำวัน (ตรงไปตรงมา เน้น Action ด่วน) เข้ากลุ่ม NOTY เรียบร้อยแล้ว',
         lineSent: pushRes.ok,
+        error: pushRes.ok ? undefined : pushRes.error,
       });
     }
 
@@ -1183,6 +1249,7 @@ ${targetUrl}
           success: true,
           message: `จัดส่งรายงานประจำสัปดาห์ (วันศุกร์ 16:30 น.) เข้ากลุ่ม LINE CC TEAM เรียบร้อยแล้ว`,
           lineSent: pushRes.ok,
+          error: pushRes.ok ? undefined : pushRes.error,
           completedCount: completedThisWeek.length,
           inProgressCount: inProgressTasks.length
         });
@@ -1502,6 +1569,7 @@ ${targetUrl}
         success: true,
         message: `จัดส่งสรุปผลการดำเนินงานประจำเดือน ${monthNameThai} ${yearThai} เข้ากลุ่ม LINE สำเร็จ`,
         lineSent: pushRes.ok,
+        error: pushRes.ok ? undefined : pushRes.error,
         targetGroup: execGroupId ? 'CC TEAM' : 'Fallback Group'
       });
     }

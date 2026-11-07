@@ -269,6 +269,7 @@ async function handleForceRun(body: any) {
 
     if (ok && (data?.lineSent || data?.skipped)) {
       tracker[dateStr][`${targetAction}_manual`] = new Date().toISOString();
+      delete tracker[dateStr][`${targetAction}_error`];
       if (body.targetDate && tracker[body.targetDate]) {
         tracker[body.targetDate][`${targetAction}_recovered`] = new Date().toISOString();
       }
@@ -279,9 +280,11 @@ async function handleForceRun(body: any) {
         data,
       });
     } else {
+      tracker[dateStr][`${targetAction}_error`] = data?.error ? JSON.stringify(data.error) : 'lineSent was false';
+      await saveTrackerAsync(tracker);
       return NextResponse.json({
         success: false,
-        message: `ไม่สามารถส่ง ${targetAction} ได้: ${data?.error || data?.message || 'LINE API or Server error'}`,
+        message: `ไม่สามารถส่ง ${targetAction} ได้: ${data?.error ? JSON.stringify(data.error) : data?.message || 'LINE API or Server error'}`,
         data,
       }, { status: 500 });
     }
@@ -354,10 +357,12 @@ async function handleCronDispatch(request: Request) {
           if (ok && data?.lineSent) {
             tracker[dateStr]['morning_brief'] = new Date().toISOString();
             delete tracker[dateStr]['morning_brief_lock'];
+            delete tracker[dateStr]['morning_brief_error'];
             trackerModified = true;
             triggeredActions.push(`morning_brief (${pacing.reason})`);
           } else {
             delete tracker[dateStr]['morning_brief_lock'];
+            tracker[dateStr]['morning_brief_error'] = data?.error ? JSON.stringify(data.error) : 'lineSent was false';
             trackerModified = true;
             console.error('[CRON] morning_brief lineSent was false:', data);
           }
@@ -386,10 +391,12 @@ async function handleCronDispatch(request: Request) {
         if (ok && (data?.lineSent || data?.skipped)) {
           tracker[dateStr]['weekly_executive_report'] = data?.skipped ? `SKIPPED: ${data.message}` : new Date().toISOString();
           delete tracker[dateStr]['weekly_executive_report_lock'];
+          delete tracker[dateStr]['weekly_executive_report_error'];
           trackerModified = true;
           triggeredActions.push('weekly_executive_report (Friday 16:30 to CC TEAM)');
         } else {
           delete tracker[dateStr]['weekly_executive_report_lock'];
+          tracker[dateStr]['weekly_executive_report_error'] = data?.error ? JSON.stringify(data.error) : 'lineSent was false';
           trackerModified = true;
           console.error('[CRON] weekly_executive_report lineSent was false:', data);
         }
@@ -410,10 +417,12 @@ async function handleCronDispatch(request: Request) {
         if (ok && data?.lineSent) {
           tracker[dateStr]['monthly_performance_summary'] = new Date().toISOString();
           delete tracker[dateStr]['monthly_performance_summary_lock'];
+          delete tracker[dateStr]['monthly_performance_summary_error'];
           trackerModified = true;
           triggeredActions.push('monthly_performance_summary (09:00 Last Workday to CC TEAM)');
         } else {
           delete tracker[dateStr]['monthly_performance_summary_lock'];
+          tracker[dateStr]['monthly_performance_summary_error'] = data?.error ? JSON.stringify(data.error) : 'lineSent was false';
           trackerModified = true;
           console.error('[CRON] monthly_performance_summary lineSent was false:', data);
         }

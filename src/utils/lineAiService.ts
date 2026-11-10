@@ -147,6 +147,32 @@ export interface MemberStatData {
   activeTasks: string[];
 }
 
+export interface TaskItemSummary {
+  code: string;
+  name: string;
+  unit: string;
+  assignee: string;
+  status: string;
+  dept: string;
+  req: string;
+  deadline: string;
+  isUrgent: boolean;
+}
+
+export interface DepartmentUrgentStat {
+  name: string;
+  urgent: number;
+  total: number;
+  urgentPct: number;
+}
+
+export interface RequesterUrgentStat {
+  name: string;
+  dept: string;
+  urgent: number;
+  total: number;
+}
+
 export interface WorkloadAnalytics {
   totals: {
     total: number;
@@ -183,6 +209,15 @@ export interface WorkloadAnalytics {
     saveCost: number;
   } | null;
   unassignedCount: number;
+  todayTasks: TaskItemSummary[];
+  urgentTasks: TaskItemSummary[];
+  overdueTasks: TaskItemSummary[];
+  departmentStats: {
+    topUrgentDepts: DepartmentUrgentStat[];
+    topVolumeDepts: Array<{ name: string; total: number; urgent: number }>;
+    topUrgentRequesters: RequesterUrgentStat[];
+  };
+  todayBangkokStr: string;
 }
 
 /**
@@ -242,6 +277,18 @@ export function analyzeWorkload(briefs: any[]): WorkloadAnalytics {
   let totalWithOnTime = 0;
   let onTimeCount = 0;
 
+  const bkkNow = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+  const yyyy = bkkNow.getFullYear();
+  const mm = String(bkkNow.getMonth() + 1).padStart(2, "0");
+  const dd = String(bkkNow.getDate()).padStart(2, "0");
+  const todayStr = `${yyyy}-${mm}-${dd}`;
+
+  const todayTasks: TaskItemSummary[] = [];
+  const urgentTasks: TaskItemSummary[] = [];
+  const overdueTasks: TaskItemSummary[] = [];
+  const deptMap: Record<string, { name: string; total: number; urgent: number; requesters: Record<string, number> }> = {};
+  const requesterMap: Record<string, { name: string; dept: string; urgent: number; total: number }> = {};
+
   const validBriefs = (briefs || []).filter((b: any) => {
     if (!b || b.status === "purged" || b.status === "cancelled") return false;
     const d = b.details || {};
@@ -260,6 +307,55 @@ export function analyzeWorkload(briefs: any[]): WorkloadAnalytics {
       inProgress++;
     } else {
       pending++;
+    }
+
+    // Requester department & urgency tracking
+    const rawDept = (details.department || details.team || details.organization || details.client || details.faculty || "ทั่วไป").trim().toUpperCase();
+    const rawReq = (b.coordinator_nickname || details.coordinator_nickname || details.coordinator || "ไม่ระบุ").trim();
+
+    if (!deptMap[rawDept]) deptMap[rawDept] = { name: rawDept, total: 0, urgent: 0, requesters: {} };
+    deptMap[rawDept].total++;
+    deptMap[rawDept].requesters[rawReq] = (deptMap[rawDept].requesters[rawReq] || 0) + 1;
+
+    const isUrgent = Boolean(details.is_urgent || details.urgent || (details.lead_time_days && details.lead_time_days <= 2) || (details.lead_time && details.lead_time <= 2));
+    if (isUrgent) {
+      deptMap[rawDept].urgent++;
+      if (!requesterMap[rawReq]) requesterMap[rawReq] = { name: rawReq, dept: rawDept, urgent: 0, total: 0 };
+      requesterMap[rawReq].urgent++;
+    }
+    if (!requesterMap[rawReq]) requesterMap[rawReq] = { name: rawReq, dept: rawDept, urgent: 0, total: 0 };
+    requesterMap[rawReq].total++;
+
+    const isTaskCompleted = st === "completed" || st === "complete";
+    const isTaskCancelled = st === "cancelled" || st === "cancel";
+    const dStr = details.publish_date || b.deadline || details.usage_date;
+    const dDatePart = dStr ? String(dStr).slice(0, 10) : "";
+    const taskCode = details.task_code || details.idc_code || details.rsp_code || (b.id ? b.id.slice(0, 8) : "-");
+
+    const ass = (
+      b.assignees?.name ||
+      details.assignee_name ||
+      details.assignee ||
+      (Array.isArray(b.assignees) ? b.assignees[0]?.name : "") ||
+      ""
+    ).trim();
+
+    if (!isTaskCompleted && !isTaskCancelled) {
+      const taskItem: TaskItemSummary = {
+        code: taskCode,
+        name: b.project_name || "ไม่ระบุชื่องาน",
+        unit: b.unit || "-",
+        assignee: ass || "ยังไม่ระบุ",
+        status: st,
+        dept: rawDept,
+        req: rawReq,
+        deadline: dDatePart,
+        isUrgent
+      };
+
+      if (isUrgent) urgentTasks.push(taskItem);
+      if (dDatePart === todayStr) todayTasks.push(taskItem);
+      else if (dDatePart && dDatePart < todayStr) overdueTasks.push(taskItem);
     }
 
     // Track real satisfaction (Ironclad Rule #4)
@@ -310,14 +406,6 @@ export function analyzeWorkload(briefs: any[]): WorkloadAnalytics {
       if (st === "completed") realizedProfitTotal += pr;
       else pipelineProfitTotal += pr;
     }
-
-    const ass = (
-      b.assignees?.name ||
-      details.assignee_name ||
-      details.assignee ||
-      (Array.isArray(b.assignees) ? b.assignees[0]?.name : "") ||
-      ""
-    ).trim();
 
     let matchedNick = "";
     for (const item of MATCHABLE_MEMBERS) {
@@ -413,6 +501,28 @@ export function analyzeWorkload(briefs: any[]): WorkloadAnalytics {
   const sortedUnits = Object.entries(unitFinancials).sort((a, b) => b[1].saveCost - a[1].saveCost);
   const topSaveCostUnit = sortedUnits.length > 0 ? { name: sortedUnits[0][0], saveCost: sortedUnits[0][1].saveCost } : null;
 
+  const topUrgentDepts = Object.values(deptMap)
+    .filter(d => d.urgent > 0)
+    .map(d => ({
+      name: d.name,
+      urgent: d.urgent,
+      total: d.total,
+      urgentPct: Math.round((d.urgent / (d.total || 1)) * 100)
+    }))
+    .sort((a, b) => b.urgent - a.urgent);
+
+  const topVolumeDepts = Object.values(deptMap)
+    .map(d => ({
+      name: d.name,
+      total: d.total,
+      urgent: d.urgent
+    }))
+    .sort((a, b) => b.total - a.total);
+
+  const topUrgentRequesters = Object.values(requesterMap)
+    .filter(r => r.urgent > 0)
+    .sort((a, b) => b.urgent - a.urgent);
+
   return {
     totals: { 
       total: validBriefs.length, 
@@ -440,6 +550,15 @@ export function analyzeWorkload(briefs: any[]): WorkloadAnalytics {
     unitFinancials,
     topSaveCostUnit,
     unassignedCount: memberStats["ยังไม่ระบุผู้รับผิดชอบ"].pending,
+    todayTasks,
+    urgentTasks,
+    overdueTasks,
+    departmentStats: {
+      topUrgentDepts,
+      topVolumeDepts,
+      topUrgentRequesters
+    },
+    todayBangkokStr: todayStr,
   };
 }
 
@@ -613,6 +732,35 @@ export async function queryLineAI(
 6. **ไม่ชวนคุยต่อและไม่มีประโยคลงท้ายซ้ำซาก**
 7. **กฎเหล็กป้องกันข้อมูลหลอน (Strict Anti-Hallucination & Zero-Fake Baseline):**
    - ห้ามแต่งตัวเลข สถิติ ชื่องาน หรือคิดค้นข้อมูลที่ไม่มีอยู่จริงในระบบเด็ดขาด
+8. **กฎตอบตรงคำถามระดับสูงสุด (Direct Precision & Zero Deflection):**
+   - **กรณีถามเรื่อง "ทีมไหน/ฝ่ายไหน/ใคร ชอบสั่งงานด่วน" หรือ "ใครสั่งงานด่วนบ่อยสุด":**
+     - ต้องตอบชื่อ **"ฝ่าย/หน่วยงานภายนอกที่สั่งบรีฟ (Requester Department)"** ทันทีตั้งแต่ประโยคแรก เช่น ฝ่าย **FOODFABR (สั่งงานด่วน 9 งาน)** และ **IASA (สั่งงานด่วน 4 งาน)** โดยมีผู้ประสานงานหลักคือ **คุณเอื้อม (7 งานด่วน)**
+     - ⚠️ **ห้ามเด็ดขาด:** ห้ามตอบเป็นยูนิตภายในของทีม CC (เช่น ห้ามตอบว่า PR & Communication, Design, Content หรือพี่โอ๊ต) เพราะทีม CC คือคนรับทำงาน ไม่ใช่คนสั่งงาน!
+   - **กรณีถามเรื่อง "งานส่งวันนี้ / เดดไลน์วันนี้ / deadline วันนี้ / วันนี้มีงานอะไร":**
+     - ให้ **แจกแจงรายชื่องานที่ครบกำหนดส่งวันนี้** ทันทีตั้งแต่ประโยคแรก (ระบุรหัสงาน ชื่องาน ยูนิต ผู้รับผิดชอบ และสถานะ)
+     - ⚠️ **ห้ามเด็ดขาด:** ห้ามตอบสถิติรวมทั้งระบบ (ห้ามขึ้นต้นด้วย 'จากข้อมูลในระบบมี 105 งาน...') และห้ามตอบว่า 'กำลังดึงสปีดเช็กสถานะ' หรือบ่ายเบี่ยงให้ไปดูในเว็บอย่างเดียวเด็ดขาด! ถ้ามีงาน ให้บอกชื่องานตรงๆ ทันที ถ้าไม่มีงาน ให้ตอบชัดว่า "วันนี้ไม่มีงานครบกำหนดส่งมอบตามเดดไลน์ค่ะ"
+   - **กรณีถามเรื่อง "งานด่วนตอนนี้ / งานด่วนมีอะไรบ้าง":**
+     - แจกแจงรายชื่องานด่วนที่กำลังทำอยู่ทันที
+   - **กรณีถามเรื่อง "งานเกินกำหนด / งาน overdue":**
+     - ระบุจำนวนงานเกินกำหนดส่งและรายชื่อที่ค้างนานที่สุด
+
+📅 งานครบกำหนดส่งมอบวันนี้ (${analytics.todayBangkokStr} • รวม ${analytics.todayTasks.length} งาน):
+${analytics.todayTasks.length > 0 
+  ? analytics.todayTasks.map((t, i) => `${i + 1}. [${t.unit.toUpperCase()}] **${t.code}**: ${t.name} | ผู้รับผิดชอบ: **${t.assignee}** (สถานะ: ${t.status === "in_progress" ? "กำลังทำ" : "รอเริ่ม (Pending)"}) | ผู้ขอ: ${t.dept} (คุณ${t.req})`).join("\n") 
+  : "วันนี้ไม่มีงานครบกำหนดส่งมอบตามเดดไลน์"}
+
+🚨 สถิติฝ่าย/ทีมภายนอกที่ชอบสั่งงานด่วน (Requester Departments - Rush Jobs):
+${analytics.departmentStats.topUrgentDepts.slice(0, 5).map((d, i) => `${i + 1}. ฝ่าย **${d.name}**: สั่งงานด่วน ${d.urgent} งาน (คิดเป็น ${d.urgentPct}% ของงานที่ฝ่ายนี้สั่งทั้งหมด ${d.total} งาน)`).join("\n")}
+- ผู้ประสานงานภายนอกที่สั่งงานด่วนสูงสุด: ${analytics.departmentStats.topUrgentRequesters.slice(0, 3).map(r => `คุณ${r.name} (${r.dept} - ${r.urgent} งาน)`).join(", ")}
+
+🏢 ฝ่ายภายนอกที่ส่งบรีฟงานรวมมากที่สุด (Top Requester Volume):
+${analytics.departmentStats.topVolumeDepts.slice(0, 5).map((d, i) => `${i + 1}. ฝ่าย **${d.name}**: รวม ${d.total} งาน (งานด่วน ${d.urgent} งาน)`).join("\n")}
+
+🚨 รายการงานด่วนที่กำลังดำเนินการ/เฝ้าระวัง (${analytics.urgentTasks.length} งาน):
+${analytics.urgentTasks.slice(0, 6).map((t, i) => `${i + 1}. [${t.unit.toUpperCase()}] **${t.code}**: ${t.name} | ฝ่ายผู้ขอ: ${t.dept} (คุณ${t.req}) | ผู้รับผิดชอบ: ${t.assignee} | กำหนดส่ง: ${t.deadline}`).join("\n")}
+
+⏰ งานเกินกำหนดส่ง (Overdue - ${analytics.overdueTasks.length} งาน):
+${analytics.overdueTasks.slice(0, 5).map((t, i) => `• [${t.unit.toUpperCase()}] ${t.code}: ${t.name} (ผู้รับผิดชอบ: ${t.assignee} • กำหนดส่งเดิม: ${t.deadline})`).join("\n")}
 
 💰 สถิติตัวชี้วัดมูลค่าการประหยัดงบประมาณ (Save Cost) รายบุคคลในระบบ (เรียงตามยอดสะสม):
 ${analytics.saveCostRanking.map((m, i) => `${i + 1}. ${m.nick} ${m.code} (${m.unit}): ฿${m.saveCost.toLocaleString()} บาท (รับผิดชอบ ${m.count} งาน, สำเร็จแล้ว ${m.completed} งาน, กำลังทำ ${m.in_progress} งาน, ค้าง ${m.pending} งาน)`).join("\n")}
@@ -708,7 +856,94 @@ ${historyContext}
 export function fallbackRuleEngine(query: string, briefs: any[], preAnalytics?: WorkloadAnalytics): string {
   const q = query.toLowerCase();
   const analytics = preAnalytics || analyzeWorkload(briefs);
-  const { totals, memberStats, pendingRanking, saveCostRanking, topProductionSaveCostMember, unitFinancials, unassignedCount } = analytics;
+  const { totals, memberStats, pendingRanking, saveCostRanking, topProductionSaveCostMember, unitFinancials, unassignedCount, todayTasks, urgentTasks, overdueTasks, departmentStats, todayBangkokStr } = analytics;
+
+  // 0.1 ถามเรื่อง "ทีมไหน/ฝ่ายไหน สั่งงานด่วน", "ใครชอบสั่งงานด่วน", "สั่งงานด่วนบ่อยสุด", "งานด่วนมาจากไหน"
+  if (
+    q.includes("สั่งงานด่วน") ||
+    q.includes("ชอบสั่งงานด่วน") ||
+    (q.includes("งานด่วน") && (q.includes("ทีมไหน") || q.includes("ฝ่ายไหน") || q.includes("ใคร") || q.includes("หน่วยงานไหน") || q.includes("แผนกไหน") || q.includes("บ่อยสุด") || q.includes("เยอะสุด") || q.includes("ชอบสั่ง") || q.includes("มาจากไหน")))
+  ) {
+    const topDepts = departmentStats.topUrgentDepts;
+    const topReqs = departmentStats.topUrgentRequesters;
+    const top1 = topDepts[0];
+    const top2 = topDepts[1];
+    const top3 = topDepts[2];
+
+    let msg = `จากสถิติข้อมูลบรีฟทั้งหมดในระบบ ฝ่ายที่ส่งบรีฟงานด่วนเข้ามามากที่สุดคือ **ฝ่าย ${top1 ? top1.name : "-"}** ค่ะ! 🚨\n\n`;
+    msg += `📊 **อันดับฝ่ายที่สั่งงานด่วนสูงสุด:**\n`;
+    if (top1) msg += `1. **ฝ่าย ${top1.name}**: สั่งงานด่วนไปถึง **${top1.urgent} งาน** (คิดเป็น ${top1.urgentPct}% ของงานที่ฝ่ายนี้สั่งทั้งหมด ${top1.total} งาน)\n`;
+    if (top2) msg += `2. **ฝ่าย ${top2.name}**: สั่งงานด่วน **${top2.urgent} งาน** (จากทั้งหมด ${top2.total} งาน • ${top2.urgentPct}%)\n`;
+    if (top3) msg += `3. **ฝ่าย ${top3.name}**: สั่งงานด่วน **${top3.urgent} งาน** (จากทั้งหมด ${top3.total} งาน • ${top3.urgentPct}%)\n`;
+
+    if (topReqs.length > 0) {
+      msg += `\n👤 **ผู้ประสานงานที่สั่งงานด่วนบ่อยที่สุด:**\n`;
+      topReqs.slice(0, 3).forEach((r, idx) => {
+        msg += `${idx + 1}. **คุณ${r.name}** (${r.dept}): สั่งงานด่วน **${r.urgent} งาน**\n`;
+      });
+    }
+
+    msg += `\n*(หมายเหตุ: นับเฉพาะงานด่วนที่มีกำหนดส่งกระชั้นชิดไม่เกิน 2 วัน หรือระบุเป็นงานด่วนพิเศษจากหน่วยงานภายนอกค่ะ)*`;
+    return msg;
+  }
+
+  // 0.2 ถามเรื่อง "งานส่งวันนี้", "เดดไลน์วันนี้", "deadline วันนี้", "วันนี้มีงานอะไร", "ส่งวันนี้"
+  if (
+    q.includes("เดดไลน์วันนี้") ||
+    q.includes("deadline วันนี้") ||
+    q.includes("งานเดดไลน์วันนี้") ||
+    (q.includes("วันนี้") && (q.includes("ส่ง") || q.includes("เดดไลน์") || q.includes("deadline") || q.includes("ครบกำหนด") || q.includes("มีงานอะไร") || q.includes("งานอะไรต้องส่ง")))
+  ) {
+    if (todayTasks.length === 0) {
+      return `วันนี้ (${todayBangkokStr}) **ไม่มีงานครบกำหนดส่งมอบตามเดดไลน์** ค่ะพี่จ๊อบ! สมาชิกในทีมสามารถลุยงานตามแผนและเคลียร์คิวงานใน To-Do List ได้อย่างราบรื่นเลยค่ะ 👍✨`;
+    }
+
+    let msg = `วันนี้ (${todayBangkokStr}) มีงานครบกำหนดส่งมอบตามเดดไลน์ทั้งหมด **${todayTasks.length} งาน** ค่ะพี่จ๊อบ 🎯:\n\n`;
+    todayTasks.forEach((t, idx) => {
+      const statusThai = t.status === "in_progress" ? "กำลังดำเนินการ" : "รอเริ่มทำ (Pending)";
+      msg += `${idx + 1}. **${t.code}** [Unit ${t.unit.toUpperCase()}]: ${t.name}\n`;
+      msg += `   └ ผู้รับผิดชอบ: **${t.assignee}** | สถานะ: **${statusThai}**\n`;
+      msg += `   └ ผู้ขอ: ${t.dept} (คุณ${t.req})\n`;
+    });
+    msg += `\nขอให้ผู้รับผิดชอบตรวจทานความเรียบร้อยและส่งมอบงานภายในวันนี้นะคะ 🌸✨`;
+    return msg;
+  }
+
+  // 0.3 ถามเรื่อง "ฝ่ายไหนสั่งงานเยอะสุด", "ทีมไหนส่งบรีฟเยอะสุด"
+  if (
+    (q.includes("ทีม") || q.includes("ฝ่าย") || q.includes("หน่วยงาน")) &&
+    (q.includes("สั่งงานเยอะ") || q.includes("ส่งงานเยอะ") || q.includes("บรีฟเยอะ") || q.includes("งานเยอะสุด") || q.includes("มากสุด"))
+  ) {
+    const topV = departmentStats.topVolumeDepts;
+    let msg = `ฝ่ายภายนอกที่ส่งบรีฟงานเข้ามาในระบบ CC มากที่สุด มีดังนี้ค่ะ 🏢:\n\n`;
+    topV.slice(0, 5).forEach((d, idx) => {
+      msg += `${idx + 1}. **ฝ่าย ${d.name}**: ส่งงานรวม **${d.total} งาน** (เป็นงานด่วน ${d.urgent} งาน)\n`;
+    });
+    return msg;
+  }
+
+  // 0.4 ถามเรื่อง "งานด่วนตอนนี้", "งานด่วนมีอะไรบ้าง"
+  if (
+    q.includes("งานด่วนมีอะไร") ||
+    q.includes("งานด่วนตอนนี้") ||
+    q.includes("งานด่วนมีบ้าง") ||
+    (q.includes("งานด่วน") && (q.includes("อะไรบ้าง") || q.includes("มีอะไร") || q.includes("กี่งาน") || q.includes("ลิสต์") || q.includes("รายชื่อ")))
+  ) {
+    if (urgentTasks.length === 0) {
+      return `ขณะนี้ในระบบไม่มีงานด่วนเฝ้าระวังตกค้างค่ะ ทุกงานดำเนินงานได้ตามเวลาปกติค่ะ 👍✨`;
+    }
+
+    let msg = `ขณะนี้ในระบบมีงานด่วนที่อยู่ระหว่างดำเนินการและเฝ้าระวังทั้งหมด **${urgentTasks.length} งาน** ค่ะ 🚨:\n\n`;
+    urgentTasks.slice(0, 8).forEach((t, idx) => {
+      const statusThai = t.status === "in_progress" ? "กำลังทำ" : "รอเริ่ม (Pending)";
+      msg += `${idx + 1}. **${t.code}** [Unit ${t.unit.toUpperCase()}]: ${t.name}\n`;
+      msg += `   └ ผู้ขอ: ${t.dept} (คุณ${t.req}) | ผู้รับผิดชอบ: **${t.assignee}** | กำหนดส่ง: ${t.deadline || "ไม่ระบุ"} (${statusThai})\n`;
+    });
+    if (urgentTasks.length > 8) {
+      msg += `\n... และยังมีงานด่วนอีก ${urgentTasks.length - 8} งาน ดูทั้งหมดได้ที่: ${SYSTEM_PORTAL_URLS.assignments}`;
+    }
+    return msg;
+  }
 
   // 1. ใครเซฟเงิน / ใครเซพเงินได้สูงสุด / ยูนิตไหนประหยัดงบได้มากสุด / อันดับ Save Cost
   if (

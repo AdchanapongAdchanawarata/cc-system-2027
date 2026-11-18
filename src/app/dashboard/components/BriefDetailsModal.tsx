@@ -1716,18 +1716,43 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                           </div>
                         </div>
 
-                        {brief.details.satisfaction_scores.comment && (
-                          <div className="bg-white/90 p-3 rounded-xl border border-amber-200/70 text-xs">
-                            <div className="font-bold text-slate-700 flex items-center gap-1.5 mb-1 text-[11px]">
-                              <MessageSquare size={13} className="text-amber-600" />
-                              ข้อเสนอแนะเพิ่มเติม:
-                            </div>
-                            <p className="text-slate-600 leading-relaxed italic">
-                              "{brief.details.satisfaction_scores.comment}"
-                            </p>
+                        {(brief.details.satisfaction_scores.needs ||
+                          brief.details.satisfaction_scores.expectations ||
+                          brief.details.satisfaction_scores.suggestions ||
+                          brief.details.satisfaction_scores.comment) && (
+                          <div className="bg-white/90 p-3 rounded-xl border border-amber-200/70 text-xs space-y-2">
+                            {brief.details.satisfaction_scores.needs && (
+                              <div>
+                                <span className="font-bold text-slate-700 text-[11px]">ความต้องการ (Needs): </span>
+                                <span className="text-slate-600">{brief.details.satisfaction_scores.needs}</span>
+                              </div>
+                            )}
+                            {brief.details.satisfaction_scores.expectations && (
+                              <div>
+                                <span className="font-bold text-slate-700 text-[11px]">ความคาดหวัง (Expectations): </span>
+                                <span className="text-slate-600">{brief.details.satisfaction_scores.expectations}</span>
+                              </div>
+                            )}
+                            {(brief.details.satisfaction_scores.suggestions || brief.details.satisfaction_scores.comment) && (
+                              <div>
+                                <div className="font-bold text-slate-700 flex items-center gap-1.5 mb-0.5 text-[11px]">
+                                  <MessageSquare size={13} className="text-amber-600" />
+                                  ข้อเสนอแนะอื่น ๆ (Suggestions):
+                                </div>
+                                <p className="text-slate-600 leading-relaxed italic">
+                                  "{brief.details.satisfaction_scores.suggestions || brief.details.satisfaction_scores.comment}"
+                                </p>
+                              </div>
+                            )}
                             {brief.details.satisfaction_scores.evaluatedBy && (
-                              <div className="text-[10px] text-slate-400 mt-1 font-medium">
-                                — ประเมินโดย: {brief.details.satisfaction_scores.evaluatedBy}
+                              <div className="text-[10px] text-slate-400 pt-1 border-t border-amber-100 font-medium flex flex-wrap items-center gap-2">
+                                <span>— ประเมินโดย: {brief.details.satisfaction_scores.evaluatedBy}</span>
+                                {brief.details.satisfaction_scores.stakeholderRole && (
+                                  <span>• กลุ่ม: {brief.details.satisfaction_scores.stakeholderRole}</span>
+                                )}
+                                {brief.details.satisfaction_scores.gender && (
+                                  <span>• เพศ: {brief.details.satisfaction_scores.gender}</span>
+                                )}
                               </div>
                             )}
                           </div>

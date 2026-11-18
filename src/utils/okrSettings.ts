@@ -55,6 +55,12 @@ export interface SatisfactionScores {
   attentiveness: number;  // 1 - 5 (มีมนุษยสัมพันธ์ดี เอาใจใส่ต่องาน)
   ownership: number;      // 1 - 5 (มีความเป็นเจ้าของงาน)
   averagePercent: number; // 0 - 100%
+  gender?: string;        // ชาย | หญิง | ไม่ต้องการระบุ
+  stakeholderRole?: string; // ตำแหน่ง / กลุ่มผู้มีส่วนได้ส่วนเสีย
+  department?: string;    // สังกัด / ฝ่ายงานของผู้ขอรับบริการ
+  needs?: string;         // ความต้องการ (Needs)
+  expectations?: string;  // ความคาดหวัง (Expectations)
+  suggestions?: string;   // ข้อเสนอแนะอื่น ๆ (Suggestions)
   comment?: string;       // ข้อเสนอแนะเพิ่มเติม
   evaluatedBy?: string;   // PM หรือ Requester
   evaluatedAt?: string;   // ISO string

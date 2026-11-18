@@ -15,6 +15,7 @@ import GoogleSheetsSyncHub from "./GoogleSheetsSyncHub";
 import AuditLogsAndBackupHub from "./AuditLogsAndBackupHub";
 import AiControlHub from "./AiControlHub";
 import LineDispatchHub from "./LineDispatchHub";
+import SupabaseCategoryManager from "./SupabaseCategoryManager";
 import { 
   getStorageQuotaStats, 
   purgeCompletedTaskAttachments, 
@@ -345,7 +346,7 @@ export default function SetupModal({ onClose, isReadOnly = false }: { onClose: (
       console.warn("fetchOKRSettingsFromSupabase notice:", err);
     }
 
-    const { data: oData } = await supabase.from('okr_settings').select('*').order('created_at', { ascending: true });
+    const { data: oData } = await supabase.from('okr_settings').select('id, type, description, target_value, is_active, created_at').not('description', 'like', 'CONFIG_%').order('created_at', { ascending: true });
     if (oData) setOkrs(oData);
 
     // 3. Fetch Service Pricing (Cloud Sync with Supabase okr_settings)
@@ -2656,6 +2657,9 @@ export default function SetupModal({ onClose, isReadOnly = false }: { onClose: (
           {/* TAB 4: STORAGE & FREE TIER HEALTH (พื้นที่จัดเก็บ & โควตาฟรี) */}
           {activeTab === "storage" && (
             <div className="space-y-6 animate-in fade-in duration-200">
+              {/* Supabase Data Categories & Custom Category Builder */}
+              <SupabaseCategoryManager />
+
               {/* Header Info Card */}
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">

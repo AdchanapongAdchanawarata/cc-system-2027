@@ -117,8 +117,8 @@ export default function InternalTaskModal({ onClose }: { onClose: () => void }) 
 
   useEffect(() => {
     const fetchData = async () => {
-      // 1. Fetch OKRs
-      const { data: okrData } = await supabase.from('okr_settings').select('id, type, description').eq('is_active', true);
+      // 1. Fetch OKRs (exclude internal CONFIG_* storage rows)
+      const { data: okrData } = await supabase.from('okr_settings').select('id, type, description').eq('is_active', true).not('description', 'like', 'CONFIG_%');
       if (okrData) setOkrs(okrData);
 
       // 2. Fetch Assignees (Active members of CC Team - exclude executives, guarantee all 12 core members)

@@ -309,6 +309,7 @@ export default function StepQuotationModal({
         const { data: briefsWithQuotation } = await supabase
           .from("briefs")
           .select("id, details, created_at")
+          .neq("status", "purged")
           .not("details->quotation", "is", null);
 
         if (briefsWithQuotation) {

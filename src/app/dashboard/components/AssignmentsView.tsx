@@ -550,7 +550,7 @@ export default function AssignmentsView() {
       updateGlobalBriefsStatsCache(briefsData, operationalOnly);
     }
 
-    const { data: okrData } = await supabase.from('okr_settings').select('id, type, description').eq('is_active', true);
+    const { data: okrData } = await supabase.from('okr_settings').select('id, type, description').eq('is_active', true).not('description', 'like', 'CONFIG_%');
     if (okrData) setOkrs(okrData);
 
     // Run non-destructive background integrity guard once per session

@@ -461,7 +461,7 @@ export default function DashboardsView({ currentUserRole: propRole }: Dashboards
       const [briefsRes, assigneesRes, okrRes] = await Promise.all([
         supabase.from("briefs").select("*").neq("status", "purged").order("created_at", { ascending: false }),
         supabase.from("assignees").select("id, name, unit, is_active").eq("is_active", true),
-        supabase.from("okr_settings").select("*").eq("is_active", true)
+        supabase.from("okr_settings").select("id, type, description, target_value, is_active").eq("is_active", true).not("description", "like", "CONFIG_%")
       ]);
 
 

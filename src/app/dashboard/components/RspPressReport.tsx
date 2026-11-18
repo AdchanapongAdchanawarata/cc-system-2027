@@ -330,6 +330,7 @@ export default function RspPressReport() {
         const { data: briefRows } = await supabase
           .from("briefs")
           .select("id, project_name, details, deadline, coordinator_nickname, requester_email, decision_maker, status")
+          .neq("status", "purged")
           .or("unit.eq.pr,unit.eq.internal,project_name.ilike.%[RSP]%");
 
         if (briefRows && briefRows.length > 0) {

@@ -34,51 +34,56 @@ export interface AuditLogEntry {
 
 const AUDIT_CONFIG_KEY = "CONFIG_AUDIT_LOGS_JSON";
 const LOCAL_AUDIT_KEY = "cc_audit_logs_cache_v1";
+const MAX_AUDIT_ENTRIES = 200;
 
 /**
- * Record an audit log entry in the system:
- * 1. Tries Supabase `audit_logs` table (if migration exists).
- * 2. Fallbacks gracefully to Supabase `okr_settings` (`CONFIG_AUDIT_LOGS_JSON`) + localStorage.
+ * Sanitize audit log details so large nested payloads (e.g. full brief details or base64 strings)
+ * never bloat the CONFIG_AUDIT_LOGS_JSON row in Supabase.
+ */
+function sanitizeAuditDetails(details?: Record<string, any>): Record<string, any> {
+  if (!details || typeof details !== "object") return {};
+  const clean: Record<string, any> = {};
+  for (const [k, v] of Object.entries(details)) {
+    if (k === "updates" && v && typeof v === "object") {
+      const u: Record<string, any> = {};
+      for (const [uk, uv] of Object.entries(v)) {
+        if (uk === "details" && uv && typeof uv === "object") {
+          u.details_keys = Object.keys(uv).slice(0, 15);
+        } else if (typeof uv !== "object" || uv === null) {
+          u[uk] = String(uv).slice(0, 150);
+        }
+      }
+      clean.updates = u;
+    } else if (typeof v === "string") {
+      clean[k] = v.length > 200 ? `${v.slice(0, 200)}...` : v;
+    } else if (typeof v === "number" || typeof v === "boolean" || v === null) {
+      clean[k] = v;
+    } else if (Array.isArray(v)) {
+      clean[k] = v.slice(0, 15).map((item) => (typeof item === "object" ? "[Object]" : String(item).slice(0, 80)));
+    }
+  }
+  return clean;
+}
+
+/**
+ * Record an audit log entry in Supabase `okr_settings` (`CONFIG_AUDIT_LOGS_JSON`) + localStorage.
+ * Automatically sanitizes nested objects and caps history to MAX_AUDIT_ENTRIES.
  */
 export async function logActivity(entry: Omit<AuditLogEntry, "id" | "timestamp">): Promise<void> {
   const fullEntry: AuditLogEntry = {
     ...entry,
+    project_name: entry.project_name ? String(entry.project_name).slice(0, 150) : undefined,
+    details: sanitizeAuditDetails(entry.details),
     id: `audit_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     timestamp: new Date().toISOString(),
   };
 
   try {
-    const supabase = createClient();
-
-    // 1. Attempt to insert into dedicated audit_logs table
-    const { error: dbErr } = await supabase.from("audit_logs").insert([
-      {
-        task_id: fullEntry.task_id || null,
-        task_code: fullEntry.task_code || null,
-        action: fullEntry.action,
-        actor_name: fullEntry.actor_name,
-        actor_email: fullEntry.actor_email,
-        actor_role: fullEntry.actor_role,
-        details: fullEntry.details || {},
-        created_at: fullEntry.timestamp,
-      },
-    ]);
-
-    // If audit_logs table exists and succeeded, we are done
-    if (!dbErr) {
-      return;
-    }
-  } catch (err) {
-    // Continue to fallback
-  }
-
-  // 2. Fallback to Cloud JSON in okr_settings (keeps last 500 audit logs)
-  try {
     const existing = (await getCloudJson<AuditLogEntry[]>(AUDIT_CONFIG_KEY, LOCAL_AUDIT_KEY, [])) || [];
-    const updated = [fullEntry, ...existing].slice(0, 500); // keep most recent 500 entries
+    const updated = [fullEntry, ...existing].slice(0, MAX_AUDIT_ENTRIES);
     await setCloudJson(AUDIT_CONFIG_KEY, updated, LOCAL_AUDIT_KEY);
   } catch (e) {
-    console.warn("Failed to persist audit log fallback:", e);
+    console.warn("Failed to persist audit log:", e);
   }
 }
 
@@ -86,32 +91,6 @@ export async function logActivity(entry: Omit<AuditLogEntry, "id" | "timestamp">
  * Fetch all audit logs (recent first)
  */
 export async function getAuditLogs(limit: number = 100): Promise<AuditLogEntry[]> {
-  try {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("audit_logs")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(limit);
-
-    if (!error && data && data.length > 0) {
-      return data.map((d: any) => ({
-        id: d.id,
-        task_id: d.task_id,
-        task_code: d.task_code,
-        action: d.action,
-        actor_name: d.actor_name,
-        actor_email: d.actor_email,
-        actor_role: d.actor_role,
-        timestamp: d.created_at,
-        details: d.details,
-      }));
-    }
-  } catch (e) {
-    // fallback
-  }
-
-  // Fallback to okr_settings
   const logs = await getCloudJson<AuditLogEntry[]>(AUDIT_CONFIG_KEY, LOCAL_AUDIT_KEY, []);
   return (logs || []).slice(0, limit);
 }

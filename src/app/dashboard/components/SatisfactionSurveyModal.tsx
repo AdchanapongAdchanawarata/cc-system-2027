@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Star, CheckCircle2, MessageSquare, Award, User, Clock, Check } from "lucide-react";
+import { X, Star, CheckCircle2, MessageSquare, Award, User, Clock, Check, Lock } from "lucide-react";
 import { SATISFACTION_CRITERIA, SatisfactionScores } from "@/utils/okrSettings";
 
 interface SatisfactionSurveyModalProps {
@@ -14,6 +14,7 @@ interface SatisfactionSurveyModalProps {
     details?: any;
   };
   assigneeName?: string;
+  readOnly?: boolean;
   onClose: () => void;
   onSave: (scores: SatisfactionScores) => Promise<void>;
 }
@@ -21,6 +22,7 @@ interface SatisfactionSurveyModalProps {
 export default function SatisfactionSurveyModal({
   brief,
   assigneeName,
+  readOnly = false,
   onClose,
   onSave
 }: SatisfactionSurveyModalProps) {
@@ -56,6 +58,7 @@ export default function SatisfactionSurveyModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (readOnly) return;
     setIsSubmitting(true);
     try {
       const evaluationData: SatisfactionScores = {
@@ -92,9 +95,16 @@ export default function SatisfactionSurveyModal({
               <Star size={20} className="fill-white" />
             </span>
             <div>
-              <h3 className="text-base font-bold text-slate-900">
-                แบบประเมินความพึงพอใจการให้บริการ (5 มิติ)
-              </h3>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-base font-bold text-slate-900">
+                  แบบประเมินความพึงพอใจการให้บริการ (5 มิติ)
+                </h3>
+                {readOnly && (
+                  <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-slate-200/80 text-slate-600 flex items-center gap-1 border border-slate-300">
+                    <Lock size={10} /> โหมดดูอย่างเดียว (เฉพาะ Admin แก้ไขได้)
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-slate-500">
                 ประเมินผลงานสำหรับงาน: <span className="font-semibold text-slate-700">{brief.project_name || "ชิ้นงาน"}</span>
               </p>
@@ -180,13 +190,22 @@ export default function SatisfactionSurveyModal({
                         <button
                           key={starVal}
                           type="button"
-                          onClick={() => setScores({ ...scores, [criterion.key]: starVal })}
+                          disabled={readOnly}
+                          onClick={() => {
+                            if (!readOnly) {
+                              setScores({ ...scores, [criterion.key]: starVal });
+                            }
+                          }}
                           className={`p-1.5 rounded-xl transition-all flex items-center justify-center ${
-                            isSelected 
-                              ? "text-amber-500 hover:scale-110 active:scale-95" 
-                              : "text-slate-300 hover:text-slate-400"
+                            readOnly
+                              ? isSelected
+                                ? "text-amber-500 cursor-default"
+                                : "text-slate-300 cursor-default"
+                              : isSelected
+                                ? "text-amber-500 hover:scale-110 active:scale-95 cursor-pointer"
+                                : "text-slate-300 hover:text-slate-400 cursor-pointer"
                           }`}
-                          title={`ให้คะแนน ${starVal} ดาว`}
+                          title={readOnly ? `คะแนน ${starVal} ดาว (ดูได้อย่างเดียว)` : `ให้คะแนน ${starVal} ดาว`}
                         >
                           <Star 
                             size={22} 
@@ -210,9 +229,17 @@ export default function SatisfactionSurveyModal({
             <textarea
               rows={3}
               value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="ระบุข้อคิดเห็น ข้อเสนอแนะ หรือคำชมเชยเพื่อนำไปพัฒนาการทำงานของทีมต่อไป..."
-              className="w-full text-xs border border-slate-200 rounded-2xl p-3 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white placeholder:text-slate-400 leading-relaxed shadow-2xs"
+              readOnly={readOnly}
+              disabled={readOnly}
+              onChange={(e) => {
+                if (!readOnly) setComment(e.target.value);
+              }}
+              placeholder={readOnly ? "ไม่มีข้อเสนอแนะเพิ่มเติม" : "ระบุข้อคิดเห็น ข้อเสนอแนะ หรือคำชมเชยเพื่อนำไปพัฒนาการทำงานของทีมต่อไป..."}
+              className={`w-full text-xs border border-slate-200 rounded-2xl p-3 leading-relaxed shadow-2xs ${
+                readOnly
+                  ? "bg-slate-50 text-slate-600 cursor-default"
+                  : "bg-white focus:ring-1 focus:ring-amber-500 focus:border-amber-500 placeholder:text-slate-400"
+              }`}
             />
           </div>
 
@@ -225,9 +252,17 @@ export default function SatisfactionSurveyModal({
               <input
                 type="text"
                 value={evaluatedBy}
-                onChange={(e) => setEvaluatedBy(e.target.value)}
+                readOnly={readOnly}
+                disabled={readOnly}
+                onChange={(e) => {
+                  if (!readOnly) setEvaluatedBy(e.target.value);
+                }}
                 placeholder="เช่น PM ส้ม, ผู้สั่งงาน (Requester)"
-                className="w-full text-xs border border-slate-200 rounded-xl px-3 py-2 bg-white focus:ring-1 focus:ring-amber-500 font-medium text-slate-800"
+                className={`w-full text-xs border border-slate-200 rounded-xl px-3 py-2 font-medium ${
+                  readOnly
+                    ? "bg-slate-50 text-slate-600 cursor-default"
+                    : "bg-white focus:ring-1 focus:ring-amber-500 text-slate-800"
+                }`}
               />
             </div>
             <div className="flex items-center text-[11px] text-slate-400 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
@@ -237,37 +272,55 @@ export default function SatisfactionSurveyModal({
 
           {/* Footer actions */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 pt-3 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors order-last sm:order-first"
-            >
-              ยกเลิก
-            </button>
+            {readOnly ? (
+              <>
+                <div className="text-[11px] font-medium text-slate-500 flex items-center gap-1.5">
+                  <Lock size={12} className="text-slate-400 shrink-0" />
+                  <span>สิทธิ์ผู้รับผิดชอบงาน (Assignee) ดูผลประเมินได้อย่างเดียว • เฉพาะ Admin ที่ประเมินและแก้ไขผลได้</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-5 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+                >
+                  ปิดหน้าต่าง (Close)
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors order-last sm:order-first cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
 
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-              <button
-                type="submit"
-                disabled={isSubmitting || isSuccess}
-                className={`px-6 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all ${
-                  isSuccess
-                    ? "bg-emerald-600 text-white"
-                    : "bg-amber-500 hover:bg-amber-600 active:scale-95 text-white"
-                }`}
-              >
-                {isSuccess ? (
-                  <>
-                    <Check size={16} /> บันทึกผลประเมินเรียบร้อยแล้ว
-                  </>
-                ) : isSubmitting ? (
-                  "กำลังบันทึก..."
-                ) : (
-                  <>
-                    <Star size={15} className="fill-white" /> บันทึกผลประเมิน ({averagePercent}%)
-                  </>
-                )}
-              </button>
-            </div>
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || isSuccess}
+                    className={`px-6 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer ${
+                      isSuccess
+                        ? "bg-emerald-600 text-white"
+                        : "bg-amber-500 hover:bg-amber-600 active:scale-95 text-white"
+                    }`}
+                  >
+                    {isSuccess ? (
+                      <>
+                        <Check size={16} /> บันทึกผลประเมินเรียบร้อยแล้ว
+                      </>
+                    ) : isSubmitting ? (
+                      "กำลังบันทึก..."
+                    ) : (
+                      <>
+                        <Star size={15} className="fill-white" /> บันทึกผลประเมิน ({averagePercent}%)
+                      </>
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </form>
       </div>

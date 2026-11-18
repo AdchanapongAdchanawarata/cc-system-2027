@@ -13,10 +13,11 @@ import {
   Ban, AlertCircle, Paperclip, Plus, Trash2, LifeBuoy, MapPin, Camera, 
   Check, Sparkles, PiggyBank, Star, MessageSquare, Minus, Building2,
   Landmark, Network, Globe, Link2, Copy, Loader2, ExternalLink, Newspaper,
-  Lock, Unlock, RotateCcw, History
+  Lock, Unlock, RotateCcw, History, Eye
 } from "lucide-react";
 import { getStandardPriceForTask, shouldInternalTaskSkipEmail, shouldSkipEmailForInProgress, shouldSkipEmailForCompleted, getLeadTimeForTask } from "@/utils/pricing";
 import SatisfactionSurveyModal from "./SatisfactionSurveyModal";
+import { getCurrentActor } from "@/utils/auditLogger";
 import { OFFICIAL_STEP_TEAMS, getBriefTimeWindow } from "@/utils/teamAnalytics";
 import { exportBriefToPdf } from "@/utils/briefPdfExport";
 import { getTaskSurveyUrl } from "@/utils/surveyTokens";
@@ -142,6 +143,11 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const currentActor = getCurrentActor();
+  const effectiveRole = typeof window !== "undefined" ? (localStorage.getItem("cc_user_role") || currentActor.role || "assignee") : currentActor.role;
+  const isNamedJobOrAdmin = currentActor.email.toLowerCase().includes("adchanapong") || currentActor.name.includes("จ๊อบ");
+  const isAdmin = effectiveRole === "admin" || (isNamedJobOrAdmin && effectiveRole !== "assignee" && effectiveRole !== "viewer");
 
   // Filter operational assignees (exclude executives from being assigned to tasks, while guaranteeing all 12 core CC members)
   const operationalAssignees = useMemo(() => {
@@ -1596,15 +1602,25 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                           <span>เปิดส่งใน Gmail</span>
                         </button>
 
-                        <button
-                          type="button"
-                          onClick={() => setShowSatisfactionModal(true)}
-                          className="px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs bg-amber-500 hover:bg-amber-600 text-white"
-                          title="บันทึกผลการประเมินความพึงพอใจ 5 มิติโดยตรง (กรณี PM แจ้งผลทาง LINE/โทรศัพท์)"
-                        >
-                          <Star size={13} className="text-white fill-white" />
-                          <span>บันทึกผลประเมิน</span>
-                        </button>
+                        {isAdmin ? (
+                          <button
+                            type="button"
+                            onClick={() => setShowSatisfactionModal(true)}
+                            className="px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs bg-amber-500 hover:bg-amber-600 text-white"
+                            title="บันทึกผลการประเมินความพึงพอใจ 5 มิติโดยตรง (เฉพาะ Admin)"
+                          >
+                            <Star size={13} className="text-white fill-white" />
+                            <span>บันทึกผลประเมิน</span>
+                          </button>
+                        ) : (
+                          <span
+                            className="px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 bg-slate-100 text-slate-500 border border-slate-200 select-none"
+                            title="เฉพาะผู้ดูแลระบบ (Admin) หรือผู้สั่งงานเท่านั้นที่สามารถประเมินผลได้"
+                          >
+                            <Lock size={12} className="text-slate-400" />
+                            <span>เฉพาะ Admin ประเมินผล</span>
+                          </span>
+                        )}
 
                         <button
                           type="button"
@@ -1657,10 +1673,19 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
                           type="button"
                           onClick={() => setShowSatisfactionModal(true)}
                           className="px-3 py-1 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs bg-white hover:bg-amber-50 text-amber-800 border border-amber-300"
-                          title="ดูหรือปรับปรุงผลการประเมินความพึงพอใจ"
+                          title={isAdmin ? "ดูหรือปรับปรุงผลการประเมินความพึงพอใจ (Admin)" : "ดูรายละเอียดผลการประเมินความพึงพอใจ (Assignee ดูได้อย่างเดียว)"}
                         >
-                          <Star size={12} className="text-amber-600 fill-amber-500" />
-                          <span>ดู/แก้ไขผลประเมิน</span>
+                          {isAdmin ? (
+                            <>
+                              <Star size={12} className="text-amber-600 fill-amber-500" />
+                              <span>ดู/แก้ไขผลประเมิน</span>
+                            </>
+                          ) : (
+                            <>
+                              <Eye size={12} className="text-amber-600" />
+                              <span>ดูผลประเมิน</span>
+                            </>
+                          )}
                         </button>
                       </div>
                     </div>
@@ -3145,8 +3170,10 @@ export default function BriefDetailsModal({ brief, assignees, taskCode, onUpdate
         <SatisfactionSurveyModal
           brief={brief}
           assigneeName={assignees.find((a: any) => a.id === brief.assignee_id)?.name}
+          readOnly={!isAdmin}
           onClose={() => setShowSatisfactionModal(false)}
           onSave={async (scores) => {
+            if (!isAdmin) return;
             const status = scores.status || (scores.comment?.includes("ไม่ทำแบบประเมิน") ? 'declined' : 'completed');
             await onUpdateField(brief.id, 'details', {
               ...brief.details,
